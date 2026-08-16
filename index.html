@@ -168,6 +168,7 @@
         <div class="control-group">
             <label>Presets</label>
             <div class="preset-grid">
+                <button id="btnEMNL" style="grid-column: span 2; background: #000; color: #fff; font-weight: bold; border: 1px solid #000;">EMNL</button>
                 <button data-theme="Nokia">Nokia</button>
                 <button data-theme="Nintendo_VB">Nintendo VB</button>
                 <button data-theme="PeB_Dither">P&B</button>
@@ -306,6 +307,20 @@
             });
         });
 
+        document.getElementById('btnEMNL').addEventListener('click', () => {
+            document.getElementById('pxSize').value = 23;
+            document.getElementById('colorSelect').value = "8";
+            document.getElementById('ditherSelect').value = "none";
+            document.getElementById('groupStrength').value = 1;
+            document.getElementById('exposicao').value = 14;
+            document.getElementById('brilho').value = 0;
+            document.getElementById('sombras').value = -20;
+            document.getElementById('saturacao').value = 120;
+            updateLabels();
+            currentForcedPalette = null;
+            triggerProcess();
+        });
+
         document.getElementById('btnOriginal').addEventListener('click', () => {
             currentForcedPalette = null;
             triggerProcess();
@@ -335,6 +350,7 @@
             
             const dithers = ["none", "bayer4", "bayer8", "horizontal", "vertical", "noise"];
             document.getElementById('ditherSelect').value = dithers[Math.floor(Math.random() * dithers.length)];
+            document.getElementById('groupStrength').value = 0;
             updateLabels();
         }
 
