@@ -286,7 +286,9 @@
                     historyArr = []; 
                     document.getElementById('btnUndo').disabled = true;
                     
-                    randConfigs(true);
+                    document.getElementById('groupStrength').value = 0;
+                    
+                    randConfigs();
                     randColors();
                     
                     triggerProcess();
@@ -325,14 +327,8 @@
             }
         }
 
-        function randConfigs(isInitial = false) {
+        function randConfigs() {
             document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4;
-            
-            if (isInitial) {
-                document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); 
-            } else {
-                document.getElementById('groupStrength').value = 0; 
-            }
             
             const colOpts = ["2", "4", "8", "16", "32", "64"];
             document.getElementById('colorSelect').value = colOpts[Math.floor(Math.random() * colOpts.length)];
