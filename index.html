@@ -1,952 +1,787 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixelar</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='2' width='10' height='10' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='12' y='2' width='10' height='10' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='2' y='12' width='10' height='10' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='12' y='12' width='10' height='10' fill='%23000' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E">
+    
     <style>
-        :root {
-            --bg: #ffffff;
-            --fg: #000000;
-            --gray: #e0e0e0;
-            --border: 1px solid #000;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: monospace;
-        }
-
+        * { box-sizing: border-box; }
+        
         body {
-            background-color: var(--bg);
-            color: var(--fg);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            margin: 0; padding: 0;
+            font-family: monospace;
+            background-color: #fff;
+            color: #000;
+            display: flex; flex-direction: row;
+            height: 100vh; overflow: hidden;
+        }
+
+        #controls {
+            width: 320px; min-width: 320px;
+            height: 100%; overflow-y: auto;
+            border-right: 2px solid #000;
+            padding: 15px; display: flex;
+            flex-direction: column; gap: 12px;
+        }
+
+        #view {
+            flex: 1; display: flex;
+            justify-content: center; align-items: center;
+            background-color: #eee; padding: 15px;
             overflow: hidden;
-        }
-
-        /* HEADER & LOGO */
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-            border-bottom: var(--border);
-            flex-shrink: 0;
-        }
-
-        .logo {
-            display: grid;
-            grid-template-columns: 10px 10px;
-            grid-template-rows: 10px 10px;
-            gap: 0;
-            margin-right: 15px;
-            border: 1px solid #000;
-        }
-
-        .logo div {
-            width: 10px;
-            height: 10px;
-            border: 1px solid #000;
-            background: #fff;
-        }
-
-        .logo .black-square {
-            background: #000;
-            border: 1px solid gray; /* Borda cinza apenas no preto */
-        }
-
-        h1 {
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* LAYOUT PRINCIPAL */
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        @media (min-width: 768px) {
-            .main-container {
-                flex-direction: row;
-            }
-        }
-
-        /* CANVAS AREA (Travada no topo no mobile) */
-        .canvas-container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f5f5f5;
-            border-bottom: var(--border);
-            overflow: hidden;
-            position: relative;
-            min-height: 40vh; /* Garante espaço visível no mobile */
-        }
-
-        @media (min-width: 768px) {
-            .canvas-container {
-                border-bottom: none;
-                border-right: var(--border);
-                min-height: auto;
-            }
         }
 
         canvas {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated; /* Desliga suavização nativa */
+            max-width: 100%; max-height: 100%;
+            object-fit: contain; image-rendering: pixelated;
+            border: 1px solid #000; background: #fff;
         }
 
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #000;
-            color: #fff;
-            padding: 10px 20px;
-            font-weight: bold;
-            display: none;
+        .title-area {
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            margin-bottom: 5px;
         }
 
-        /* CONTROLES AREA (Scrollável no mobile) */
-        .controls-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: var(--bg);
-            padding-bottom: 50px;
-        }
-
-        @media (min-width: 768px) {
-            .controls-container {
-                flex: 0 0 350px;
-            }
-        }
-
+        h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        
         .control-group {
-            margin-bottom: 20px;
-            border-bottom: 1px dashed var(--gray);
-            padding-bottom: 15px;
+            display: flex; flex-direction: column; gap: 4px;
+            padding-bottom: 8px; border-bottom: 1px dashed #000;
         }
 
-        .control-group:last-child {
-            border-bottom: none;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            margin-bottom: 5px;
-            accent-color: #000;
-        }
-
-        .val-display {
-            float: right;
-            font-weight: normal;
-        }
-
-        select, button, input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: var(--border);
-            background: #fff;
-            color: #000;
-            font-family: inherit;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        button:hover, select:hover, input[type="file"]:hover {
-            background: #f0f0f0;
-        }
-
-        button.primary {
-            background: #000;
-            color: #fff;
-        }
-
-        button.primary:hover {
-            background: #333;
-        }
-
-        /* CORES E PALETAS */
-        .color-picker-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-
-        input[type="color"] {
-            width: 100%;
-            height: 40px;
-            border: var(--border);
-            cursor: pointer;
-            padding: 0;
-            background: none;
-            -webkit-appearance: none;
-            border-radius: 0;
-        }
+        label { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; }
+        .sub-label { font-weight: normal; margin-top: 4px; }
         
-        input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-        
-        input[type="color"]::-webkit-color-swatch {
-            border: none;
-            border-radius: 0;
+        input[type="range"], select, input[type="file"] {
+            width: 100%; cursor: pointer; border: 1px solid #000; font-family: monospace;
         }
 
-        .info-text {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 5px;
-            display: block;
+        button {
+            padding: 6px; background: #fff; border: 1px solid #000; color: #000;
+            font-family: monospace; cursor: pointer; font-size: 0.85rem;
         }
+        button:hover { background: #000; color: #fff; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .history-controls {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .history-controls button {
-            flex: 1;
-        }
+        .colors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 4px; }
+        .colors-grid input { width: 100%; height: 28px; padding: 0; border: 1px solid #000; cursor: pointer; appearance: none; -webkit-appearance: none; border-radius: 0; }
 
-        .btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
+        .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .warning { color: #555; font-size: 0.7rem; margin-top: 0px; }
+
+        #footer { margin-top: auto; border-top: 2px solid #000; padding-top: 10px; text-align: center; font-size: 0.8rem; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #view { order: 1; height: 50vh; min-height: 50vh; border-bottom: 2px solid #000; border-right: none; padding: 5px; }
+            #controls { order: 2; height: 50vh; overflow-y: auto; width: 100%; min-width: 100%; border-right: none; }
         }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="logo">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div class="black-square"></div>
+    <div id="controls">
+        <div class="title-area">
+            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="10" height="10" fill="#fff" stroke="#000" stroke-width="1"/>
+                <rect x="12" y="2" width="10" height="10" fill="#fff" stroke="#000" stroke-width="1"/>
+                <rect x="2" y="12" width="10" height="10" fill="#fff" stroke="#000" stroke-width="1"/>
+                <rect x="12" y="12" width="10" height="10" fill="#000" stroke="#000" stroke-width="1"/>
+            </svg>
+            <h1>PIXELAR</h1>
         </div>
-        <h1>Pixelar</h1>
+
+        <div class="control-group" style="padding-bottom: 4px;">
+            <input type="file" id="imageUpload" accept="image/*" style="padding: 4px; font-size: 0.8rem; background: #eee;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <div id="status" style="font-weight: bold; font-size:0.9rem;">Aguardando...</div>
+            <button id="btnUndo" disabled style="padding: 2px 8px; font-size: 0.75rem;">↶ Voltar</button>
+        </div>
+
+        <div class="control-group">
+            <label>Tamanho do Pixel: <span id="pxVal">8</span></label>
+            <input type="range" id="pxSize" min="1" max="64" value="8">
+            <div class="warning">Tamanhos menores demoram mais para processar. Use com sabedoria.</div>
+        </div>
+
+        <div class="control-group">
+            <label>Agrupar: <span id="groupVal">0</span></label>
+            <input type="range" id="groupStrength" min="0" max="100" value="0">
+        </div>
+
+        <div class="control-group">
+            <label>Cores / Bits:</label>
+            <select id="colorSelect">
+                <option value="2">2 Cores</option>
+                <option value="3">3 Cores</option>
+                <option value="4">4 Cores</option>
+                <option value="6">6 Cores</option>
+                <option value="8">8 Cores</option>
+                <option value="12">12 Cores</option>
+                <option value="16" selected>16 Cores</option>
+                <option value="24">24 Cores</option>
+                <option value="32">32 Cores</option>
+                <option value="48">48 Cores</option>
+                <option value="64">64 Cores</option>
+                <option value="128">128 Cores</option>
+                <option value="256">256 Cores</option>
+                <option value="all">Todas</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Textura</label>
+            <select id="ditherSelect">
+                <option value="none">Sólido</option>
+                <option value="bayer4">Xadrez Fino</option>
+                <option value="bayer8">Xadrez Largo</option>
+                <option value="horizontal">Linhas Horizontais</option>
+                <option value="vertical">Linhas Verticais</option>
+                <option value="noise">Ruído</option>
+            </select>
+        </div>
+
+        <div class="control-group" style="margin-top: 8px;">
+            <label>Aleatório</label>
+            <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                <button id="btnAleatorioConfigs" style="flex: 1;">Ajustes</button>
+                <button id="btnAleatorioCores" style="flex: 1;">Cores</button>
+            </div>
+            <button id="btnAleatorioAmbos" style="width: 100%; font-weight: bold;">Tudo</button>
+        </div>
+
+        <div class="control-group" style="margin-top: 8px;">
+            <label>Escolha suas cores</label>
+            <div class="colors-grid">
+                <input type="color" id="cc0" value="#111111">
+                <input type="color" id="cc1" value="#555555">
+                <input type="color" id="cc2" value="#AA0000">
+                <input type="color" id="cc3" value="#FF0000">
+            </div>
+            <button id="btnAplicar" style="width: 100%;">Aplicar</button>
+            <button id="btnOriginal" style="width: 100%; margin-top: 4px;">Cores Originais da Foto</button>
+        </div>
+
+        <div class="control-group">
+            <label>Presets</label>
+            <div class="preset-grid">
+                <button id="btnEMNL" style="grid-column: span 2; background: #000; color: #fff; font-weight: bold; border: 1px solid #000;">EMNL</button>
+                <button data-theme="Nokia">Nokia</button>
+                <button data-theme="Nintendo_VB">Nintendo VB</button>
+                <button data-theme="PeB_Dither">P&B</button>
+                <button data-theme="GameBoy">GameBoy</button>
+                <button data-theme="VHS">VHS</button>
+                <button data-theme="RaioX">Raio-X</button>
+                <button data-theme="Meteorologia">Meteorologia</button>
+                <button data-theme="Termica">Térmica</button>
+                <button data-theme="WindowsXP">Windows XP</button>
+                <button data-theme="Sonar">Sonar</button>
+                <button data-theme="CCTV">Câmera Segurança</button>
+            </div>
+        </div>
+
+        <div class="control-group" style="margin-top: 8px;">
+            <label>Ajustes de Imagem</label>
+            <label class="sub-label">Exposição: <span id="expVal">0</span></label>
+            <input type="range" id="exposicao" min="-100" max="100" value="0">
+            
+            <label class="sub-label">Brilho: <span id="briVal">0</span></label>
+            <input type="range" id="brilho" min="-100" max="100" value="0">
+            
+            <label class="sub-label">Sombras: <span id="somVal">0</span></label>
+            <input type="range" id="sombras" min="-100" max="100" value="0">
+            
+            <label class="sub-label">Saturação: <span id="satVal">50</span></label>
+            <input type="range" id="saturacao" min="0" max="200" value="50">
+        </div>
+
+        <button id="downloadBtn" style="background:#000; color:#fff; font-weight:bold; margin-top:5px;" disabled>Baixar Imagem</button>
+
+        <div class="control-group">
+            <label>Salvos</label>
+            <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;"></div>
+            <div style="display: flex; gap: 4px;">
+                <button id="btnSavePreset" style="flex: 1;">Salvar Preset</button>
+                <button id="btnDownloadTxt" style="flex: 1;">Baixar .TXT</button>
+            </div>
+        </div>
+
+        <div id="footer">
+            Henrique Marinhos<br>
+            2026
+        </div>
     </div>
 
-    <div class="main-container">
-        <div class="canvas-container">
-            <canvas id="canvas"></canvas>
-            <div id="loading" class="loading">PROCESSANDO...</div>
-        </div>
-
-        <div class="controls-container">
-            
-            <div class="control-group">
-                <input type="file" id="imageUpload" accept="image/*">
-                <div class="history-controls">
-                    <button id="btnUndo">Desfazer (0)</button>
-                    <button id="btnDownload" class="primary">Baixar Imagem</button>
-                </div>
-            </div>
-
-            <div class="control-group">
-                <label>Tamanho do Pixel <span id="valPixelSize" class="val-display">8</span></label>
-                <input type="range" id="pixelSize" min="1" max="100" value="8">
-                <span class="info-text">Tamanhos menores demoram mais para processar. Use com sabedoria.</span>
-            </div>
-
-            <div class="control-group">
-                <label>Agrupar <span id="valGroup" class="val-display">0</span></label>
-                <input type="range" id="groupSize" min="0" max="50" value="0">
-            </div>
-
-            <div class="control-group">
-                <label>Cores / Bits</label>
-                <select id="colorCount">
-                    <option value="2">2 Cores (1-bit)</option>
-                    <option value="4">4 Cores (2-bit)</option>
-                    <option value="8">8 Cores (3-bit)</option>
-                    <option value="16" selected>16 Cores (4-bit)</option>
-                    <option value="32">32 Cores</option>
-                    <option value="64">64 Cores</option>
-                    <option value="128">128 Cores</option>
-                    <option value="256">256 Cores (8-bit)</option>
-                </select>
-            </div>
-
-            <div class="control-group">
-                <label>Textura</label>
-                <select id="ditherMode">
-                    <option value="none">Sólido</option>
-                    <option value="bayer4">Xadrez Fino</option>
-                    <option value="bayer8">Xadrez Largo</option>
-                    <option value="h-lines">Linhas Horizontais</option>
-                    <option value="v-lines">Linhas Verticais</option>
-                    <option value="noise">Ruído</option>
-                </select>
-            </div>
-
-            <div class="control-group">
-                <label>Aleatório</label>
-                <div class="btn-grid">
-                    <button id="btnRandConfigs">Configs</button>
-                    <button id="btnRandColors">Cores</button>
-                </div>
-                <button id="btnRandAll" class="primary">Aleatório Total</button>
-            </div>
-
-            <div class="control-group">
-                <label>Escolha suas cores</label>
-                <div class="color-picker-grid">
-                    <input type="color" id="c1" value="#000000">
-                    <input type="color" id="c2" value="#555555">
-                    <input type="color" id="c3" value="#aaaaaa">
-                    <input type="color" id="c4" value="#ffffff">
-                </div>
-                <button id="btnApplyColors">Aplicar Cores</button>
-                <button id="btnOriginalColors">Cores Originais</button>
-            </div>
-
-            <div class="control-group">
-                <label>Presets</label>
-                <select id="presetHardware">
-                    <option value="">Selecione...</option>
-                    <option value="emnl">EMNL</option>
-                    <option value="gameboy">GameBoy (Verde)</option>
-                    <option value="cga">CGA (Rosa/Ciano)</option>
-                    <option value="nokia">Nokia 3310</option>
-                    <option value="mac">Macintosh Clássico</option>
-                    <option value="zx">ZX Spectrum</option>
-                    <option value="cctv">Câmera Segurança</option>
-                    <option value="thermo">Termografia</option>
-                </select>
-                <button id="btnSavePreset">Salvar Preset</button>
-                <button id="btnExportTxt">Exportar Info (.txt)</button>
-            </div>
-
-            <div class="control-group">
-                <label>Ajustes de Imagem</label>
-                
-                <label>Exposição <span id="valExp" class="val-display">0</span></label>
-                <input type="range" id="exposure" min="-50" max="50" value="0">
-
-                <label>Brilho <span id="valBri" class="val-display">0</span></label>
-                <input type="range" id="brightness" min="-50" max="50" value="0">
-
-                <label>Sombras <span id="valSha" class="val-display">0</span></label>
-                <input type="range" id="shadows" min="-50" max="50" value="0">
-
-                <label>Saturação <span id="valSat" class="val-display">100%</span></label>
-                <input type="range" id="saturation" min="0" max="200" value="100">
-            </div>
-
-        </div>
+    <div id="view">
+        <canvas id="outputCanvas"></canvas>
     </div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        let originalImage = null;
-        let isProcessing = false;
-        let useOriginalColors = true;
-        let processTimeout = null;
+        let sourceImg = null;
+        let processTimer = null;
+        let currentForcedPalette = null; 
+        let savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {};
         
-        // Histórico
-        const maxHistory = 10;
-        let history = [];
+        let historyArr = [];
+        let isUndoing = false;
 
-        // Matrizes de Bayer para Dithering
-        const bayer4x4 = [
-            [ 0,  8,  2, 10],
-            [12,  4, 14,  6],
-            [ 3, 11,  1,  9],
-            [15,  7, 13,  5]
-        ].map(row => row.map(v => (v / 16) - 0.5));
+        const THEMES = {
+            Nokia: ["#43523D", "#43523D", "#C7F0D8", "#C7F0D8"],
+            Nintendo_VB: ["#000000", "#550000", "#AA0000", "#FF0000"],
+            PeB_Dither: ["#000000", "#000000", "#FFFFFF", "#FFFFFF"],
+            GameBoy: ["#0F380F", "#306230", "#8BAC0F", "#9BBC0F"],
+            VHS: ["#1E1E1E", "#00FFFF", "#FF00FF", "#F0F8FF"],
+            RaioX: ["#000000", "#1A2421", "#008B8B", "#80CBC4", "#FFFFFF"],
+            Meteorologia: ["#000000", "#00FF00", "#FFFF00", "#FF0000", "#8B008B"],
+            Termica: ["#00008B", "#800080", "#FF0000", "#FFFF00", "#FFFFFF"],
+            WindowsXP: ["#397A18", "#245DDA", "#689DF6", "#689DF6", "#ECECEC"],
+            Sonar: ["#002200", "#003300", "#005500", "#008800", "#39FF14"],
+            CCTV: ["#2A2A2A", "#696969", "#A9A9A9", "#EFEFEF", "#FF0000"]
+        };
 
-        const bayer8x8 = [
-            [ 0, 32,  8, 40,  2, 34, 10, 42],
-            [48, 16, 56, 24, 50, 18, 58, 26],
-            [12, 44,  4, 36, 14, 46,  6, 38],
-            [60, 28, 52, 20, 62, 30, 54, 22],
-            [ 3, 35, 11, 43,  1, 33,  9, 41],
-            [51, 19, 59, 27, 49, 17, 57, 25],
-            [15, 47,  7, 39, 13, 45,  5, 37],
-            [63, 31, 55, 23, 61, 29, 53, 21]
-        ].map(row => row.map(v => (v / 64) - 0.5));
+        const bayer4x4 = [ 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 ];
+        const bayer8x8 = [ 0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21 ];
 
-        // Listeners de UI
-        const inputs = ['pixelSize', 'groupSize', 'exposure', 'brightness', 'shadows', 'saturation'];
-        inputs.forEach(id => {
+        function hexToRgb(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : {r:0, g:0, b:0};
+        }
+        function rgbToHex(r, g, b) {
+            return "#" + (1 << 24 | Math.max(0, Math.min(255, r)) << 16 | Math.max(0, Math.min(255, g)) << 8 | Math.max(0, Math.min(255, b))).toString(16).slice(1).toUpperCase();
+        }
+
+        const canvas = document.getElementById('outputCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusTxt = document.getElementById('status');
+
+        const inputsMap = {
+            'pxSize': 'pxVal', 'groupStrength': 'groupVal', 'exposicao': 'expVal',
+            'brilho': 'briVal', 'sombras': 'somVal', 'saturacao': 'satVal'
+        };
+
+        for(let id in inputsMap) {
             const el = document.getElementById(id);
-            const valEl = document.getElementById('val' + id.substring(0,3).charAt(0).toUpperCase() + id.substring(1,3));
-            el.addEventListener('input', () => {
-                if(valEl) valEl.innerText = id === 'saturation' ? el.value + '%' : el.value;
-            });
-            el.addEventListener('change', triggerProcess);
-        });
-
-        document.getElementById('colorCount').addEventListener('change', triggerProcess);
-        document.getElementById('ditherMode').addEventListener('change', triggerProcess);
-
-        // Upload de Imagem
-        document.getElementById('imageUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    originalImage = img;
-                    
-                    // Sorteia tudo na entrada da foto, limitando agrupar a 0-5
-                    randomizeAll(true); 
-                    
-                    saveState();
-                }
-                img.src = event.target.result;
+            const valEl = document.getElementById(inputsMap[id]);
+            if(el && valEl) {
+                el.addEventListener('input', () => { valEl.textContent = el.value; });
+                el.addEventListener('change', triggerProcess);
             }
+        }
+        document.getElementById('colorSelect').addEventListener('change', triggerProcess);
+        document.getElementById('ditherSelect').addEventListener('change', triggerProcess);
+
+        const upload = document.getElementById('imageUpload');
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            statusTxt.textContent = "Carregando...";
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    sourceImg = img;
+                    document.getElementById('downloadBtn').disabled = false;
+                    historyArr = []; 
+                    document.getElementById('btnUndo').disabled = true;
+                    
+                    document.getElementById('groupStrength').value = 0;
+                    
+                    randConfigs();
+                    randColors();
+                    
+                    triggerProcess();
+                };
+                img.src = ev.target.result;
+            };
             reader.readAsDataURL(file);
         });
 
-        // Botões
-        document.getElementById('btnApplyColors').addEventListener('click', () => { useOriginalColors = false; triggerProcess(); saveState(); });
-        document.getElementById('btnOriginalColors').addEventListener('click', () => { useOriginalColors = true; triggerProcess(); saveState(); });
-        
-        document.getElementById('btnRandConfigs').addEventListener('click', () => { randomizeConfigs(); triggerProcess(); saveState(); });
-        document.getElementById('btnRandColors').addEventListener('click', () => { randomizeColors(); useOriginalColors = false; triggerProcess(); saveState(); });
-        document.getElementById('btnRandAll').addEventListener('click', () => { randomizeAll(false); saveState(); });
-
-        document.getElementById('presetHardware').addEventListener('change', applyPreset);
-        
-        document.getElementById('btnUndo').addEventListener('click', undo);
-
-        document.getElementById('btnDownload').addEventListener('click', function() {
-            if (!originalImage) return;
-            canvas.toBlob(function(blob) {
-                if (blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `pixelar_${Date.now()}.png`;
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    }, 100);
-                }
-            }, 'image/png');
+        document.querySelectorAll('.preset-grid button[data-theme]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const themeName = e.target.getAttribute('data-theme');
+                if (THEMES[themeName]) currentForcedPalette = THEMES[themeName].map(hexToRgb);
+                triggerProcess();
+            });
         });
 
-        document.getElementById('btnExportTxt').addEventListener('click', function() {
-            if (!originalImage) return;
-            
-            const selDither = document.getElementById('ditherMode');
-            const ditherName = selDither.options[selDither.selectedIndex].text;
-            
-            let info = `PIXELAR - Configurações da Arte\n\n`;
-            info += `Tamanho do Pixel: ${document.getElementById('pixelSize').value}\n`;
-            info += `Agrupar: ${document.getElementById('groupSize').value}\n`;
-            info += `Quantidade de Cores: ${document.getElementById('colorCount').value}\n`;
-            info += `Textura: ${ditherName}\n\n`;
-            
-            info += `Ajustes:\n`;
-            info += `Exposição: ${document.getElementById('exposure').value}\n`;
-            info += `Brilho: ${document.getElementById('brightness').value}\n`;
-            info += `Sombras: ${document.getElementById('shadows').value}\n`;
-            info += `Saturação: ${document.getElementById('saturation').value}%\n\n`;
+        document.getElementById('btnEMNL').addEventListener('click', () => {
+            document.getElementById('pxSize').value = 23;
+            document.getElementById('colorSelect').value = "8";
+            document.getElementById('ditherSelect').value = "none";
+            document.getElementById('groupStrength').value = 1;
+            document.getElementById('exposicao').value = 14;
+            document.getElementById('brilho').value = 0;
+            document.getElementById('sombras').value = -20;
+            document.getElementById('saturacao').value = 120;
+            updateLabels();
+            currentForcedPalette = null;
+            triggerProcess();
+        });
 
-            if (!useOriginalColors) {
-                info += `Paleta Customizada (Hex):\n`;
-                info += `Cor 1: ${document.getElementById('c1').value}\n`;
-                info += `Cor 2: ${document.getElementById('c2').value}\n`;
-                info += `Cor 3: ${document.getElementById('c3').value}\n`;
-                info += `Cor 4: ${document.getElementById('c4').value}\n`;
-            } else {
-                info += `Paleta: Cores Originais da Imagem\n`;
+        document.getElementById('btnOriginal').addEventListener('click', () => {
+            currentForcedPalette = null;
+            triggerProcess();
+        });
+
+        document.getElementById('btnAplicar').addEventListener('click', () => {
+            currentForcedPalette = [];
+            for(let i=0; i<4; i++) {
+                currentForcedPalette.push(hexToRgb(document.getElementById('cc'+i).value));
             }
-
-            const blob = new Blob([info], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `pixelar_configs_${Date.now()}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            triggerProcess();
         });
+
+        function updateLabels() {
+            for(let id in inputsMap) {
+                const el = document.getElementById(id);
+                const valEl = document.getElementById(inputsMap[id]);
+                if(el && valEl) valEl.textContent = el.value;
+            }
+        }
+
+        function randConfigs() {
+            document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4;
+            
+            const colOpts = ["2", "4", "8", "16", "32", "64"];
+            document.getElementById('colorSelect').value = colOpts[Math.floor(Math.random() * colOpts.length)];
+            
+            const dithers = ["none", "bayer4", "bayer8", "horizontal", "vertical", "noise"];
+            document.getElementById('ditherSelect').value = dithers[Math.floor(Math.random() * dithers.length)];
+            document.getElementById('groupStrength').value = 0;
+            updateLabels();
+        }
+
+        function hslToRgb(h, s, l){
+            let r, g, b;
+            if(s === 0){ r = g = b = l; }
+            else {
+                const hue2rgb = (p, q, t) => {
+                    if(t < 0) t += 1;
+                    if(t > 1) t -= 1;
+                    if(t < 1/6) return p + (q - p) * 6 * t;
+                    if(t < 1/2) return q;
+                    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                }
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
+        }
+
+        function randColors() {
+            currentForcedPalette = [];
+            for(let i=0; i<4; i++) {
+                let h = Math.random();
+                let s = 0.8 + Math.random() * 0.2; 
+                let l = 0.2 + (i * 0.2) + Math.random() * 0.2; 
+                let rgb = hslToRgb(h, s, l);
+                document.getElementById('cc'+i).value = rgbToHex(rgb.r, rgb.g, rgb.b);
+                currentForcedPalette.push(rgb);
+            }
+        }
+
+        document.getElementById('btnAleatorioConfigs').addEventListener('click', () => { randConfigs(); triggerProcess(); });
+        document.getElementById('btnAleatorioCores').addEventListener('click', () => { randColors(); triggerProcess(); });
+        document.getElementById('btnAleatorioAmbos').addEventListener('click', () => { randConfigs(); randColors(); triggerProcess(); });
+
+        document.getElementById('btnUndo').addEventListener('click', () => {
+            if (historyArr.length <= 1) return;
+            historyArr.pop(); 
+            let p = historyArr[historyArr.length - 1]; 
+            
+            document.getElementById('pxSize').value = p.px;
+            document.getElementById('colorSelect').value = p.col;
+            document.getElementById('ditherSelect').value = p.dith || "none";
+            document.getElementById('groupStrength').value = p.grp;
+            document.getElementById('exposicao').value = p.exp;
+            document.getElementById('brilho').value = p.bri;
+            document.getElementById('sombras').value = p.som;
+            document.getElementById('saturacao').value = p.sat;
+            for(let i=0; i<4; i++) { if (p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; }
+            
+            updateLabels();
+            currentForcedPalette = p.pal ? [...p.pal] : null;
+            
+            isUndoing = true;
+            triggerProcess();
+            document.getElementById('btnUndo').disabled = historyArr.length <= 1;
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if(!sourceImg) return;
+            const a = document.createElement('a');
+            a.download = `pixelar_${Date.now()}.png`;
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+        });
+
+        function renderPresets() {
+            const grid = document.getElementById('myPresetsGrid');
+            grid.innerHTML = '';
+            for(let key in savedPresets) {
+                const div = document.createElement('div');
+                div.style.display = "flex"; div.style.gap = "4px";
+                
+                const b = document.createElement('button');
+                b.textContent = key; b.style.flex = "1";
+                b.onclick = () => loadPreset(key);
+                
+                const db = document.createElement('button');
+                db.textContent = "X";
+                db.onclick = () => { delete savedPresets[key]; localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); renderPresets(); };
+
+                div.appendChild(b); div.appendChild(db);
+                grid.appendChild(div);
+            }
+        }
+
+        document.getElementById('btnSavePreset').addEventListener('click', () => {
+            let name = prompt("Nome do Preset:");
+            if(!name) return;
+            let currentCC = [];
+            for(let i=0; i<4; i++) currentCC.push(document.getElementById('cc'+i).value);
+            
+            savedPresets[name] = {
+                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, 
+                dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
+                exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
+                som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
+                pal: currentForcedPalette, cc: currentCC
+            };
+            localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets));
+            renderPresets();
+        });
+
+        function loadPreset(name) {
+            let p = savedPresets[name];
+            if(!p) return;
+            document.getElementById('pxSize').value = p.px; document.getElementById('colorSelect').value = p.col;
+            document.getElementById('ditherSelect').value = p.dith || "none"; document.getElementById('groupStrength').value = p.grp;
+            document.getElementById('exposicao').value = p.exp || 0; document.getElementById('brilho').value = p.bri || 0;
+            document.getElementById('sombras').value = p.som || 0; document.getElementById('saturacao').value = p.sat || 100;
+            
+            updateLabels();
+            currentForcedPalette = p.pal;
+            if(p.cc) { for(let i=0; i<4; i++) { if(document.getElementById('cc'+i) && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; } }
+            triggerProcess();
+        }
+
+        document.getElementById('btnDownloadTxt').addEventListener('click', () => {
+            let coresText = document.getElementById('colorSelect').options[document.getElementById('colorSelect').selectedIndex].text;
+            let texturaText = document.getElementById('ditherSelect').options[document.getElementById('ditherSelect').selectedIndex].text;
+            let hexColors = `${document.getElementById('cc0').value}, ${document.getElementById('cc1').value}, ${document.getElementById('cc2').value}, ${document.getElementById('cc3').value}`;
+            
+            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Escolhidas: ${hexColors}`;
+            
+            const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
+            el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el);
+        });
+
+        renderPresets();
 
         function triggerProcess() {
-            if (!originalImage) return;
-            clearTimeout(processTimeout);
-            document.getElementById('loading').style.display = 'block';
-            
-            // Usa timeout para o UI dar render no aviso de loading antes de travar o processo
-            processTimeout = setTimeout(() => {
-                processImage();
-                document.getElementById('loading').style.display = 'none';
-            }, 50);
+            if(!sourceImg) return;
+            statusTxt.textContent = "Processando...";
+            clearTimeout(processTimer);
+            processTimer = setTimeout(() => {
+                runEngine();
+                isUndoing = false;
+                statusTxt.textContent = "Pronto";
+            }, 20);
         }
 
-        // --- SISTEMA DE ESTADOS (UNDO) ---
-        function saveState() {
-            if(!originalImage) return;
-            const state = {
-                pixelSize: document.getElementById('pixelSize').value,
-                groupSize: document.getElementById('groupSize').value,
-                colorCount: document.getElementById('colorCount').value,
-                ditherMode: document.getElementById('ditherMode').value,
-                exposure: document.getElementById('exposure').value,
-                brightness: document.getElementById('brightness').value,
-                shadows: document.getElementById('shadows').value,
-                saturation: document.getElementById('saturation').value,
-                c1: document.getElementById('c1').value,
-                c2: document.getElementById('c2').value,
-                c3: document.getElementById('c3').value,
-                c4: document.getElementById('c4').value,
-                useOriginalColors: useOriginalColors
-            };
-            
-            history.push(state);
-            if(history.length > maxHistory) history.shift();
-            updateUndoBtn();
-        }
-
-        function undo() {
-            if(history.length <= 1) return;
-            history.pop(); // tira o atual
-            const state = history[history.length - 1]; // pega o anterior
-            
-            document.getElementById('pixelSize').value = state.pixelSize;
-            document.getElementById('groupSize').value = state.groupSize;
-            document.getElementById('colorCount').value = state.colorCount;
-            document.getElementById('ditherMode').value = state.ditherMode;
-            document.getElementById('exposure').value = state.exposure;
-            document.getElementById('brightness').value = state.brightness;
-            document.getElementById('shadows').value = state.shadows;
-            document.getElementById('saturation').value = state.saturation;
-            
-            document.getElementById('c1').value = state.c1;
-            document.getElementById('c2').value = state.c2;
-            document.getElementById('c3').value = state.c3;
-            document.getElementById('c4').value = state.c4;
-            
-            useOriginalColors = state.useOriginalColors;
-            
-            // Atualizar displays de texto
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                const valEl = document.getElementById('val' + id.substring(0,3).charAt(0).toUpperCase() + id.substring(1,3));
-                if(valEl) valEl.innerText = id === 'saturation' ? el.value + '%' : el.value;
-            });
-
-            updateUndoBtn();
-            triggerProcess();
-        }
-
-        function updateUndoBtn() {
-            const btn = document.getElementById('btnUndo');
-            btn.innerText = `Desfazer (${Math.max(0, history.length - 1)})`;
-            btn.disabled = history.length <= 1;
-        }
-
-        // --- LÓGICAS ALEATÓRIAS ---
-        function randomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        function hslToHex(h, s, l) {
-            l /= 100;
-            const a = s * Math.min(l, 1 - l) / 100;
-            const f = n => {
-                const k = (n + h / 30) % 12;
-                const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-                return Math.round(255 * color).toString(16).padStart(2, '0');
-            };
-            return `#${f(0)}${f(8)}${f(4)}`;
-        }
-
-        function randomizeConfigs(isInitialLoad = false) {
-            const pSize = document.getElementById('pixelSize');
-            pSize.value = randomInt(4, 24);
-            document.getElementById('valPix').innerText = pSize.value;
-
-            // Agrupar: Apenas mexe se for carregamento inicial. Caso contrário, zera.
-            const gSize = document.getElementById('groupSize');
-            if(isInitialLoad) {
-                gSize.value = randomInt(0, 5);
-            } else {
-                gSize.value = 0;
+        function interpolatePalette(colors, targetCount) {
+            if(targetCount <= colors.length) return colors.slice(0, targetCount);
+            let result = [];
+            for(let i=0; i<targetCount; i++) {
+                let t = i / (targetCount - 1);
+                let scaledT = t * (colors.length - 1);
+                let idx1 = Math.floor(scaledT);
+                let idx2 = Math.min(idx1 + 1, colors.length - 1);
+                let frac = scaledT - idx1;
+                
+                let c1 = colors[idx1], c2 = colors[idx2];
+                result.push({
+                    r: Math.round(c1.r + (c2.r - c1.r)*frac),
+                    g: Math.round(c1.g + (c2.g - c1.g)*frac),
+                    b: Math.round(c1.b + (c2.b - c1.b)*frac)
+                });
             }
-            document.getElementById('valGro').innerText = gSize.value;
-
-            const colorOpts = [2, 4, 8, 16, 32];
-            document.getElementById('colorCount').value = colorOpts[randomInt(0, colorOpts.length - 1)];
-
-            const ditherOpts = ['none', 'none', 'bayer4', 'bayer8', 'h-lines', 'noise'];
-            document.getElementById('ditherMode').value = ditherOpts[randomInt(0, ditherOpts.length - 1)];
+            return result;
         }
 
-        function randomizeColors() {
-            // Gera 4 cores baseadas em matizes distantes para garantir altíssimo contraste, saturação forte
-            const hueBase = randomInt(0, 360);
-            
-            document.getElementById('c1').value = hslToHex((hueBase) % 360, randomInt(80, 100), randomInt(10, 20)); // Escura
-            document.getElementById('c2').value = hslToHex((hueBase + randomInt(60, 120)) % 360, randomInt(70, 100), randomInt(40, 50)); // Média
-            document.getElementById('c3').value = hslToHex((hueBase + randomInt(180, 240)) % 360, randomInt(70, 100), randomInt(60, 75)); // Média Clara
-            document.getElementById('c4').value = hslToHex((hueBase + randomInt(90, 270)) % 360, randomInt(50, 100), randomInt(85, 95)); // Clara
-        }
-
-        function randomizeAll(isInitialLoad = false) {
-            randomizeConfigs(isInitialLoad);
-            randomizeColors();
-            useOriginalColors = false;
-            triggerProcess();
-        }
-
-        // --- PRESETS ---
-        function applyPreset() {
-            const val = document.getElementById('presetHardware').value;
-            if(!val) return;
-
-            // Resetar ajustes de imagem
-            ['exposure', 'brightness', 'shadows'].forEach(id => {
-                document.getElementById(id).value = 0;
-                document.getElementById('val' + id.substring(0,3).charAt(0).toUpperCase() + id.substring(1,3)).innerText = 0;
-            });
-            document.getElementById('saturation').value = 100;
-            document.getElementById('valSat').innerText = '100%';
-
-            useOriginalColors = false;
-            document.getElementById('groupSize').value = 0;
-            document.getElementById('valGro').innerText = 0;
-
-            if (val === 'emnl') {
-                document.getElementById('pixelSize').value = 23;
-                document.getElementById('valPix').innerText = 23;
-                document.getElementById('colorCount').value = 8;
-                document.getElementById('ditherMode').value = 'none';
-                
-                document.getElementById('groupSize').value = 1;
-                document.getElementById('valGro').innerText = 1;
-                
-                document.getElementById('exposure').value = 14;
-                document.getElementById('valExp').innerText = 14;
-                
-                document.getElementById('shadows').value = -20;
-                document.getElementById('valSha').innerText = -20;
-                
-                document.getElementById('saturation').value = 120;
-                document.getElementById('valSat').innerText = '120%';
-                
-                useOriginalColors = true;
-            } else if (val === 'gameboy') {
-                setPal('#0f380f', '#306230', '#8bac0f', '#9bbc0f');
-                document.getElementById('colorCount').value = 4;
-                document.getElementById('ditherMode').value = 'bayer4';
-            } else if (val === 'cga') {
-                setPal('#000000', '#55ffff', '#ff55ff', '#ffffff');
-                document.getElementById('colorCount').value = 4;
-                document.getElementById('ditherMode').value = 'bayer8';
-            } else if (val === 'nokia') {
-                setPal('#43523d', '#43523d', '#c7f0d8', '#c7f0d8');
-                document.getElementById('colorCount').value = 2;
-                document.getElementById('ditherMode').value = 'none';
-            } else if (val === 'mac') {
-                setPal('#000000', '#000000', '#ffffff', '#ffffff');
-                document.getElementById('colorCount').value = 2;
-                document.getElementById('ditherMode').value = 'bayer4';
-            } else if (val === 'zx') {
-                setPal('#000000', '#d70000', '#00d7d7', '#d7d7d7');
-                document.getElementById('colorCount').value = 8;
-                document.getElementById('ditherMode').value = 'noise';
-                document.getElementById('saturation').value = 150;
-            } else if (val === 'cctv') {
-                setPal('#001100', '#224422', '#55aa55', '#aaffaa');
-                document.getElementById('colorCount').value = 16;
-                document.getElementById('ditherMode').value = 'h-lines';
-            } else if (val === 'thermo') {
-                setPal('#000033', '#cc0000', '#ffff00', '#ffffff');
-                document.getElementById('colorCount').value = 32;
-                document.getElementById('ditherMode').value = 'none';
-                document.getElementById('groupSize').value = 5;
-            }
-
-            triggerProcess();
-            saveState();
-        }
-
-        function setPal(c1, c2, c3, c4) {
-            document.getElementById('c1').value = c1;
-            document.getElementById('c2').value = c2;
-            document.getElementById('c3').value = c3;
-            document.getElementById('c4').value = c4;
-        }
-
-        // --- MOTOR DE PROCESSAMENTO ---
-        function hexToRgb(hex) {
-            let r = parseInt(hex.slice(1, 3), 16);
-            let g = parseInt(hex.slice(3, 5), 16);
-            let b = parseInt(hex.slice(5, 7), 16);
-            return [r, g, b];
-        }
-
-        // Gera paleta interpolada (Gradient Mapping)
-        function generateInterpolatedPalette(numColors) {
-            const baseColors = [
-                hexToRgb(document.getElementById('c1').value),
-                hexToRgb(document.getElementById('c2').value),
-                hexToRgb(document.getElementById('c3').value),
-                hexToRgb(document.getElementById('c4').value)
-            ];
-
-            if (numColors <= 4) {
-                return baseColors.slice(0, numColors);
-            }
-
-            const palette = [];
-            for (let i = 0; i < numColors; i++) {
-                const t = i / (numColors - 1);
-                const section = t * 3; // 3 intervalos entre 4 cores
-                const idx = Math.min(Math.floor(section), 2);
-                const localT = section - idx;
-
-                const cA = baseColors[idx];
-                const cB = baseColors[idx + 1];
-
-                palette.push([
-                    Math.round(cA[0] + (cB[0] - cA[0]) * localT),
-                    Math.round(cA[1] + (cB[1] - cA[1]) * localT),
-                    Math.round(cA[2] + (cB[2] - cA[2]) * localT)
-                ]);
-            }
-            return palette;
-        }
-
-        function applyImageAdjustments(data) {
-            const exp = parseInt(document.getElementById('exposure').value);
-            const bri = parseInt(document.getElementById('brightness').value);
-            const sha = parseInt(document.getElementById('shadows').value);
-            const sat = parseInt(document.getElementById('saturation').value) / 100;
-
-            for (let i = 0; i < data.length; i += 4) {
-                let r = data[i];
-                let g = data[i+1];
-                let b = data[i+2];
-
-                // Exposição
-                const factor = Math.pow(2, exp / 20);
-                r *= factor; g *= factor; b *= factor;
-
-                // Brilho
-                r += bri; g += bri; b += bri;
-
-                // Sombras
-                if (sha !== 0) {
-                    const lum = 0.299*r + 0.587*g + 0.114*b;
-                    if (lum < 128) {
-                        const shadowAdj = (128 - lum) / 128 * sha;
-                        r += shadowAdj; g += shadowAdj; b += shadowAdj;
+        function getMedianCut(pixels, count) {
+            if(!pixels.length) return [{r:0,g:0,b:0}];
+            let buckets = [pixels];
+            while(buckets.length < count) {
+                let maxR=-1, targetIdx=-1, axis='r';
+                for(let i=0; i<buckets.length; i++){
+                    let b = buckets[i];
+                    if(b.length < 2) continue;
+                    let rm=255, rx=0, gm=255, gx=0, bm=255, bx=0;
+                    for(let p of b){
+                        if(p.r<rm)rm=p.r; if(p.r>rx)rx=p.r;
+                        if(p.g<gm)gm=p.g; if(p.g>gx)gx=p.g;
+                        if(p.b<bm)bm=p.b; if(p.b>bx)bx=p.b;
                     }
+                    let rng = Math.max(rx-rm, gx-gm, bx-bm);
+                    if(rng > maxR) { maxR=rng; targetIdx=i; axis= (rx-rm===rng)?'r':(gx-gm===rng)?'g':'b'; }
                 }
-
-                // Saturação
-                if (sat !== 1) {
-                    const lum = 0.299*r + 0.587*g + 0.114*b;
-                    r = lum + (r - lum) * sat;
-                    g = lum + (g - lum) * sat;
-                    b = lum + (b - lum) * sat;
-                }
-
-                data[i]   = Math.min(255, Math.max(0, r));
-                data[i+1] = Math.min(255, Math.max(0, g));
-                data[i+2] = Math.min(255, Math.max(0, b));
+                if(targetIdx === -1) break;
+                let b = buckets[targetIdx];
+                b.sort((a,c) => a[axis]-c[axis]);
+                let mid = Math.floor(b.length/2);
+                buckets.splice(targetIdx, 1, b.slice(0,mid), b.slice(mid));
             }
+            return buckets.map(b => {
+                if(!b.length) return {r:0,g:0,b:0};
+                let r=0,g=0,bl=0;
+                for(let p of b){ r+=p.r; g+=p.g; bl+=p.b; }
+                return {r:Math.round(r/b.length), g:Math.round(g/b.length), b:Math.round(bl/b.length)};
+            });
         }
 
-        // Filtro de Mediana Otimizado para preservar arestas
-        function applyMedianFilter(data, width, height, passes) {
-            if (passes <= 0) return;
+        function runEngine() {
+            const pxEl = document.getElementById('pxSize');
+            if (!pxEl) return;
+            const px = parseInt(pxEl.value, 10);
+            const cLimitStr = document.getElementById('colorSelect').value;
+            const passes = parseInt(document.getElementById('groupStrength').value, 10);
+            const ditherMode = document.getElementById('ditherSelect').value;
             
-            let tempData = new Uint8ClampedArray(data);
-            const radius = 2; // Janela 5x5
+            const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
+            const brBoost = parseInt(document.getElementById('brilho').value, 10);
+            const shBoost = parseInt(document.getElementById('sombras').value, 10);
+            const satBoost = parseInt(document.getElementById('saturacao').value, 10) / 100;
+
+            const origW = sourceImg.width;
+            const origH = sourceImg.height;
+
+            const smallW = Math.max(1, Math.floor(origW / px));
+            const smallH = Math.max(1, Math.floor(origH / px));
+
+            const smallCanvas = document.createElement('canvas');
+            smallCanvas.width = smallW; smallCanvas.height = smallH;
+            const sCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
             
-            for (let p = 0; p < passes; p++) {
-                const currentData = new Uint8ClampedArray(tempData);
-                
-                for (let y = 0; y < height; y++) {
-                    for (let x = 0; x < width; x++) {
-                        const idx = (y * width + x) * 4;
-                        const rArr = [], gArr = [], bArr = [];
-                        
-                        for (let dy = -radius; dy <= radius; dy++) {
-                            for (let dx = -radius; dx <= radius; dx++) {
-                                const ny = y + dy;
-                                const nx = x + dx;
-                                if (ny >= 0 && ny < height && nx >= 0 && nx < width) {
-                                    const nIdx = (ny * width + nx) * 4;
-                                    rArr.push(currentData[nIdx]);
-                                    gArr.push(currentData[nIdx+1]);
-                                    bArr.push(currentData[nIdx+2]);
+            sCtx.imageSmoothingEnabled = false;
+            
+            sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
+            let imgData = sCtx.getImageData(0, 0, smallW, smallH);
+            let d = imgData.data;
+
+            let minL=255, maxL=0;
+
+            for(let i=0; i<d.length; i+=4) {
+                if(d[i+3] === 0) continue;
+                let r=d[i], g=d[i+1], b=d[i+2];
+
+                r *= expBoost; g *= expBoost; b *= expBoost;
+                r += brBoost; g += brBoost; b += brBoost;
+
+                let luma = 0.3*r + 0.59*g + 0.11*b;
+                if(shBoost !== 0 && luma < 128) {
+                    let factor = (128 - luma)/128;
+                    r += shBoost * factor; g += shBoost * factor; b += shBoost * factor;
+                }
+
+                r = luma + (r - luma) * satBoost;
+                g = luma + (g - luma) * satBoost;
+                b = luma + (b - luma) * satBoost;
+
+                d[i]   = Math.min(255, Math.max(0, r));
+                d[i+1] = Math.min(255, Math.max(0, g));
+                d[i+2] = Math.min(255, Math.max(0, b));
+
+                let fluma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+                if(fluma < minL) minL = fluma;
+                if(fluma > maxL) maxL = fluma;
+            }
+
+            if (passes > 0) {
+                let srcData = new Uint8ClampedArray(d);
+                let dstData = new Uint8ClampedArray(d);
+                for(let p=0; p<passes; p++) {
+                    for(let y=0; y<smallH; y++) {
+                        for(let x=0; x<smallW; x++) {
+                            let idx = (y*smallW + x)*4;
+                            if(srcData[idx+3] === 0) { dstData[idx+3]=0; continue; }
+                            
+                            let neighbors = [];
+                            for(let dy=-1; dy<=1; dy++){
+                                let ny = y+dy;
+                                if(ny<0 || ny>=smallH) continue;
+                                for(let dx=-1; dx<=1; dx++){
+                                    let nx = x+dx;
+                                    if(nx<0 || nx>=smallW) continue;
+                                    let nidx = (ny*smallW + nx)*4;
+                                    if(srcData[nidx+3] > 0) {
+                                        neighbors.push({
+                                            r: srcData[nidx], g: srcData[nidx+1], b: srcData[nidx+2],
+                                            l: 0.3*srcData[nidx] + 0.59*srcData[nidx+1] + 0.11*srcData[nidx+2]
+                                        });
+                                    }
                                 }
                             }
+                            neighbors.sort((a,b) => a.l - b.l);
+                            let mid = Math.floor(neighbors.length / 2);
+                            dstData[idx]   = neighbors[mid].r;
+                            dstData[idx+1] = neighbors[mid].g;
+                            dstData[idx+2] = neighbors[mid].b;
+                            dstData[idx+3] = srcData[idx+3];
                         }
+                    }
+                    srcData.set(dstData);
+                }
+                d.set(dstData);
+            }
+            
+            let activePalette = null;
+            
+            if (!currentForcedPalette && cLimitStr !== 'all') {
+                let pxs = [];
+                const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
+                for(let i=0; i<d.length; i+=step) {
+                    if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
+                }
+                activePalette = getMedianCut(pxs, parseInt(cLimitStr, 10));
+            }
+
+            if (passes > 0) {
+                let srcData = new Uint8ClampedArray(d);
+                let dstData = new Uint8ClampedArray(d);
+                for(let p=0; p<passes; p++) {
+                    for(let y=0; y<smallH; y++) {
+                        for(let x=0; x<smallW; x++) {
+                            let idx = (y*smallW + x)*4;
+                            if(srcData[idx+3] === 0) { dstData[idx+3]=0; continue; }
+                            
+                            let r=srcData[idx], g=srcData[idx+1], b=srcData[idx+2];
+                            let sumR=0, sumG=0, sumB=0, count=0;
+                            
+                            for(let dy=-1; dy<=1; dy++){
+                                let ny = y+dy;
+                                if(ny<0 || ny>=smallH) continue;
+                                for(let dx=-1; dx<=1; dx++){
+                                    let nx = x+dx;
+                                    if(nx<0 || nx>=smallW) continue;
+                                    let nidx = (ny*smallW + nx)*4;
+                                    if(srcData[nidx+3] > 0) {
+                                        let nr=srcData[nidx], ng=srcData[nidx+1], nb=srcData[nidx+2];
+                                        if (Math.abs(nr-r) + Math.abs(ng-g) + Math.abs(nb-b) < 150) {
+                                            sumR += nr; sumG += ng; sumB += nb; count++;
+                                        }
+                                    }
+                                }
+                            }
+                            dstData[idx]   = sumR/count;
+                            dstData[idx+1] = sumG/count;
+                            dstData[idx+2] = sumB/count;
+                            dstData[idx+3] = srcData[idx+3];
+                        }
+                    }
+                    srcData.set(dstData);
+                }
+                d.set(dstData);
+            }
+            
+            if (currentForcedPalette && currentForcedPalette.length > 0) {
+                let baseSorted = [...currentForcedPalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                let targetColors = (cLimitStr === 'all') ? 256 : parseInt(cLimitStr, 10);
+                activePalette = interpolatePalette(baseSorted, targetColors);
+                
+                for(let y=0; y<smallH; y++) {
+                    for(let x=0; x<smallW; x++) {
+                        let i = (y*smallW + x) * 4;
+                        if(d[i+3] < 127) continue;
+                        let r=d[i], g=d[i+1], b=d[i+2];
+
+                        let factor = 0;
+                        if(ditherMode === 'bayer4') factor = (bayer4x4[(y % 4) * 4 + (x % 4)] / 16) - 0.5;
+                        else if (ditherMode === 'bayer8') factor = (bayer8x8[(y % 8) * 8 + (x % 8)] / 64) - 0.5;
+                        else if (ditherMode === 'horizontal') factor = (y % 2 === 0) ? -0.2 : 0.2;
+                        else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
+                        else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
                         
-                        rArr.sort((a,b)=>a-b);
-                        gArr.sort((a,b)=>a-b);
-                        bArr.sort((a,b)=>a-b);
-                        const mid = Math.floor(rArr.length / 2);
+                        let pxLuma = 0.3*r + 0.59*g + 0.11*b;
+                        if (factor !== 0) { pxLuma = Math.max(0, Math.min(255, pxLuma + factor * 120)); }
                         
-                        tempData[idx] = rArr[mid];
-                        tempData[idx+1] = gArr[mid];
-                        tempData[idx+2] = bArr[mid];
+                        let norm = (pxLuma - minL) / (maxL - minL || 1);
+                        norm = Math.max(0, Math.min(1, norm));
+                        
+                        let pIdx = Math.floor(norm * activePalette.length);
+                        if(pIdx >= activePalette.length) pIdx = activePalette.length - 1;
+                        
+                        let closest = activePalette[pIdx];
+                        d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                    }
+                }
+            } 
+            else if (cLimitStr !== 'all') {
+                for(let y=0; y<smallH; y++) {
+                    for(let x=0; x<smallW; x++) {
+                        let i = (y*smallW + x) * 4;
+                        if(d[i+3] < 127) continue;
+                        let r=d[i], g=d[i+1], b=d[i+2];
+
+                        let factor = 0;
+                        if(ditherMode === 'bayer4') factor = (bayer4x4[(y % 4) * 4 + (x % 4)] / 16) - 0.5;
+                        else if (ditherMode === 'bayer8') factor = (bayer8x8[(y % 8) * 8 + (x % 8)] / 64) - 0.5;
+                        else if (ditherMode === 'horizontal') factor = (y % 2 === 0) ? -0.2 : 0.2;
+                        else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
+                        else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
+                        
+                        if (factor !== 0) {
+                            let spread = 120;
+                            r = Math.max(0, Math.min(255, r + factor * spread));
+                            g = Math.max(0, Math.min(255, g + factor * spread));
+                            b = Math.max(0, Math.min(255, b + factor * spread));
+                        }
+
+                        let minDist=Infinity, closest=activePalette[0];
+                        for(let c of activePalette) {
+                            let dist = (r-c.r)**2 + (g-c.g)**2 + (b-c.b)**2;
+                            if(dist < minDist){ minDist=dist; closest=c; }
+                        }
+                        d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
                     }
                 }
             }
-            
-            for (let i = 0; i < data.length; i++) {
-                data[i] = tempData[i];
-            }
-        }
 
-        function findClosestPaletteColor(r, g, b, palette) {
-            let minDist = Infinity;
-            let closest = palette[0];
-            for (let i = 0; i < palette.length; i++) {
-                const p = palette[i];
-                // Distância Euclideana rápida
-                const d = (r-p[0])*(r-p[0]) + (g-p[1])*(g-p[1]) + (b-p[2])*(b-p[2]);
-                if (d < minDist) {
-                    minDist = d;
-                    closest = p;
+            sCtx.putImageData(imgData, 0, 0);
+
+            let maxDim = Math.max(origW, origH);
+            let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
+            canvas.width = origW * displayScale; 
+            canvas.height = origH * displayScale;
+            
+            ctx.imageSmoothingEnabled = false; 
+            ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
+
+            if (!isUndoing) {
+                let state = {
+                    px: px, col: cLimitStr, dith: ditherMode, grp: passes,
+                    exp: document.getElementById('exposicao').value,
+                    bri: document.getElementById('brilho').value,
+                    som: document.getElementById('sombras').value,
+                    sat: document.getElementById('saturacao').value,
+                    cc: [document.getElementById('cc0').value, document.getElementById('cc1').value, document.getElementById('cc2').value, document.getElementById('cc3').value],
+                    pal: currentForcedPalette ? [...currentForcedPalette] : null
+                };
+                if (historyArr.length === 0 || JSON.stringify(historyArr[historyArr.length-1]) !== JSON.stringify(state)) {
+                    historyArr.push(state);
+                    if (historyArr.length > 11) historyArr.shift();
+                    document.getElementById('btnUndo').disabled = historyArr.length <= 1;
                 }
             }
-            return closest;
         }
-
-        // Quantização usando Gradient Mapping para cores customizadas
-        function mapToCustomPalette(data, palette) {
-            const numColors = palette.length;
-            for (let i = 0; i < data.length; i += 4) {
-                // Luminância para mapear no gradiente
-                const lum = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-                // Normaliza de 0-255 para 0 a (numColors-1)
-                let colorIdx = Math.floor((lum / 255) * numColors);
-                if (colorIdx >= numColors) colorIdx = numColors - 1;
-                
-                const c = palette[colorIdx];
-                data[i] = c[0];
-                data[i+1] = c[1];
-                data[i+2] = c[2];
-            }
-        }
-        
-        // Quantização preservando cores originais (Posterização Dinâmica)
-        function quantizeOriginalColors(data, numColors) {
-            const step = Math.floor(255 / (Math.cbrt(numColors)));
-            if(step <= 0) return;
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] = Math.round(data[i] / step) * step;
-                data[i+1] = Math.round(data[i+1] / step) * step;
-                data[i+2] = Math.round(data[i+2] / step) * step;
-            }
-        }
-
-        function processImage() {
-            if (!originalImage) return;
-
-            const pixelSize = parseInt(document.getElementById('pixelSize').value);
-            const groupSize = parseInt(document.getElementById('groupSize').value);
-            const numColors = parseInt(document.getElementById('colorCount').value);
-            const ditherMode = document.getElementById('ditherMode').value;
-
-            // Escala inicial
-            const scale = 1 / pixelSize;
-            let w = Math.max(1, Math.floor(originalImage.width * scale));
-            let h = Math.max(1, Math.floor(originalImage.height * scale));
-
-            // Offscreen canvas para processamento
-            const offCanvas = document.createElement('canvas');
-            offCanvas.width = w;
-            offCanvas.height = h;
-            const oCtx = offCanvas.getContext('2d', { willReadFrequently: true });
-            
-            // Desenha a imagem reduzida
-            oCtx.drawImage(originalImage, 0, 0, w, h);
-            let imgData = oCtx.getImageData(0, 0, w, h);
-            let data = imgData.data;
-
-            // 1. Ajustes base (Exposição, etc)
-            applyImageAdjustments(data);
-
-            // 2. Agrupamento (Mediana - Sem Blur, Preserva Arestas)
-            applyMedianFilter(data, w, h, groupSize);
-
-            // 3. Preparar Paleta e Dithering
-            const customPalette = useOriginalColors ? null : generateInterpolatedPalette(numColors);
-
-            for (let y = 0; y < h; y++) {
-                for (let x = 0; x < w; x++) {
-                    const idx = (y * w + x) * 4;
-                    let r = data[idx];
-                    let g = data[idx+1];
-                    let b = data[idx+2];
-
-                    // Aplicar Dither (Espalha erro antes de quantizar)
-                    let ditherVal = 0;
-                    if (ditherMode === 'bayer4') ditherVal = bayer4x4[y % 4][x % 4] * 64;
-                    else if (ditherMode === 'bayer8') ditherVal = bayer8x8[y % 8][x % 8] * 64;
-                    else if (ditherMode === 'h-lines') ditherVal = (y % 2 === 0 ? 0.2 : -0.2) * 64;
-                    else if (ditherMode === 'v-lines') ditherVal = (x % 2 === 0 ? 0.2 : -0.2) * 64;
-                    else if (ditherMode === 'noise') ditherVal = (Math.random() - 0.5) * 64;
-
-                    r = Math.min(255, Math.max(0, r + ditherVal));
-                    g = Math.min(255, Math.max(0, g + ditherVal));
-                    b = Math.min(255, Math.max(0, b + ditherVal));
-                    
-                    data[idx] = r; data[idx+1] = g; data[idx+2] = b;
-                }
-            }
-
-            // 4. Quantização Final
-            if (!useOriginalColors) {
-                mapToCustomPalette(data, customPalette);
-            } else {
-                quantizeOriginalColors(data, numColors);
-            }
-
-            oCtx.putImageData(imgData, 0, 0);
-
-            // Desenhar de volta no canvas principal (Escala final sem suavização)
-            canvas.width = originalImage.width;
-            canvas.height = originalImage.height;
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(offCanvas, 0, 0, canvas.width, canvas.height);
-        }
-
     </script>
 </body>
 </html>
