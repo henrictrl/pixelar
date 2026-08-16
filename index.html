@@ -416,10 +416,40 @@
 
         document.getElementById('downloadBtn').addEventListener('click', () => {
             if(!sourceImg) return;
-            const a = document.createElement('a');
-            a.download = `pixelar_${Date.now()}.png`;
-            a.href = canvas.toDataURL('image/png');
-            a.click();
+            const fileName = `pixelar_${Date.now()}.png`;
+            const triggerDownload = (url) => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                a.target = '_blank';
+                document.body.appendChild(a);
+
+                try {
+                    a.click();
+                } catch (error) {
+                    window.open(url, '_blank');
+                }
+
+                setTimeout(() => a.remove(), 1000);
+
+                if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                    const popup = window.open(url, '_blank');
+                    if (!popup) window.location.href = url;
+                }
+            };
+
+            if (canvas.toBlob) {
+                canvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    triggerDownload(url);
+                    setTimeout(() => URL.revokeObjectURL(url), 1500);
+                }, 'image/png');
+                return;
+            }
+
+            triggerDownload(canvas.toDataURL('image/png'));
         });
 
         function renderPresets() {
