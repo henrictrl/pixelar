@@ -66,7 +66,7 @@
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .colors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 4px; }
-        .colors-grid input { width: 100%; height: 28px; padding: 0; border: 1px solid #000; cursor: pointer; }
+        .colors-grid input { width: 100%; height: 28px; padding: 0; border: 1px solid #000; cursor: pointer; appearance: none; -webkit-appearance: none; border-radius: 0; }
 
         .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .warning { color: #555; font-size: 0.7rem; margin-top: 0px; }
@@ -108,6 +108,11 @@
         </div>
 
         <div class="control-group">
+            <label>Agrupar: <span id="groupVal">0</span></label>
+            <input type="range" id="groupStrength" min="0" max="100" value="0">
+        </div>
+
+        <div class="control-group">
             <label>Cores / Bits:</label>
             <select id="colorSelect">
                 <option value="2">2 Cores</option>
@@ -137,11 +142,6 @@
                 <option value="vertical">Linhas Verticais</option>
                 <option value="noise">Ruído</option>
             </select>
-        </div>
-
-        <div class="control-group">
-            <label>Agrupar: <span id="groupVal">5</span></label>
-            <input type="range" id="groupStrength" min="0" max="100" value="5">
         </div>
 
         <div class="control-group" style="margin-top: 8px;">
@@ -286,7 +286,7 @@
                     historyArr = []; 
                     document.getElementById('btnUndo').disabled = true;
                     
-                    randConfigs();
+                    randConfigs(true);
                     randColors();
                     
                     triggerProcess();
@@ -325,11 +325,17 @@
             }
         }
 
-        function randConfigs() {
+        function randConfigs(isInitial = false) {
             document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4;
+            
+            if (isInitial) {
+                document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); 
+            } else {
+                document.getElementById('groupStrength').value = 0; 
+            }
+            
             const colOpts = ["2", "4", "8", "16", "32", "64"];
             document.getElementById('colorSelect').value = colOpts[Math.floor(Math.random() * colOpts.length)];
-            document.getElementById('groupStrength').value = Math.floor(Math.random() * 80) + 10;
             
             const dithers = ["none", "bayer4", "bayer8", "horizontal", "vertical", "noise"];
             document.getElementById('ditherSelect').value = dithers[Math.floor(Math.random() * dithers.length)];
