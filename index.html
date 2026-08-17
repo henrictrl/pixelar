@@ -41,8 +41,12 @@
             text-align: center;
             font-size: 1.2rem;
             color: #555;
-            pointer-events: none;
+            cursor: pointer;
             display: flex; flex-direction: column; gap: 10px; align-items: center;
+            transition: color 0.2s;
+        }
+        #welcomeMsg:hover {
+            color: #000;
         }
 
         canvas {
@@ -140,6 +144,10 @@
             position: absolute; top: 4px; right: 4px; font-size: 0.65rem; color: #555;
             display: none; font-weight: bold; z-index: 2;
         }
+        
+        .perf-warning {
+            font-size: 0.7rem; color: #555; text-align: left; margin-bottom: 4px; font-weight: bold;
+        }
 
         #footer { margin-top: auto; padding: 10px 0; text-align: center; font-size: 0.8rem; }
 
@@ -199,6 +207,10 @@
                 <input type="range" id="groupStrength" min="0" max="100" value="0">
             </div>
         </details>
+
+        <div class="perf-warning">
+            Tamanhos menores e agrupamentos maiores demoram mais.
+        </div>
 
         <details open class="setting-section">
             <summary>
@@ -282,7 +294,7 @@
         </details>
 
         <details class="setting-section">
-            <summary><div class="summary-title">Presets Rápidos</div></summary>
+            <summary><div class="summary-title">Presets</div></summary>
             <div class="sec-content preset-grid">
                 <button class="std-btn" id="btnEMNL">E-Manual</button>
                 <button class="std-btn" data-theme="Nokia">Nokia</button>
@@ -325,10 +337,10 @@
     </div>
 
     <div id="view">
-        <div id="welcomeMsg">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        <label id="welcomeMsg" for="imageUpload">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
             Faça o upload de uma<br>imagem para começar
-        </div>
+        </label>
         <canvas id="outputCanvas"></canvas>
     </div>
 
@@ -491,7 +503,7 @@
             if(!locks.pxSize) document.getElementById('pxSize').value = 23;
             if(!locks.colorSelect) document.getElementById('colorSelect').value = "8";
             if(!locks.ditherSelect) document.getElementById('ditherSelect').value = "none";
-            if(!locks.groupStrength) document.getElementById('groupStrength').value = 1;
+            if(!locks.groupStrength) document.getElementById('groupStrength').value = 5; // Equals 1 real pass now
             document.getElementById('exposicao').value = 14;
             document.getElementById('brilho').value = 0;
             document.getElementById('sombras').value = -20;
@@ -532,7 +544,7 @@
         }
 
         function randPx() { document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4; updateLabels(); }
-        function randGrp() { document.getElementById('groupStrength').value = Math.random() > 0.7 ? 1 : 0; updateLabels(); }
+        function randGrp() { document.getElementById('groupStrength').value = Math.random() > 0.7 ? Math.floor(Math.random() * 15) + 1 : 0; updateLabels(); }
         function randDith() { 
             const d = ["none", "bayer8", "horizontal", "vertical", "noise"];
             document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
@@ -813,7 +825,8 @@
         async function runEngineAsync(signal) {
             const px = parseInt(document.getElementById('pxSize').value, 10);
             const cLimitStr = document.getElementById('colorSelect').value;
-            const passes = parseInt(document.getElementById('groupStrength').value, 10);
+            const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
+            const passes = Math.ceil(uiGroupStrength / 5); // Conversão para máximo de 20 passos reais
             const ditherMode = document.getElementById('ditherSelect').value;
             
             const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
@@ -1011,7 +1024,7 @@
 
             if (!isNavigatingHistory) {
                 let state = {
-                    px: px, col: cLimitStr, dith: ditherMode, grp: passes,
+                    px: px, col: cLimitStr, dith: ditherMode, grp: uiGroupStrength,
                     exp: document.getElementById('exposicao').value,
                     bri: document.getElementById('brilho').value,
                     som: document.getElementById('sombras').value,
