@@ -590,7 +590,7 @@
 
         function randomizeAll(initialSetup = false) {
             if(!locks.pxSize) randPx();
-            if(!locks.groupStrength) document.getElementById('groupStrength').value = 0; 
+            if(!locks.groupStrength) randGrp(); 
             if(!locks.ditherSelect) randDith();
             if(!locks.colorSelect) randColQty();
             if(!locks.colors) randColorsGen();
