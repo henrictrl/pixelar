@@ -18,6 +18,18 @@
             height: 100vh; overflow: hidden;
         }
 
+        #progressContainer {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 6px;
+            background: #e0e0e0; z-index: 9999;
+        }
+        #progressBar {
+            height: 100%; width: 0%;
+            background: #000;
+            transition: width 0.1s ease-out;
+        }
+
         #controls {
             width: 320px; min-width: 320px;
             height: 100%; overflow-y: auto;
@@ -37,6 +49,7 @@
             max-width: 100%; max-height: 100%;
             object-fit: contain; image-rendering: pixelated;
             border: 1px solid #000; background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .title-area {
@@ -71,6 +84,28 @@
         .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .warning { color: #555; font-size: 0.7rem; margin-top: 0px; }
 
+        #downloadBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #000;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1rem;
+            border: 2px solid #fff;
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            z-index: 1000;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        #downloadBtn:hover:not(:disabled) {
+            transform: scale(1.05);
+            background: #333;
+        }
+        #downloadBtn:disabled { display: none; }
+
         #footer { margin-top: auto; border-top: 2px solid #000; padding-top: 10px; text-align: center; font-size: 0.8rem; }
 
         @media (max-width: 768px) {
@@ -81,6 +116,10 @@
     </style>
 </head>
 <body>
+    <div id="progressContainer">
+        <div id="progressBar"></div>
+    </div>
+
     <div id="controls">
         <div class="title-area">
             <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -198,8 +237,6 @@
             <input type="range" id="saturacao" min="0" max="200" value="50">
         </div>
 
-        <button id="downloadBtn" style="background:#000; color:#fff; font-weight:bold; margin-top:5px;" disabled>Baixar Imagem</button>
-
         <div class="control-group">
             <label>Salvos</label>
             <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;"></div>
@@ -217,11 +254,13 @@
 
     <div id="view">
         <canvas id="outputCanvas"></canvas>
+        <button id="downloadBtn" disabled>BAIXAR IMAGEM</button>
     </div>
 
     <script>
         let sourceImg = null;
-        let processTimer = null;
+        let abortController = null;
+        let isProcessing = false;
         let currentForcedPalette = null; 
         let savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {};
         
@@ -256,6 +295,8 @@
         const canvas = document.getElementById('outputCanvas');
         const ctx = canvas.getContext('2d');
         const statusTxt = document.getElementById('status');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
 
         const inputsMap = {
             'pxSize': 'pxVal', 'groupStrength': 'groupVal', 'exposicao': 'expVal',
@@ -415,7 +456,7 @@
         });
 
         document.getElementById('downloadBtn').addEventListener('click', () => {
-            if(!sourceImg) return;
+            if(!sourceImg || isProcessing) return;
             const fileName = `pixelar_${Date.now()}.png`;
             const triggerDownload = (url) => {
                 const a = document.createElement('a');
@@ -424,19 +465,8 @@
                 a.style.display = 'none';
                 a.target = '_blank';
                 document.body.appendChild(a);
-
-                try {
-                    a.click();
-                } catch (error) {
-                    window.open(url, '_blank');
-                }
-
+                try { a.click(); } catch (error) { window.open(url, '_blank'); }
                 setTimeout(() => a.remove(), 1000);
-
-                if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-                    const popup = window.open(url, '_blank');
-                    if (!popup) window.location.href = url;
-                }
             };
 
             if (canvas.toBlob) {
@@ -448,7 +478,6 @@
                 }, 'image/png');
                 return;
             }
-
             triggerDownload(canvas.toDataURL('image/png'));
         });
 
@@ -458,15 +487,12 @@
             for(let key in savedPresets) {
                 const div = document.createElement('div');
                 div.style.display = "flex"; div.style.gap = "4px";
-                
                 const b = document.createElement('button');
                 b.textContent = key; b.style.flex = "1";
                 b.onclick = () => loadPreset(key);
-                
                 const db = document.createElement('button');
                 db.textContent = "X";
                 db.onclick = () => { delete savedPresets[key]; localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); renderPresets(); };
-
                 div.appendChild(b); div.appendChild(db);
                 grid.appendChild(div);
             }
@@ -477,7 +503,6 @@
             if(!name) return;
             let currentCC = [];
             for(let i=0; i<4; i++) currentCC.push(document.getElementById('cc'+i).value);
-            
             savedPresets[name] = {
                 px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, 
                 dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
@@ -507,24 +532,47 @@
             let coresText = document.getElementById('colorSelect').options[document.getElementById('colorSelect').selectedIndex].text;
             let texturaText = document.getElementById('ditherSelect').options[document.getElementById('ditherSelect').selectedIndex].text;
             let hexColors = `${document.getElementById('cc0').value}, ${document.getElementById('cc1').value}, ${document.getElementById('cc2').value}, ${document.getElementById('cc3').value}`;
-            
             let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Escolhidas: ${hexColors}`;
-            
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
             el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el);
         });
 
         renderPresets();
 
-        function triggerProcess() {
+        // Yield execution back to the browser's main thread
+        const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
+
+        async function triggerProcess() {
             if(!sourceImg) return;
-            statusTxt.textContent = "Processando...";
-            clearTimeout(processTimer);
-            processTimer = setTimeout(() => {
-                runEngine();
-                isUndoing = false;
-                statusTxt.textContent = "Pronto";
-            }, 20);
+            
+            if(abortController) abortController.abort();
+            abortController = new AbortController();
+            const signal = abortController.signal;
+
+            isProcessing = true;
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            statusTxt.textContent = "Processando... 0%";
+            document.getElementById('downloadBtn').style.opacity = '0.5';
+
+            try {
+                await runEngineAsync(signal);
+                if (!signal.aborted) {
+                    isUndoing = false;
+                    statusTxt.textContent = "Pronto";
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.error(e);
+                    statusTxt.textContent = "Erro!";
+                }
+            } finally {
+                if (!signal.aborted) {
+                    isProcessing = false;
+                    document.getElementById('downloadBtn').style.opacity = '1';
+                    setTimeout(() => progressContainer.style.display = 'none', 500);
+                }
+            }
         }
 
         function interpolatePalette(colors, targetCount) {
@@ -536,7 +584,6 @@
                 let idx1 = Math.floor(scaledT);
                 let idx2 = Math.min(idx1 + 1, colors.length - 1);
                 let frac = scaledT - idx1;
-                
                 let c1 = colors[idx1], c2 = colors[idx2];
                 result.push({
                     r: Math.round(c1.r + (c2.r - c1.r)*frac),
@@ -578,7 +625,7 @@
             });
         }
 
-        function runEngine() {
+        async function runEngineAsync(signal) {
             const pxEl = document.getElementById('pxSize');
             if (!pxEl) return;
             const px = parseInt(pxEl.value, 10);
@@ -593,7 +640,6 @@
 
             const origW = sourceImg.width;
             const origH = sourceImg.height;
-
             const smallW = Math.max(1, Math.floor(origW / px));
             const smallH = Math.max(1, Math.floor(origH / px));
 
@@ -602,93 +648,57 @@
             const sCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
             
             sCtx.imageSmoothingEnabled = false;
-            
             sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
             let imgData = sCtx.getImageData(0, 0, smallW, smallH);
             let d = imgData.data;
 
+            const updateProgress = (pct) => {
+                progressBar.style.width = pct + '%';
+                statusTxt.textContent = `Processando... ${Math.floor(pct)}%`;
+            };
+
+            const chunkRows = Math.max(4, Math.floor(smallH / 20)); 
             let minL=255, maxL=0;
 
-            for(let i=0; i<d.length; i+=4) {
-                if(d[i+3] === 0) continue;
-                let r=d[i], g=d[i+1], b=d[i+2];
+            // Fase 1: Correções Base (Exposição, Brilho, Sombra, Saturação)
+            for(let y=0; y<smallH; y++) {
+                if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                for(let x=0; x<smallW; x++) {
+                    let i = (y*smallW + x)*4;
+                    if(d[i+3] === 0) continue;
+                    let r=d[i], g=d[i+1], b=d[i+2];
 
-                r *= expBoost; g *= expBoost; b *= expBoost;
-                r += brBoost; g += brBoost; b += brBoost;
+                    r *= expBoost; g *= expBoost; b *= expBoost;
+                    r += brBoost; g += brBoost; b += brBoost;
 
-                let luma = 0.3*r + 0.59*g + 0.11*b;
-                if(shBoost !== 0 && luma < 128) {
-                    let factor = (128 - luma)/128;
-                    r += shBoost * factor; g += shBoost * factor; b += shBoost * factor;
-                }
-
-                r = luma + (r - luma) * satBoost;
-                g = luma + (g - luma) * satBoost;
-                b = luma + (b - luma) * satBoost;
-
-                d[i]   = Math.min(255, Math.max(0, r));
-                d[i+1] = Math.min(255, Math.max(0, g));
-                d[i+2] = Math.min(255, Math.max(0, b));
-
-                let fluma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
-                if(fluma < minL) minL = fluma;
-                if(fluma > maxL) maxL = fluma;
-            }
-
-            if (passes > 0) {
-                let srcData = new Uint8ClampedArray(d);
-                let dstData = new Uint8ClampedArray(d);
-                for(let p=0; p<passes; p++) {
-                    for(let y=0; y<smallH; y++) {
-                        for(let x=0; x<smallW; x++) {
-                            let idx = (y*smallW + x)*4;
-                            if(srcData[idx+3] === 0) { dstData[idx+3]=0; continue; }
-                            
-                            let neighbors = [];
-                            for(let dy=-1; dy<=1; dy++){
-                                let ny = y+dy;
-                                if(ny<0 || ny>=smallH) continue;
-                                for(let dx=-1; dx<=1; dx++){
-                                    let nx = x+dx;
-                                    if(nx<0 || nx>=smallW) continue;
-                                    let nidx = (ny*smallW + nx)*4;
-                                    if(srcData[nidx+3] > 0) {
-                                        neighbors.push({
-                                            r: srcData[nidx], g: srcData[nidx+1], b: srcData[nidx+2],
-                                            l: 0.3*srcData[nidx] + 0.59*srcData[nidx+1] + 0.11*srcData[nidx+2]
-                                        });
-                                    }
-                                }
-                            }
-                            neighbors.sort((a,b) => a.l - b.l);
-                            let mid = Math.floor(neighbors.length / 2);
-                            dstData[idx]   = neighbors[mid].r;
-                            dstData[idx+1] = neighbors[mid].g;
-                            dstData[idx+2] = neighbors[mid].b;
-                            dstData[idx+3] = srcData[idx+3];
-                        }
+                    let luma = 0.3*r + 0.59*g + 0.11*b;
+                    if(shBoost !== 0 && luma < 128) {
+                        let factor = (128 - luma)/128;
+                        r += shBoost * factor; g += shBoost * factor; b += shBoost * factor;
                     }
-                    srcData.set(dstData);
+
+                    r = luma + (r - luma) * satBoost;
+                    g = luma + (g - luma) * satBoost;
+                    b = luma + (b - luma) * satBoost;
+
+                    d[i]   = Math.min(255, Math.max(0, r));
+                    d[i+1] = Math.min(255, Math.max(0, g));
+                    d[i+2] = Math.min(255, Math.max(0, b));
+
+                    let fluma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+                    if(fluma < minL) minL = fluma;
+                    if(fluma > maxL) maxL = fluma;
                 }
-                d.set(dstData);
-            }
-            
-            let activePalette = null;
-            
-            if (!currentForcedPalette && cLimitStr !== 'all') {
-                let pxs = [];
-                const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
-                for(let i=0; i<d.length; i+=step) {
-                    if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
-                }
-                activePalette = getMedianCut(pxs, parseInt(cLimitStr, 10));
+                if (y % chunkRows === 0) { updateProgress((y / smallH) * 15); await yieldToMain(); }
             }
 
+            // Fase 2: Agrupamento
             if (passes > 0) {
                 let srcData = new Uint8ClampedArray(d);
                 let dstData = new Uint8ClampedArray(d);
                 for(let p=0; p<passes; p++) {
                     for(let y=0; y<smallH; y++) {
+                        if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
                         for(let x=0; x<smallW; x++) {
                             let idx = (y*smallW + x)*4;
                             if(srcData[idx+3] === 0) { dstData[idx+3]=0; continue; }
@@ -716,71 +726,106 @@
                             dstData[idx+2] = sumB/count;
                             dstData[idx+3] = srcData[idx+3];
                         }
+                        if (y % chunkRows === 0) { 
+                            updateProgress(15 + 25 * ((p * smallH + y) / (passes * smallH))); 
+                            await yieldToMain(); 
+                        }
                     }
                     srcData.set(dstData);
                 }
                 d.set(dstData);
             }
             
-            if (currentForcedPalette && currentForcedPalette.length > 0) {
+            updateProgress(40);
+            await yieldToMain();
+
+            // Fase 3: Extração de Cores
+            let activePalette = null;
+            if (!currentForcedPalette && cLimitStr !== 'all') {
+                let pxs = [];
+                const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
+                for(let i=0; i<d.length; i+=step) {
+                    if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
+                }
+                activePalette = getMedianCut(pxs, parseInt(cLimitStr, 10));
+            } else if (currentForcedPalette) {
                 let baseSorted = [...currentForcedPalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
                 let targetColors = (cLimitStr === 'all') ? 256 : parseInt(cLimitStr, 10);
                 activePalette = interpolatePalette(baseSorted, targetColors);
+            }
+
+            updateProgress(45);
+            await yieldToMain();
+
+            // Fase 4: Mapeamento de Paleta e Dithering
+            if (activePalette || (currentForcedPalette && currentForcedPalette.length > 0)) {
                 
-                for(let y=0; y<smallH; y++) {
-                    for(let x=0; x<smallW; x++) {
-                        let i = (y*smallW + x) * 4;
-                        if(d[i+3] < 127) continue;
-                        let r=d[i], g=d[i+1], b=d[i+2];
+                // Pré-calcular matrizes para performance
+                const bayer4 = new Float32Array(16);
+                for(let i=0; i<16; i++) bayer4[i] = (bayer4x4[i]/16) - 0.5;
+                const bayer8 = new Float32Array(64);
+                for(let i=0; i<64; i++) bayer8[i] = (bayer8x8[i]/64) - 0.5;
 
-                        let factor = 0;
-                        if(ditherMode === 'bayer4') factor = (bayer4x4[(y % 4) * 4 + (x % 4)] / 16) - 0.5;
-                        else if (ditherMode === 'bayer8') factor = (bayer8x8[(y % 8) * 8 + (x % 8)] / 64) - 0.5;
-                        else if (ditherMode === 'horizontal') factor = (y % 2 === 0) ? -0.2 : 0.2;
-                        else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
-                        else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
-                        
-                        let pxLuma = 0.3*r + 0.59*g + 0.11*b;
-                        if (factor !== 0) { pxLuma = Math.max(0, Math.min(255, pxLuma + factor * 120)); }
-                        
-                        let norm = (pxLuma - minL) / (maxL - minL || 1);
-                        norm = Math.max(0, Math.min(1, norm));
-                        
-                        let pIdx = Math.floor(norm * activePalette.length);
-                        if(pIdx >= activePalette.length) pIdx = activePalette.length - 1;
-                        
-                        let closest = activePalette[pIdx];
-                        d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                // Cache seguro de cores para evitar gargalos durante buscas de distância
+                const colorCache = new Map();
+                const findClosestColor = (r, g, b, palette) => {
+                    const key = (r & 0xF8) << 10 | (g & 0xF8) << 5 | (b & 0xF8);
+                    let cached = colorCache.get(key);
+                    if (cached) return cached;
+                    
+                    let minDist = Infinity, closest = palette[0];
+                    for(let i = 0; i < palette.length; i++) {
+                        let c = palette[i];
+                        let dr = r - c.r, dg = g - c.g, db = b - c.b;
+                        let dist = dr*dr + dg*dg + db*db;
+                        if(dist < minDist){ minDist = dist; closest = c; }
                     }
-                }
-            } 
-            else if (cLimitStr !== 'all') {
+                    colorCache.set(key, closest);
+                    return closest;
+                };
+
                 for(let y=0; y<smallH; y++) {
+                    if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                    
+                    let yMod4 = (y % 4) * 4, yMod8 = (y % 8) * 8;
+                    let isEvenY = (y % 2 === 0);
+
                     for(let x=0; x<smallW; x++) {
                         let i = (y*smallW + x) * 4;
                         if(d[i+3] < 127) continue;
                         let r=d[i], g=d[i+1], b=d[i+2];
 
                         let factor = 0;
-                        if(ditherMode === 'bayer4') factor = (bayer4x4[(y % 4) * 4 + (x % 4)] / 16) - 0.5;
-                        else if (ditherMode === 'bayer8') factor = (bayer8x8[(y % 8) * 8 + (x % 8)] / 64) - 0.5;
-                        else if (ditherMode === 'horizontal') factor = (y % 2 === 0) ? -0.2 : 0.2;
+                        if(ditherMode === 'bayer4') factor = bayer4[yMod4 + (x % 4)];
+                        else if (ditherMode === 'bayer8') factor = bayer8[yMod8 + (x % 8)];
+                        else if (ditherMode === 'horizontal') factor = isEvenY ? -0.2 : 0.2;
                         else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
                         else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
-                        
-                        if (factor !== 0) {
-                            let spread = 120;
-                            r = Math.max(0, Math.min(255, r + factor * spread));
-                            g = Math.max(0, Math.min(255, g + factor * spread));
-                            b = Math.max(0, Math.min(255, b + factor * spread));
-                        }
 
-                        let minDist=Infinity, closest=activePalette[0];
-                        for(let c of activePalette) {
-                            let dist = (r-c.r)**2 + (g-c.g)**2 + (b-c.b)**2;
-                            if(dist < minDist){ minDist=dist; closest=c; }
+                        if (currentForcedPalette && currentForcedPalette.length > 0) {
+                            let pxLuma = 0.3*r + 0.59*g + 0.11*b;
+                            if (factor !== 0) pxLuma += factor * 120;
+                            let norm = (pxLuma - minL) / (maxL - minL || 1);
+                            norm = Math.max(0, Math.min(1, norm));
+                            
+                            let pIdx = Math.floor(norm * activePalette.length);
+                            if(pIdx >= activePalette.length) pIdx = activePalette.length - 1;
+                            let closest = activePalette[pIdx];
+                            d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                        } else {
+                            if (factor !== 0) {
+                                let spread = 120;
+                                r = Math.max(0, Math.min(255, r + factor * spread));
+                                g = Math.max(0, Math.min(255, g + factor * spread));
+                                b = Math.max(0, Math.min(255, b + factor * spread));
+                            }
+                            let closest = findClosestColor(r, g, b, activePalette);
+                            d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
                         }
-                        d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                    }
+                    if (y % chunkRows === 0) { 
+                        updateProgress(45 + 55 * (y / smallH)); 
+                        await yieldToMain(); 
                     }
                 }
             }
@@ -794,6 +839,8 @@
             
             ctx.imageSmoothingEnabled = false; 
             ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
+
+            updateProgress(100);
 
             if (!isUndoing) {
                 let state = {
