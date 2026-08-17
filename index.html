@@ -16,18 +16,7 @@
             color: #000;
             display: flex; flex-direction: row;
             height: 100vh; overflow: hidden;
-        }
-
-        #progressContainer {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 6px;
-            background: #e0e0e0; z-index: 9999;
-        }
-        #progressBar {
-            height: 100%; width: 0%;
-            background: #000;
-            transition: width 0.1s ease-out;
+            padding-bottom: 60px;
         }
 
         #controls {
@@ -35,14 +24,25 @@
             height: 100%; overflow-y: auto;
             border-right: 2px solid #000;
             padding: 15px; display: flex;
-            flex-direction: column; gap: 12px;
+            flex-direction: column; gap: 8px;
+            background: #fff;
+            z-index: 10;
         }
 
         #view {
             flex: 1; display: flex;
             justify-content: center; align-items: center;
             background-color: #eee; padding: 15px;
-            overflow: hidden;
+            overflow: hidden; position: relative;
+        }
+
+        #welcomeMsg {
+            position: absolute;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #555;
+            pointer-events: none;
+            display: flex; flex-direction: column; gap: 10px; align-items: center;
         }
 
         canvas {
@@ -56,76 +56,102 @@
             background-size: 20px 20px;
             background-position: 0 0, 10px 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
         }
 
         .title-area {
             display: flex; justify-content: center; align-items: center; gap: 10px;
-            margin-bottom: 5px;
+            margin-bottom: 5px; padding-bottom: 10px; border-bottom: 2px solid #000;
         }
-
         h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; }
         
-        .control-group {
-            display: flex; flex-direction: column; gap: 4px;
-            padding-bottom: 8px; border-bottom: 1px dashed #000;
+        details.setting-section {
+            border: 1px dashed #000;
+            background: #fafafa;
+            margin-bottom: 4px;
         }
-
-        label { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; }
-        .sub-label { font-weight: normal; margin-top: 4px; }
+        details.setting-section[open] { background: #fff; }
         
-        input[type="range"], select, input[type="file"] {
+        summary {
+            font-weight: bold; font-size: 0.85rem;
+            padding: 8px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            list-style: none; user-select: none;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary:hover { background: #f0f0f0; }
+
+        .summary-title { flex: 1; display: flex; align-items: center; }
+        .sec-tools { display: flex; gap: 4px; align-items: center; }
+        
+        .tool-btn {
+            background: none; border: 1px solid transparent;
+            cursor: pointer; padding: 4px;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+        }
+        .tool-btn:hover { background: #ddd; border-color: #000; }
+        .tool-btn.locked { background: #000; color: #fff; border-color: #000; }
+        .tool-btn svg { width: 14px; height: 14px; }
+        .tool-btn:not(.locked) .icon-lock { display: none; }
+        .tool-btn.locked .icon-unlock { display: none; }
+
+        .sec-content { padding: 8px; border-top: 1px dashed #000; display: flex; flex-direction: column; gap: 4px; }
+        
+        input[type="range"], select {
             width: 100%; cursor: pointer; border: 1px solid #000; font-family: monospace;
         }
 
-        button {
+        button.std-btn {
             padding: 6px; background: #fff; border: 1px solid #000; color: #000;
             font-family: monospace; cursor: pointer; font-size: 0.85rem;
         }
-        button:hover { background: #000; color: #fff; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.std-btn:hover { background: #000; color: #fff; }
 
-        .colors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 4px; }
-        .colors-grid input { width: 100%; height: 28px; padding: 0; border: 1px solid #000; cursor: pointer; appearance: none; -webkit-appearance: none; border-radius: 0; }
+        .colors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 4px; }
+        .colors-grid input { width: 100%; height: 32px; padding: 0; border: 1px solid #000; cursor: pointer; appearance: none; -webkit-appearance: none; border-radius: 0; }
 
         .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .warning { color: #555; font-size: 0.7rem; margin-top: 0px; }
-
-        #downloadBtn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 12px 18px;
-            background: #fff;
-            color: #000;
-            border: 2px solid #000;
-            font-weight: bold;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            box-shadow: 0 2px 0 #000;
-            z-index: 1000;
-            cursor: pointer;
-            transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+        .sub-label { font-weight: normal; margin-top: 4px; font-size: 0.8rem; display: flex; justify-content: space-between; }
+        
+        #floating-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+            background: #fff; border-top: 2px solid #000;
+            display: flex; z-index: 9999;
         }
-        #downloadBtn:hover:not(:disabled) {
-            background: #000;
-            color: #fff;
-            transform: translateY(-1px);
-        }
-        #downloadBtn:disabled { display: none; }
 
-        #footer { margin-top: auto; border-top: 2px solid #000; padding-top: 10px; text-align: center; font-size: 0.8rem; }
+        #floating-progress {
+            position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+            background: #d4d4d4; z-index: 0; transition: width 0.1s ease-out;
+        }
+
+        .float-btn {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: transparent; border: none; border-right: 1px solid #000;
+            color: #000; font-family: monospace; font-size: 0.75rem; font-weight: bold;
+            cursor: pointer; position: relative; z-index: 1; transition: background 0.1s;
+        }
+        .float-btn:last-child { border-right: none; }
+        .float-btn:hover:not(:disabled) { background: rgba(0,0,0,0.1); }
+        .float-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .float-btn svg { width: 20px; height: 20px; margin-bottom: 2px; fill: currentColor; }
+        .float-btn input[type="file"] { display: none; }
+
+        .proc-indicator {
+            position: absolute; top: 4px; right: 4px; font-size: 0.65rem; color: #555;
+            display: none; font-weight: bold; z-index: 2;
+        }
+
+        #footer { margin-top: auto; padding: 10px 0; text-align: center; font-size: 0.8rem; }
 
         @media (max-width: 768px) {
-            body { flex-direction: column; }
-            #view { order: 1; height: 50vh; min-height: 50vh; border-bottom: 2px solid #000; border-right: none; padding: 5px; }
-            #controls { order: 2; height: 50vh; overflow-y: auto; width: 100%; min-width: 100%; border-right: none; }
+            body { flex-direction: column; padding-bottom: 60px; }
+            #view { order: 1; height: 45vh; min-height: 45vh; border-bottom: 2px solid #000; padding: 5px; }
+            #controls { order: 2; height: calc(55vh - 60px); width: 100%; min-width: 100%; border-right: none; }
+            .float-btn span { font-size: 0.65rem; }
         }
     </style>
 </head>
 <body>
-    <div id="progressContainer">
-        <div id="progressBar"></div>
-    </div>
 
     <div id="controls">
         <div class="title-area">
@@ -138,138 +164,236 @@
             <h1>PIXELAR</h1>
         </div>
 
-        <div class="control-group" style="padding-bottom: 4px;">
-            <input type="file" id="imageUpload" accept="image/*" style="padding: 4px; font-size: 0.8rem; background: #eee;">
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <div id="status" style="font-weight: bold; font-size:0.9rem;">Aguardando...</div>
-            <button id="btnUndo" disabled style="padding: 2px 8px; font-size: 0.75rem;">↶ Voltar</button>
-        </div>
-
-        <div class="control-group">
-            <label>Tamanho do Pixel: <span id="pxVal">8</span></label>
-            <input type="range" id="pxSize" min="1" max="64" value="8">
-            <div class="warning">Tamanhos menores demoram mais para processar. Use com sabedoria.</div>
-        </div>
-
-        <div class="control-group">
-            <label>Agrupar: <span id="groupVal">0</span></label>
-            <input type="range" id="groupStrength" min="0" max="100" value="0">
-        </div>
-
-        <div class="control-group">
-            <label>Cores / Bits:</label>
-            <select id="colorSelect">
-                <option value="2">2 Cores</option>
-                <option value="3">3 Cores</option>
-                <option value="4">4 Cores</option>
-                <option value="6">6 Cores</option>
-                <option value="8">8 Cores</option>
-                <option value="12">12 Cores</option>
-                <option value="16" selected>16 Cores</option>
-                <option value="24">24 Cores</option>
-                <option value="32">32 Cores</option>
-                <option value="48">48 Cores</option>
-                <option value="64">64 Cores</option>
-                <option value="128">128 Cores</option>
-                <option value="256">256 Cores</option>
-                <option value="all">Todas</option>
-            </select>
-        </div>
-
-        <div class="control-group">
-            <label>Textura</label>
-            <select id="ditherSelect">
-                <option value="none">Sólido</option>
-                <option value="bayer4">Xadrez Fino</option>
-                <option value="bayer8">Xadrez Largo</option>
-                <option value="horizontal">Linhas Horizontais</option>
-                <option value="vertical">Linhas Verticais</option>
-                <option value="noise">Ruído</option>
-            </select>
-        </div>
-
-        <div class="control-group" style="margin-top: 8px;">
-            <label>Aleatório</label>
-            <div style="display: flex; gap: 4px; margin-bottom: 4px;">
-                <button id="btnAleatorioConfigs" style="flex: 1;">Ajustes</button>
-                <button id="btnAleatorioCores" style="flex: 1;">Cores</button>
+        <details open class="setting-section">
+            <summary>
+                <div class="summary-title">Tamanho Pixel: <span id="pxVal" style="margin-left: 4px;">8</span></div>
+                <div class="sec-tools">
+                    <button class="tool-btn lock-btn" data-target="pxSize" title="Travar">
+                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </button>
+                    <button class="tool-btn shuffle-btn" data-target="pxSize" title="Embaralhar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    </button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <input type="range" id="pxSize" min="1" max="64" value="8">
             </div>
-            <button id="btnAleatorioAmbos" style="width: 100%; font-weight: bold;">Tudo</button>
-        </div>
+        </details>
 
-        <div class="control-group" style="margin-top: 8px;">
-            <label>Escolha suas cores</label>
-            <div id="colorsGrid" class="colors-grid"></div>
-            <button id="btnAplicar" style="width: 100%;">Aplicar</button>
-            <button id="btnOriginal" style="width: 100%; margin-top: 4px;">Cores Originais da Foto</button>
-        </div>
-
-        <div class="control-group">
-            <label>Presets</label>
-            <div class="preset-grid">
-                <button id="btnEMNL" style="grid-column: span 2; background: #000; color: #fff; font-weight: bold; border: 1px solid #000;">EMNL</button>
-                <button data-theme="Nokia">Nokia</button>
-                <button data-theme="Nintendo_VB">Nintendo VB</button>
-                <button data-theme="PeB_Dither">P&B</button>
-                <button data-theme="GameBoy">GameBoy</button>
-                <button data-theme="VHS">VHS</button>
-                <button data-theme="RaioX">Raio-X</button>
-                <button data-theme="Meteorologia">Meteorologia</button>
-                <button data-theme="Termica">Térmica</button>
-                <button data-theme="WindowsXP">Windows XP</button>
-                <button data-theme="Sonar">Sonar</button>
-                <button data-theme="CCTV">Câmera Segurança</button>
+        <details open class="setting-section">
+            <summary>
+                <div class="summary-title">Agrupar: <span id="groupVal" style="margin-left: 4px;">0</span></div>
+                <div class="sec-tools">
+                    <button class="tool-btn lock-btn" data-target="groupStrength" title="Travar">
+                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </button>
+                    <button class="tool-btn shuffle-btn" data-target="groupStrength" title="Embaralhar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    </button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <input type="range" id="groupStrength" min="0" max="100" value="0">
             </div>
-        </div>
+        </details>
 
-        <div class="control-group" style="margin-top: 8px;">
-            <label>Ajustes de Imagem</label>
-            <label class="sub-label">Exposição: <span id="expVal">0</span></label>
-            <input type="range" id="exposicao" min="-100" max="100" value="0">
-            
-            <label class="sub-label">Brilho: <span id="briVal">0</span></label>
-            <input type="range" id="brilho" min="-100" max="100" value="0">
-            
-            <label class="sub-label">Sombras: <span id="somVal">0</span></label>
-            <input type="range" id="sombras" min="-100" max="100" value="0">
-            
-            <label class="sub-label">Saturação: <span id="satVal">0</span></label>
-            <input type="range" id="saturacao" min="-100" max="100" value="0">
-        </div>
-
-        <div class="control-group">
-            <label>Salvos</label>
-            <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;"></div>
-            <div style="display: flex; gap: 4px;">
-                <button id="btnSavePreset" style="flex: 1;">Salvar Preset</button>
-                <button id="btnDownloadTxt" style="flex: 1;">Baixar .TXT</button>
+        <details open class="setting-section">
+            <summary>
+                <div class="summary-title">Textura</div>
+                <div class="sec-tools">
+                    <button class="tool-btn lock-btn" data-target="ditherSelect" title="Travar">
+                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </button>
+                    <button class="tool-btn shuffle-btn" data-target="ditherSelect" title="Embaralhar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    </button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <select id="ditherSelect">
+                    <option value="none">Sólido</option>
+                    <option value="bayer8">Xadrez</option>
+                    <option value="horizontal">Linhas Horizontais</option>
+                    <option value="vertical">Linhas Verticais</option>
+                    <option value="noise">Ruído</option>
+                </select>
             </div>
-        </div>
+        </details>
 
-        <div id="footer">
-            Henrique Marinhos<br>
-            2026
-        </div>
+        <details open class="setting-section">
+            <summary>
+                <div class="summary-title">Qtd. de Cores</div>
+                <div class="sec-tools">
+                    <button class="tool-btn lock-btn" data-target="colorSelect" title="Travar">
+                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </button>
+                    <button class="tool-btn shuffle-btn" data-target="colorSelect" title="Embaralhar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    </button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <select id="colorSelect">
+                    <option value="2">2 Cores</option>
+                    <option value="3">3 Cores</option>
+                    <option value="4">4 Cores</option>
+                    <option value="6">6 Cores</option>
+                    <option value="8">8 Cores</option>
+                    <option value="12">12 Cores</option>
+                    <option value="16" selected>16 Cores</option>
+                    <option value="24">24 Cores</option>
+                    <option value="32">32 Cores</option>
+                    <option value="48">48 Cores</option>
+                    <option value="64">64 Cores</option>
+                    <option value="128">128 Cores</option>
+                    <option value="256">256 Cores</option>
+                    <option value="all">Todas</option>
+                </select>
+            </div>
+        </details>
+
+        <details open class="setting-section">
+            <summary>
+                <div class="summary-title">Cores Manuais</div>
+                <div class="sec-tools">
+                    <button class="tool-btn lock-btn" data-target="colors" title="Travar">
+                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </button>
+                    <button class="tool-btn shuffle-btn" data-target="colors" title="Embaralhar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    </button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <div id="colorsGrid" class="colors-grid">
+                    <input type="color" id="cc0" value="#2C2C2C">
+                    <input type="color" id="cc1" value="#D62828">
+                    <input type="color" id="cc2" value="#FFD166">
+                    <input type="color" id="cc3" value="#00C2A8">
+                </div>
+                <button class="std-btn" id="btnOriginal">Cores Originais da Foto</button>
+            </div>
+        </details>
+
+        <details class="setting-section">
+            <summary><div class="summary-title">Presets Rápidos</div></summary>
+            <div class="sec-content preset-grid">
+                <button class="std-btn" id="btnEMNL">E-Manual</button>
+                <button class="std-btn" data-theme="Nokia">Nokia</button>
+                <button class="std-btn" data-theme="Nintendo_VB">Nintendo VB</button>
+                <button class="std-btn" data-theme="PeB_Dither">P&B</button>
+                <button class="std-btn" data-theme="GameBoy">GameBoy</button>
+                <button class="std-btn" data-theme="VHS">VHS</button>
+                <button class="std-btn" data-theme="RaioX">Raio-X</button>
+                <button class="std-btn" data-theme="Termica">Térmica</button>
+                <button class="std-btn" data-theme="WindowsXP">Windows XP</button>
+            </div>
+        </details>
+
+        <details class="setting-section">
+            <summary><div class="summary-title">Ajustes de Imagem</div></summary>
+            <div class="sec-content">
+                <div class="sub-label">Exposição: <span id="expVal">0</span></div>
+                <input type="range" id="exposicao" min="-100" max="100" value="0">
+                <div class="sub-label">Brilho: <span id="briVal">0</span></div>
+                <input type="range" id="brilho" min="-100" max="100" value="0">
+                <div class="sub-label">Sombras: <span id="somVal">0</span></div>
+                <input type="range" id="sombras" min="-100" max="100" value="0">
+                <div class="sub-label">Saturação: <span id="satVal">0</span></div>
+                <input type="range" id="saturacao" min="-100" max="100" value="0">
+            </div>
+        </details>
+
+        <details class="setting-section">
+            <summary><div class="summary-title">Salvos</div></summary>
+            <div class="sec-content">
+                <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;"></div>
+                <div style="display: flex; gap: 4px;">
+                    <button class="std-btn" id="btnSavePreset" style="flex: 1;">Salvar Atual</button>
+                    <button class="std-btn" id="btnDownloadTxt" style="flex: 1;">Baixar .TXT</button>
+                </div>
+            </div>
+        </details>
+
+        <div id="footer">Henrique Marinhos | 2026</div>
     </div>
 
     <div id="view">
+        <div id="welcomeMsg">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Faça o upload de uma<br>imagem para começar
+        </div>
         <canvas id="outputCanvas"></canvas>
-        <button id="downloadBtn" disabled>BAIXAR IMAGEM</button>
+    </div>
+
+    <!-- Barra Flutuante Global -->
+    <div id="floating-bar">
+        <div id="floating-progress"></div>
+        <div class="proc-indicator" id="proc-text">0%</div>
+
+        <label class="float-btn" id="btn-upload">
+            <input type="file" id="imageUpload" accept="image/*">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span>Upload</span>
+        </label>
+        
+        <button class="float-btn" id="btn-undo" disabled>
+            <svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span>Voltar</span>
+        </button>
+
+        <button class="float-btn" id="btn-redo" disabled>
+            <svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span>Refazer</span>
+        </button>
+
+        <button class="float-btn" id="btn-random-global">
+            <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span>Randomizar</span>
+        </button>
+
+        <button class="float-btn" id="btn-download" disabled>
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span>Baixar</span>
+        </button>
     </div>
 
     <script>
-        const MAX_MANUAL_COLORS = 16;
+        document.querySelectorAll('.sec-tools').forEach(tool => {
+            tool.addEventListener('click', e => e.preventDefault());
+        });
+
+        const locks = { pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, colors: false };
+
+        document.querySelectorAll('.lock-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = btn.getAttribute('data-target');
+                locks[target] = !locks[target];
+                btn.classList.toggle('locked', locks[target]);
+            });
+        });
 
         let sourceImg = null;
         let abortController = null;
         let isProcessing = false;
+        
         let currentForcedPalette = null; 
-        let savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {};
+        // Modos: 'manual', 'original', 'random', 'preset'
+        let currentPaletteMode = 'manual'; 
+        
+        let savedPresets = {};
+        try { savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {}; } 
+        catch(e) { console.warn("Modo offline / Storage bloqueado."); }
         
         let historyArr = [];
-        let isUndoing = false;
+        let historyIndex = -1;
+        let isNavigatingHistory = false;
 
         const THEMES = {
             Nokia: ["#43523D", "#43523D", "#C7F0D8", "#C7F0D8"],
@@ -278,14 +402,10 @@
             GameBoy: ["#0F380F", "#306230", "#8BAC0F", "#9BBC0F"],
             VHS: ["#1E1E1E", "#00FFFF", "#FF00FF", "#F0F8FF"],
             RaioX: ["#000000", "#1A2421", "#008B8B", "#80CBC4", "#FFFFFF"],
-            Meteorologia: ["#000000", "#00FF00", "#FFFF00", "#FF0000", "#8B008B"],
             Termica: ["#00008B", "#800080", "#FF0000", "#FFFF00", "#FFFFFF"],
-            WindowsXP: ["#397A18", "#245DDA", "#689DF6", "#689DF6", "#ECECEC"],
-            Sonar: ["#002200", "#003300", "#005500", "#008800", "#39FF14"],
-            CCTV: ["#2A2A2A", "#696969", "#A9A9A9", "#EFEFEF", "#FF0000"]
+            WindowsXP: ["#397A18", "#245DDA", "#689DF6", "#689DF6", "#ECECEC"]
         };
 
-        const bayer4x4 = [ 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 ];
         const bayer8x8 = [ 0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21 ];
 
         function hexToRgb(hex) {
@@ -298,9 +418,9 @@
 
         const canvas = document.getElementById('outputCanvas');
         const ctx = canvas.getContext('2d');
-        const statusTxt = document.getElementById('status');
-        const progressBar = document.getElementById('progressBar');
-        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('floating-progress');
+        const progressText = document.getElementById('proc-text');
+        const floatBtns = document.querySelectorAll('.float-btn');
 
         const inputsMap = {
             'pxSize': 'pxVal', 'groupStrength': 'groupVal', 'exposicao': 'expVal',
@@ -315,6 +435,7 @@
                 el.addEventListener('change', triggerProcess);
             }
         }
+
         document.getElementById('colorSelect').addEventListener('change', triggerProcess);
         document.getElementById('ditherSelect').addEventListener('change', triggerProcess);
 
@@ -322,22 +443,20 @@
         upload.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if(!file) return;
-            statusTxt.textContent = "Carregando...";
+            document.getElementById('welcomeMsg').style.display = 'none';
+            canvas.style.display = 'block';
+            
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const img = new Image();
                 img.onload = () => {
                     sourceImg = img;
-                    document.getElementById('downloadBtn').disabled = false;
+                    document.getElementById('btn-download').disabled = false;
                     historyArr = []; 
-                    document.getElementById('btnUndo').disabled = true;
+                    historyIndex = -1;
+                    if(!locks.groupStrength) document.getElementById('groupStrength').value = 0;
                     
-                    document.getElementById('groupStrength').value = 0;
-                    
-                    randConfigs();
-                    randColors();
-                    
-                    triggerProcess();
+                    randomizeAll(true); 
                 };
                 img.src = ev.target.result;
             };
@@ -347,56 +466,39 @@
         document.querySelectorAll('.preset-grid button[data-theme]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const themeName = e.target.getAttribute('data-theme');
-                if (THEMES[themeName]) currentForcedPalette = THEMES[themeName].map(hexToRgb);
+                if (THEMES[themeName]) {
+                    currentPaletteMode = 'preset';
+                    currentForcedPalette = THEMES[themeName].map(hexToRgb);
+                }
                 triggerProcess();
             });
         });
 
-        function buildColorPickers() {
-            const grid = document.getElementById('colorsGrid');
-            if (!grid) return;
-
-            const defaults = [
-                '#111111', '#2C2C2C', '#4D4D4D', '#7A7A7A',
-                '#A52A2A', '#D62828', '#FF4D4D', '#FFB703',
-                '#F77F00', '#FFD166', '#00A6A6', '#00C2A8',
-                '#008F8C', '#3A86FF', '#6A4C93', '#C77DFF'
-            ];
-
-            grid.innerHTML = '';
-            for (let i = 0; i < MAX_MANUAL_COLORS; i++) {
-                const input = document.createElement('input');
-                input.type = 'color';
-                input.id = 'cc' + i;
-                input.value = defaults[i] || '#000000';
-                grid.appendChild(input);
-            }
+        for(let i = 0; i < 4; i++) {
+            document.getElementById('cc' + i).addEventListener('input', () => {
+                currentPaletteMode = 'manual';
+                triggerProcess();
+            });
         }
 
+        document.getElementById('btnOriginal').addEventListener('click', () => {
+            currentPaletteMode = 'original';
+            currentForcedPalette = null;
+            triggerProcess();
+        });
+
         document.getElementById('btnEMNL').addEventListener('click', () => {
-            document.getElementById('pxSize').value = 23;
-            document.getElementById('colorSelect').value = "8";
-            document.getElementById('ditherSelect').value = "none";
-            document.getElementById('groupStrength').value = 1;
+            if(!locks.pxSize) document.getElementById('pxSize').value = 23;
+            if(!locks.colorSelect) document.getElementById('colorSelect').value = "8";
+            if(!locks.ditherSelect) document.getElementById('ditherSelect').value = "none";
+            if(!locks.groupStrength) document.getElementById('groupStrength').value = 1;
             document.getElementById('exposicao').value = 14;
             document.getElementById('brilho').value = 0;
             document.getElementById('sombras').value = -20;
             document.getElementById('saturacao').value = 35;
             updateLabels();
+            currentPaletteMode = 'manual';
             currentForcedPalette = null;
-            triggerProcess();
-        });
-
-        document.getElementById('btnOriginal').addEventListener('click', () => {
-            currentForcedPalette = null;
-            triggerProcess();
-        });
-
-        document.getElementById('btnAplicar').addEventListener('click', () => {
-            currentForcedPalette = [];
-            for(let i=0; i<MAX_MANUAL_COLORS; i++) {
-                currentForcedPalette.push(hexToRgb(document.getElementById('cc'+i).value));
-            }
             triggerProcess();
         });
 
@@ -406,18 +508,6 @@
                 const valEl = document.getElementById(inputsMap[id]);
                 if(el && valEl) valEl.textContent = el.value;
             }
-        }
-
-        function randConfigs() {
-            document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4;
-            
-            const colOpts = ["2", "4", "8", "16", "32", "64"];
-            document.getElementById('colorSelect').value = colOpts[Math.floor(Math.random() * colOpts.length)];
-            
-            const dithers = ["none", "bayer4", "bayer8", "horizontal", "vertical", "noise"];
-            document.getElementById('ditherSelect').value = dithers[Math.floor(Math.random() * dithers.length)];
-            document.getElementById('groupStrength').value = 0;
-            updateLabels();
         }
 
         function hslToRgb(h, s, l){
@@ -441,27 +531,69 @@
             return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
         }
 
-        function randColors() {
-            currentForcedPalette = [];
-            for(let i=0; i<MAX_MANUAL_COLORS; i++) {
+        function randPx() { document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4; updateLabels(); }
+        function randGrp() { document.getElementById('groupStrength').value = Math.random() > 0.7 ? 1 : 0; updateLabels(); }
+        function randDith() { 
+            const d = ["none", "bayer8", "horizontal", "vertical", "noise"];
+            document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
+        }
+        function randColQty() {
+            const c = ["2", "4", "8", "16", "32", "64"];
+            document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)];
+        }
+        function randColorsGen() {
+            currentPaletteMode = 'random';
+            let qty = document.getElementById('colorSelect').value;
+            let count = (qty === 'all') ? 64 : parseInt(qty, 10);
+            if(count > 64) count = 64;
+            
+            let newPal = [];
+            for(let i=0; i < count; i++) {
                 let h = Math.random();
                 let s = 0.6 + Math.random() * 0.4;
-                let l = 0.15 + (i / MAX_MANUAL_COLORS) * 0.7 + Math.random() * 0.1;
-                let rgb = hslToRgb(h, s, l);
-                document.getElementById('cc'+i).value = rgbToHex(rgb.r, rgb.g, rgb.b);
-                currentForcedPalette.push(rgb);
+                let l = 0.15 + (i / count) * 0.7 + Math.random() * 0.1;
+                newPal.push(hslToRgb(h, s, l));
+            }
+            currentForcedPalette = newPal;
+
+            for(let i=0; i<4; i++) {
+                if(newPal[i]) document.getElementById('cc'+i).value = rgbToHex(newPal[i].r, newPal[i].g, newPal[i].b);
             }
         }
 
-        document.getElementById('btnAleatorioConfigs').addEventListener('click', () => { randConfigs(); triggerProcess(); });
-        document.getElementById('btnAleatorioCores').addEventListener('click', () => { randColors(); triggerProcess(); });
-        document.getElementById('btnAleatorioAmbos').addEventListener('click', () => { randConfigs(); randColors(); triggerProcess(); });
+        document.querySelectorAll('.shuffle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tgt = btn.getAttribute('data-target');
+                if(locks[tgt]) return;
+                
+                if(tgt === 'pxSize') randPx();
+                if(tgt === 'groupStrength') randGrp();
+                if(tgt === 'ditherSelect') randDith();
+                if(tgt === 'colorSelect') randColQty();
+                if(tgt === 'colors') randColorsGen();
+                
+                triggerProcess();
+            });
+        });
 
-        document.getElementById('btnUndo').addEventListener('click', () => {
-            if (historyArr.length <= 1) return;
-            historyArr.pop(); 
-            let p = historyArr[historyArr.length - 1]; 
-            
+        function randomizeAll(initialSetup = false) {
+            if(!locks.pxSize) randPx();
+            if(!locks.groupStrength) document.getElementById('groupStrength').value = 0; 
+            if(!locks.ditherSelect) randDith();
+            if(!locks.colorSelect) randColQty();
+            if(!locks.colors) randColorsGen();
+            updateLabels();
+            triggerProcess();
+        }
+        
+        document.getElementById('btn-random-global').addEventListener('click', () => randomizeAll(false));
+
+        function updateHistoryButtons() {
+            document.getElementById('btn-undo').disabled = historyIndex <= 0;
+            document.getElementById('btn-redo').disabled = historyIndex >= historyArr.length - 1;
+        }
+
+        function applyState(p) {
             document.getElementById('pxSize').value = p.px;
             document.getElementById('colorSelect').value = p.col;
             document.getElementById('ditherSelect').value = p.dith || "none";
@@ -470,36 +602,46 @@
             document.getElementById('brilho').value = p.bri;
             document.getElementById('sombras').value = p.som;
             document.getElementById('saturacao').value = p.sat;
-            for(let i=0; i<MAX_MANUAL_COLORS; i++) { if (p.cc && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; }
+            
+            for(let i=0; i<4; i++) { if (p.cc && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; }
             
             updateLabels();
+            currentPaletteMode = p.palMode || 'manual';
             currentForcedPalette = p.pal ? [...p.pal] : null;
             
-            isUndoing = true;
+            isNavigatingHistory = true;
             triggerProcess();
-            document.getElementById('btnUndo').disabled = historyArr.length <= 1;
+            updateHistoryButtons();
+        }
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (historyIndex > 0) {
+                historyIndex--;
+                applyState(historyArr[historyIndex]);
+            }
         });
 
-        document.getElementById('downloadBtn').addEventListener('click', () => {
+        document.getElementById('btn-redo').addEventListener('click', () => {
+            if (historyIndex < historyArr.length - 1) {
+                historyIndex++;
+                applyState(historyArr[historyIndex]);
+            }
+        });
+
+        document.getElementById('btn-download').addEventListener('click', () => {
             if(!sourceImg || isProcessing) return;
             const fileName = `pixelar_${Date.now()}.png`;
             const triggerDownload = (url) => {
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                a.style.display = 'none';
-                a.target = '_blank';
+                const a = document.createElement('a'); a.href = url; a.download = fileName;
+                a.style.display = 'none'; a.target = '_blank';
                 document.body.appendChild(a);
                 try { a.click(); } catch (error) { window.open(url, '_blank'); }
                 setTimeout(() => a.remove(), 1000);
             };
-
             if (canvas.toBlob) {
                 canvas.toBlob((blob) => {
-                    if (!blob) return;
-                    const url = URL.createObjectURL(blob);
-                    triggerDownload(url);
-                    setTimeout(() => URL.revokeObjectURL(url), 1500);
+                    if (!blob) return; const url = URL.createObjectURL(blob);
+                    triggerDownload(url); setTimeout(() => URL.revokeObjectURL(url), 1500);
                 }, 'image/png');
                 return;
             }
@@ -513,11 +655,15 @@
                 const div = document.createElement('div');
                 div.style.display = "flex"; div.style.gap = "4px";
                 const b = document.createElement('button');
-                b.textContent = key; b.style.flex = "1";
+                b.className = "std-btn"; b.textContent = key; b.style.flex = "1";
                 b.onclick = () => loadPreset(key);
                 const db = document.createElement('button');
-                db.textContent = "X";
-                db.onclick = () => { delete savedPresets[key]; localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); renderPresets(); };
+                db.className = "std-btn"; db.textContent = "X";
+                db.onclick = () => { 
+                    delete savedPresets[key]; 
+                    try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch(e) {}
+                    renderPresets(); 
+                };
                 div.appendChild(b); div.appendChild(db);
                 grid.appendChild(div);
             }
@@ -527,15 +673,24 @@
             let name = prompt("Nome do Preset:");
             if(!name) return;
             let currentCC = [];
-            for(let i=0; i<MAX_MANUAL_COLORS; i++) currentCC.push(document.getElementById('cc'+i).value);
+            for(let i=0; i<4; i++) currentCC.push(document.getElementById('cc'+i).value);
+            
+            let palSave = currentForcedPalette;
+            if(currentPaletteMode === 'manual' && !palSave) {
+                 palSave = [];
+                 for(let i=0; i<4; i++) palSave.push(hexToRgb(currentCC[i]));
+            }
+
             savedPresets[name] = {
                 px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, 
                 dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
                 exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
                 som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
-                pal: currentForcedPalette, cc: currentCC
+                pal: palSave, cc: currentCC, palMode: currentPaletteMode
             };
-            localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets));
+            
+            try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } 
+            catch (e) { console.warn("Navegador bloqueou salvamento local."); }
             renderPresets();
         });
 
@@ -548,25 +703,23 @@
             document.getElementById('sombras').value = p.som || 0; document.getElementById('saturacao').value = p.sat || 0;
             
             updateLabels();
+            currentPaletteMode = p.palMode || 'manual';
             currentForcedPalette = p.pal;
-            if(p.cc) { for(let i=0; i<MAX_MANUAL_COLORS; i++) { if(document.getElementById('cc'+i) && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; } }
+            if(p.cc) { for(let i=0; i<4; i++) { if(document.getElementById('cc'+i) && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; } }
             triggerProcess();
         }
 
         document.getElementById('btnDownloadTxt').addEventListener('click', () => {
             let coresText = document.getElementById('colorSelect').options[document.getElementById('colorSelect').selectedIndex].text;
             let texturaText = document.getElementById('ditherSelect').options[document.getElementById('ditherSelect').selectedIndex].text;
-            let hexColors = [];
-            for (let i = 0; i < MAX_MANUAL_COLORS; i++) hexColors.push(document.getElementById('cc' + i).value);
-            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Escolhidas: ${hexColors.join(', ')}`;
+            let hexColors = []; for (let i = 0; i < 4; i++) hexColors.push(document.getElementById('cc' + i).value);
+            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Manuais: ${hexColors.join(', ')}`;
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
             el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el);
         });
 
-        buildColorPickers();
         renderPresets();
 
-        // Yield execution back to the browser's main thread
         const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
 
         async function triggerProcess() {
@@ -577,36 +730,41 @@
             const signal = abortController.signal;
 
             isProcessing = true;
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
-            statusTxt.textContent = "Processando... 0%";
-            document.getElementById('downloadBtn').style.opacity = '0.5';
+            
+            floatBtns.forEach(b => { 
+                if(b.id !== 'btn-upload') { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; }
+            });
+            progressFill.style.width = '0%';
+            progressText.style.display = 'block';
 
             try {
                 await runEngineAsync(signal);
                 if (!signal.aborted) {
-                    isUndoing = false;
-                    statusTxt.textContent = "Pronto";
+                    isNavigatingHistory = false;
                 }
             } catch (e) {
-                if (e.name !== 'AbortError') {
-                    console.error(e);
-                    statusTxt.textContent = "Erro!";
-                }
+                if (e.name !== 'AbortError') console.error(e);
             } finally {
                 if (!signal.aborted) {
                     isProcessing = false;
-                    document.getElementById('downloadBtn').style.opacity = '1';
-                    setTimeout(() => progressContainer.style.display = 'none', 500);
+                    progressFill.style.width = '100%';
+                    setTimeout(() => { progressFill.style.width = '0%'; progressText.style.display = 'none'; }, 600);
+                    
+                    floatBtns.forEach(b => { 
+                        b.style.opacity = '1'; 
+                        b.style.pointerEvents = 'auto'; 
+                    });
+                    
+                    updateHistoryButtons();
                 }
             }
         }
 
         function interpolatePalette(colors, targetCount) {
-            if(targetCount <= colors.length) return colors.slice(0, targetCount);
+            if(targetCount === colors.length) return colors;
             let result = [];
             for(let i=0; i<targetCount; i++) {
-                let t = i / (targetCount - 1);
+                let t = targetCount === 1 ? 0 : i / (targetCount - 1);
                 let scaledT = t * (colors.length - 1);
                 let idx1 = Math.floor(scaledT);
                 let idx2 = Math.min(idx1 + 1, colors.length - 1);
@@ -653,9 +811,7 @@
         }
 
         async function runEngineAsync(signal) {
-            const pxEl = document.getElementById('pxSize');
-            if (!pxEl) return;
-            const px = parseInt(pxEl.value, 10);
+            const px = parseInt(document.getElementById('pxSize').value, 10);
             const cLimitStr = document.getElementById('colorSelect').value;
             const passes = parseInt(document.getElementById('groupStrength').value, 10);
             const ditherMode = document.getElementById('ditherSelect').value;
@@ -680,26 +836,19 @@
             let d = imgData.data;
 
             const updateProgress = (pct) => {
-                progressBar.style.width = pct + '%';
-                statusTxt.textContent = `Processando... ${Math.floor(pct)}%`;
+                progressFill.style.width = pct + '%';
+                progressText.textContent = Math.floor(pct) + '%';
             };
 
             const chunkRows = Math.max(4, Math.floor(smallH / 20)); 
             let minL=255, maxL=0;
 
-            // Fase 1: Correções Base (Exposição, Brilho, Sombra, Saturação e Transparência)
             for(let y=0; y<smallH; y++) {
                 if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
                 for(let x=0; x<smallW; x++) {
                     let i = (y*smallW + x)*4;
                     
-                    // Tratamento rigoroso de transparência para imagens PNG
-                    // Qualquer pixel com mais de 50% de transparência vira espaço vazio (0)
-                    if(d[i+3] < 127) {
-                        d[i] = 0; d[i+1] = 0; d[i+2] = 0; d[i+3] = 0; 
-                        continue;
-                    }
-                    // Pixels visíveis se tornam blocos opacos sólidos, típicos de Pixel Art
+                    if(d[i+3] < 127) { d[i] = 0; d[i+1] = 0; d[i+2] = 0; d[i+3] = 0; continue; }
                     d[i+3] = 255; 
                     
                     let r=d[i], g=d[i+1], b=d[i+2];
@@ -714,11 +863,9 @@
                     }
 
                     const satScale = 1 + satBoost;
-                    r = luma + (r - luma) * satScale;
-                    g = luma + (g - luma) * satScale;
-                    b = luma + (b - luma) * satScale;
+                    r = luma + (r - luma) * satScale; g = luma + (g - luma) * satScale; b = luma + (b - luma) * satScale;
 
-                    d[i]   = Math.min(255, Math.max(0, r));
+                    d[i] = Math.min(255, Math.max(0, r));
                     d[i+1] = Math.min(255, Math.max(0, g));
                     d[i+2] = Math.min(255, Math.max(0, b));
 
@@ -729,7 +876,6 @@
                 if (y % chunkRows === 0) { updateProgress((y / smallH) * 15); await yieldToMain(); }
             }
 
-            // Fase 2: Agrupamento
             if (passes > 0) {
                 let srcData = new Uint8ClampedArray(d);
                 let dstData = new Uint8ClampedArray(d);
@@ -744,11 +890,9 @@
                             let sumR=0, sumG=0, sumB=0, count=0;
                             
                             for(let dy=-1; dy<=1; dy++){
-                                let ny = y+dy;
-                                if(ny<0 || ny>=smallH) continue;
+                                let ny = y+dy; if(ny<0 || ny>=smallH) continue;
                                 for(let dx=-1; dx<=1; dx++){
-                                    let nx = x+dx;
-                                    if(nx<0 || nx>=smallW) continue;
+                                    let nx = x+dx; if(nx<0 || nx>=smallW) continue;
                                     let nidx = (ny*smallW + nx)*4;
                                     if(srcData[nidx+3] > 0) {
                                         let nr=srcData[nidx], ng=srcData[nidx+1], nb=srcData[nidx+2];
@@ -758,15 +902,9 @@
                                     }
                                 }
                             }
-                            dstData[idx]   = sumR/count;
-                            dstData[idx+1] = sumG/count;
-                            dstData[idx+2] = sumB/count;
-                            dstData[idx+3] = srcData[idx+3];
+                            dstData[idx] = sumR/count; dstData[idx+1] = sumG/count; dstData[idx+2] = sumB/count; dstData[idx+3] = srcData[idx+3];
                         }
-                        if (y % chunkRows === 0) { 
-                            updateProgress(15 + 25 * ((p * smallH + y) / (passes * smallH))); 
-                            await yieldToMain(); 
-                        }
+                        if (y % chunkRows === 0) { updateProgress(15 + 25 * ((p * smallH + y) / (passes * smallH))); await yieldToMain(); }
                     }
                     srcData.set(dstData);
                 }
@@ -776,34 +914,30 @@
             updateProgress(40);
             await yieldToMain();
 
-            // Fase 3: Extração de Cores
             let activePalette = null;
-            if (!currentForcedPalette && cLimitStr !== 'all') {
+            let targetColors = (cLimitStr === 'all') ? 256 : parseInt(cLimitStr, 10);
+
+            if (currentPaletteMode === 'manual') {
+                let base = [];
+                for(let i=0; i<4; i++) base.push(hexToRgb(document.getElementById('cc'+i).value));
+                base.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                activePalette = interpolatePalette(base, targetColors);
+            } else if (currentPaletteMode === 'random' || currentPaletteMode === 'preset') {
+                let baseSorted = [...currentForcedPalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                activePalette = interpolatePalette(baseSorted, targetColors);
+            } else if (currentPaletteMode === 'original') {
                 let pxs = [];
                 const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
-                for(let i=0; i<d.length; i+=step) {
-                    if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
-                }
-                activePalette = getMedianCut(pxs, parseInt(cLimitStr, 10));
-            } else if (currentForcedPalette) {
-                let baseSorted = [...currentForcedPalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-                let targetColors = (cLimitStr === 'all') ? 256 : parseInt(cLimitStr, 10);
-                activePalette = interpolatePalette(baseSorted, targetColors);
+                for(let i=0; i<d.length; i+=step) if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
+                activePalette = getMedianCut(pxs, targetColors);
             }
 
             updateProgress(45);
             await yieldToMain();
 
-            // Fase 4: Mapeamento de Paleta e Dithering
-            if (activePalette || (currentForcedPalette && currentForcedPalette.length > 0)) {
-                
-                // Pré-calcular matrizes para performance
-                const bayer4 = new Float32Array(16);
-                for(let i=0; i<16; i++) bayer4[i] = (bayer4x4[i]/16) - 0.5;
-                const bayer8 = new Float32Array(64);
-                for(let i=0; i<64; i++) bayer8[i] = (bayer8x8[i]/64) - 0.5;
+            if (activePalette) {
+                const bayer8 = new Float32Array(64); for(let i=0; i<64; i++) bayer8[i] = (bayer8x8[i]/64) - 0.5;
 
-                // Cache seguro de cores para evitar gargalos durante buscas de distância
                 const colorCache = new Map();
                 const findClosestColor = (r, g, b, palette) => {
                     const key = (r & 0xF8) << 10 | (g & 0xF8) << 5 | (b & 0xF8);
@@ -824,7 +958,7 @@
                 for(let y=0; y<smallH; y++) {
                     if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
                     
-                    let yMod4 = (y % 4) * 4, yMod8 = (y % 8) * 8;
+                    let yMod8 = (y % 8) * 8;
                     let isEvenY = (y % 2 === 0);
 
                     for(let x=0; x<smallW; x++) {
@@ -833,13 +967,12 @@
                         let r=d[i], g=d[i+1], b=d[i+2];
 
                         let factor = 0;
-                        if(ditherMode === 'bayer4') factor = bayer4[yMod4 + (x % 4)];
-                        else if (ditherMode === 'bayer8') factor = bayer8[yMod8 + (x % 8)];
+                        if(ditherMode === 'bayer8') factor = bayer8[yMod8 + (x % 8)];
                         else if (ditherMode === 'horizontal') factor = isEvenY ? -0.2 : 0.2;
                         else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
                         else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
 
-                        if (currentForcedPalette && currentForcedPalette.length > 0) {
+                        if (currentPaletteMode !== 'original') {
                             let pxLuma = 0.3*r + 0.59*g + 0.11*b;
                             if (factor !== 0) pxLuma += factor * 120;
                             let norm = (pxLuma - minL) / (maxL - minL || 1);
@@ -860,10 +993,7 @@
                             d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
                         }
                     }
-                    if (y % chunkRows === 0) { 
-                        updateProgress(45 + 55 * (y / smallH)); 
-                        await yieldToMain(); 
-                    }
+                    if (y % chunkRows === 0) { updateProgress(45 + 55 * (y / smallH)); await yieldToMain(); }
                 }
             }
 
@@ -879,20 +1009,27 @@
 
             updateProgress(100);
 
-            if (!isUndoing) {
+            if (!isNavigatingHistory) {
                 let state = {
                     px: px, col: cLimitStr, dith: ditherMode, grp: passes,
                     exp: document.getElementById('exposicao').value,
                     bri: document.getElementById('brilho').value,
                     som: document.getElementById('sombras').value,
                     sat: document.getElementById('saturacao').value,
-                    cc: Array.from({ length: MAX_MANUAL_COLORS }, (_, i) => document.getElementById('cc' + i).value),
-                    pal: currentForcedPalette ? [...currentForcedPalette] : null
+                    cc: Array.from({ length: 4 }, (_, i) => document.getElementById('cc' + i).value),
+                    pal: currentForcedPalette ? [...currentForcedPalette] : null,
+                    palMode: currentPaletteMode
                 };
-                if (historyArr.length === 0 || JSON.stringify(historyArr[historyArr.length-1]) !== JSON.stringify(state)) {
+                
+                if (historyIndex === -1 || JSON.stringify(historyArr[historyIndex]) !== JSON.stringify(state)) {
+                    historyArr = historyArr.slice(0, historyIndex + 1);
                     historyArr.push(state);
-                    if (historyArr.length > 11) historyArr.shift();
-                    document.getElementById('btnUndo').disabled = historyArr.length <= 1;
+                    if (historyArr.length > 20) {
+                        historyArr.shift();
+                    } else {
+                        historyIndex++;
+                    }
+                    updateHistoryButtons();
                 }
             }
         }
