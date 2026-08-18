@@ -792,7 +792,7 @@
         }
 
         function getMedianCut(pixels, count) {
-            if(!pixels.length) return [{r:0,g:0,b:0}];
+            if(!pixels.length) return [{r:0,g:0,b:0, count:0}];
             let buckets = [pixels];
             while(buckets.length < count) {
                 let maxR=-1, targetIdx=-1, axis='r';
@@ -815,10 +815,10 @@
                 buckets.splice(targetIdx, 1, b.slice(0,mid), b.slice(mid));
             }
             return buckets.map(b => {
-                if(!b.length) return {r:0,g:0,b:0};
+                if(!b.length) return {r:0,g:0,b:0, count:0};
                 let r=0,g=0,bl=0;
                 for(let p of b){ r+=p.r; g+=p.g; bl+=p.b; }
-                return {r:Math.round(r/b.length), g:Math.round(g/b.length), b:Math.round(bl/b.length)};
+                return {r:Math.round(r/b.length), g:Math.round(g/b.length), b:Math.round(bl/b.length), count: b.length};
             });
         }
 
@@ -826,7 +826,7 @@
             const px = parseInt(document.getElementById('pxSize').value, 10);
             const cLimitStr = document.getElementById('colorSelect').value;
             const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
-            const passes = Math.ceil(uiGroupStrength / 5); // Conversão para máximo de 20 passos reais
+            const passes = Math.ceil(uiGroupStrength / 5); 
             const ditherMode = document.getElementById('ditherSelect').value;
             
             const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
@@ -929,20 +929,93 @@
 
             let activePalette = null;
             let targetColors = (cLimitStr === 'all') ? 256 : parseInt(cLimitStr, 10);
+            const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
+
+            const getBalancedPalette = (mappedArr, targetSize) => {
+                mappedArr.sort((a,b) => b.count - a.count);
+                if (targetSize < 2 || mappedArr.length <= targetSize) return mappedArr.slice(0, targetSize).map(x => x.col);
+                
+                let pool = mappedArr.slice(0, Math.max(targetSize * 2, 4));
+                if (pool.length < 2) return mappedArr.slice(0, targetSize).map(x => x.col);
+
+                pool.sort((a,b) => a.luma - b.luma);
+                let darkest = pool[0];
+                let lightest = pool[pool.length - 1];
+                let finalPalette = [darkest, lightest];
+                
+                mappedArr = mappedArr.filter(x => x !== darkest && x !== lightest);
+                mappedArr.sort((a,b) => b.count - a.count);
+                
+                for (let i = 0; i < targetSize - 2; i++) {
+                    if (mappedArr[i]) finalPalette.push(mappedArr[i]);
+                }
+                return finalPalette.map(x => x.col);
+            };
+
+            const extractDominant = (baseArray, targetSize) => {
+                let counts = new Array(baseArray.length).fill(0);
+                for(let i=0; i<d.length; i+=step) {
+                    if(d[i+3] > 127) {
+                        let minDist = Infinity, minIdx = 0;
+                        for(let c=0; c<baseArray.length; c++) {
+                            let dr = d[i]-baseArray[c].r, dg = d[i+1]-baseArray[c].g, db = d[i+2]-baseArray[c].b;
+                            let dist = dr*dr + dg*dg + db*db;
+                            if(dist < minDist) { minDist = dist; minIdx = c; }
+                        }
+                        counts[minIdx]++;
+                    }
+                }
+                let mapped = baseArray.map((col, idx) => ({
+                    col: col, 
+                    count: counts[idx],
+                    luma: 0.3*col.r + 0.59*col.g + 0.11*col.b
+                }));
+                return getBalancedPalette(mapped, targetSize);
+            };
 
             if (currentPaletteMode === 'manual') {
                 let base = [];
                 for(let i=0; i<4; i++) base.push(hexToRgb(document.getElementById('cc'+i).value));
-                base.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-                activePalette = interpolatePalette(base, targetColors);
+                
+                if (targetColors < 4) {
+                    activePalette = extractDominant(base, targetColors);
+                } else if (targetColors > 4) {
+                    base.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                    activePalette = interpolatePalette(base, targetColors);
+                } else {
+                    activePalette = base;
+                }
             } else if (currentPaletteMode === 'random' || currentPaletteMode === 'preset') {
-                let baseSorted = [...currentForcedPalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-                activePalette = interpolatePalette(baseSorted, targetColors);
+                let baseLen = currentForcedPalette.length;
+                if (targetColors < baseLen) {
+                    activePalette = extractDominant(currentForcedPalette, targetColors);
+                } else if (targetColors > baseLen) {
+                    let baseSorted = [...currentForcedPalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                    activePalette = interpolatePalette(baseSorted, targetColors);
+                } else {
+                    activePalette = currentForcedPalette;
+                }
             } else if (currentPaletteMode === 'original') {
                 let pxs = [];
-                const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
                 for(let i=0; i<d.length; i+=step) if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
-                activePalette = getMedianCut(pxs, targetColors);
+                
+                let baseCount = Math.max(targetColors, 16); 
+                let basePal = getMedianCut(pxs, baseCount);
+                
+                if (targetColors < baseCount) {
+                    let mapped = basePal.map(c => ({
+                        col: {r: c.r, g: c.g, b: c.b},
+                        count: c.count,
+                        luma: 0.3*c.r + 0.59*c.g + 0.11*c.b
+                    }));
+                    activePalette = getBalancedPalette(mapped, targetColors);
+                } else {
+                    activePalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b}));
+                }
+            }
+
+            if (activePalette) {
+                activePalette.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
             }
 
             updateProgress(45);
