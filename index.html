@@ -1016,6 +1016,23 @@
 
             if (activePalette) {
                 activePalette.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                
+                if (currentPaletteMode !== 'manual') {
+                    let uiPalette = [];
+                    if (activePalette.length <= 4) {
+                        uiPalette = [...activePalette];
+                        while(uiPalette.length < 4) uiPalette.push(uiPalette[uiPalette.length-1] || {r:0,g:0,b:0});
+                    } else {
+                        uiPalette.push(activePalette[0]);
+                        uiPalette.push(activePalette[Math.floor(activePalette.length / 3)]);
+                        uiPalette.push(activePalette[Math.floor(2 * activePalette.length / 3)]);
+                        uiPalette.push(activePalette[activePalette.length - 1]);
+                    }
+                    for(let i = 0; i < 4; i++) {
+                        let el = document.getElementById('cc' + i);
+                        if (el) el.value = rgbToHex(uiPalette[i].r, uiPalette[i].g, uiPalette[i].b);
+                    }
+                }
             }
 
             updateProgress(45);
