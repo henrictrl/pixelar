@@ -400,6 +400,856 @@
         </button>
     </div>
 
-    <script src="app.ofuscado.js"></script>
+    <script>
+        document.querySelectorAll('.sec-tools').forEach(tool => {
+            tool.addEventListener('click', e => e.preventDefault());
+        });
+
+        const locks = { pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, mapSelect: false, colors: false };
+
+        document.querySelectorAll('.lock-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = btn.getAttribute('data-target');
+                locks[target] = !locks[target];
+                btn.classList.toggle('locked', locks[target]);
+            });
+        });
+
+        let sourceImg = null;
+        let abortController = null;
+        let isProcessing = false;
+        
+        let currentForcedPalette = null; 
+        let currentPaletteMode = 'manual'; 
+        
+        let savedPresets = {};
+        try { savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {}; } 
+        catch(e) { console.warn("Modo offline / Storage bloqueado."); }
+        
+        let historyArr = [];
+        let historyIndex = -1;
+        let isNavigatingHistory = false;
+
+        const THEMES = {
+            Nokia: ["#43523D", "#43523D", "#C7F0D8", "#C7F0D8"],
+            Nintendo_VB: ["#000000", "#550000", "#AA0000", "#FF0000"],
+            PeB_Dither: ["#000000", "#000000", "#FFFFFF", "#FFFFFF"],
+            GameBoy: ["#0F380F", "#306230", "#8BAC0F", "#9BBC0F"],
+            VHS: ["#1E1E1E", "#00FFFF", "#FF00FF", "#F0F8FF"],
+            RaioX: ["#000000", "#1A2421", "#008B8B", "#80CBC4", "#FFFFFF"],
+            Termica: ["#00008B", "#800080", "#FF0000", "#FFFF00", "#FFFFFF"],
+            WindowsXP: ["#397A18", "#245DDA", "#689DF6", "#689DF6", "#ECECEC"]
+        };
+
+        const bayer8x8 = [ 0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21 ];
+
+        function hexToRgb(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : {r:0, g:0, b:0};
+        }
+        function rgbToHex(r, g, b) {
+            return "#" + (1 << 24 | Math.max(0, Math.min(255, r)) << 16 | Math.max(0, Math.min(255, g)) << 8 | Math.max(0, Math.min(255, b))).toString(16).slice(1).toUpperCase();
+        }
+
+        const canvas = document.getElementById('outputCanvas');
+        const ctx = canvas.getContext('2d');
+        const progressFill = document.getElementById('floating-progress');
+        const progressText = document.getElementById('proc-text');
+        const floatBtns = document.querySelectorAll('.float-btn');
+
+        const inputsMap = {
+            'pxSize': 'pxVal', 'groupStrength': 'groupVal', 'exposicao': 'expVal',
+            'brilho': 'briVal', 'sombras': 'somVal', 'saturacao': 'satVal'
+        };
+
+        for(let id in inputsMap) {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(inputsMap[id]);
+            if(el && valEl) {
+                el.addEventListener('input', () => { valEl.textContent = el.value; });
+                el.addEventListener('change', triggerProcess);
+            }
+        }
+
+        document.getElementById('colorSelect').addEventListener('change', triggerProcess);
+        document.getElementById('ditherSelect').addEventListener('change', triggerProcess);
+        document.getElementById('mapSelect').addEventListener('change', triggerProcess);
+
+        document.getElementById('btnInvert').addEventListener('click', (e) => {
+            e.stopPropagation();
+            let c0 = document.getElementById('cc0').value;
+            let c1 = document.getElementById('cc1').value;
+            let c2 = document.getElementById('cc2').value;
+            let c3 = document.getElementById('cc3').value;
+            document.getElementById('cc0').value = c3;
+            document.getElementById('cc1').value = c2;
+            document.getElementById('cc2').value = c1;
+            document.getElementById('cc3').value = c0;
+            currentPaletteMode = 'manual';
+            triggerProcess();
+        });
+
+        const upload = document.getElementById('imageUpload');
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            document.getElementById('welcomeMsg').style.display = 'none';
+            canvas.style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const buffer = ev.target.result;
+                const bytes = new Uint8Array(buffer);
+
+                const tailOffset = Math.max(0, bytes.length - 3000);
+                const tailStr = new TextDecoder('utf-8', {fatal: false}).decode(bytes.slice(tailOffset));
+                const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/);
+                
+                let loadedState = null;
+                if(metaMatch) {
+                    try { loadedState = JSON.parse(metaMatch[1]); } catch(err) { console.warn("Falha ao analisar os metadados da imagem."); }
+                }
+
+                const blob = new Blob([bytes], {type: file.type});
+                const url = URL.createObjectURL(blob);
+                
+                const img = new Image();
+                img.onload = () => {
+                    sourceImg = img;
+                    document.getElementById('btn-download').disabled = false;
+                    historyArr = []; 
+                    historyIndex = -1;
+                    
+                    if (loadedState) {
+                        applyState(loadedState);
+                    } else {
+                        if(!locks.groupStrength) document.getElementById('groupStrength').value = 0;
+                        randomizeAll(true); 
+                    }
+                    
+                    URL.revokeObjectURL(url);
+                };
+                img.src = url;
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        document.querySelectorAll('.preset-grid button[data-theme]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const themeName = e.target.getAttribute('data-theme');
+                if (THEMES[themeName]) {
+                    document.getElementById('mapSelect').value = 'luma'; 
+                    currentPaletteMode = 'preset';
+                    currentForcedPalette = THEMES[themeName].map(hexToRgb);
+                }
+                triggerProcess();
+            });
+        });
+
+        for(let i = 0; i < 4; i++) {
+            document.getElementById('cc' + i).addEventListener('input', () => {
+                currentPaletteMode = 'manual';
+                triggerProcess();
+            });
+        }
+
+        document.getElementById('btnOriginal').addEventListener('click', () => {
+            document.getElementById('mapSelect').value = 'rgb'; 
+            currentPaletteMode = 'original';
+            currentForcedPalette = null;
+            triggerProcess();
+        });
+
+        document.getElementById('btnEMNL').addEventListener('click', () => {
+            if(!locks.pxSize) document.getElementById('pxSize').value = 23;
+            if(!locks.colorSelect) document.getElementById('colorSelect').value = "8";
+            if(!locks.ditherSelect) document.getElementById('ditherSelect').value = "none";
+            if(!locks.groupStrength) document.getElementById('groupStrength').value = 5; 
+            document.getElementById('exposicao').value = 14;
+            document.getElementById('brilho').value = 0;
+            document.getElementById('sombras').value = -20;
+            document.getElementById('saturacao').value = 35;
+            document.getElementById('mapSelect').value = 'luma';
+            updateLabels();
+            currentPaletteMode = 'manual';
+            currentForcedPalette = null;
+            triggerProcess();
+        });
+
+        function updateLabels() {
+            for(let id in inputsMap) {
+                const el = document.getElementById(id);
+                const valEl = document.getElementById(inputsMap[id]);
+                if(el && valEl) valEl.textContent = el.value;
+            }
+        }
+
+        function hslToRgb(h, s, l){
+            let r, g, b;
+            if(s === 0){ r = g = b = l; }
+            else {
+                const hue2rgb = (p, q, t) => {
+                    if(t < 0) t += 1;
+                    if(t > 1) t -= 1;
+                    if(t < 1/6) return p + (q - p) * 6 * t;
+                    if(t < 1/2) return q;
+                    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                }
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
+        }
+
+        function randPx() { document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4; updateLabels(); }
+        function randGrp() { document.getElementById('groupStrength').value = Math.random() > 0.7 ? Math.floor(Math.random() * 15) + 1 : 0; updateLabels(); }
+        function randDith() { 
+            const d = ["none", "bayer8", "horizontal", "vertical", "noise"];
+            document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
+        }
+        function randColQty() {
+            const c = ["2", "4", "8", "16", "32", "64"];
+            document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)];
+        }
+        function randMap() { 
+            const d = ["rgb", "luma"];
+            document.getElementById('mapSelect').value = d[Math.floor(Math.random() * d.length)];
+        }
+
+        function randColorsGen() {
+            currentPaletteMode = 'random';
+            let qty = document.getElementById('colorSelect').value;
+            let count = (qty === 'all') ? 64 : parseInt(qty, 10);
+            if(count > 64) count = 64; 
+            
+            let newPal = [];
+            let strategy = Math.floor(Math.random() * 5);
+            let baseHue = Math.random();
+            let isMuted = Math.random() > 0.5;
+
+            for(let i = 0; i < count; i++) {
+                let step = count > 1 ? i / (count - 1) : 0;
+                let h = baseHue;
+                let s = isMuted ? 0.2 + Math.random() * 0.4 : 0.6 + Math.random() * 0.4;
+                let l = 0.1 + Math.random() * 0.8; 
+
+                switch(strategy) {
+                    case 0: 
+                        h = baseHue + (Math.floor(Math.random() * 3) * 0.33) + (Math.random() * 0.05);
+                        break;
+                    case 1: 
+                        h = baseHue + (Math.random() * 0.4 - 0.2);
+                        break;
+                    case 2: 
+                        h = baseHue + (Math.random() > 0.5 ? 0 : 0.5) + (Math.random() * 0.1);
+                        s = 0.8 + Math.random() * 0.2;
+                        break;
+                    case 3: 
+                        h = baseHue + (step * 1.5);
+                        s = 0.5 + Math.random() * 0.3;
+                        break;
+                    case 4: 
+                        h = Math.random();
+                        s = Math.random();
+                        break;
+                }
+
+                h = h % 1; if(h < 0) h += 1;
+                newPal.push(hslToRgb(h, s, l));
+            }
+            
+            currentForcedPalette = newPal;
+            
+            let sortedForUi = [...newPal].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+            let uiPalette = [
+                sortedForUi[0] || {r:0,g:0,b:0},
+                sortedForUi[Math.floor(sortedForUi.length * 0.33)] || {r:0,g:0,b:0},
+                sortedForUi[Math.floor(sortedForUi.length * 0.66)] || {r:0,g:0,b:0},
+                sortedForUi[sortedForUi.length - 1] || {r:0,g:0,b:0}
+            ];
+            
+            for(let i=0; i<4; i++) {
+                let el = document.getElementById('cc'+i);
+                if (el) el.value = rgbToHex(uiPalette[i].r, uiPalette[i].g, uiPalette[i].b);
+            }
+        }
+
+        document.querySelectorAll('.shuffle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tgt = btn.getAttribute('data-target');
+                if(locks[tgt]) return;
+                
+                if(tgt === 'pxSize') randPx();
+                if(tgt === 'groupStrength') randGrp();
+                if(tgt === 'ditherSelect') randDith();
+                if(tgt === 'colorSelect') randColQty();
+                if(tgt === 'mapSelect') randMap();
+                if(tgt === 'colors') randColorsGen();
+                
+                triggerProcess();
+            });
+        });
+
+        function randomizeAll(initialSetup = false) {
+            if(!locks.pxSize) randPx();
+            if(!locks.groupStrength) randGrp(); 
+            if(!locks.ditherSelect) randDith();
+            if(!locks.colorSelect) randColQty();
+            if(!locks.mapSelect) randMap();
+            if(!locks.colors) randColorsGen();
+            updateLabels();
+            triggerProcess();
+        }
+        
+        document.getElementById('btn-random-global').addEventListener('click', () => randomizeAll(false));
+
+        function updateHistoryButtons() {
+            document.getElementById('btn-undo').disabled = historyIndex <= 0;
+            document.getElementById('btn-redo').disabled = historyIndex >= historyArr.length - 1;
+        }
+
+        function applyState(p) {
+            document.getElementById('pxSize').value = p.px;
+            document.getElementById('colorSelect').value = p.col;
+            document.getElementById('ditherSelect').value = p.dith || "none";
+            document.getElementById('groupStrength').value = p.grp;
+            document.getElementById('exposicao').value = p.exp;
+            document.getElementById('brilho').value = p.bri;
+            document.getElementById('sombras').value = p.som;
+            document.getElementById('saturacao').value = p.sat;
+            if(p.map) document.getElementById('mapSelect').value = p.map;
+            
+            for(let i=0; i<4; i++) { if (p.cc && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; }
+            
+            updateLabels();
+            currentPaletteMode = p.palMode || 'manual';
+            currentForcedPalette = p.pal ? [...p.pal] : null;
+            
+            isNavigatingHistory = true;
+            triggerProcess();
+            updateHistoryButtons();
+        }
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (historyIndex > 0) {
+                historyIndex--;
+                applyState(historyArr[historyIndex]);
+            }
+        });
+
+        document.getElementById('btn-redo').addEventListener('click', () => {
+            if (historyIndex < historyArr.length - 1) {
+                historyIndex++;
+                applyState(historyArr[historyIndex]);
+            }
+        });
+
+        document.getElementById('btn-download').addEventListener('click', () => {
+            if(!sourceImg || isProcessing) return;
+            const fileName = `pixelar_${Date.now()}.png`;
+            
+            const triggerDownload = (url) => {
+                const a = document.createElement('a'); a.href = url; a.download = fileName;
+                a.style.display = 'none'; a.target = '_blank';
+                document.body.appendChild(a);
+                try { a.click(); } catch (error) { window.open(url, '_blank'); }
+                setTimeout(() => a.remove(), 1000);
+            };
+
+            const stateToSave = {
+                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value,
+                dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
+                exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
+                som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
+                map: document.getElementById('mapSelect').value,
+                cc: Array.from({ length: 4 }, (_, i) => document.getElementById('cc' + i).value),
+                pal: currentForcedPalette ? [...currentForcedPalette] : null,
+                palMode: currentPaletteMode
+            };
+
+            const embedMetadataAndDownload = (blob) => {
+                if (!blob) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const buffer = reader.result;
+                    const metaStr = "PIXELAR_META:" + JSON.stringify(stateToSave);
+                    const metaBytes = new TextEncoder().encode(metaStr);
+                    
+                    const combined = new Uint8Array(buffer.byteLength + metaBytes.length);
+                    combined.set(new Uint8Array(buffer), 0);
+                    combined.set(metaBytes, buffer.byteLength);
+
+                    const finalBlob = new Blob([combined], {type: 'image/png'});
+                    const url = URL.createObjectURL(finalBlob);
+                    triggerDownload(url);
+                    setTimeout(() => URL.revokeObjectURL(url), 1500);
+                };
+                reader.readAsArrayBuffer(blob);
+            };
+
+            if (canvas.toBlob) {
+                canvas.toBlob(embedMetadataAndDownload, 'image/png');
+            } else {
+                triggerDownload(canvas.toDataURL('image/png'));
+            }
+        });
+
+        function renderPresets() {
+            const grid = document.getElementById('myPresetsGrid');
+            grid.innerHTML = '';
+            for(let key in savedPresets) {
+                const div = document.createElement('div');
+                div.style.display = "flex"; div.style.gap = "4px";
+                const b = document.createElement('button');
+                b.className = "std-btn"; b.textContent = key; b.style.flex = "1";
+                b.onclick = () => loadPreset(key);
+                const db = document.createElement('button');
+                db.className = "std-btn"; db.textContent = "X";
+                db.onclick = () => { 
+                    delete savedPresets[key]; 
+                    try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch(e) {}
+                    renderPresets(); 
+                };
+                div.appendChild(b); div.appendChild(db);
+                grid.appendChild(div);
+            }
+        }
+
+        document.getElementById('btnSavePreset').addEventListener('click', () => {
+            let name = prompt("Nome do Preset:");
+            if(!name) return;
+            let currentCC = [];
+            for(let i=0; i<4; i++) currentCC.push(document.getElementById('cc'+i).value);
+            
+            let palSave = currentForcedPalette;
+            if(currentPaletteMode === 'manual' && !palSave) {
+                 palSave = [];
+                 for(let i=0; i<4; i++) palSave.push(hexToRgb(currentCC[i]));
+            }
+
+            savedPresets[name] = {
+                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, 
+                dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
+                exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
+                som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
+                map: document.getElementById('mapSelect').value,
+                pal: palSave, cc: currentCC, palMode: currentPaletteMode
+            };
+            
+            try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } 
+            catch (e) { console.warn("Navegador bloqueou salvamento local."); }
+            renderPresets();
+        });
+
+        function loadPreset(name) {
+            let p = savedPresets[name];
+            if(!p) return;
+            document.getElementById('pxSize').value = p.px; document.getElementById('colorSelect').value = p.col;
+            document.getElementById('ditherSelect').value = p.dith || "none"; document.getElementById('groupStrength').value = p.grp;
+            document.getElementById('exposicao').value = p.exp || 0; document.getElementById('brilho').value = p.bri || 0;
+            document.getElementById('sombras').value = p.som || 0; document.getElementById('saturacao').value = p.sat || 0;
+            if(p.map) document.getElementById('mapSelect').value = p.map;
+            
+            updateLabels();
+            currentPaletteMode = p.palMode || 'manual';
+            currentForcedPalette = p.pal;
+            if(p.cc) { for(let i=0; i<4; i++) { if(document.getElementById('cc'+i) && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; } }
+            triggerProcess();
+        }
+
+        document.getElementById('btnDownloadTxt').addEventListener('click', () => {
+            let coresText = document.getElementById('colorSelect').options[document.getElementById('colorSelect').selectedIndex].text;
+            let texturaText = document.getElementById('ditherSelect').options[document.getElementById('ditherSelect').selectedIndex].text;
+            let mapText = document.getElementById('mapSelect').options[document.getElementById('mapSelect').selectedIndex].text;
+            let hexColors = []; for (let i = 0; i < 4; i++) hexColors.push(document.getElementById('cc' + i).value);
+            
+            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nMapeamento: ${mapText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Manuais: ${hexColors.join(', ')}`;
+            const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
+            el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el);
+        });
+
+        renderPresets();
+
+        const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
+
+        async function triggerProcess() {
+            if(!sourceImg) return;
+            
+            if(abortController) abortController.abort();
+            abortController = new AbortController();
+            const signal = abortController.signal;
+
+            isProcessing = true;
+            
+            floatBtns.forEach(b => { 
+                if(b.id !== 'btn-upload') { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; }
+            });
+            progressFill.style.width = '0%';
+            progressText.style.display = 'block';
+
+            try {
+                await runEngineAsync(signal);
+                if (!signal.aborted) {
+                    isNavigatingHistory = false;
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') console.error(e);
+            } finally {
+                if (!signal.aborted) {
+                    isProcessing = false;
+                    progressFill.style.width = '100%';
+                    setTimeout(() => { progressFill.style.width = '0%'; progressText.style.display = 'none'; }, 600);
+                    
+                    floatBtns.forEach(b => { 
+                        b.style.opacity = '1'; 
+                        b.style.pointerEvents = 'auto'; 
+                    });
+                    
+                    updateHistoryButtons();
+                }
+            }
+        }
+
+        function interpolatePalette(colors, targetCount) {
+            if(targetCount === colors.length) return colors;
+            if(targetCount === 1) return [colors[0]];
+            let result = [];
+            for(let i=0; i<targetCount; i++) {
+                let t = i / (targetCount - 1);
+                let scaledT = t * (colors.length - 1);
+                let idx1 = Math.floor(scaledT);
+                let idx2 = Math.min(idx1 + 1, colors.length - 1);
+                let frac = scaledT - idx1;
+                let c1 = colors[idx1], c2 = colors[idx2];
+                result.push({
+                    r: Math.round(c1.r + (c2.r - c1.r)*frac),
+                    g: Math.round(c1.g + (c2.g - c1.g)*frac),
+                    b: Math.round(c1.b + (c2.b - c1.b)*frac)
+                });
+            }
+            return result;
+        }
+
+        function getMedianCut(pixels, count) {
+            if(!pixels.length) return [{r:0,g:0,b:0, count:0}];
+            let buckets = [pixels];
+            while(buckets.length < count) {
+                let maxR=-1, targetIdx=-1, axis='r';
+                for(let i=0; i<buckets.length; i++){
+                    let b = buckets[i];
+                    if(b.length < 2) continue;
+                    let rm=255, rx=0, gm=255, gx=0, bm=255, bx=0;
+                    for(let p of b){
+                        if(p.r<rm)rm=p.r; if(p.r>rx)rx=p.r;
+                        if(p.g<gm)gm=p.g; if(p.g>gx)gx=p.g;
+                        if(p.b<bm)bm=p.b; if(p.b>bx)bx=p.b;
+                    }
+                    let rng = Math.max(rx-rm, gx-gm, bx-bm);
+                    if(rng > maxR) { maxR=rng; targetIdx=i; axis= (rx-rm===rng)?'r':(gx-gm===rng)?'g':'b'; }
+                }
+                if(targetIdx === -1) break;
+                let b = buckets[targetIdx];
+                b.sort((a,c) => a[axis]-c[axis]);
+                let mid = Math.floor(b.length/2);
+                buckets.splice(targetIdx, 1, b.slice(0,mid), b.slice(mid));
+            }
+            return buckets.map(b => {
+                if(!b.length) return {r:0,g:0,b:0, count:0};
+                let r=0,g=0,bl=0;
+                for(let p of b){ r+=p.r; g+=p.g; bl+=p.b; }
+                return {r:Math.round(r/b.length), g:Math.round(g/b.length), b:Math.round(bl/b.length), count: b.length};
+            });
+        }
+
+        async function runEngineAsync(signal) {
+            const px = parseInt(document.getElementById('pxSize').value, 10);
+            const cLimitStr = document.getElementById('colorSelect').value;
+            const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
+            const passes = Math.ceil(uiGroupStrength / 5); 
+            const ditherMode = document.getElementById('ditherSelect').value;
+            const mapMode = document.getElementById('mapSelect').value;
+            
+            const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
+            const brBoost = parseInt(document.getElementById('brilho').value, 10);
+            const shBoost = parseInt(document.getElementById('sombras').value, 10);
+            const satBoost = parseInt(document.getElementById('saturacao').value, 10) / 100;
+
+            const origW = sourceImg.width;
+            const origH = sourceImg.height;
+            const smallW = Math.max(1, Math.floor(origW / px));
+            const smallH = Math.max(1, Math.floor(origH / px));
+
+            const smallCanvas = document.createElement('canvas');
+            smallCanvas.width = smallW; smallCanvas.height = smallH;
+            const sCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
+            
+            sCtx.imageSmoothingEnabled = false;
+            sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
+            let imgData = sCtx.getImageData(0, 0, smallW, smallH);
+            let d = imgData.data;
+
+            const updateProgress = (pct) => {
+                progressFill.style.width = pct + '%';
+                progressText.textContent = Math.floor(pct) + '%';
+            };
+
+            const chunkRows = Math.max(4, Math.floor(smallH / 20)); 
+            let minL=255, maxL=0;
+
+            for(let y=0; y<smallH; y++) {
+                if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                for(let x=0; x<smallW; x++) {
+                    let i = (y*smallW + x)*4;
+                    
+                    if(d[i+3] < 127) { d[i] = 0; d[i+1] = 0; d[i+2] = 0; d[i+3] = 0; continue; }
+                    d[i+3] = 255; 
+                    
+                    let r=d[i], g=d[i+1], b=d[i+2];
+
+                    r *= expBoost; g *= expBoost; b *= expBoost;
+                    r += brBoost; g += brBoost; b += brBoost;
+
+                    let luma = 0.3*r + 0.59*g + 0.11*b;
+                    if(shBoost !== 0 && luma < 128) {
+                        let factor = (128 - luma)/128;
+                        r += shBoost * factor; g += shBoost * factor; b += shBoost * factor;
+                    }
+
+                    const satScale = 1 + satBoost;
+                    r = luma + (r - luma) * satScale; g = luma + (g - luma) * satScale; b = luma + (b - luma) * satScale;
+
+                    d[i] = Math.min(255, Math.max(0, r));
+                    d[i+1] = Math.min(255, Math.max(0, g));
+                    d[i+2] = Math.min(255, Math.max(0, b));
+
+                    let fluma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+                    if(fluma < minL) minL = fluma;
+                    if(fluma > maxL) maxL = fluma;
+                }
+                if (y % chunkRows === 0) { updateProgress((y / smallH) * 15); await yieldToMain(); }
+            }
+
+            if (passes > 0) {
+                let srcData = new Uint8ClampedArray(d);
+                let dstData = new Uint8ClampedArray(d);
+                for(let p=0; p<passes; p++) {
+                    for(let y=0; y<smallH; y++) {
+                        if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                        for(let x=0; x<smallW; x++) {
+                            let idx = (y*smallW + x)*4;
+                            if(srcData[idx+3] === 0) { dstData[idx+3]=0; continue; }
+                            
+                            let r=srcData[idx], g=srcData[idx+1], b=srcData[idx+2];
+                            let sumR=0, sumG=0, sumB=0, count=0;
+                            
+                            for(let dy=-1; dy<=1; dy++){
+                                let ny = y+dy; if(ny<0 || ny>=smallH) continue;
+                                for(let dx=-1; dx<=1; dx++){
+                                    let nx = x+dx; if(nx<0 || nx>=smallW) continue;
+                                    let nidx = (ny*smallW + nx)*4;
+                                    if(srcData[nidx+3] > 0) {
+                                        let nr=srcData[nidx], ng=srcData[nidx+1], nb=srcData[nidx+2];
+                                        if (Math.abs(nr-r) + Math.abs(ng-g) + Math.abs(nb-b) < 150) {
+                                            sumR += nr; sumG += ng; sumB += nb; count++;
+                                        }
+                                    }
+                                }
+                            }
+                            dstData[idx] = sumR/count; dstData[idx+1] = sumG/count; dstData[idx+2] = sumB/count; dstData[idx+3] = srcData[idx+3];
+                        }
+                        if (y % chunkRows === 0) { updateProgress(15 + 25 * ((p * smallH + y) / (passes * smallH))); await yieldToMain(); }
+                    }
+                    srcData.set(dstData);
+                }
+                d.set(dstData);
+            }
+            
+            updateProgress(40);
+            await yieldToMain();
+
+            let activePalette = null;
+            let targetColors = (cLimitStr === 'all') ? 256 : parseInt(cLimitStr, 10);
+            const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
+
+            const getBalancedPalette = (mappedArr, targetSize) => {
+                mappedArr.sort((a,b) => b.count - a.count);
+                if (targetSize < 2 || mappedArr.length <= targetSize) return mappedArr.slice(0, targetSize).map(x => x.col);
+                
+                let pool = mappedArr.slice(0, Math.max(targetSize * 2, 4));
+                if (pool.length < 2) return mappedArr.slice(0, targetSize).map(x => x.col);
+
+                pool.sort((a,b) => a.luma - b.luma);
+                let darkest = pool[0];
+                let lightest = pool[pool.length - 1];
+                let finalPalette = [darkest, lightest];
+                
+                mappedArr = mappedArr.filter(x => x !== darkest && x !== lightest);
+                mappedArr.sort((a,b) => b.count - a.count);
+                
+                for (let i = 0; i < targetSize - 2; i++) {
+                    if (mappedArr[i]) finalPalette.push(mappedArr[i]);
+                }
+                return finalPalette.map(x => x.col);
+            };
+
+            if (currentPaletteMode === 'manual') {
+                let base = [];
+                for(let i=0; i<4; i++) base.push(hexToRgb(document.getElementById('cc'+i).value));
+                activePalette = interpolatePalette(base, targetColors);
+            } else if (currentPaletteMode === 'preset') {
+                activePalette = interpolatePalette(currentForcedPalette, targetColors);
+            } else if (currentPaletteMode === 'random') {
+                activePalette = currentForcedPalette; 
+            } else if (currentPaletteMode === 'original') {
+                let pxs = [];
+                for(let i=0; i<d.length; i+=step) if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
+                
+                let baseCount = Math.max(targetColors, 16); 
+                let basePal = getMedianCut(pxs, baseCount);
+                
+                if (targetColors < baseCount) {
+                    let mapped = basePal.map(c => ({
+                        col: {r: c.r, g: c.g, b: c.b},
+                        count: c.count,
+                        luma: 0.3*c.r + 0.59*c.g + 0.11*c.b
+                    }));
+                    activePalette = getBalancedPalette(mapped, targetColors);
+                } else {
+                    activePalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b}));
+                }
+            }
+            
+            if (activePalette && mapMode === 'luma') {
+                activePalette.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+            }
+
+            if (activePalette) {
+                if (currentPaletteMode !== 'manual') {
+                    let uiPalette = [];
+                    let sortedForUi = [...activePalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                    
+                    if (sortedForUi.length <= 4) {
+                        uiPalette = [...sortedForUi];
+                        while(uiPalette.length < 4) uiPalette.push(uiPalette[uiPalette.length-1] || {r:0,g:0,b:0});
+                    } else {
+                        uiPalette.push(sortedForUi[0]);
+                        uiPalette.push(sortedForUi[Math.floor(sortedForUi.length / 3)]);
+                        uiPalette.push(sortedForUi[Math.floor(2 * sortedForUi.length / 3)]);
+                        uiPalette.push(sortedForUi[sortedForUi.length - 1]);
+                    }
+                    for(let i = 0; i < 4; i++) {
+                        let el = document.getElementById('cc' + i);
+                        if (el) el.value = rgbToHex(uiPalette[i].r, uiPalette[i].g, uiPalette[i].b);
+                    }
+                }
+            }
+
+            updateProgress(45);
+            await yieldToMain();
+
+            if (activePalette) {
+                const bayer8 = new Float32Array(64); for(let i=0; i<64; i++) bayer8[i] = (bayer8x8[i]/64) - 0.5;
+
+                const colorCache = new Map();
+                const findClosestColor = (r, g, b, palette) => {
+                    const key = (r & 0xF8) << 10 | (g & 0xF8) << 5 | (b & 0xF8);
+                    let cached = colorCache.get(key);
+                    if (cached) return cached;
+                    
+                    let minDist = Infinity, closest = palette[0];
+                    for(let i = 0; i < palette.length; i++) {
+                        let c = palette[i];
+                        let dr = r - c.r, dg = g - c.g, db = b - c.b;
+                        let dist = dr*dr + dg*dg + db*db;
+                        if(dist < minDist){ minDist = dist; closest = c; }
+                    }
+                    colorCache.set(key, closest);
+                    return closest;
+                };
+
+                for(let y=0; y<smallH; y++) {
+                    if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                    
+                    let yMod8 = (y % 8) * 8;
+                    let isEvenY = (y % 2 === 0);
+
+                    for(let x=0; x<smallW; x++) {
+                        let i = (y*smallW + x) * 4;
+                        if(d[i+3] < 127) continue;
+                        let r=d[i], g=d[i+1], b=d[i+2];
+
+                        let factor = 0;
+                        if(ditherMode === 'bayer8') factor = bayer8[yMod8 + (x % 8)];
+                        else if (ditherMode === 'horizontal') factor = isEvenY ? -0.2 : 0.2;
+                        else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
+                        else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
+
+                        if (mapMode === 'luma') {
+                            let pxLuma = 0.3*r + 0.59*g + 0.11*b;
+                            if (factor !== 0) pxLuma += factor * 120;
+                            let norm = (pxLuma - minL) / (maxL - minL || 1);
+                            norm = Math.max(0, Math.min(1, norm));
+                            
+                            let pIdx = Math.floor(norm * activePalette.length);
+                            if(pIdx >= activePalette.length) pIdx = activePalette.length - 1;
+                            let closest = activePalette[pIdx];
+                            d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                        } else {
+                            if (factor !== 0) {
+                                let spread = 120;
+                                r = Math.max(0, Math.min(255, r + factor * spread));
+                                g = Math.max(0, Math.min(255, g + factor * spread));
+                                b = Math.max(0, Math.min(255, b + factor * spread));
+                            }
+                            let closest = findClosestColor(r, g, b, activePalette);
+                            d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                        }
+                    }
+                    if (y % chunkRows === 0) { updateProgress(45 + 55 * (y / smallH)); await yieldToMain(); }
+                }
+            }
+
+            sCtx.putImageData(imgData, 0, 0);
+
+            let maxDim = Math.max(origW, origH);
+            let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
+            canvas.width = origW * displayScale; 
+            canvas.height = origH * displayScale;
+            
+            ctx.imageSmoothingEnabled = false; 
+            ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
+
+            updateProgress(100);
+
+            if (!isNavigatingHistory) {
+                let state = {
+                    px: px, col: cLimitStr, dith: ditherMode, grp: uiGroupStrength,
+                    exp: document.getElementById('exposicao').value,
+                    bri: document.getElementById('brilho').value,
+                    som: document.getElementById('sombras').value,
+                    sat: document.getElementById('saturacao').value,
+                    map: document.getElementById('mapSelect').value,
+                    cc: Array.from({ length: 4 }, (_, i) => document.getElementById('cc' + i).value),
+                    pal: currentForcedPalette ? [...currentForcedPalette] : null,
+                    palMode: currentPaletteMode
+                };
+                
+                if (historyIndex === -1 || JSON.stringify(historyArr[historyIndex]) !== JSON.stringify(state)) {
+                    historyArr = historyArr.slice(0, historyIndex + 1);
+                    historyArr.push(state);
+                    if (historyArr.length > 20) {
+                        historyArr.shift();
+                    } else {
+                        historyIndex++;
+                    }
+                    updateHistoryButtons();
+                }
+            }
+        }
+    </script>
 </body>
 </html>
