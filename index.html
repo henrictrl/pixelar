@@ -271,8 +271,32 @@
 
         <details open class="setting-section">
             <summary>
+                <div class="summary-title">Mapeamento</div>
+                <div class="sec-tools">
+                    <button class="tool-btn lock-btn" data-target="mapSelect" title="Travar">
+                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </button>
+                    <button class="tool-btn shuffle-btn" data-target="mapSelect" title="Embaralhar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    </button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <select id="mapSelect">
+                    <option value="rgb">RGB</option>
+                    <option value="luma" selected>Luz</option>
+                </select>
+            </div>
+        </details>
+
+        <details open class="setting-section">
+            <summary>
                 <div class="summary-title">Cores Manuais</div>
                 <div class="sec-tools">
+                    <button class="tool-btn" id="btnInvert" title="Inverter Ordem">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="8 21 3 21 3 16"></polyline><line x1="20" y1="4" x2="3" y2="21"></line></svg>
+                    </button>
                     <button class="tool-btn lock-btn" data-target="colors" title="Travar">
                         <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
                         <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
@@ -381,7 +405,7 @@
             tool.addEventListener('click', e => e.preventDefault());
         });
 
-        const locks = { pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, colors: false };
+        const locks = { pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, mapSelect: false, colors: false };
 
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -396,7 +420,6 @@
         let isProcessing = false;
         
         let currentForcedPalette = null; 
-        // Modos: 'manual', 'original', 'random', 'preset'
         let currentPaletteMode = 'manual'; 
         
         let savedPresets = {};
@@ -450,6 +473,21 @@
 
         document.getElementById('colorSelect').addEventListener('change', triggerProcess);
         document.getElementById('ditherSelect').addEventListener('change', triggerProcess);
+        document.getElementById('mapSelect').addEventListener('change', triggerProcess);
+
+        document.getElementById('btnInvert').addEventListener('click', (e) => {
+            e.stopPropagation();
+            let c0 = document.getElementById('cc0').value;
+            let c1 = document.getElementById('cc1').value;
+            let c2 = document.getElementById('cc2').value;
+            let c3 = document.getElementById('cc3').value;
+            document.getElementById('cc0').value = c3;
+            document.getElementById('cc1').value = c2;
+            document.getElementById('cc2').value = c1;
+            document.getElementById('cc3').value = c0;
+            currentPaletteMode = 'manual';
+            triggerProcess();
+        });
 
         const upload = document.getElementById('imageUpload');
         upload.addEventListener('change', (e) => {
@@ -460,25 +498,47 @@
             
             const reader = new FileReader();
             reader.onload = (ev) => {
+                const buffer = ev.target.result;
+                const bytes = new Uint8Array(buffer);
+
+                const tailOffset = Math.max(0, bytes.length - 3000);
+                const tailStr = new TextDecoder('utf-8', {fatal: false}).decode(bytes.slice(tailOffset));
+                const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/);
+                
+                let loadedState = null;
+                if(metaMatch) {
+                    try { loadedState = JSON.parse(metaMatch[1]); } catch(err) { console.warn("Falha ao analisar os metadados da imagem."); }
+                }
+
+                const blob = new Blob([bytes], {type: file.type});
+                const url = URL.createObjectURL(blob);
+                
                 const img = new Image();
                 img.onload = () => {
                     sourceImg = img;
                     document.getElementById('btn-download').disabled = false;
                     historyArr = []; 
                     historyIndex = -1;
-                    if(!locks.groupStrength) document.getElementById('groupStrength').value = 0;
                     
-                    randomizeAll(true); 
+                    if (loadedState) {
+                        applyState(loadedState);
+                    } else {
+                        if(!locks.groupStrength) document.getElementById('groupStrength').value = 0;
+                        randomizeAll(true); 
+                    }
+                    
+                    URL.revokeObjectURL(url);
                 };
-                img.src = ev.target.result;
+                img.src = url;
             };
-            reader.readAsDataURL(file);
+            reader.readAsArrayBuffer(file);
         });
 
         document.querySelectorAll('.preset-grid button[data-theme]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const themeName = e.target.getAttribute('data-theme');
                 if (THEMES[themeName]) {
+                    document.getElementById('mapSelect').value = 'luma'; 
                     currentPaletteMode = 'preset';
                     currentForcedPalette = THEMES[themeName].map(hexToRgb);
                 }
@@ -494,6 +554,7 @@
         }
 
         document.getElementById('btnOriginal').addEventListener('click', () => {
+            document.getElementById('mapSelect').value = 'rgb'; 
             currentPaletteMode = 'original';
             currentForcedPalette = null;
             triggerProcess();
@@ -503,11 +564,12 @@
             if(!locks.pxSize) document.getElementById('pxSize').value = 23;
             if(!locks.colorSelect) document.getElementById('colorSelect').value = "8";
             if(!locks.ditherSelect) document.getElementById('ditherSelect').value = "none";
-            if(!locks.groupStrength) document.getElementById('groupStrength').value = 5; // Equals 1 real pass now
+            if(!locks.groupStrength) document.getElementById('groupStrength').value = 5; 
             document.getElementById('exposicao').value = 14;
             document.getElementById('brilho').value = 0;
             document.getElementById('sombras').value = -20;
             document.getElementById('saturacao').value = 35;
+            document.getElementById('mapSelect').value = 'luma';
             updateLabels();
             currentPaletteMode = 'manual';
             currentForcedPalette = null;
@@ -553,23 +615,66 @@
             const c = ["2", "4", "8", "16", "32", "64"];
             document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)];
         }
+        function randMap() { 
+            const d = ["rgb", "luma"];
+            document.getElementById('mapSelect').value = d[Math.floor(Math.random() * d.length)];
+        }
+
         function randColorsGen() {
             currentPaletteMode = 'random';
             let qty = document.getElementById('colorSelect').value;
             let count = (qty === 'all') ? 64 : parseInt(qty, 10);
-            if(count > 64) count = 64;
+            if(count > 64) count = 64; 
             
             let newPal = [];
-            for(let i=0; i < count; i++) {
-                let h = Math.random();
-                let s = 0.6 + Math.random() * 0.4;
-                let l = 0.15 + (i / count) * 0.7 + Math.random() * 0.1;
+            let strategy = Math.floor(Math.random() * 5);
+            let baseHue = Math.random();
+            let isMuted = Math.random() > 0.5;
+
+            for(let i = 0; i < count; i++) {
+                let step = count > 1 ? i / (count - 1) : 0;
+                let h = baseHue;
+                let s = isMuted ? 0.2 + Math.random() * 0.4 : 0.6 + Math.random() * 0.4;
+                let l = 0.1 + Math.random() * 0.8; 
+
+                switch(strategy) {
+                    case 0: 
+                        h = baseHue + (Math.floor(Math.random() * 3) * 0.33) + (Math.random() * 0.05);
+                        break;
+                    case 1: 
+                        h = baseHue + (Math.random() * 0.4 - 0.2);
+                        break;
+                    case 2: 
+                        h = baseHue + (Math.random() > 0.5 ? 0 : 0.5) + (Math.random() * 0.1);
+                        s = 0.8 + Math.random() * 0.2;
+                        break;
+                    case 3: 
+                        h = baseHue + (step * 1.5);
+                        s = 0.5 + Math.random() * 0.3;
+                        break;
+                    case 4: 
+                        h = Math.random();
+                        s = Math.random();
+                        break;
+                }
+
+                h = h % 1; if(h < 0) h += 1;
                 newPal.push(hslToRgb(h, s, l));
             }
+            
             currentForcedPalette = newPal;
-
+            
+            let sortedForUi = [...newPal].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+            let uiPalette = [
+                sortedForUi[0] || {r:0,g:0,b:0},
+                sortedForUi[Math.floor(sortedForUi.length * 0.33)] || {r:0,g:0,b:0},
+                sortedForUi[Math.floor(sortedForUi.length * 0.66)] || {r:0,g:0,b:0},
+                sortedForUi[sortedForUi.length - 1] || {r:0,g:0,b:0}
+            ];
+            
             for(let i=0; i<4; i++) {
-                if(newPal[i]) document.getElementById('cc'+i).value = rgbToHex(newPal[i].r, newPal[i].g, newPal[i].b);
+                let el = document.getElementById('cc'+i);
+                if (el) el.value = rgbToHex(uiPalette[i].r, uiPalette[i].g, uiPalette[i].b);
             }
         }
 
@@ -582,6 +687,7 @@
                 if(tgt === 'groupStrength') randGrp();
                 if(tgt === 'ditherSelect') randDith();
                 if(tgt === 'colorSelect') randColQty();
+                if(tgt === 'mapSelect') randMap();
                 if(tgt === 'colors') randColorsGen();
                 
                 triggerProcess();
@@ -593,6 +699,7 @@
             if(!locks.groupStrength) randGrp(); 
             if(!locks.ditherSelect) randDith();
             if(!locks.colorSelect) randColQty();
+            if(!locks.mapSelect) randMap();
             if(!locks.colors) randColorsGen();
             updateLabels();
             triggerProcess();
@@ -614,6 +721,7 @@
             document.getElementById('brilho').value = p.bri;
             document.getElementById('sombras').value = p.som;
             document.getElementById('saturacao').value = p.sat;
+            if(p.map) document.getElementById('mapSelect').value = p.map;
             
             for(let i=0; i<4; i++) { if (p.cc && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; }
             
@@ -643,6 +751,7 @@
         document.getElementById('btn-download').addEventListener('click', () => {
             if(!sourceImg || isProcessing) return;
             const fileName = `pixelar_${Date.now()}.png`;
+            
             const triggerDownload = (url) => {
                 const a = document.createElement('a'); a.href = url; a.download = fileName;
                 a.style.display = 'none'; a.target = '_blank';
@@ -650,14 +759,43 @@
                 try { a.click(); } catch (error) { window.open(url, '_blank'); }
                 setTimeout(() => a.remove(), 1000);
             };
+
+            const stateToSave = {
+                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value,
+                dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
+                exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
+                som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
+                map: document.getElementById('mapSelect').value,
+                cc: Array.from({ length: 4 }, (_, i) => document.getElementById('cc' + i).value),
+                pal: currentForcedPalette ? [...currentForcedPalette] : null,
+                palMode: currentPaletteMode
+            };
+
+            const embedMetadataAndDownload = (blob) => {
+                if (!blob) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const buffer = reader.result;
+                    const metaStr = "PIXELAR_META:" + JSON.stringify(stateToSave);
+                    const metaBytes = new TextEncoder().encode(metaStr);
+                    
+                    const combined = new Uint8Array(buffer.byteLength + metaBytes.length);
+                    combined.set(new Uint8Array(buffer), 0);
+                    combined.set(metaBytes, buffer.byteLength);
+
+                    const finalBlob = new Blob([combined], {type: 'image/png'});
+                    const url = URL.createObjectURL(finalBlob);
+                    triggerDownload(url);
+                    setTimeout(() => URL.revokeObjectURL(url), 1500);
+                };
+                reader.readAsArrayBuffer(blob);
+            };
+
             if (canvas.toBlob) {
-                canvas.toBlob((blob) => {
-                    if (!blob) return; const url = URL.createObjectURL(blob);
-                    triggerDownload(url); setTimeout(() => URL.revokeObjectURL(url), 1500);
-                }, 'image/png');
-                return;
+                canvas.toBlob(embedMetadataAndDownload, 'image/png');
+            } else {
+                triggerDownload(canvas.toDataURL('image/png'));
             }
-            triggerDownload(canvas.toDataURL('image/png'));
         });
 
         function renderPresets() {
@@ -698,6 +836,7 @@
                 dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
                 exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
                 som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
+                map: document.getElementById('mapSelect').value,
                 pal: palSave, cc: currentCC, palMode: currentPaletteMode
             };
             
@@ -713,6 +852,7 @@
             document.getElementById('ditherSelect').value = p.dith || "none"; document.getElementById('groupStrength').value = p.grp;
             document.getElementById('exposicao').value = p.exp || 0; document.getElementById('brilho').value = p.bri || 0;
             document.getElementById('sombras').value = p.som || 0; document.getElementById('saturacao').value = p.sat || 0;
+            if(p.map) document.getElementById('mapSelect').value = p.map;
             
             updateLabels();
             currentPaletteMode = p.palMode || 'manual';
@@ -724,8 +864,10 @@
         document.getElementById('btnDownloadTxt').addEventListener('click', () => {
             let coresText = document.getElementById('colorSelect').options[document.getElementById('colorSelect').selectedIndex].text;
             let texturaText = document.getElementById('ditherSelect').options[document.getElementById('ditherSelect').selectedIndex].text;
+            let mapText = document.getElementById('mapSelect').options[document.getElementById('mapSelect').selectedIndex].text;
             let hexColors = []; for (let i = 0; i < 4; i++) hexColors.push(document.getElementById('cc' + i).value);
-            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Manuais: ${hexColors.join(', ')}`;
+            
+            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nMapeamento: ${mapText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Manuais: ${hexColors.join(', ')}`;
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
             el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el);
         });
@@ -774,9 +916,10 @@
 
         function interpolatePalette(colors, targetCount) {
             if(targetCount === colors.length) return colors;
+            if(targetCount === 1) return [colors[0]];
             let result = [];
             for(let i=0; i<targetCount; i++) {
-                let t = targetCount === 1 ? 0 : i / (targetCount - 1);
+                let t = i / (targetCount - 1);
                 let scaledT = t * (colors.length - 1);
                 let idx1 = Math.floor(scaledT);
                 let idx2 = Math.min(idx1 + 1, colors.length - 1);
@@ -828,6 +971,7 @@
             const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
             const passes = Math.ceil(uiGroupStrength / 5); 
             const ditherMode = document.getElementById('ditherSelect').value;
+            const mapMode = document.getElementById('mapSelect').value;
             
             const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
             const brBoost = parseInt(document.getElementById('brilho').value, 10);
@@ -952,49 +1096,14 @@
                 return finalPalette.map(x => x.col);
             };
 
-            const extractDominant = (baseArray, targetSize) => {
-                let counts = new Array(baseArray.length).fill(0);
-                for(let i=0; i<d.length; i+=step) {
-                    if(d[i+3] > 127) {
-                        let minDist = Infinity, minIdx = 0;
-                        for(let c=0; c<baseArray.length; c++) {
-                            let dr = d[i]-baseArray[c].r, dg = d[i+1]-baseArray[c].g, db = d[i+2]-baseArray[c].b;
-                            let dist = dr*dr + dg*dg + db*db;
-                            if(dist < minDist) { minDist = dist; minIdx = c; }
-                        }
-                        counts[minIdx]++;
-                    }
-                }
-                let mapped = baseArray.map((col, idx) => ({
-                    col: col, 
-                    count: counts[idx],
-                    luma: 0.3*col.r + 0.59*col.g + 0.11*col.b
-                }));
-                return getBalancedPalette(mapped, targetSize);
-            };
-
             if (currentPaletteMode === 'manual') {
                 let base = [];
                 for(let i=0; i<4; i++) base.push(hexToRgb(document.getElementById('cc'+i).value));
-                
-                if (targetColors < 4) {
-                    activePalette = extractDominant(base, targetColors);
-                } else if (targetColors > 4) {
-                    base.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-                    activePalette = interpolatePalette(base, targetColors);
-                } else {
-                    activePalette = base;
-                }
-            } else if (currentPaletteMode === 'random' || currentPaletteMode === 'preset') {
-                let baseLen = currentForcedPalette.length;
-                if (targetColors < baseLen) {
-                    activePalette = extractDominant(currentForcedPalette, targetColors);
-                } else if (targetColors > baseLen) {
-                    let baseSorted = [...currentForcedPalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-                    activePalette = interpolatePalette(baseSorted, targetColors);
-                } else {
-                    activePalette = currentForcedPalette;
-                }
+                activePalette = interpolatePalette(base, targetColors);
+            } else if (currentPaletteMode === 'preset') {
+                activePalette = interpolatePalette(currentForcedPalette, targetColors);
+            } else if (currentPaletteMode === 'random') {
+                activePalette = currentForcedPalette; 
             } else if (currentPaletteMode === 'original') {
                 let pxs = [];
                 for(let i=0; i<d.length; i+=step) if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
@@ -1013,20 +1122,24 @@
                     activePalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b}));
                 }
             }
+            
+            if (activePalette && mapMode === 'luma') {
+                activePalette.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+            }
 
             if (activePalette) {
-                activePalette.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-                
                 if (currentPaletteMode !== 'manual') {
                     let uiPalette = [];
-                    if (activePalette.length <= 4) {
-                        uiPalette = [...activePalette];
+                    let sortedForUi = [...activePalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                    
+                    if (sortedForUi.length <= 4) {
+                        uiPalette = [...sortedForUi];
                         while(uiPalette.length < 4) uiPalette.push(uiPalette[uiPalette.length-1] || {r:0,g:0,b:0});
                     } else {
-                        uiPalette.push(activePalette[0]);
-                        uiPalette.push(activePalette[Math.floor(activePalette.length / 3)]);
-                        uiPalette.push(activePalette[Math.floor(2 * activePalette.length / 3)]);
-                        uiPalette.push(activePalette[activePalette.length - 1]);
+                        uiPalette.push(sortedForUi[0]);
+                        uiPalette.push(sortedForUi[Math.floor(sortedForUi.length / 3)]);
+                        uiPalette.push(sortedForUi[Math.floor(2 * sortedForUi.length / 3)]);
+                        uiPalette.push(sortedForUi[sortedForUi.length - 1]);
                     }
                     for(let i = 0; i < 4; i++) {
                         let el = document.getElementById('cc' + i);
@@ -1075,7 +1188,7 @@
                         else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
                         else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
 
-                        if (currentPaletteMode !== 'original') {
+                        if (mapMode === 'luma') {
                             let pxLuma = 0.3*r + 0.59*g + 0.11*b;
                             if (factor !== 0) pxLuma += factor * 120;
                             let norm = (pxLuma - minL) / (maxL - minL || 1);
@@ -1119,6 +1232,7 @@
                     bri: document.getElementById('brilho').value,
                     som: document.getElementById('sombras').value,
                     sat: document.getElementById('saturacao').value,
+                    map: document.getElementById('mapSelect').value,
                     cc: Array.from({ length: 4 }, (_, i) => document.getElementById('cc' + i).value),
                     pal: currentForcedPalette ? [...currentForcedPalette] : null,
                     palMode: currentPaletteMode
