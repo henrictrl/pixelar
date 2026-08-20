@@ -4,35 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixelar</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='2' width='10' height='10' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='12' y='2' width='10' height='10' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='2' y='12' width='10' height='10' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='12' y='12' width='10' height='10' fill='%23000' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='2' width='10' height='10' fill='currentColor' stroke='currentColor' stroke-width='1'/%3E%3C/svg%3E">
     
     <style>
+        :root {
+            --bg: #fff;
+            --text: #000;
+            --panel: #fafafa;
+            --border: #000;
+            --border-light: #000;
+            --hover: #f0f0f0;
+            --btn-hover: #ddd;
+            --canvas-bg: #eee;
+            --canvas-chk: #e0e0e0;
+            --accent: #555;
+        }
+
+        [data-theme="dark"] {
+            --bg: #121212;
+            --text: #eaeaea;
+            --panel: #1a1a1a;
+            --border: #444;
+            --border-light: #333;
+            --hover: #222;
+            --btn-hover: #333;
+            --canvas-bg: #0a0a0a;
+            --canvas-chk: #1c1c1c;
+            --accent: #aaa;
+        }
+
         * { box-sizing: border-box; }
         
         body {
             margin: 0; padding: 0;
             font-family: monospace;
-            background-color: #fff;
-            color: #000;
+            background-color: var(--bg);
+            color: var(--text);
             display: flex; flex-direction: row;
             height: 100vh; overflow: hidden;
             padding-bottom: 60px;
+            transition: background-color 0.2s, color 0.2s;
         }
 
         #controls {
             width: 320px; min-width: 320px;
             height: 100%; overflow-y: auto;
-            border-right: 2px solid #000;
+            border-right: 2px solid var(--border);
             padding: 15px; display: flex;
             flex-direction: column; gap: 8px;
-            background: #fff;
+            background: var(--bg);
             z-index: 10;
         }
+        #controls::-webkit-scrollbar { width: 6px; }
+        #controls::-webkit-scrollbar-thumb { background: var(--border); }
 
         #view {
             flex: 1; display: flex;
             justify-content: center; align-items: center;
-            background-color: #eee; padding: 15px;
+            background-color: var(--canvas-bg); padding: 15px;
             overflow: hidden; position: relative;
         }
 
@@ -40,41 +69,41 @@
             position: absolute;
             text-align: center;
             font-size: 1.2rem;
-            color: #555;
+            color: var(--accent);
             cursor: pointer;
             display: flex; flex-direction: column; gap: 10px; align-items: center;
             transition: color 0.2s;
         }
-        #welcomeMsg:hover {
-            color: #000;
-        }
+        #welcomeMsg:hover { color: var(--text); }
 
         canvas {
             max-width: 100%; max-height: 100%;
             object-fit: contain; image-rendering: pixelated;
-            border: 1px solid #000;
-            background-color: #fff;
+            border: 1px solid var(--border);
+            background-color: var(--bg);
             background-image: 
-                linear-gradient(45deg, #e0e0e0 25%, transparent 25%, transparent 75%, #e0e0e0 75%, #e0e0e0),
-                linear-gradient(45deg, #e0e0e0 25%, transparent 25%, transparent 75%, #e0e0e0 75%, #e0e0e0);
+                linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk)),
+                linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk));
             background-size: 20px 20px;
             background-position: 0 0, 10px 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             display: none;
         }
 
         .title-area {
-            display: flex; justify-content: center; align-items: center; gap: 10px;
-            margin-bottom: 5px; padding-bottom: 10px; border-bottom: 2px solid #000;
+            display: flex; justify-content: space-between; align-items: center; gap: 10px;
+            margin-bottom: 5px; padding-bottom: 10px; border-bottom: 2px solid var(--border);
         }
-        h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        .title-main { display: flex; align-items: center; gap: 10px; }
+        h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
+        .title-main svg rect { stroke: var(--text); }
         
         details.setting-section {
-            border: 1px dashed #000;
-            background: #fafafa;
+            border: 1px dashed var(--border-light);
+            background: var(--panel);
             margin-bottom: 4px;
         }
-        details.setting-section[open] { background: #fff; }
+        details.setting-section[open] { background: var(--bg); }
         
         summary {
             font-weight: bold; font-size: 0.85rem;
@@ -83,77 +112,89 @@
             list-style: none; user-select: none;
         }
         summary::-webkit-details-marker { display: none; }
-        summary:hover { background: #f0f0f0; }
+        summary:hover { background: var(--hover); }
 
         .summary-title { flex: 1; display: flex; align-items: center; }
         .sec-tools { display: flex; gap: 4px; align-items: center; }
         
         .tool-btn {
-            background: none; border: 1px solid transparent;
-            cursor: pointer; padding: 4px;
+            background: transparent; border: 1px solid transparent;
+            cursor: pointer; padding: 4px; color: var(--text);
             border-radius: 4px; display: flex; align-items: center; justify-content: center;
         }
-        .tool-btn:hover { background: #ddd; border-color: #000; }
-        .tool-btn.locked { background: #000; color: #fff; border-color: #000; }
-        .tool-btn svg { width: 14px; height: 14px; }
+        .tool-btn:hover { background: var(--btn-hover); border-color: var(--border); }
+        .tool-btn.locked { background: var(--text); color: var(--bg); border-color: var(--text); }
+        .tool-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; }
         .tool-btn:not(.locked) .icon-lock { display: none; }
         .tool-btn.locked .icon-unlock { display: none; }
 
-        .sec-content { padding: 8px; border-top: 1px dashed #000; display: flex; flex-direction: column; gap: 4px; }
+        .sec-content { padding: 8px; border-top: 1px dashed var(--border-light); display: flex; flex-direction: column; gap: 4px; }
         
-        input[type="range"], select {
-            width: 100%; cursor: pointer; border: 1px solid #000; font-family: monospace;
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--text); }
+        input[type="checkbox"] { cursor: pointer; accent-color: var(--text); width: 16px; height: 16px; }
+        select {
+            width: 100%; cursor: pointer; border: 1px solid var(--border); font-family: monospace;
+            background: var(--bg); color: var(--text); padding: 4px;
         }
 
         button.std-btn {
-            padding: 6px; background: #fff; border: 1px solid #000; color: #000;
-            font-family: monospace; cursor: pointer; font-size: 0.85rem;
+            padding: 6px; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+            font-family: monospace; cursor: pointer; font-size: 0.85rem; transition: background 0.1s;
         }
-        button.std-btn:hover { background: #000; color: #fff; }
+        button.std-btn:hover { background: var(--text); color: var(--bg); }
 
-        .colors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 4px; }
-        .colors-grid input { width: 100%; height: 32px; padding: 0; border: 1px solid #000; cursor: pointer; appearance: none; -webkit-appearance: none; border-radius: 0; }
+        .colors-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(32px, 1fr)); 
+            gap: 4px; margin-bottom: 4px; 
+            max-height: 140px; overflow-y: auto; padding-right: 2px;
+        }
+        .colors-grid::-webkit-scrollbar { width: 4px; }
+        .colors-grid::-webkit-scrollbar-thumb { background: var(--border); }
+        
+        .colors-grid input { 
+            width: 100%; height: 32px; padding: 0; 
+            border: 1px solid var(--border); cursor: pointer; 
+            appearance: none; -webkit-appearance: none; border-radius: 0; 
+        }
 
         .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        .sub-label { font-weight: normal; margin-top: 4px; font-size: 0.8rem; display: flex; justify-content: space-between; }
+        .sub-label { font-weight: normal; margin-top: 4px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
         
         #floating-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
-            background: #fff; border-top: 2px solid #000;
+            background: var(--bg); border-top: 2px solid var(--border);
             display: flex; z-index: 9999;
         }
 
         #floating-progress {
             position: absolute; top: 0; left: 0; height: 100%; width: 0%;
-            background: #d4d4d4; z-index: 0; transition: width 0.1s ease-out;
+            background: var(--btn-hover); z-index: 0; transition: width 0.1s ease-out;
         }
 
         .float-btn {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: transparent; border: none; border-right: 1px solid #000;
-            color: #000; font-family: monospace; font-size: 0.75rem; font-weight: bold;
+            background: transparent; border: none; border-right: 1px solid var(--border);
+            color: var(--text); font-family: monospace; font-size: 0.75rem; font-weight: bold;
             cursor: pointer; position: relative; z-index: 1; transition: background 0.1s;
         }
         .float-btn:last-child { border-right: none; }
-        .float-btn:hover:not(:disabled) { background: rgba(0,0,0,0.1); }
+        .float-btn:hover:not(:disabled) { background: rgba(128,128,128,0.2); }
         .float-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .float-btn svg { width: 20px; height: 20px; margin-bottom: 2px; fill: currentColor; }
+        .float-btn svg { width: 20px; height: 20px; margin-bottom: 2px; fill: none; stroke: currentColor; }
         .float-btn input[type="file"] { display: none; }
 
         .proc-indicator {
-            position: absolute; top: 4px; right: 4px; font-size: 0.65rem; color: #555;
+            position: absolute; top: 4px; right: 4px; font-size: 0.65rem; color: var(--accent);
             display: none; font-weight: bold; z-index: 2;
         }
         
-        .perf-warning {
-            font-size: 0.7rem; color: #555; text-align: left; margin-bottom: 4px; font-weight: bold;
-        }
-
-        #footer { margin-top: auto; padding: 10px 0; text-align: center; font-size: 0.8rem; }
+        .perf-warning { font-size: 0.7rem; color: var(--accent); text-align: left; margin-bottom: 4px; font-weight: bold; }
+        #footer { margin-top: auto; padding: 10px 0; text-align: center; font-size: 0.8rem; color: var(--accent); }
 
         @media (max-width: 768px) {
             body { flex-direction: column; padding-bottom: 60px; }
-            #view { order: 1; height: 45vh; min-height: 45vh; border-bottom: 2px solid #000; padding: 5px; }
+            #view { order: 1; height: 45vh; min-height: 45vh; border-bottom: 2px solid var(--border); padding: 5px; }
             #controls { order: 2; height: calc(55vh - 60px); width: 100%; min-width: 100%; border-right: none; }
             .float-btn span { font-size: 0.65rem; }
         }
@@ -163,13 +204,16 @@
 
     <div id="controls">
         <div class="title-area">
-            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="10" height="10" fill="#fff" stroke="#000" stroke-width="1"/>
-                <rect x="12" y="2" width="10" height="10" fill="#fff" stroke="#000" stroke-width="1"/>
-                <rect x="2" y="12" width="10" height="10" fill="#fff" stroke="#000" stroke-width="1"/>
-                <rect x="12" y="12" width="10" height="10" fill="#000" stroke="#000" stroke-width="1"/>
-            </svg>
-            <h1>PIXELAR</h1>
+            <div class="title-main">
+                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="10" height="10" fill="transparent" stroke-width="1"/>
+                    <rect x="12" y="2" width="10" height="10" fill="transparent" stroke-width="1"/>
+                    <rect x="2" y="12" width="10" height="10" fill="transparent" stroke-width="1"/>
+                    <rect x="12" y="12" width="10" height="10" fill="currentColor" stroke="none"/>
+                </svg>
+                <h1>PIXELAR</h1>
+            </div>
+            <button class="tool-btn" id="btnThemeToggle" title="Alternar Tema"></button>
         </div>
 
         <details open class="setting-section">
@@ -177,11 +221,11 @@
                 <div class="summary-title">Tamanho Pixel: <span id="pxVal" style="margin-left: 4px;">8</span></div>
                 <div class="sec-tools">
                     <button class="tool-btn lock-btn" data-target="pxSize" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     </button>
                     <button class="tool-btn shuffle-btn" data-target="pxSize" title="Embaralhar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                     </button>
                 </div>
             </summary>
@@ -195,11 +239,11 @@
                 <div class="summary-title">Agrupar: <span id="groupVal" style="margin-left: 4px;">0</span></div>
                 <div class="sec-tools">
                     <button class="tool-btn lock-btn" data-target="groupStrength" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     </button>
                     <button class="tool-btn shuffle-btn" data-target="groupStrength" title="Embaralhar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                     </button>
                 </div>
             </summary>
@@ -217,35 +261,49 @@
                 <div class="summary-title">Textura</div>
                 <div class="sec-tools">
                     <button class="tool-btn lock-btn" data-target="ditherSelect" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     </button>
                     <button class="tool-btn shuffle-btn" data-target="ditherSelect" title="Embaralhar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                     </button>
                 </div>
             </summary>
             <div class="sec-content">
                 <select id="ditherSelect">
                     <option value="none">Sólido</option>
-                    <option value="bayer8">Xadrez</option>
+                    <option value="checkerboard">Xadrez</option>
+                    <option value="diag-right">Diagonal Direita</option>
+                    <option value="diag-left">Diagonal Esquerda</option>
+                    <option value="crosshatch">Cruzado</option>
+                    <option value="dots">Pontilhismo</option>
+                    <option value="halftone">Meio-tom</option>
+                    <option value="diamonds">Losangos</option>
+                    <option value="waves">Ondas</option>
+                    <option value="scanlines">TV</option>
+                    <option value="maze">Malha</option>
                     <option value="horizontal">Linhas Horizontais</option>
                     <option value="vertical">Linhas Verticais</option>
                     <option value="noise">Ruído</option>
                 </select>
+                
+                <div class="sub-label">Escala da Textura: <span id="ditherScaleVal">1</span></div>
+                <input type="range" id="ditherScale" min="1" max="10" value="1">
+                <div class="sub-label">Intensidade: <span id="ditherIntVal">100</span>%</div>
+                <input type="range" id="ditherIntensity" min="0" max="200" value="100">
             </div>
         </details>
 
         <details open class="setting-section">
             <summary>
-                <div class="summary-title">Qtd. de Cores</div>
+                <div class="summary-title">Quantidade de Cores</div>
                 <div class="sec-tools">
                     <button class="tool-btn lock-btn" data-target="colorSelect" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     </button>
                     <button class="tool-btn shuffle-btn" data-target="colorSelect" title="Embaralhar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                     </button>
                 </div>
             </summary>
@@ -271,48 +329,25 @@
 
         <details open class="setting-section">
             <summary>
-                <div class="summary-title">Mapeamento</div>
-                <div class="sec-tools">
-                    <button class="tool-btn lock-btn" data-target="mapSelect" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    </button>
-                    <button class="tool-btn shuffle-btn" data-target="mapSelect" title="Embaralhar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                    </button>
-                </div>
-            </summary>
-            <div class="sec-content">
-                <select id="mapSelect">
-                    <option value="rgb">RGB</option>
-                    <option value="luma" selected>Luz</option>
-                </select>
-            </div>
-        </details>
-
-        <details open class="setting-section">
-            <summary>
                 <div class="summary-title">Cores Manuais</div>
                 <div class="sec-tools">
-                    <button class="tool-btn" id="btnInvert" title="Inverter Ordem">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="8 21 3 21 3 16"></polyline><line x1="20" y1="4" x2="3" y2="21"></line></svg>
+                    <button class="tool-btn" id="btnInvert" title="Inverter Cores (Negativo)">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"/>
+                            <path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"/>
+                        </svg>
                     </button>
                     <button class="tool-btn lock-btn" data-target="colors" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     </button>
                     <button class="tool-btn shuffle-btn" data-target="colors" title="Embaralhar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                     </button>
                 </div>
             </summary>
             <div class="sec-content">
-                <div id="colorsGrid" class="colors-grid">
-                    <input type="color" id="cc0" value="#2C2C2C">
-                    <input type="color" id="cc1" value="#D62828">
-                    <input type="color" id="cc2" value="#FFD166">
-                    <input type="color" id="cc3" value="#00C2A8">
-                </div>
+                <div id="colorsGrid" class="colors-grid"></div>
                 <button class="std-btn" id="btnOriginal">Cores Originais da Foto</button>
             </div>
         </details>
@@ -320,7 +355,7 @@
         <details class="setting-section">
             <summary><div class="summary-title">Presets</div></summary>
             <div class="sec-content preset-grid">
-                <button class="std-btn" id="btnEMNL">E-Manual</button>
+                <button class="std-btn" id="btnPixelar">Pixelar</button>
                 <button class="std-btn" data-theme="Nokia">Nokia</button>
                 <button class="std-btn" data-theme="Nintendo_VB">Nintendo VB</button>
                 <button class="std-btn" data-theme="PeB_Dither">P&B</button>
@@ -333,16 +368,45 @@
         </details>
 
         <details class="setting-section">
-            <summary><div class="summary-title">Ajustes de Imagem</div></summary>
+            <summary>
+                <div class="summary-title">Ajustes de Imagem</div>
+                <div class="sec-tools">
+                    <button class="tool-btn" id="btnResetAdjustments" title="Zerar Ajustes">
+                        <svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                    </button>
+                </div>
+            </summary>
             <div class="sec-content">
                 <div class="sub-label">Exposição: <span id="expVal">0</span></div>
                 <input type="range" id="exposicao" min="-100" max="100" value="0">
                 <div class="sub-label">Brilho: <span id="briVal">0</span></div>
                 <input type="range" id="brilho" min="-100" max="100" value="0">
-                <div class="sub-label">Sombras: <span id="somVal">0</span></div>
-                <input type="range" id="sombras" min="-100" max="100" value="0">
+                <div class="sub-label">Contraste: <span id="contVal">0</span></div>
+                <input type="range" id="contraste" min="-100" max="100" value="0">
+                <div class="sub-label">Temperatura: <span id="tempVal">0</span></div>
+                <input type="range" id="temperatura" min="-100" max="100" value="0">
                 <div class="sub-label">Saturação: <span id="satVal">0</span></div>
                 <input type="range" id="saturacao" min="-100" max="100" value="0">
+                <div class="sub-label">Sombras: <span id="somVal">0</span></div>
+                <input type="range" id="sombras" min="-100" max="100" value="0">
+            </div>
+        </details>
+
+        <details class="setting-section">
+            <summary><div class="summary-title">Efeitos Especiais</div></summary>
+            <div class="sec-content">
+                <label class="sub-label" style="cursor:pointer;">
+                    <span>Traçar Contornos (Lineart)</span>
+                    <input type="checkbox" id="effEdge">
+                </label>
+                <label class="sub-label" style="cursor:pointer;">
+                    <span>Inverter Sombras (Split)</span>
+                    <input type="checkbox" id="effSplit">
+                </label>
+                <label class="sub-label" style="cursor:pointer;">
+                    <span>Dither nos Tons Médios</span>
+                    <input type="checkbox" id="effMidDither">
+                </label>
             </div>
         </details>
 
@@ -368,7 +432,6 @@
         <canvas id="outputCanvas"></canvas>
     </div>
 
-    <!-- Barra Flutuante Global -->
     <div id="floating-bar">
         <div id="floating-progress"></div>
         <div class="proc-indicator" id="proc-text">0%</div>
@@ -401,11 +464,37 @@
     </div>
 
     <script>
+        const themeBtn = document.getElementById('btnThemeToggle');
+        const rootHtml = document.documentElement;
+        
+        const moonIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+        const sunIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+
+        function updateThemeIcon() {
+            themeBtn.innerHTML = rootHtml.getAttribute('data-theme') === 'dark' ? sunIcon : moonIcon;
+        }
+
+        if (localStorage.getItem('pixelarTheme') === 'dark') {
+            rootHtml.setAttribute('data-theme', 'dark');
+        }
+        updateThemeIcon();
+        
+        themeBtn.addEventListener('click', () => {
+            if (rootHtml.getAttribute('data-theme') === 'dark') {
+                rootHtml.removeAttribute('data-theme');
+                localStorage.setItem('pixelarTheme', 'light');
+            } else {
+                rootHtml.setAttribute('data-theme', 'dark');
+                localStorage.setItem('pixelarTheme', 'dark');
+            }
+            updateThemeIcon();
+        });
+
         document.querySelectorAll('.sec-tools').forEach(tool => {
             tool.addEventListener('click', e => e.preventDefault());
         });
 
-        const locks = { pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, mapSelect: false, colors: false };
+        const locks = { pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, colors: false };
 
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -419,8 +508,9 @@
         let abortController = null;
         let isProcessing = false;
         
-        let currentForcedPalette = null; 
         let currentPaletteMode = 'manual'; 
+        let globalCurrentPalette = []; 
+        let isImageInverted = false;
         
         let savedPresets = {};
         try { savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {}; } 
@@ -441,8 +531,6 @@
             WindowsXP: ["#397A18", "#245DDA", "#689DF6", "#689DF6", "#ECECEC"]
         };
 
-        const bayer8x8 = [ 0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21 ];
-
         function hexToRgb(hex) {
             let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : {r:0, g:0, b:0};
@@ -450,6 +538,27 @@
         function rgbToHex(r, g, b) {
             return "#" + (1 << 24 | Math.max(0, Math.min(255, r)) << 16 | Math.max(0, Math.min(255, g)) << 8 | Math.max(0, Math.min(255, b))).toString(16).slice(1).toUpperCase();
         }
+
+        function buildColorInputs(palette) {
+            const grid = document.getElementById('colorsGrid');
+            grid.innerHTML = '';
+            let viewPal = palette.slice(0, 64);
+            viewPal.forEach((color, i) => {
+                const inp = document.createElement('input');
+                inp.type = 'color';
+                inp.id = 'cc' + i;
+                inp.value = rgbToHex(color.r, color.g, color.b);
+                inp.addEventListener('input', () => {
+                    currentPaletteMode = 'manual';
+                    globalCurrentPalette[i] = hexToRgb(inp.value);
+                    triggerProcess();
+                });
+                grid.appendChild(inp);
+            });
+        }
+
+        globalCurrentPalette = [hexToRgb('#2C2C2C'), hexToRgb('#D62828'), hexToRgb('#FFD166'), hexToRgb('#00C2A8')];
+        buildColorInputs(globalCurrentPalette);
 
         const canvas = document.getElementById('outputCanvas');
         const ctx = canvas.getContext('2d');
@@ -459,33 +568,56 @@
 
         const inputsMap = {
             'pxSize': 'pxVal', 'groupStrength': 'groupVal', 'exposicao': 'expVal',
-            'brilho': 'briVal', 'sombras': 'somVal', 'saturacao': 'satVal'
+            'brilho': 'briVal', 'sombras': 'somVal', 'saturacao': 'satVal',
+            'contraste': 'contVal', 'temperatura': 'tempVal',
+            'ditherScale': 'ditherScaleVal', 'ditherIntensity': 'ditherIntVal'
         };
 
         for(let id in inputsMap) {
             const el = document.getElementById(id);
             const valEl = document.getElementById(inputsMap[id]);
             if(el && valEl) {
-                el.addEventListener('input', () => { valEl.textContent = el.value; });
-                el.addEventListener('change', triggerProcess);
+                el.addEventListener('input', () => { 
+                    valEl.textContent = el.value; 
+                    triggerProcess(); 
+                });
             }
         }
 
-        document.getElementById('colorSelect').addEventListener('change', triggerProcess);
-        document.getElementById('ditherSelect').addEventListener('change', triggerProcess);
-        document.getElementById('mapSelect').addEventListener('change', triggerProcess);
+        ['colorSelect', 'ditherSelect', 'effEdge', 'effSplit', 'effMidDither'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', () => {
+                if (id === 'colorSelect') {
+                    let target = parseInt(el.value, 10);
+                    if (isNaN(target)) target = 256; 
+                    if (currentPaletteMode === 'random') randColorsGen(); 
+                    else if (currentPaletteMode === 'manual' || currentPaletteMode === 'preset') {
+                        globalCurrentPalette = interpolatePalette(globalCurrentPalette, target);
+                        buildColorInputs(globalCurrentPalette);
+                    }
+                }
+                triggerProcess();
+            });
+        });
+
+        document.getElementById('btnResetAdjustments').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('exposicao').value = 0;
+            document.getElementById('brilho').value = 0;
+            document.getElementById('contraste').value = 0;
+            document.getElementById('temperatura').value = 0;
+            document.getElementById('saturacao').value = 0;
+            document.getElementById('sombras').value = 0;
+            updateLabels();
+            triggerProcess();
+        });
 
         document.getElementById('btnInvert').addEventListener('click', (e) => {
             e.stopPropagation();
-            let c0 = document.getElementById('cc0').value;
-            let c1 = document.getElementById('cc1').value;
-            let c2 = document.getElementById('cc2').value;
-            let c3 = document.getElementById('cc3').value;
-            document.getElementById('cc0').value = c3;
-            document.getElementById('cc1').value = c2;
-            document.getElementById('cc2').value = c1;
-            document.getElementById('cc3').value = c0;
             currentPaletteMode = 'manual';
+            isImageInverted = !isImageInverted;
+            globalCurrentPalette = globalCurrentPalette.map(c => ({r: 255-c.r, g: 255-c.g, b: 255-c.b}));
+            buildColorInputs(globalCurrentPalette);
             triggerProcess();
         });
 
@@ -519,6 +651,7 @@
                     document.getElementById('btn-download').disabled = false;
                     historyArr = []; 
                     historyIndex = -1;
+                    isImageInverted = false;
                     
                     if (loadedState) {
                         applyState(loadedState);
@@ -538,41 +671,45 @@
             btn.addEventListener('click', (e) => {
                 const themeName = e.target.getAttribute('data-theme');
                 if (THEMES[themeName]) {
-                    document.getElementById('mapSelect').value = 'luma'; 
+                    isImageInverted = false;
                     currentPaletteMode = 'preset';
-                    currentForcedPalette = THEMES[themeName].map(hexToRgb);
+                    let targetColors = parseInt(document.getElementById('colorSelect').value, 10);
+                    if (isNaN(targetColors)) targetColors = 64;
+                    globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors);
+                    buildColorInputs(globalCurrentPalette);
                 }
                 triggerProcess();
             });
         });
 
-        for(let i = 0; i < 4; i++) {
-            document.getElementById('cc' + i).addEventListener('input', () => {
-                currentPaletteMode = 'manual';
-                triggerProcess();
-            });
-        }
-
         document.getElementById('btnOriginal').addEventListener('click', () => {
-            document.getElementById('mapSelect').value = 'rgb'; 
+            isImageInverted = false;
             currentPaletteMode = 'original';
-            currentForcedPalette = null;
             triggerProcess();
         });
 
-        document.getElementById('btnEMNL').addEventListener('click', () => {
-            if(!locks.pxSize) document.getElementById('pxSize').value = 23;
-            if(!locks.colorSelect) document.getElementById('colorSelect').value = "8";
+        document.getElementById('btnPixelar').addEventListener('click', () => {
+            isImageInverted = false;
+            if(!locks.pxSize) document.getElementById('pxSize').value = 8;
+            if(!locks.colorSelect) document.getElementById('colorSelect').value = "16";
             if(!locks.ditherSelect) document.getElementById('ditherSelect').value = "none";
-            if(!locks.groupStrength) document.getElementById('groupStrength').value = 5; 
-            document.getElementById('exposicao').value = 14;
+            if(!locks.groupStrength) document.getElementById('groupStrength').value = 0; 
+            
+            document.getElementById('exposicao').value = 0;
             document.getElementById('brilho').value = 0;
-            document.getElementById('sombras').value = -20;
-            document.getElementById('saturacao').value = 35;
-            document.getElementById('mapSelect').value = 'luma';
+            document.getElementById('sombras').value = 0;
+            document.getElementById('saturacao').value = 0;
+            document.getElementById('contraste').value = 0;
+            document.getElementById('temperatura').value = 0;
+            document.getElementById('ditherScale').value = 1;
+            document.getElementById('ditherIntensity').value = 100;
+            
+            document.getElementById('effEdge').checked = false;
+            document.getElementById('effSplit').checked = false;
+            document.getElementById('effMidDither').checked = false;
+            
             updateLabels();
-            currentPaletteMode = 'manual';
-            currentForcedPalette = null;
+            currentPaletteMode = 'original';
             triggerProcess();
         });
 
@@ -605,77 +742,80 @@
             return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
         }
 
+        function interpolatePalette(colors, targetCount) {
+            if(targetCount === colors.length) return colors;
+            if(targetCount === 1) return [colors[0]];
+            let result = [];
+            for(let i=0; i<targetCount; i++) {
+                let t = i / (targetCount - 1);
+                let scaledT = t * (colors.length - 1);
+                let idx1 = Math.floor(scaledT);
+                let idx2 = Math.min(idx1 + 1, colors.length - 1);
+                let frac = scaledT - idx1;
+                let c1 = colors[idx1], c2 = colors[idx2];
+                result.push({
+                    r: Math.round(c1.r + (c2.r - c1.r)*frac),
+                    g: Math.round(c1.g + (c2.g - c1.g)*frac),
+                    b: Math.round(c1.b + (c2.b - c1.b)*frac)
+                });
+            }
+            return result;
+        }
+
         function randPx() { document.getElementById('pxSize').value = Math.floor(Math.random() * 16) + 4; updateLabels(); }
         function randGrp() { document.getElementById('groupStrength').value = Math.random() > 0.7 ? Math.floor(Math.random() * 15) + 1 : 0; updateLabels(); }
         function randDith() { 
-            const d = ["none", "bayer8", "horizontal", "vertical", "noise"];
+            const d = ["none", "checkerboard", "diag-right", "diag-left", "crosshatch", "dots", "halftone", "diamonds", "waves", "scanlines", "maze", "horizontal", "vertical", "noise"];
             document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
         }
         function randColQty() {
             const c = ["2", "4", "8", "16", "32", "64"];
             document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)];
         }
-        function randMap() { 
-            const d = ["rgb", "luma"];
-            document.getElementById('mapSelect').value = d[Math.floor(Math.random() * d.length)];
-        }
 
         function randColorsGen() {
+            isImageInverted = false;
             currentPaletteMode = 'random';
-            let qty = document.getElementById('colorSelect').value;
-            let count = (qty === 'all') ? 64 : parseInt(qty, 10);
-            if(count > 64) count = 64; 
+            let qty = parseInt(document.getElementById('colorSelect').value, 10);
+            if(isNaN(qty)) qty = 256; 
             
-            let newPal = [];
-            let strategy = Math.floor(Math.random() * 5);
-            let baseHue = Math.random();
-            let isMuted = Math.random() > 0.5;
+            let algo = Math.floor(Math.random() * 4);
+            let anchors = [];
 
-            for(let i = 0; i < count; i++) {
-                let step = count > 1 ? i / (count - 1) : 0;
-                let h = baseHue;
-                let s = isMuted ? 0.2 + Math.random() * 0.4 : 0.6 + Math.random() * 0.4;
-                let l = 0.1 + Math.random() * 0.8; 
-
-                switch(strategy) {
-                    case 0: 
-                        h = baseHue + (Math.floor(Math.random() * 3) * 0.33) + (Math.random() * 0.05);
-                        break;
-                    case 1: 
-                        h = baseHue + (Math.random() * 0.4 - 0.2);
-                        break;
-                    case 2: 
-                        h = baseHue + (Math.random() > 0.5 ? 0 : 0.5) + (Math.random() * 0.1);
-                        s = 0.8 + Math.random() * 0.2;
-                        break;
-                    case 3: 
-                        h = baseHue + (step * 1.5);
-                        s = 0.5 + Math.random() * 0.3;
-                        break;
-                    case 4: 
-                        h = Math.random();
-                        s = Math.random();
-                        break;
+            if (algo === 0) { 
+                let baseHue = Math.random();
+                let numAnchors = 5 + Math.floor(Math.random() * 3);
+                for(let i=0; i<numAnchors; i++) {
+                    anchors.push(hslToRgb((baseHue + (i * 0.15)) % 1, 0.8 + Math.random()*0.2, 0.1 + (i / (numAnchors-1)) * 0.8));
                 }
-
-                h = h % 1; if(h < 0) h += 1;
-                newPal.push(hslToRgb(h, s, l));
+            } else if (algo === 1) { 
+                let numAnchors = 4 + Math.floor(Math.random() * 4);
+                for(let i=0; i<numAnchors; i++) {
+                    anchors.push(hslToRgb(Math.random(), 0.6 + Math.random()*0.4, Math.random()));
+                }
+                anchors.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+            } else if (algo === 2) { 
+                let baseHue = Math.random();
+                anchors = [
+                    {r: 10, g: 10, b: 20},
+                    hslToRgb(baseHue, 0.9, 0.4),
+                    hslToRgb((baseHue + 0.33) % 1, 0.9, 0.5),
+                    hslToRgb((baseHue + 0.66) % 1, 0.9, 0.6),
+                    {r: 245, g: 245, b: 255}
+                ];
+            } else { 
+                let baseHue = Math.random(); 
+                anchors = [
+                    hslToRgb(baseHue, 0.9, 0.1), 
+                    hslToRgb((baseHue + 0.8) % 1, 0.9, 0.4),
+                    hslToRgb((baseHue + 0.5) % 1, 0.9, 0.6), 
+                    hslToRgb((baseHue + 0.1) % 1, 0.9, 0.8), 
+                    hslToRgb(baseHue, 0.1, 0.95) 
+                ];
             }
             
-            currentForcedPalette = newPal;
-            
-            let sortedForUi = [...newPal].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-            let uiPalette = [
-                sortedForUi[0] || {r:0,g:0,b:0},
-                sortedForUi[Math.floor(sortedForUi.length * 0.33)] || {r:0,g:0,b:0},
-                sortedForUi[Math.floor(sortedForUi.length * 0.66)] || {r:0,g:0,b:0},
-                sortedForUi[sortedForUi.length - 1] || {r:0,g:0,b:0}
-            ];
-            
-            for(let i=0; i<4; i++) {
-                let el = document.getElementById('cc'+i);
-                if (el) el.value = rgbToHex(uiPalette[i].r, uiPalette[i].g, uiPalette[i].b);
-            }
+            globalCurrentPalette = interpolatePalette(anchors, qty);
+            buildColorInputs(globalCurrentPalette);
         }
 
         document.querySelectorAll('.shuffle-btn').forEach(btn => {
@@ -687,7 +827,6 @@
                 if(tgt === 'groupStrength') randGrp();
                 if(tgt === 'ditherSelect') randDith();
                 if(tgt === 'colorSelect') randColQty();
-                if(tgt === 'mapSelect') randMap();
                 if(tgt === 'colors') randColorsGen();
                 
                 triggerProcess();
@@ -699,8 +838,11 @@
             if(!locks.groupStrength) randGrp(); 
             if(!locks.ditherSelect) randDith();
             if(!locks.colorSelect) randColQty();
-            if(!locks.mapSelect) randMap();
             if(!locks.colors) randColorsGen();
+            
+            document.getElementById('ditherScale').value = Math.floor(Math.random() * 4) + 1;
+            document.getElementById('ditherIntensity').value = Math.floor(Math.random() * 150) + 50;
+            
             updateLabels();
             triggerProcess();
         }
@@ -721,13 +863,23 @@
             document.getElementById('brilho').value = p.bri;
             document.getElementById('sombras').value = p.som;
             document.getElementById('saturacao').value = p.sat;
-            if(p.map) document.getElementById('mapSelect').value = p.map;
+            document.getElementById('contraste').value = p.cont || 0;
+            document.getElementById('temperatura').value = p.temp || 0;
+            document.getElementById('ditherScale').value = p.dScale || 1;
+            document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100;
             
-            for(let i=0; i<4; i++) { if (p.cc && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; }
+            document.getElementById('effEdge').checked = p.effEdge || false;
+            document.getElementById('effSplit').checked = p.effSplit || false;
+            document.getElementById('effMidDither').checked = p.effMidDither || false;
             
             updateLabels();
             currentPaletteMode = p.palMode || 'manual';
-            currentForcedPalette = p.pal ? [...p.pal] : null;
+            isImageInverted = p.inv || false;
+            
+            if (p.cc && p.cc.length > 0) {
+                globalCurrentPalette = p.cc.map(hexToRgb);
+                buildColorInputs(globalCurrentPalette);
+            }
             
             isNavigatingHistory = true;
             triggerProcess();
@@ -765,10 +917,12 @@
                 dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
                 exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
                 som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
-                map: document.getElementById('mapSelect').value,
-                cc: Array.from({ length: 4 }, (_, i) => document.getElementById('cc' + i).value),
-                pal: currentForcedPalette ? [...currentForcedPalette] : null,
-                palMode: currentPaletteMode
+                cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value,
+                dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value,
+                effEdge: document.getElementById('effEdge').checked, effSplit: document.getElementById('effSplit').checked,
+                effMidDither: document.getElementById('effMidDither').checked,
+                cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)),
+                palMode: currentPaletteMode, inv: isImageInverted
             };
 
             const embedMetadataAndDownload = (blob) => {
@@ -822,22 +976,18 @@
         document.getElementById('btnSavePreset').addEventListener('click', () => {
             let name = prompt("Nome do Preset:");
             if(!name) return;
-            let currentCC = [];
-            for(let i=0; i<4; i++) currentCC.push(document.getElementById('cc'+i).value);
             
-            let palSave = currentForcedPalette;
-            if(currentPaletteMode === 'manual' && !palSave) {
-                 palSave = [];
-                 for(let i=0; i<4; i++) palSave.push(hexToRgb(currentCC[i]));
-            }
-
             savedPresets[name] = {
                 px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, 
                 dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value,
                 exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value,
                 som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value,
-                map: document.getElementById('mapSelect').value,
-                pal: palSave, cc: currentCC, palMode: currentPaletteMode
+                cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value,
+                dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value,
+                effEdge: document.getElementById('effEdge').checked, effSplit: document.getElementById('effSplit').checked,
+                effMidDither: document.getElementById('effMidDither').checked,
+                cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)),
+                palMode: currentPaletteMode, inv: isImageInverted
             };
             
             try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } 
@@ -852,22 +1002,31 @@
             document.getElementById('ditherSelect').value = p.dith || "none"; document.getElementById('groupStrength').value = p.grp;
             document.getElementById('exposicao').value = p.exp || 0; document.getElementById('brilho').value = p.bri || 0;
             document.getElementById('sombras').value = p.som || 0; document.getElementById('saturacao').value = p.sat || 0;
-            if(p.map) document.getElementById('mapSelect').value = p.map;
+            document.getElementById('contraste').value = p.cont || 0; document.getElementById('temperatura').value = p.temp || 0;
+            document.getElementById('ditherScale').value = p.dScale || 1;
+            document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100;
+            
+            document.getElementById('effEdge').checked = p.effEdge || false;
+            document.getElementById('effSplit').checked = p.effSplit || false;
+            document.getElementById('effMidDither').checked = p.effMidDither || false;
             
             updateLabels();
             currentPaletteMode = p.palMode || 'manual';
-            currentForcedPalette = p.pal;
-            if(p.cc) { for(let i=0; i<4; i++) { if(document.getElementById('cc'+i) && p.cc[i]) document.getElementById('cc'+i).value = p.cc[i]; } }
+            isImageInverted = p.inv || false;
+
+            if(p.cc && p.cc.length > 0) { 
+                globalCurrentPalette = p.cc.map(hexToRgb);
+                buildColorInputs(globalCurrentPalette);
+            }
             triggerProcess();
         }
 
         document.getElementById('btnDownloadTxt').addEventListener('click', () => {
             let coresText = document.getElementById('colorSelect').options[document.getElementById('colorSelect').selectedIndex].text;
             let texturaText = document.getElementById('ditherSelect').options[document.getElementById('ditherSelect').selectedIndex].text;
-            let mapText = document.getElementById('mapSelect').options[document.getElementById('mapSelect').selectedIndex].text;
-            let hexColors = []; for (let i = 0; i < 4; i++) hexColors.push(document.getElementById('cc' + i).value);
+            let hexColors = globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b));
             
-            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nMapeamento: ${mapText}\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nCores Manuais: ${hexColors.join(', ')}`;
+            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nEscala Textura: ${document.getElementById('ditherScale').value}\nIntensidade: ${document.getElementById('ditherIntensity').value}%\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nContraste: ${document.getElementById('contraste').value}\nTemperatura: ${document.getElementById('temperatura').value}\nContornos Ativos: ${document.getElementById('effEdge').checked}\nSplit Ativo: ${document.getElementById('effSplit').checked}\nDither Médio Ativo: ${document.getElementById('effMidDither').checked}\nImagem Invertida: ${isImageInverted}\nCores Manuais: ${hexColors.join(', ')}`;
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
             el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el);
         });
@@ -914,26 +1073,6 @@
             }
         }
 
-        function interpolatePalette(colors, targetCount) {
-            if(targetCount === colors.length) return colors;
-            if(targetCount === 1) return [colors[0]];
-            let result = [];
-            for(let i=0; i<targetCount; i++) {
-                let t = i / (targetCount - 1);
-                let scaledT = t * (colors.length - 1);
-                let idx1 = Math.floor(scaledT);
-                let idx2 = Math.min(idx1 + 1, colors.length - 1);
-                let frac = scaledT - idx1;
-                let c1 = colors[idx1], c2 = colors[idx2];
-                result.push({
-                    r: Math.round(c1.r + (c2.r - c1.r)*frac),
-                    g: Math.round(c1.g + (c2.g - c1.g)*frac),
-                    b: Math.round(c1.b + (c2.b - c1.b)*frac)
-                });
-            }
-            return result;
-        }
-
         function getMedianCut(pixels, count) {
             if(!pixels.length) return [{r:0,g:0,b:0, count:0}];
             let buckets = [pixels];
@@ -971,12 +1110,22 @@
             const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
             const passes = Math.ceil(uiGroupStrength / 5); 
             const ditherMode = document.getElementById('ditherSelect').value;
-            const mapMode = document.getElementById('mapSelect').value;
             
             const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
             const brBoost = parseInt(document.getElementById('brilho').value, 10);
             const shBoost = parseInt(document.getElementById('sombras').value, 10);
             const satBoost = parseInt(document.getElementById('saturacao').value, 10) / 100;
+            const contValue = parseInt(document.getElementById('contraste').value, 10);
+            const tempBoost = parseInt(document.getElementById('temperatura').value, 10);
+            
+            const dithScale = parseInt(document.getElementById('ditherScale').value, 10);
+            const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100;
+            
+            const isEdgeEnabled = document.getElementById('effEdge').checked;
+            const isSplitEnabled = document.getElementById('effSplit').checked;
+            const isMidDitherEnabled = document.getElementById('effMidDither').checked;
+
+            const contFactor = (259 * (contValue + 255)) / (255 * (259 - contValue));
 
             const origW = sourceImg.width;
             const origH = sourceImg.height;
@@ -991,6 +1140,12 @@
             sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
             let imgData = sCtx.getImageData(0, 0, smallW, smallH);
             let d = imgData.data;
+
+            let maxDim = Math.max(origW, origH);
+            let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
+            canvas.width = origW * displayScale; 
+            canvas.height = origH * displayScale;
+            ctx.imageSmoothingEnabled = false;
 
             const updateProgress = (pct) => {
                 progressFill.style.width = pct + '%';
@@ -1010,17 +1165,44 @@
                     
                     let r=d[i], g=d[i+1], b=d[i+2];
 
-                    r *= expBoost; g *= expBoost; b *= expBoost;
-                    r += brBoost; g += brBoost; b += brBoost;
+                    r = r * expBoost + brBoost;
+                    g = g * expBoost + brBoost;
+                    b = b * expBoost + brBoost;
+
+                    if (contValue !== 0) {
+                        r = contFactor * (r - 128) + 128;
+                        g = contFactor * (g - 128) + 128;
+                        b = contFactor * (b - 128) + 128;
+                    }
+
+                    if (tempBoost !== 0) {
+                        r += tempBoost; 
+                        b -= tempBoost; 
+                    }
+
+                    r = Math.max(0, Math.min(255, r));
+                    g = Math.max(0, Math.min(255, g));
+                    b = Math.max(0, Math.min(255, b));
+
+                    if (isImageInverted) {
+                        r = 255 - r;
+                        g = 255 - g;
+                        b = 255 - b;
+                    }
 
                     let luma = 0.3*r + 0.59*g + 0.11*b;
-                    if(shBoost !== 0 && luma < 128) {
+
+                    if (satBoost !== 0) {
+                        const satScale = 1 + satBoost;
+                        r = luma + (r - luma) * satScale;
+                        g = luma + (g - luma) * satScale;
+                        b = luma + (b - luma) * satScale;
+                    }
+
+                    if (shBoost !== 0 && luma < 128) {
                         let factor = (128 - luma)/128;
                         r += shBoost * factor; g += shBoost * factor; b += shBoost * factor;
                     }
-
-                    const satScale = 1 + satBoost;
-                    r = luma + (r - luma) * satScale; g = luma + (g - luma) * satScale; b = luma + (b - luma) * satScale;
 
                     d[i] = Math.min(255, Math.max(0, r));
                     d[i+1] = Math.min(255, Math.max(0, g));
@@ -1030,7 +1212,14 @@
                     if(fluma < minL) minL = fluma;
                     if(fluma > maxL) maxL = fluma;
                 }
-                if (y % chunkRows === 0) { updateProgress((y / smallH) * 15); await yieldToMain(); }
+                
+                if (y % chunkRows === 0) { 
+                    updateProgress((y / smallH) * 15); 
+                    sCtx.putImageData(imgData, 0, 0);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
+                    await yieldToMain(); 
+                }
             }
 
             if (passes > 0) {
@@ -1061,17 +1250,40 @@
                             }
                             dstData[idx] = sumR/count; dstData[idx+1] = sumG/count; dstData[idx+2] = sumB/count; dstData[idx+3] = srcData[idx+3];
                         }
-                        if (y % chunkRows === 0) { updateProgress(15 + 25 * ((p * smallH + y) / (passes * smallH))); await yieldToMain(); }
+                        
+                        if (y % chunkRows === 0) { 
+                            updateProgress(15 + 25 * ((p * smallH + y) / (passes * smallH))); 
+                            sCtx.putImageData(imgData, 0, 0);
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
+                            await yieldToMain(); 
+                        }
                     }
                     srcData.set(dstData);
                 }
                 d.set(dstData);
             }
+
+            let edgeMap = null;
+            if (isEdgeEnabled) {
+                edgeMap = new Uint8Array(smallW * smallH);
+                for (let y = 0; y < smallH - 1; y++) {
+                    for (let x = 0; x < smallW - 1; x++) {
+                        let idx = (y * smallW + x) * 4;
+                        let luma = 0.3*d[idx] + 0.59*d[idx+1] + 0.11*d[idx+2];
+                        let rLuma = 0.3*d[idx+4] + 0.59*d[idx+5] + 0.11*d[idx+6];
+                        let bLuma = 0.3*d[idx + smallW*4] + 0.59*d[idx + smallW*4 + 1] + 0.11*d[idx + smallW*4 + 2];
+
+                        if (Math.abs(luma - rLuma) > 20 || Math.abs(luma - bLuma) > 20) {
+                            edgeMap[y * smallW + x] = 1;
+                        }
+                    }
+                }
+            }
             
             updateProgress(40);
             await yieldToMain();
 
-            let activePalette = null;
             let targetColors = (cLimitStr === 'all') ? 256 : parseInt(cLimitStr, 10);
             const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
 
@@ -1096,15 +1308,7 @@
                 return finalPalette.map(x => x.col);
             };
 
-            if (currentPaletteMode === 'manual') {
-                let base = [];
-                for(let i=0; i<4; i++) base.push(hexToRgb(document.getElementById('cc'+i).value));
-                activePalette = interpolatePalette(base, targetColors);
-            } else if (currentPaletteMode === 'preset') {
-                activePalette = interpolatePalette(currentForcedPalette, targetColors);
-            } else if (currentPaletteMode === 'random') {
-                activePalette = currentForcedPalette; 
-            } else if (currentPaletteMode === 'original') {
+            if (currentPaletteMode === 'original') {
                 let pxs = [];
                 for(let i=0; i<d.length; i+=step) if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
                 
@@ -1117,43 +1321,29 @@
                         count: c.count,
                         luma: 0.3*c.r + 0.59*c.g + 0.11*c.b
                     }));
-                    activePalette = getBalancedPalette(mapped, targetColors);
+                    globalCurrentPalette = getBalancedPalette(mapped, targetColors);
                 } else {
-                    activePalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b}));
+                    globalCurrentPalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b}));
                 }
-            }
-            
-            if (activePalette && mapMode === 'luma') {
-                activePalette.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
+                
+                if (!isNavigatingHistory) {
+                    buildColorInputs(globalCurrentPalette);
+                }
             }
 
-            if (activePalette) {
-                if (currentPaletteMode !== 'manual') {
-                    let uiPalette = [];
-                    let sortedForUi = [...activePalette].sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
-                    
-                    if (sortedForUi.length <= 4) {
-                        uiPalette = [...sortedForUi];
-                        while(uiPalette.length < 4) uiPalette.push(uiPalette[uiPalette.length-1] || {r:0,g:0,b:0});
-                    } else {
-                        uiPalette.push(sortedForUi[0]);
-                        uiPalette.push(sortedForUi[Math.floor(sortedForUi.length / 3)]);
-                        uiPalette.push(sortedForUi[Math.floor(2 * sortedForUi.length / 3)]);
-                        uiPalette.push(sortedForUi[sortedForUi.length - 1]);
-                    }
-                    for(let i = 0; i < 4; i++) {
-                        let el = document.getElementById('cc' + i);
-                        if (el) el.value = rgbToHex(uiPalette[i].r, uiPalette[i].g, uiPalette[i].b);
-                    }
-                }
+            let enginePalette = [...globalCurrentPalette];
+            
+            let darkestColor = enginePalette[0];
+            let minLumaDark = 255;
+            for(let c of enginePalette) {
+                let lum = 0.3*c.r + 0.59*c.g + 0.11*c.b;
+                if(lum < minLumaDark) { minLumaDark = lum; darkestColor = c; }
             }
 
             updateProgress(45);
             await yieldToMain();
 
-            if (activePalette) {
-                const bayer8 = new Float32Array(64); for(let i=0; i<64; i++) bayer8[i] = (bayer8x8[i]/64) - 0.5;
-
+            if (enginePalette) {
                 const colorCache = new Map();
                 const findClosestColor = (r, g, b, palette) => {
                     const key = (r & 0xF8) << 10 | (g & 0xF8) << 5 | (b & 0xF8);
@@ -1164,7 +1354,8 @@
                     for(let i = 0; i < palette.length; i++) {
                         let c = palette[i];
                         let dr = r - c.r, dg = g - c.g, db = b - c.b;
-                        let dist = dr*dr + dg*dg + db*db;
+                        let dist = dr*dr + dg*dg + db*db; 
+                        
                         if(dist < minDist){ minDist = dist; closest = c; }
                     }
                     colorCache.set(key, closest);
@@ -1174,53 +1365,85 @@
                 for(let y=0; y<smallH; y++) {
                     if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
                     
-                    let yMod8 = (y % 8) * 8;
-                    let isEvenY = (y % 2 === 0);
+                    let sy = Math.floor(y / dithScale);
+                    let isEvenY = (sy % 2 === 0);
 
                     for(let x=0; x<smallW; x++) {
                         let i = (y*smallW + x) * 4;
                         if(d[i+3] < 127) continue;
                         let r=d[i], g=d[i+1], b=d[i+2];
 
+                        if (isEdgeEnabled && edgeMap[y * smallW + x] === 1) {
+                            d[i]=darkestColor.r; d[i+1]=darkestColor.g; d[i+2]=darkestColor.b;
+                            continue;
+                        }
+
+                        let pxLuma = 0.3*r + 0.59*g + 0.11*b;
+                        
+                        if (isSplitEnabled) {
+                            let norm = (pxLuma - minL) / (maxL - minL || 1);
+                            if (norm < 0.45) {
+                                r = 255 - r; g = 255 - g; b = 255 - b;
+                            }
+                        }
+
+                        let sx = Math.floor(x / dithScale);
                         let factor = 0;
-                        if(ditherMode === 'bayer8') factor = bayer8[yMod8 + (x % 8)];
+
+                        if (ditherMode === 'checkerboard') factor = ((sx + sy) % 2 === 0) ? -0.3 : 0.3;
+                        else if (ditherMode === 'diag-right') factor = ((sx + sy) % 4 === 0) ? -0.4 : 0.2;
+                        else if (ditherMode === 'diag-left') factor = ((sx - sy + 4) % 4 === 0) ? -0.4 : 0.2;
+                        else if (ditherMode === 'crosshatch') factor = (((sx + sy) % 4 === 0) || ((sx - sy + 4) % 4 === 0)) ? -0.4 : 0.2;
+                        else if (ditherMode === 'dots') {
+                            let dotSize = Math.max(1, Math.floor(dithScale / 3) + 1);
+                            let spacing = Math.max(2, dithScale);
+                            let nx = Math.floor(x / dotSize);
+                            let ny = Math.floor(y / dotSize);
+                            factor = ((nx % spacing === 0) && (ny % spacing === 0)) ? -0.5 : 0.1;
+                        }
+                        else if (ditherMode === 'halftone') factor = Math.sin(sx * 0.5) * Math.sin(sy * 0.5) * 0.4;
+                        else if (ditherMode === 'diamonds') {
+                            let cx = sx % 6;
+                            let cy = sy % 6;
+                            factor = (Math.abs(cx - 3) + Math.abs(cy - 3) < 3) ? -0.4 : 0.2;
+                        }
+                        else if (ditherMode === 'waves') factor = (Math.sin(sx * 0.5) + Math.cos(sy * 0.5)) * 0.25;
+                        else if (ditherMode === 'scanlines') factor = (sy % 3 === 0) ? -0.4 : 0.1;
+                        else if (ditherMode === 'maze') factor = ((sx * sy) % 3 === 0) ? -0.3 : 0.3;
                         else if (ditherMode === 'horizontal') factor = isEvenY ? -0.2 : 0.2;
-                        else if (ditherMode === 'vertical') factor = (x % 2 === 0) ? -0.2 : 0.2;
+                        else if (ditherMode === 'vertical') factor = (sx % 2 === 0) ? -0.2 : 0.2;
                         else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
 
-                        if (mapMode === 'luma') {
-                            let pxLuma = 0.3*r + 0.59*g + 0.11*b;
-                            if (factor !== 0) pxLuma += factor * 120;
+                        factor *= dithInt;
+
+                        if (isMidDitherEnabled) {
                             let norm = (pxLuma - minL) / (maxL - minL || 1);
-                            norm = Math.max(0, Math.min(1, norm));
-                            
-                            let pIdx = Math.floor(norm * activePalette.length);
-                            if(pIdx >= activePalette.length) pIdx = activePalette.length - 1;
-                            let closest = activePalette[pIdx];
-                            d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
-                        } else {
-                            if (factor !== 0) {
-                                let spread = 120;
-                                r = Math.max(0, Math.min(255, r + factor * spread));
-                                g = Math.max(0, Math.min(255, g + factor * spread));
-                                b = Math.max(0, Math.min(255, b + factor * spread));
-                            }
-                            let closest = findClosestColor(r, g, b, activePalette);
-                            d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                            if (norm < 0.25 || norm > 0.75) factor = 0;
                         }
+
+                        if (factor !== 0) {
+                            let spread = 120;
+                            r = Math.max(0, Math.min(255, r + factor * spread));
+                            g = Math.max(0, Math.min(255, g + factor * spread));
+                            b = Math.max(0, Math.min(255, b + factor * spread));
+                        }
+                        
+                        let closest = findClosestColor(r, g, b, enginePalette);
+                        d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
                     }
-                    if (y % chunkRows === 0) { updateProgress(45 + 55 * (y / smallH)); await yieldToMain(); }
+                    
+                    if (y % chunkRows === 0) { 
+                        updateProgress(45 + 55 * (y / smallH)); 
+                        sCtx.putImageData(imgData, 0, 0);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
+                        await yieldToMain(); 
+                    }
                 }
             }
 
             sCtx.putImageData(imgData, 0, 0);
-
-            let maxDim = Math.max(origW, origH);
-            let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
-            canvas.width = origW * displayScale; 
-            canvas.height = origH * displayScale;
-            
-            ctx.imageSmoothingEnabled = false; 
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
 
             updateProgress(100);
@@ -1232,10 +1455,15 @@
                     bri: document.getElementById('brilho').value,
                     som: document.getElementById('sombras').value,
                     sat: document.getElementById('saturacao').value,
-                    map: document.getElementById('mapSelect').value,
-                    cc: Array.from({ length: 4 }, (_, i) => document.getElementById('cc' + i).value),
-                    pal: currentForcedPalette ? [...currentForcedPalette] : null,
-                    palMode: currentPaletteMode
+                    cont: document.getElementById('contraste').value,
+                    temp: document.getElementById('temperatura').value,
+                    dScale: document.getElementById('ditherScale').value,
+                    dInt: document.getElementById('ditherIntensity').value,
+                    effEdge: document.getElementById('effEdge').checked,
+                    effSplit: document.getElementById('effSplit').checked,
+                    effMidDither: document.getElementById('effMidDither').checked,
+                    cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)),
+                    palMode: currentPaletteMode, inv: isImageInverted
                 };
                 
                 if (historyIndex === -1 || JSON.stringify(historyArr[historyIndex]) !== JSON.stringify(state)) {
