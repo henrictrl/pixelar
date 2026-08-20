@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixelar</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='2' y='2' width='10' height='10' fill='currentColor' stroke='currentColor' stroke-width='1'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='8' height='8' fill='%23000'/%3E%3Crect x='8' y='8' width='8' height='8' fill='%23000'/%3E%3C/svg%3E">
     
     <style>
         :root {
@@ -98,12 +98,13 @@
         h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
         .title-main svg rect { stroke: var(--text); }
         
-        details.setting-section {
+        .setting-section {
             border: 1px dashed var(--border-light);
             background: var(--panel);
             margin-bottom: 4px;
         }
-        details.setting-section[open] { background: var(--bg); }
+        details.setting-section[open], div.setting-section { background: var(--bg); }
+        div.setting-section { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
         
         summary {
             font-weight: bold; font-size: 0.85rem;
@@ -131,7 +132,27 @@
         .sec-content { padding: 8px; border-top: 1px dashed var(--border-light); display: flex; flex-direction: column; gap: 4px; }
         
         input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--text); }
-        input[type="checkbox"] { cursor: pointer; accent-color: var(--text); width: 16px; height: 16px; }
+        
+        .custom-checkbox {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            user-select: none; font-size: 0.8rem; color: var(--text);
+        }
+        .custom-checkbox input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+        .checkmark {
+            height: 14px; width: 14px; background-color: var(--bg);
+            border: 1px solid var(--border); display: flex;
+            justify-content: center; align-items: center; border-radius: 2px;
+            transition: background-color 0.1s, border-color 0.1s;
+        }
+        .custom-checkbox:hover input ~ .checkmark { background-color: var(--hover); }
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: var(--text); border-color: var(--text);
+        }
+        .custom-checkbox input:checked ~ .checkmark::after {
+            content: ""; display: block; width: 6px; height: 6px;
+            background: var(--bg); border-radius: 1px;
+        }
+
         select {
             width: 100%; cursor: pointer; border: 1px solid var(--border); font-family: monospace;
             background: var(--bg); color: var(--text); padding: 4px;
@@ -152,10 +173,39 @@
         .colors-grid::-webkit-scrollbar { width: 4px; }
         .colors-grid::-webkit-scrollbar-thumb { background: var(--border); }
         
-        .colors-grid input { 
+        .color-btn { 
             width: 100%; height: 32px; padding: 0; 
             border: 1px solid var(--border); cursor: pointer; 
-            appearance: none; -webkit-appearance: none; border-radius: 0; 
+            border-radius: 0; transition: outline 0.1s;
+        }
+        .color-btn:hover {
+            outline: 2px solid var(--text);
+            outline-offset: -2px;
+        }
+
+        #customColorPicker {
+            display: none; position: fixed; z-index: 10000;
+            background: var(--bg); border: 2px solid var(--border);
+            padding: 12px; width: 220px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.15);
+        }
+        [data-theme="dark"] #customColorPicker { box-shadow: 4px 4px 0px rgba(0,0,0,0.6); }
+        
+        #customColorPicker input[type="text"] {
+            width: 100%; background: var(--panel); border: 1px solid var(--border);
+            color: var(--text); padding: 4px; font-family: monospace;
+            text-transform: uppercase; text-align: center; font-size: 0.9rem;
+        }
+        
+        #cpNativeWrapper {
+            position: relative; width: 26px; height: 26px;
+            border: 1px solid var(--border); border-radius: 2px;
+            overflow: hidden; flex-shrink: 0; cursor: pointer;
+        }
+        #cpNativeWrapper input[type="color"] {
+            position: absolute; top: -10px; left: -10px;
+            width: 46px; height: 46px; cursor: pointer;
+            border: none; padding: 0; background: none;
         }
 
         .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
@@ -327,6 +377,37 @@
             </div>
         </details>
 
+        <div class="setting-section">
+            <label class="custom-checkbox">
+                <input type="checkbox" id="effEdge">
+                <span class="checkmark"></span>
+                <span>Traçar Contornos (Lineart)</span>
+            </label>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="effSplit">
+                <span class="checkmark"></span>
+                <span>Inverter Sombras (Split)</span>
+            </label>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="effMidDither">
+                <span class="checkmark"></span>
+                <span>Dither nos Tons Médios</span>
+            </label>
+            
+            <hr style="border:0; border-top:1px dashed var(--border-light); margin: 4px 0;">
+            
+            <div class="sub-label">Isolamento de Cor (Keying):</div>
+            <div style="display:flex; gap:4px; align-items: center;">
+                <div id="btnKeyColor" class="color-btn" data-color="#ff0000" style="width:40px; height:24px; background-color:#ff0000; border-radius:2px;"></div>
+                <input type="range" id="keyTol" min="0" max="255" value="60" style="flex:1;">
+            </div>
+            <label class="custom-checkbox">
+                <input type="checkbox" id="effColorKey">
+                <span class="checkmark"></span>
+                <span>Ativar Isolamento</span>
+            </label>
+        </div>
+
         <details open class="setting-section">
             <summary>
                 <div class="summary-title">Cores Manuais</div>
@@ -389,24 +470,15 @@
                 <input type="range" id="saturacao" min="-100" max="100" value="0">
                 <div class="sub-label">Sombras: <span id="somVal">0</span></div>
                 <input type="range" id="sombras" min="-100" max="100" value="0">
-            </div>
-        </details>
-
-        <details class="setting-section">
-            <summary><div class="summary-title">Efeitos Especiais</div></summary>
-            <div class="sec-content">
-                <label class="sub-label" style="cursor:pointer;">
-                    <span>Traçar Contornos (Lineart)</span>
-                    <input type="checkbox" id="effEdge">
+                
+                <hr style="border:0; border-top:1px dashed var(--border-light); margin: 4px 0;">
+                
+                <label class="custom-checkbox" style="margin-bottom:4px;">
+                    <input type="checkbox" id="fillBg">
+                    <span class="checkmark"></span>
+                    <span>Preencher Fundo (PNG)</span>
                 </label>
-                <label class="sub-label" style="cursor:pointer;">
-                    <span>Inverter Sombras (Split)</span>
-                    <input type="checkbox" id="effSplit">
-                </label>
-                <label class="sub-label" style="cursor:pointer;">
-                    <span>Dither nos Tons Médios</span>
-                    <input type="checkbox" id="effMidDither">
-                </label>
+                <div id="btnBgColor" class="color-btn" data-color="#ffffff" style="background-color:#ffffff; margin-bottom:4px; height: 24px; border-radius: 2px;"></div>
             </div>
         </details>
 
@@ -415,8 +487,9 @@
             <div class="sec-content">
                 <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;"></div>
                 <div style="display: flex; gap: 4px;">
-                    <button class="std-btn" id="btnSavePreset" style="flex: 1;">Salvar Atual</button>
+                    <button class="std-btn" id="btnSavePreset" style="flex: 1;">Salvar em Preset</button>
                     <button class="std-btn" id="btnDownloadTxt" style="flex: 1;">Baixar .TXT</button>
+                    <button class="std-btn" id="btnDownloadSVG" style="flex: 1;" title="Vetorização">SVG</button>
                 </div>
             </div>
         </details>
@@ -427,7 +500,7 @@
     <div id="view">
         <label id="welcomeMsg" for="imageUpload">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            Faça o upload de uma<br>imagem para começar
+            Faça o upload de uma imagem<br>para começar
         </label>
         <canvas id="outputCanvas"></canvas>
     </div>
@@ -461,6 +534,22 @@
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             <span>Baixar</span>
         </button>
+    </div>
+
+    <!-- Modal Seletor de Cores Customizado -->
+    <div id="customColorPicker">
+        <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
+            <b style="font-size:0.85rem;">Editar Cor</b>
+            <span id="closeColorPicker" style="cursor:pointer; font-weight:bold; font-size:1.1rem; line-height:1;">&times;</span>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:6px;">
+            <div id="cpNativeWrapper" title="Abrir paleta livre">
+                <input type="color" id="cpNative">
+            </div>
+            <span style="font-size:0.8rem; font-weight:bold;">HEX</span>
+            <input type="text" id="cpHex" maxlength="7" style="flex:1;">
+        </div>
     </div>
 
     <script>
@@ -539,21 +628,82 @@
             return "#" + (1 << 24 | Math.max(0, Math.min(255, r)) << 16 | Math.max(0, Math.min(255, g)) << 8 | Math.max(0, Math.min(255, b))).toString(16).slice(1).toUpperCase();
         }
 
+        let activeColorTarget = null;
+        let activeColorIndex = -1; 
+
+        function openColorPicker(targetEl, hex, index) {
+            activeColorTarget = targetEl;
+            activeColorIndex = index;
+            updateCpUi(hex);
+            
+            const picker = document.getElementById('customColorPicker');
+            picker.style.display = 'block';
+            
+            const rect = targetEl.getBoundingClientRect();
+            let top = rect.bottom + 5;
+            let left = rect.left;
+            
+            if (top + picker.offsetHeight > window.innerHeight) top = rect.top - picker.offsetHeight - 5;
+            if (left + picker.offsetWidth > window.innerWidth) left = window.innerWidth - picker.offsetWidth - 5;
+            
+            picker.style.top = top + 'px';
+            picker.style.left = left + 'px';
+        }
+
+        function updateCpUi(hex) {
+            document.getElementById('cpHex').value = hex;
+            document.getElementById('cpNative').value = hex; 
+        }
+
+        document.getElementById('cpHex').addEventListener('input', (e) => {
+            let hex = e.target.value;
+            if(/^#[0-9A-F]{6}$/i.test(hex)) {
+                updateCpUi(hex);
+                applyColorToTarget(hex);
+            }
+        });
+
+        document.getElementById('cpNative').addEventListener('input', (e) => {
+            let hex = e.target.value.toUpperCase();
+            updateCpUi(hex);
+            applyColorToTarget(hex);
+        });
+
+        function applyColorToTarget(hex) {
+            if(activeColorTarget) {
+                activeColorTarget.style.backgroundColor = hex;
+                activeColorTarget.setAttribute('data-color', hex);
+                if(activeColorIndex >= 0) {
+                    currentPaletteMode = 'manual';
+                    globalCurrentPalette[activeColorIndex] = hexToRgb(hex);
+                }
+                triggerProcess();
+            }
+        }
+
+        document.getElementById('closeColorPicker').addEventListener('click', () => {
+            document.getElementById('customColorPicker').style.display = 'none';
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            const picker = document.getElementById('customColorPicker');
+            if(picker.style.display === 'block' && !picker.contains(e.target) && !e.target.classList.contains('color-btn')) {
+                picker.style.display = 'none';
+            }
+        });
+
         function buildColorInputs(palette) {
             const grid = document.getElementById('colorsGrid');
             grid.innerHTML = '';
             let viewPal = palette.slice(0, 64);
             viewPal.forEach((color, i) => {
-                const inp = document.createElement('input');
-                inp.type = 'color';
-                inp.id = 'cc' + i;
-                inp.value = rgbToHex(color.r, color.g, color.b);
-                inp.addEventListener('input', () => {
-                    currentPaletteMode = 'manual';
-                    globalCurrentPalette[i] = hexToRgb(inp.value);
-                    triggerProcess();
-                });
-                grid.appendChild(inp);
+                const btn = document.createElement('div');
+                btn.className = 'color-btn';
+                let hex = rgbToHex(color.r, color.g, color.b);
+                btn.style.backgroundColor = hex;
+                btn.setAttribute('data-color', hex);
+                btn.addEventListener('click', () => openColorPicker(btn, btn.getAttribute('data-color'), i));
+                grid.appendChild(btn);
             });
         }
 
@@ -584,20 +734,30 @@
             }
         }
 
-        ['colorSelect', 'ditherSelect', 'effEdge', 'effSplit', 'effMidDither'].forEach(id => {
+        ['colorSelect', 'ditherSelect', 'effEdge', 'effSplit', 'effMidDither', 'effColorKey', 'keyTol', 'fillBg'].forEach(id => {
             const el = document.getElementById(id);
-            el.addEventListener('input', () => {
-                if (id === 'colorSelect') {
-                    let target = parseInt(el.value, 10);
-                    if (isNaN(target)) target = 256; 
-                    if (currentPaletteMode === 'random') randColorsGen(); 
-                    else if (currentPaletteMode === 'manual' || currentPaletteMode === 'preset') {
-                        globalCurrentPalette = interpolatePalette(globalCurrentPalette, target);
-                        buildColorInputs(globalCurrentPalette);
+            if(el) {
+                el.addEventListener('input', () => {
+                    if (id === 'colorSelect') {
+                        let target = parseInt(el.value, 10);
+                        if (isNaN(target)) target = 256; 
+                        if (currentPaletteMode === 'random') randColorsGen(); 
+                        else if (currentPaletteMode === 'manual' || currentPaletteMode === 'preset') {
+                            globalCurrentPalette = interpolatePalette(globalCurrentPalette, target);
+                            buildColorInputs(globalCurrentPalette);
+                        }
                     }
-                }
-                triggerProcess();
-            });
+                    triggerProcess();
+                });
+            }
+        });
+
+        document.getElementById('btnKeyColor').addEventListener('click', (e) => {
+            openColorPicker(e.target, e.target.getAttribute('data-color'), -2);
+        });
+
+        document.getElementById('btnBgColor').addEventListener('click', (e) => {
+            openColorPicker(e.target, e.target.getAttribute('data-color'), -3);
         });
 
         document.getElementById('btnResetAdjustments').addEventListener('click', (e) => {
@@ -627,16 +787,14 @@
             if(!file) return;
             document.getElementById('welcomeMsg').style.display = 'none';
             canvas.style.display = 'block';
-            
+
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const buffer = ev.target.result;
                 const bytes = new Uint8Array(buffer);
-
                 const tailOffset = Math.max(0, bytes.length - 3000);
                 const tailStr = new TextDecoder('utf-8', {fatal: false}).decode(bytes.slice(tailOffset));
                 const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/);
-                
                 let loadedState = null;
                 if(metaMatch) {
                     try { loadedState = JSON.parse(metaMatch[1]); } catch(err) { console.warn("Falha ao analisar os metadados da imagem."); }
@@ -644,22 +802,17 @@
 
                 const blob = new Blob([bytes], {type: file.type});
                 const url = URL.createObjectURL(blob);
-                
                 const img = new Image();
                 img.onload = () => {
                     sourceImg = img;
                     document.getElementById('btn-download').disabled = false;
-                    historyArr = []; 
-                    historyIndex = -1;
-                    isImageInverted = false;
+                    historyArr = []; historyIndex = -1; isImageInverted = false;
                     
-                    if (loadedState) {
-                        applyState(loadedState);
-                    } else {
+                    if (loadedState) applyState(loadedState);
+                    else {
                         if(!locks.groupStrength) document.getElementById('groupStrength').value = 0;
                         randomizeAll(true); 
                     }
-                    
                     URL.revokeObjectURL(url);
                 };
                 img.src = url;
@@ -669,22 +822,26 @@
 
         document.querySelectorAll('.preset-grid button[data-theme]').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const themeName = e.target.getAttribute('data-theme');
-                if (THEMES[themeName]) {
-                    isImageInverted = false;
-                    currentPaletteMode = 'preset';
-                    let targetColors = parseInt(document.getElementById('colorSelect').value, 10);
-                    if (isNaN(targetColors)) targetColors = 64;
-                    globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors);
-                    buildColorInputs(globalCurrentPalette);
+                if (!locks.colors) {
+                    const themeName = e.target.getAttribute('data-theme');
+                    if (THEMES[themeName]) {
+                        isImageInverted = false;
+                        currentPaletteMode = 'preset';
+                        let targetColors = parseInt(document.getElementById('colorSelect').value, 10);
+                        if (isNaN(targetColors)) targetColors = 64;
+                        globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors);
+                        buildColorInputs(globalCurrentPalette);
+                    }
                 }
                 triggerProcess();
             });
         });
 
         document.getElementById('btnOriginal').addEventListener('click', () => {
-            isImageInverted = false;
-            currentPaletteMode = 'original';
+            if (!locks.colors) {
+                isImageInverted = false;
+                currentPaletteMode = 'original';
+            }
             triggerProcess();
         });
 
@@ -707,9 +864,14 @@
             document.getElementById('effEdge').checked = false;
             document.getElementById('effSplit').checked = false;
             document.getElementById('effMidDither').checked = false;
+            document.getElementById('effColorKey').checked = false;
             
             updateLabels();
-            currentPaletteMode = 'original';
+            
+            if (!locks.colors) {
+                currentPaletteMode = 'original';
+            }
+            
             triggerProcess();
         });
 
@@ -855,30 +1017,46 @@
         }
 
         function applyState(p) {
-            document.getElementById('pxSize').value = p.px;
-            document.getElementById('colorSelect').value = p.col;
-            document.getElementById('ditherSelect').value = p.dith || "none";
-            document.getElementById('groupStrength').value = p.grp;
-            document.getElementById('exposicao').value = p.exp;
-            document.getElementById('brilho').value = p.bri;
-            document.getElementById('sombras').value = p.som;
-            document.getElementById('saturacao').value = p.sat;
-            document.getElementById('contraste').value = p.cont || 0;
-            document.getElementById('temperatura').value = p.temp || 0;
-            document.getElementById('ditherScale').value = p.dScale || 1;
+            if (!locks.pxSize && p.px !== undefined) document.getElementById('pxSize').value = p.px;
+            if (!locks.colorSelect && p.col !== undefined) document.getElementById('colorSelect').value = p.col;
+            if (!locks.ditherSelect && p.dith !== undefined) document.getElementById('ditherSelect').value = p.dith;
+            if (!locks.groupStrength && p.grp !== undefined) document.getElementById('groupStrength').value = p.grp;
+            
+            document.getElementById('exposicao').value = p.exp !== undefined ? p.exp : 0;
+            document.getElementById('brilho').value = p.bri !== undefined ? p.bri : 0;
+            document.getElementById('sombras').value = p.som !== undefined ? p.som : 0;
+            document.getElementById('saturacao').value = p.sat !== undefined ? p.sat : 0;
+            document.getElementById('contraste').value = p.cont !== undefined ? p.cont : 0;
+            document.getElementById('temperatura').value = p.temp !== undefined ? p.temp : 0;
+            document.getElementById('ditherScale').value = p.dScale !== undefined ? p.dScale : 1;
             document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100;
             
             document.getElementById('effEdge').checked = p.effEdge || false;
             document.getElementById('effSplit').checked = p.effSplit || false;
             document.getElementById('effMidDither').checked = p.effMidDither || false;
+            document.getElementById('effColorKey').checked = p.effColorKey || false;
+            
+            if(p.keyColor) {
+                document.getElementById('btnKeyColor').setAttribute('data-color', p.keyColor);
+                document.getElementById('btnKeyColor').style.backgroundColor = p.keyColor;
+            }
+            if(p.keyTol !== undefined) document.getElementById('keyTol').value = p.keyTol;
+            
+            document.getElementById('fillBg').checked = p.fillBg || false;
+            if(p.bgColor) {
+                document.getElementById('btnBgColor').setAttribute('data-color', p.bgColor);
+                document.getElementById('btnBgColor').style.backgroundColor = p.bgColor;
+            }
             
             updateLabels();
-            currentPaletteMode = p.palMode || 'manual';
-            isImageInverted = p.inv || false;
-            
-            if (p.cc && p.cc.length > 0) {
-                globalCurrentPalette = p.cc.map(hexToRgb);
-                buildColorInputs(globalCurrentPalette);
+
+            if (!locks.colors) {
+                currentPaletteMode = p.palMode || 'manual';
+                isImageInverted = p.inv || false;
+                if (p.cc && p.cc.length > 0) {
+                    globalCurrentPalette = p.cc.map(hexToRgb);
+                    buildColorInputs(globalCurrentPalette);
+                }
             }
             
             isNavigatingHistory = true;
@@ -906,8 +1084,7 @@
             
             const triggerDownload = (url) => {
                 const a = document.createElement('a'); a.href = url; a.download = fileName;
-                a.style.display = 'none'; a.target = '_blank';
-                document.body.appendChild(a);
+                a.style.display = 'none'; document.body.appendChild(a);
                 try { a.click(); } catch (error) { window.open(url, '_blank'); }
                 setTimeout(() => a.remove(), 1000);
             };
@@ -921,6 +1098,10 @@
                 dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value,
                 effEdge: document.getElementById('effEdge').checked, effSplit: document.getElementById('effSplit').checked,
                 effMidDither: document.getElementById('effMidDither').checked,
+                effColorKey: document.getElementById('effColorKey').checked, 
+                keyColor: document.getElementById('btnKeyColor').getAttribute('data-color'),
+                keyTol: document.getElementById('keyTol').value, fillBg: document.getElementById('fillBg').checked,
+                bgColor: document.getElementById('btnBgColor').getAttribute('data-color'),
                 cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)),
                 palMode: currentPaletteMode, inv: isImageInverted
             };
@@ -932,11 +1113,9 @@
                     const buffer = reader.result;
                     const metaStr = "PIXELAR_META:" + JSON.stringify(stateToSave);
                     const metaBytes = new TextEncoder().encode(metaStr);
-                    
                     const combined = new Uint8Array(buffer.byteLength + metaBytes.length);
                     combined.set(new Uint8Array(buffer), 0);
                     combined.set(metaBytes, buffer.byteLength);
-
                     const finalBlob = new Blob([combined], {type: 'image/png'});
                     const url = URL.createObjectURL(finalBlob);
                     triggerDownload(url);
@@ -945,11 +1124,55 @@
                 reader.readAsArrayBuffer(blob);
             };
 
-            if (canvas.toBlob) {
-                canvas.toBlob(embedMetadataAndDownload, 'image/png');
-            } else {
-                triggerDownload(canvas.toDataURL('image/png'));
+            if (canvas.toBlob) canvas.toBlob(embedMetadataAndDownload, 'image/png');
+            else triggerDownload(canvas.toDataURL('image/png'));
+        });
+
+        document.getElementById('btnDownloadSVG').addEventListener('click', () => {
+            if(!sourceImg || isProcessing) return;
+            const px = parseInt(document.getElementById('pxSize').value, 10);
+            const origW = sourceImg.width; const origH = sourceImg.height;
+            const smallW = Math.max(1, Math.floor(origW / px));
+            const smallH = Math.max(1, Math.floor(origH / px));
+            
+            const tmpCanvas = document.createElement('canvas');
+            tmpCanvas.width = canvas.width; tmpCanvas.height = canvas.height;
+            const tCtx = tmpCanvas.getContext('2d');
+            tCtx.drawImage(canvas, 0, 0);
+            
+            const smallCtx = document.createElement('canvas').getContext('2d');
+            smallCtx.canvas.width = smallW; smallCtx.canvas.height = smallH;
+            smallCtx.imageSmoothingEnabled = false;
+            smallCtx.drawImage(tmpCanvas, 0, 0, smallW, smallH);
+            
+            let sCtxData = smallCtx.getImageData(0,0,smallW,smallH).data;
+            let svg = `<?xml version="1.0" encoding="utf-8"?>\n<svg width="${smallW * px}" height="${smallH * px}" viewBox="0 0 ${smallW * px} ${smallH * px}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            for(let y=0; y<smallH; y++) {
+                let startX = 0; let curColor = '';
+                for(let x=0; x<=smallW; x++) {
+                    let idx = (y*smallW + x)*4;
+                    let hex = x < smallW ? rgbToHex(sCtxData[idx], sCtxData[idx+1], sCtxData[idx+2]) : null;
+                    let alpha = sCtxData[idx+3];
+                    
+                    if (alpha < 127) hex = null; 
+
+                    if (x === 0) { curColor = hex; continue; }
+                    if (hex !== curColor || x === smallW) {
+                        if (curColor !== null) {
+                            svg += `\n  <rect x="${startX * px}" y="${y * px}" width="${(x - startX) * px}" height="${px}" fill="${curColor}"/>`;
+                        }
+                        startX = x; curColor = hex;
+                    }
+                }
             }
+            svg += `\n</svg>`;
+            
+            const blob = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `pixelar_vetor_${Date.now()}.svg`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
         });
 
         function renderPresets() {
@@ -986,6 +1209,10 @@
                 dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value,
                 effEdge: document.getElementById('effEdge').checked, effSplit: document.getElementById('effSplit').checked,
                 effMidDither: document.getElementById('effMidDither').checked,
+                effColorKey: document.getElementById('effColorKey').checked, 
+                keyColor: document.getElementById('btnKeyColor').getAttribute('data-color'),
+                keyTol: document.getElementById('keyTol').value, fillBg: document.getElementById('fillBg').checked,
+                bgColor: document.getElementById('btnBgColor').getAttribute('data-color'),
                 cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)),
                 palMode: currentPaletteMode, inv: isImageInverted
             };
@@ -998,27 +1225,7 @@
         function loadPreset(name) {
             let p = savedPresets[name];
             if(!p) return;
-            document.getElementById('pxSize').value = p.px; document.getElementById('colorSelect').value = p.col;
-            document.getElementById('ditherSelect').value = p.dith || "none"; document.getElementById('groupStrength').value = p.grp;
-            document.getElementById('exposicao').value = p.exp || 0; document.getElementById('brilho').value = p.bri || 0;
-            document.getElementById('sombras').value = p.som || 0; document.getElementById('saturacao').value = p.sat || 0;
-            document.getElementById('contraste').value = p.cont || 0; document.getElementById('temperatura').value = p.temp || 0;
-            document.getElementById('ditherScale').value = p.dScale || 1;
-            document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100;
-            
-            document.getElementById('effEdge').checked = p.effEdge || false;
-            document.getElementById('effSplit').checked = p.effSplit || false;
-            document.getElementById('effMidDither').checked = p.effMidDither || false;
-            
-            updateLabels();
-            currentPaletteMode = p.palMode || 'manual';
-            isImageInverted = p.inv || false;
-
-            if(p.cc && p.cc.length > 0) { 
-                globalCurrentPalette = p.cc.map(hexToRgb);
-                buildColorInputs(globalCurrentPalette);
-            }
-            triggerProcess();
+            applyState(p);
         }
 
         document.getElementById('btnDownloadTxt').addEventListener('click', () => {
@@ -1026,7 +1233,7 @@
             let texturaText = document.getElementById('ditherSelect').options[document.getElementById('ditherSelect').selectedIndex].text;
             let hexColors = globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b));
             
-            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nEscala Textura: ${document.getElementById('ditherScale').value}\nIntensidade: ${document.getElementById('ditherIntensity').value}%\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nContraste: ${document.getElementById('contraste').value}\nTemperatura: ${document.getElementById('temperatura').value}\nContornos Ativos: ${document.getElementById('effEdge').checked}\nSplit Ativo: ${document.getElementById('effSplit').checked}\nDither Médio Ativo: ${document.getElementById('effMidDither').checked}\nImagem Invertida: ${isImageInverted}\nCores Manuais: ${hexColors.join(', ')}`;
+            let txt = `Tamanho do Pixel: ${document.getElementById('pxSize').value}\nCores / Bits: ${coresText}\nTextura: ${texturaText}\nEscala Textura: ${document.getElementById('ditherScale').value}\nIntensidade: ${document.getElementById('ditherIntensity').value}%\nAgrupar: ${document.getElementById('groupStrength').value}\nExposição: ${document.getElementById('exposicao').value}\nBrilho: ${document.getElementById('brilho').value}\nSombras: ${document.getElementById('sombras').value}\nSaturação: ${document.getElementById('saturacao').value}%\nContraste: ${document.getElementById('contraste').value}\nTemperatura: ${document.getElementById('temperatura').value}\nContornos Ativos: ${document.getElementById('effEdge').checked}\nSplit Ativo: ${document.getElementById('effSplit').checked}\nDither Médio Ativo: ${document.getElementById('effMidDither').checked}\nIsolamento Cor Ativo: ${document.getElementById('effColorKey').checked}\nPreencher Fundo: ${document.getElementById('fillBg').checked}\nImagem Invertida: ${isImageInverted}\nCores Manuais: ${hexColors.join(', ')}`;
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt));
             el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el);
         });
@@ -1124,6 +1331,13 @@
             const isEdgeEnabled = document.getElementById('effEdge').checked;
             const isSplitEnabled = document.getElementById('effSplit').checked;
             const isMidDitherEnabled = document.getElementById('effMidDither').checked;
+            
+            const isColorKeyEnabled = document.getElementById('effColorKey').checked;
+            const keyColorRgb = hexToRgb(document.getElementById('btnKeyColor').getAttribute('data-color'));
+            const keyTol = parseInt(document.getElementById('keyTol').value, 10);
+            
+            const isFillBgEnabled = document.getElementById('fillBg').checked;
+            const bgColorHex = hexToRgb(document.getElementById('btnBgColor').getAttribute('data-color'));
 
             const contFactor = (259 * (contValue + 255)) / (255 * (259 - contValue));
 
@@ -1140,6 +1354,7 @@
             sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
             let imgData = sCtx.getImageData(0, 0, smallW, smallH);
             let d = imgData.data;
+            const origData = new Uint8ClampedArray(d); 
 
             let maxDim = Math.max(origW, origH);
             let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
@@ -1156,12 +1371,20 @@
             let minL=255, maxL=0;
 
             for(let y=0; y<smallH; y++) {
-                if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                if(signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
                 for(let x=0; x<smallW; x++) {
                     let i = (y*smallW + x)*4;
                     
-                    if(d[i+3] < 127) { d[i] = 0; d[i+1] = 0; d[i+2] = 0; d[i+3] = 0; continue; }
-                    d[i+3] = 255; 
+                    if(d[i+3] < 127) { 
+                        if (isFillBgEnabled) {
+                            d[i] = bgColorHex.r; d[i+1] = bgColorHex.g; d[i+2] = bgColorHex.b; d[i+3] = 255;
+                        } else {
+                            d[i] = 0; d[i+1] = 0; d[i+2] = 0; d[i+3] = 0; 
+                            continue; 
+                        }
+                    } else {
+                        d[i+3] = 255; 
+                    }
                     
                     let r=d[i], g=d[i+1], b=d[i+2];
 
@@ -1227,7 +1450,7 @@
                 let dstData = new Uint8ClampedArray(d);
                 for(let p=0; p<passes; p++) {
                     for(let y=0; y<smallH; y++) {
-                        if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                        if(signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
                         for(let x=0; x<smallW; x++) {
                             let idx = (y*smallW + x)*4;
                             if(srcData[idx+3] === 0) { dstData[idx+3]=0; continue; }
@@ -1309,25 +1532,27 @@
             };
 
             if (currentPaletteMode === 'original') {
-                let pxs = [];
-                for(let i=0; i<d.length; i+=step) if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
-                
-                let baseCount = Math.max(targetColors, 16); 
-                let basePal = getMedianCut(pxs, baseCount);
-                
-                if (targetColors < baseCount) {
-                    let mapped = basePal.map(c => ({
-                        col: {r: c.r, g: c.g, b: c.b},
-                        count: c.count,
-                        luma: 0.3*c.r + 0.59*c.g + 0.11*c.b
-                    }));
-                    globalCurrentPalette = getBalancedPalette(mapped, targetColors);
-                } else {
-                    globalCurrentPalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b}));
-                }
-                
-                if (!isNavigatingHistory) {
-                    buildColorInputs(globalCurrentPalette);
+                if(globalCurrentPalette.length === 0) {
+                    let pxs = [];
+                    for(let i=0; i<d.length; i+=step) if(d[i+3] > 127) pxs.push({r:d[i], g:d[i+1], b:d[i+2]});
+                    
+                    let baseCount = Math.max(targetColors, 16); 
+                    let basePal = getMedianCut(pxs, baseCount);
+                    
+                    if (targetColors < baseCount) {
+                        let mapped = basePal.map(c => ({
+                            col: {r: c.r, g: c.g, b: c.b},
+                            count: c.count,
+                            luma: 0.3*c.r + 0.59*c.g + 0.11*c.b
+                        }));
+                        globalCurrentPalette = getBalancedPalette(mapped, targetColors);
+                    } else {
+                        globalCurrentPalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b}));
+                    }
+                    
+                    if (!isNavigatingHistory) {
+                        buildColorInputs(globalCurrentPalette);
+                    }
                 }
             }
 
@@ -1363,7 +1588,7 @@
                 };
 
                 for(let y=0; y<smallH; y++) {
-                    if(signal.aborted) throw new DOMException('Aborted', 'AbortError');
+                    if(signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
                     
                     let sy = Math.floor(y / dithScale);
                     let isEvenY = (sy % 2 === 0);
@@ -1371,6 +1596,17 @@
                     for(let x=0; x<smallW; x++) {
                         let i = (y*smallW + x) * 4;
                         if(d[i+3] < 127) continue;
+                        
+                        let origR = origData[i], origG = origData[i+1], origB = origData[i+2];
+
+                        if (isColorKeyEnabled) {
+                            let kDist = Math.abs(origR - keyColorRgb.r) + Math.abs(origG - keyColorRgb.g) + Math.abs(origB - keyColorRgb.b);
+                            if (kDist > keyTol) {
+                                d[i] = origR; d[i+1] = origG; d[i+2] = origB;
+                                continue;
+                            }
+                        }
+
                         let r=d[i], g=d[i+1], b=d[i+2];
 
                         if (isEdgeEnabled && edgeMap[y * smallW + x] === 1) {
@@ -1462,6 +1698,11 @@
                     effEdge: document.getElementById('effEdge').checked,
                     effSplit: document.getElementById('effSplit').checked,
                     effMidDither: document.getElementById('effMidDither').checked,
+                    effColorKey: document.getElementById('effColorKey').checked,
+                    keyColor: document.getElementById('btnKeyColor').getAttribute('data-color'),
+                    keyTol: document.getElementById('keyTol').value,
+                    fillBg: document.getElementById('fillBg').checked,
+                    bgColor: document.getElementById('btnBgColor').getAttribute('data-color'),
                     cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)),
                     palMode: currentPaletteMode, inv: isImageInverted
                 };
