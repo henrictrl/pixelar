@@ -191,6 +191,7 @@
 
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; }
+        input[type="color"]::-moz-color-swatch { border: none; padding: 0; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; padding-bottom: 60px; }
@@ -628,7 +629,6 @@
             return {h, s, l};
         }
 
-        // --- FUNÇÕES INSERIDAS PARA CORRIGIR O ERRO ---
         function hslToRgb(h, s, l) {
             let r, g, b;
             if (s === 0) {
@@ -672,14 +672,7 @@
             }
             return result;
         }
-        // ----------------------------------------------
 
-        const hiddenPalettePicker = document.createElement('input');
-        hiddenPalettePicker.type = 'color';
-        hiddenPalettePicker.style.position = 'absolute';
-        hiddenPalettePicker.style.opacity = '0';
-        hiddenPalettePicker.style.pointerEvents = 'none';
-        document.body.appendChild(hiddenPalettePicker);
         let activeColorIndex = -1;
 
         function setBasePalette(pal) {
@@ -690,26 +683,6 @@
             updateLabels();
             buildColorInputs(globalCurrentPalette);
         }
-
-        hiddenPalettePicker.addEventListener('change', (e) => {
-            if (activeColorIndex >= 0) {
-                currentPaletteMode = 'manual';
-                // Ao mexer em uma cor livre, salvamos os offsets atuais zerando os sliders
-                basePalette = clone(globalCurrentPalette);
-                document.getElementById('palHue').value = 0;
-                document.getElementById('palSat').value = 0;
-                document.getElementById('palLight').value = 0;
-                updateLabels();
-                
-                let newColor = hexToRgb(e.target.value);
-                basePalette[activeColorIndex] = newColor;
-                globalCurrentPalette[activeColorIndex] = newColor;
-                
-                buildColorInputs(globalCurrentPalette);
-                triggerProcess();
-                activeColorIndex = -1;
-            }
-        });
 
         const btnBgColor = document.getElementById('btnBgColor');
         const hexBgColor = document.getElementById('hexBgColor');
@@ -743,18 +716,35 @@
             const grid = document.getElementById('colorsGrid'); grid.innerHTML = '';
             let viewPal = palette.slice(0, 64);
             viewPal.forEach((color, i) => {
-                const btn = document.createElement('div'); btn.className = 'color-btn';
-                let hex = rgbToHex(color.r, color.g, color.b); btn.style.backgroundColor = hex; btn.setAttribute('data-color', hex);
-                btn.addEventListener('mouseenter', () => { if (activeColorIndex === -1) setHighlightColor(i); });
-                btn.addEventListener('mouseleave', () => { if (activeColorIndex === -1) clearHighlightColor(); });
+                const inp = document.createElement('input');
+                inp.type = 'color';
+                inp.className = 'color-btn';
+                let hex = rgbToHex(color.r, color.g, color.b);
+                inp.value = hex; 
                 
-                btn.addEventListener('click', (e) => { 
-                    e.stopPropagation(); 
-                    activeColorIndex = i;
-                    hiddenPalettePicker.value = btn.getAttribute('data-color');
-                    hiddenPalettePicker.click(); 
+                inp.addEventListener('mouseenter', () => { if (activeColorIndex === -1) setHighlightColor(i); });
+                inp.addEventListener('mouseleave', () => { if (activeColorIndex === -1) clearHighlightColor(); });
+                
+                inp.addEventListener('click', () => { activeColorIndex = i; });
+                inp.addEventListener('blur', () => { setTimeout(() => { activeColorIndex = -1; clearHighlightColor(); }, 200); });
+                
+                inp.addEventListener('change', (e) => {
+                    currentPaletteMode = 'manual';
+                    basePalette = clone(globalCurrentPalette);
+                    document.getElementById('palHue').value = 0;
+                    document.getElementById('palSat').value = 0;
+                    document.getElementById('palLight').value = 0;
+                    updateLabels();
+                    
+                    let newColor = hexToRgb(e.target.value);
+                    basePalette[i] = newColor;
+                    globalCurrentPalette[i] = newColor;
+                    
+                    buildColorInputs(globalCurrentPalette);
+                    triggerProcess();
+                    activeColorIndex = -1;
                 });
-                grid.appendChild(btn);
+                grid.appendChild(inp);
             });
         }
 
