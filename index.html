@@ -48,8 +48,12 @@
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 99999; border: none; padding: 0; margin: 0; background: #000;
         }
-        body.is-fullscreen canvas {
-            max-width: 95vw; max-height: 95vh; border: none; box-shadow: none; background: transparent;
+        body.is-fullscreen #canvas-wrapper {
+            max-width: 95vw; max-height: 95vh;
+        }
+        body.is-fullscreen #outputCanvas,
+        body.is-fullscreen #originalCanvas {
+            border: none; box-shadow: none; background: transparent;
         }
 
         #controls {
@@ -70,21 +74,64 @@
         }
         #welcomeMsg:hover { color: var(--text); }
 
-        canvas {
+        /* Novo layout para os canvas ficarem sobrepostos perfeitamente para o Antes/Depois */
+        #canvas-wrapper {
+            position: relative;
+            display: none;
+            max-width: 100%;
+            max-height: 100%;
+            touch-action: none;
+        }
+        #canvas-wrapper.comparing { cursor: ew-resize; }
+
+        #outputCanvas {
+            display: block;
             max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated;
             border: 1px solid var(--border); background-color: var(--bg);
             background-image: 
                 linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk)),
                 linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk));
-            background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none;
+            background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        #canvas-tools {
-            position: absolute; top: 15px; right: 15px; display: none; gap: 4px; background: var(--bg);
-            border: 1px solid var(--border); padding: 4px; border-radius: 4px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); z-index: 50;
+        #originalCanvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: contain; image-rendering: auto;
+            clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+            display: none;
         }
-        body.is-fullscreen #canvas-tools { background: rgba(0,0,0,0.5); border-color: #555; }
-        body.is-fullscreen #canvas-tools .tool-btn { color: #fff; }
+
+        #slider-line {
+            position: absolute;
+            top: 0; bottom: 0; left: 50%;
+            width: 2px; background: #fff;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+            z-index: 9; display: none; pointer-events: none;
+        }
+        #slider-line::after {
+            content: '↔';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg); color: var(--text);
+            border: 2px solid var(--border);
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            line-height: 1; padding-bottom: 2px;
+        }
+
+        /* Ferramentas do Canvas reposicionadas para a base e centralizadas */
+        #canvas-tools {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: none; gap: 8px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px);
+            border: 1px solid var(--border); padding: 6px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 50;
+        }
+        [data-theme="dark"] #canvas-tools { background: rgba(30, 30, 30, 0.85); border-color: #555; }
+        
+        body.is-fullscreen #canvas-tools { bottom: 20px; left: 50%; transform: translateX(-50%); }
 
         .title-area {
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
@@ -109,13 +156,13 @@
         .sec-tools { display: flex; gap: 4px; align-items: center; }
         
         .tool-btn {
-            background: transparent; border: 1px solid transparent; cursor: pointer; padding: 4px;
+            background: transparent; border: 1px solid transparent; cursor: pointer; padding: 6px;
             color: var(--text); border-radius: 4px; display: flex; align-items: center; justify-content: center;
         }
         .tool-btn:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--border); }
         .tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .tool-btn.locked { background: var(--text); color: var(--bg); border-color: var(--text); }
-        .tool-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; }
+        .tool-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; }
         .tool-btn:not(.locked) .icon-lock { display: none; }
         .tool-btn.locked .icon-unlock { display: none; }
 
@@ -467,6 +514,17 @@
     </div>
 
     <div id="view">
+        <label id="welcomeMsg" for="imageUpload">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Faça o upload de uma imagem<br>para começar
+        </label>
+        
+        <div id="canvas-wrapper">
+            <canvas id="outputCanvas"></canvas>
+            <canvas id="originalCanvas"></canvas>
+            <div id="slider-line"></div>
+        </div>
+
         <div id="canvas-tools">
             <button class="tool-btn" id="btn-undo-view" disabled title="Voltar">
                 <svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
@@ -474,16 +532,13 @@
             <button class="tool-btn" id="btn-redo-view" disabled title="Refazer">
                 <svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
+            <button class="tool-btn" id="btn-compare" disabled title="Comparar (Antes/Depois)">
+                <svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </button>
             <button class="tool-btn" id="btn-fs-view" title="Tela Cheia (Esc para Sair)">
                 <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
         </div>
-
-        <label id="welcomeMsg" for="imageUpload">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            Faça o upload de uma imagem<br>para começar
-        </label>
-        <canvas id="outputCanvas"></canvas>
     </div>
 
     <div id="floating-bar">
@@ -759,6 +814,7 @@
         setBasePalette(globalCurrentPalette);
 
         const canvas = document.getElementById('outputCanvas'); const ctx = canvas.getContext('2d');
+        const origCanvas = document.getElementById('originalCanvas'); const oCtx = origCanvas.getContext('2d');
         const progressFill = document.getElementById('floating-progress'); const progressText = document.getElementById('proc-text');
         const floatBtns = document.querySelectorAll('.float-btn');
 
@@ -848,10 +904,64 @@
             setBasePalette(globalCurrentPalette); triggerProcess();
         });
 
+        // Configuração do Slider de Comparação
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        const sliderLine = document.getElementById('slider-line');
+        const btnCompare = document.getElementById('btn-compare');
+        let isComparing = false;
+        let isDraggingSlider = false;
+
+        btnCompare.addEventListener('click', () => {
+            isComparing = !isComparing;
+            if (isComparing) {
+                btnCompare.classList.add('locked');
+                canvasWrapper.classList.add('comparing');
+                origCanvas.style.display = 'block';
+                sliderLine.style.display = 'block';
+                updateCompareSlider(50);
+            } else {
+                btnCompare.classList.remove('locked');
+                canvasWrapper.classList.remove('comparing');
+                origCanvas.style.display = 'none';
+                sliderLine.style.display = 'none';
+            }
+        });
+
+        canvasWrapper.addEventListener('pointerdown', (e) => {
+            if (!isComparing) return;
+            isDraggingSlider = true;
+            canvasWrapper.setPointerCapture(e.pointerId);
+            handleCompareDrag(e);
+        });
+
+        canvasWrapper.addEventListener('pointermove', (e) => {
+            if (!isDraggingSlider) return;
+            handleCompareDrag(e);
+        });
+
+        canvasWrapper.addEventListener('pointerup', (e) => {
+            isDraggingSlider = false;
+            canvasWrapper.releasePointerCapture(e.pointerId);
+        });
+
+        function handleCompareDrag(e) {
+            const rect = canvasWrapper.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            x = Math.max(0, Math.min(x, rect.width));
+            const pct = (x / rect.width) * 100;
+            updateCompareSlider(pct);
+        }
+
+        function updateCompareSlider(pct) {
+            origCanvas.style.clipPath = `polygon(0 0, ${pct}% 0, ${pct}% 100%, 0 100%)`;
+            sliderLine.style.left = `${pct}%`;
+        }
+
         const upload = document.getElementById('imageUpload');
         upload.addEventListener('change', (e) => {
             const file = e.target.files[0]; if(!file) return;
-            document.getElementById('welcomeMsg').style.display = 'none'; canvas.style.display = 'block';
+            document.getElementById('welcomeMsg').style.display = 'none'; 
+            canvasWrapper.style.display = 'flex';
             document.getElementById('canvas-tools').style.display = 'flex';
 
             const slice = file.slice(Math.max(0, file.size - 3000));
@@ -866,8 +976,20 @@
                 img.onload = () => {
                     sourceImg = img; lastEngineImageData = null;
                     document.getElementById('btn-download').disabled = false;
+                    document.getElementById('btn-compare').disabled = false;
                     historyArr = []; historyIndex = -1; isImageInverted = false;
                     
+                    // Reset do modo de comparação se estiver ativo
+                    if (isComparing) btnCompare.click();
+
+                    // Prepara a imagem original para ser desenhada sob a mesma escala
+                    let maxDim = Math.max(img.width, img.height); 
+                    let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
+                    origCanvas.width = img.width * displayScale;
+                    origCanvas.height = img.height * displayScale;
+                    oCtx.imageSmoothingEnabled = true;
+                    oCtx.drawImage(img, 0, 0, origCanvas.width, origCanvas.height);
+
                     if (loadedState) { applyState(loadedState); } 
                     else {
                         document.getElementById('pxSize').value = 8; document.getElementById('colorSelect').value = "all";
@@ -985,20 +1107,20 @@
             let qty = parseInt(document.getElementById('colorSelect').value, 10); if(isNaN(qty)) qty = 256; 
             currentPaletteMode = 'random';
             
-            // Avança pelo angulo de ouro no circulo cromatico (passeando pelo arcoiris)
+            // Avança pelo angulo de ouro no circulo cromatico
             window.lastRandomHue = (window.lastRandomHue + 0.381966) % 1;
             let baseHue = window.lastRandomHue;
             
             let anchors = [];
             let algo = Math.floor(Math.random() * 4);
             
-            if (algo === 0) { // Complementar vibrante
+            if (algo === 0) {
                 anchors = [hslToRgb(baseHue, 0.9, 0.2), hslToRgb(baseHue, 0.8, 0.8), hslToRgb((baseHue + 0.5)%1, 0.9, 0.3), hslToRgb((baseHue + 0.5)%1, 0.8, 0.8)];
-            } else if (algo === 1) { // Triade
+            } else if (algo === 1) {
                 anchors = [hslToRgb(baseHue, 0.9, 0.2), hslToRgb((baseHue + 0.33)%1, 0.8, 0.5), hslToRgb((baseHue + 0.66)%1, 0.8, 0.5), hslToRgb(baseHue, 0.1, 0.9)];
-            } else if (algo === 2) { // Monocromático / Degradê Forte
+            } else if (algo === 2) {
                 anchors = [hslToRgb(baseHue, 0.9, 0.1), hslToRgb(baseHue, 1.0, 0.3), hslToRgb(baseHue, 0.8, 0.6), hslToRgb(baseHue, 0.6, 0.8), hslToRgb(baseHue, 0.2, 0.95)];
-            } else { // Analogas / Adjacentes
+            } else {
                 let numAnchors = 3 + Math.floor(Math.random() * 4);
                 for(let i=0; i<numAnchors; i++) { anchors.push(hslToRgb((baseHue + i*0.08)%1, 0.7 + Math.random()*0.3, 0.1 + Math.random()*0.8)); }
                 anchors.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
