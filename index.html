@@ -389,6 +389,8 @@
             <div class="sec-content">
                 <select id="ditherSelect">
                     <option value="none">Sólido</option>
+                    <option value="bayer">Bayer (Ordenado)</option>
+                    <option value="nintendo_ds">Nintendo DS</option>
                     <option value="halftone">Meiotonagem</option>
                     <option value="xerox">Xerox</option>
                     <option value="linhas">Linhas</option>
@@ -493,10 +495,11 @@
         <details class="setting-section">
             <summary><div class="summary-title">Presets</div></summary>
             <div class="sec-content preset-grid">
+                <button class="std-btn" data-theme="Nintendo_DS">Nintendo DS</button>
+                <button class="std-btn" data-theme="GameBoy">GameBoy</button>
                 <button class="std-btn" data-theme="Nokia">Nokia</button>
                 <button class="std-btn" data-theme="Nintendo_VB">Nintendo VB</button>
                 <button class="std-btn" data-theme="PeB_Dither">P&B</button>
-                <button class="std-btn" data-theme="GameBoy">GameBoy</button>
                 <button class="std-btn" data-theme="VHS">VHS</button>
                 <button class="std-btn" data-theme="RaioX">Raio-X</button>
                 <button class="std-btn" data-theme="Termica">Térmica</button>
@@ -659,7 +662,8 @@
         let historyArr = []; let historyIndex = -1; let isNavigatingHistory = false;
 
         const THEMES = {
-            Nokia: ["#43523D", "#43523D", "#C7F0D8", "#C7F0D8"], Nintendo_VB: ["#000000", "#550000", "#AA0000", "#FF0000"],
+            Nintendo_DS: ["#050505", "#DFE4E8"], Nokia: ["#43523D", "#43523D", "#C7F0D8", "#C7F0D8"], 
+            Nintendo_VB: ["#000000", "#550000", "#AA0000", "#FF0000"],
             PeB_Dither: ["#000000", "#000000", "#FFFFFF", "#FFFFFF"], GameBoy: ["#0F380F", "#306230", "#8BAC0F", "#9BBC0F"],
             VHS: ["#1E1E1E", "#00FFFF", "#FF00FF", "#F0F8FF"], RaioX: ["#000000", "#1A2421", "#008B8B", "#80CBC4", "#FFFFFF"],
             Termica: ["#00008B", "#800080", "#FF0000", "#FFFF00", "#FFFFFF"], WindowsXP: ["#397A18", "#245DDA", "#689DF6", "#689DF6", "#ECECEC"]
@@ -914,7 +918,6 @@
             setBasePalette(globalCurrentPalette); triggerProcess();
         });
 
-        // Configuração do Slider de Comparação
         const canvasWrapper = document.getElementById('canvas-wrapper');
         const sliderLine = document.getElementById('slider-line');
         const btnCompare = document.getElementById('btn-compare');
@@ -967,7 +970,6 @@
             sliderLine.style.left = `${pct}%`;
         }
 
-        // Rotação de Imagem (90 graus horário)
         document.getElementById('btn-rotate').addEventListener('click', () => {
             if (!sourceImg) return;
             const tmpCanvas = document.createElement('canvas');
@@ -1073,8 +1075,26 @@
                     const themeName = e.target.getAttribute('data-theme');
                     if (THEMES[themeName]) {
                         isImageInverted = false; currentPaletteMode = 'preset';
+
+                        if (themeName === 'Nintendo_DS') {
+                            if (!locks.colorSelect) document.getElementById('colorSelect').value = "2";
+                            if (!locks.ditherSelect) {
+                                document.getElementById('ditherSelect').value = "nintendo_ds";
+                                document.getElementById('ditherScale').value = 1;
+                                document.getElementById('ditherIntensity').value = 100;
+                            }
+                            updateLabels();
+                        } else if (themeName === 'GameBoy') {
+                            if (!locks.colorSelect) document.getElementById('colorSelect').value = "4";
+                            if (!locks.ditherSelect) {
+                                document.getElementById('ditherSelect').value = "bayer";
+                                document.getElementById('ditherScale').value = 1;
+                            }
+                            updateLabels();
+                        }
+
                         let targetColors = parseInt(document.getElementById('colorSelect').value, 10);
-                        if (isNaN(targetColors)) { targetColors = 16; document.getElementById('colorSelect').value = "16"; }
+                        if (isNaN(targetColors)) { targetColors = THEMES[themeName].length; document.getElementById('colorSelect').value = targetColors; }
                         globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors); 
                         setBasePalette(globalCurrentPalette);
                     }
@@ -1141,7 +1161,7 @@
         function randPx() { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 10); updateLabels(); }
         function randGrp() { document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); updateLabels(); }
         function randDith() { 
-            const d = ["none", "xerox", "halftone", "linhas", "checkerboard", "dots", "diamonds", "waves", "scanlines", "maze", "noise"];
+            const d = ["none", "bayer", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "dots", "diamonds", "waves", "scanlines", "maze", "noise"];
             document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
         }
         function randColQty() { const c = ["2", "4", "8", "16", "32", "64"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; }
@@ -1455,6 +1475,13 @@
             canvas.width = origW * displayScale; canvas.height = origH * displayScale;
             ctx.imageSmoothingEnabled = false;
 
+            const bayerMatrix = [
+                [ 0,  8,  2, 10],
+                [12,  4, 14,  6],
+                [ 3, 11,  1,  9],
+                [15,  7, 13,  5]
+            ];
+
             const updateProgress = (pct) => { progressFill.style.width = pct + '%'; progressText.textContent = Math.floor(pct) + '%'; };
             const chunkRows = Math.max(4, Math.floor(smallH / 20)); let minL=255, maxL=0;
 
@@ -1651,6 +1678,14 @@
                         let cx = (Math.abs(rx) % size) - size / 2; let cy = (Math.abs(ry) % size) - size / 2;
                         let dist = Math.sqrt(cx * cx + cy * cy); let maxDist = size / 1.5;
                         factor = ((dist / maxDist) - 0.5) * 1.5;
+                    }
+                    else if (ditherMode === 'bayer') {
+                        factor = (bayerMatrix[sy % 4][sx % 4] / 15) - 0.5;
+                    }
+                    else if (ditherMode === 'nintendo_ds') {
+                        let bayer = (bayerMatrix[sy % 4][sx % 4] / 15) - 0.5;
+                        let lcd = (sx % 2 === 0) ? -0.25 : 0.25; 
+                        factor = (bayer * 0.7) + lcd;
                     }
                     else if (ditherMode === 'xerox') {
                         let rand = Math.random(); let noise = rand > 0.7 ? 0.7 : (rand < 0.3 ? -0.7 : (rand - 0.5) * 0.2);
