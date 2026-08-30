@@ -30,7 +30,7 @@
             transition: background-color 0.2s, color 0.2s;
         }
 
-        body.is-fullscreen #controls, body.is-fullscreen #mobile-header, body.is-fullscreen #desktop-tabs,
+        body.is-fullscreen #controls, body.is-fullscreen #mobile-header,
         body.is-fullscreen #floating-bar, body.is-fullscreen #top-bar,
         body.is-fullscreen #mobile-tab-bar, body.is-fullscreen #brush-panel, body.is-fullscreen #zoom-controls { display: none !important; }
         
@@ -38,70 +38,79 @@
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 99999; border: none; padding: 0; margin: 0; background: #000;
         }
-        body.is-fullscreen #canvas-wrapper { max-width: 95vw; max-height: 95vh; }
-        body.is-fullscreen #outputCanvas, body.is-fullscreen #originalCanvas { border: none; box-shadow: none; background: transparent; }
+        body.is-fullscreen #canvas-wrapper { max-width: 100vw; max-height: 100vh; }
         body.is-fullscreen #btn-exit-fullscreen { display: flex; }
 
         /* ================= DESKTOP SIDEBAR ================= */
         #controls {
-            width: 360px; min-width: 360px; height: 100%; overflow-y: auto; border-right: 2px solid var(--border);
-            padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); z-index: 10;
+            width: 440px; min-width: 440px; height: 100%; overflow: hidden; border-right: 2px solid var(--border);
+            padding: 15px; display: flex; flex-direction: column; background: var(--bg); z-index: 10;
         }
-        #controls::-webkit-scrollbar { width: 6px; }
-        #controls::-webkit-scrollbar-thumb { background: var(--border); }
-
-        .title-area { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 5px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+        .title-area { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
         .title-main { display: flex; align-items: center; gap: 10px; }
         .title-main svg rect { stroke: var(--text); }
         h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
         #mobile-header { display: none; }
 
-        /* Desktop Tabs */
-        #desktop-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 12px; border-bottom: 2px solid var(--border-light); }
-        .d-tab { flex: 1 1 calc(33% - 6px); background: var(--bg); border: 2px solid var(--border); padding: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: var(--accent); transition: all 0.2s; font-family: monospace; }
-        .d-tab.active { background: var(--text); color: var(--bg); }
-
-        .control-group { display: none; flex-direction: column; gap: 12px; }
-        .control-group.active { display: flex; }
+        /* Estrutura Lado a Lado Desktop */
+        .controls-layout { display: flex; flex-direction: row; height: calc(100vh - 80px); overflow: hidden; }
         
-        .m-sub-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+        /* Botões Laterais Principais (Desktop) */
+        #desktop-tabs { 
+            display: flex; flex-direction: column; width: 90px; flex-shrink: 0; gap: 8px; 
+            border-right: 2px solid var(--border-light); padding-right: 10px; margin-right: 10px; 
+            overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+        }
+        #desktop-tabs::-webkit-scrollbar { display: none; }
+        .d-tab { 
+            background: var(--bg); border: 2px solid var(--border); color: var(--accent);
+            cursor: pointer; padding: 12px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-family: monospace; font-size: 0.65rem; font-weight: bold; text-transform: uppercase;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1); text-align: center; height: 75px; flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .d-tab svg { width: 24px; height: 24px; margin-bottom: 6px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .d-tab.active { background: var(--text); color: var(--bg); border-color: var(--text); box-shadow: 2px 2px 0px rgba(0,0,0,0.3); transform: translate(-1px,-1px); }
+
+        /* Área de Scroll dos Painéis (Desktop) */
+        .panels-container { flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; display: flex; flex-direction: column; }
+        .panels-container::-webkit-scrollbar { width: 6px; }
+        .panels-container::-webkit-scrollbar-thumb { background: var(--border); }
+
+        .control-group { display: none; }
+        
+        /* Oculta navegação secundária no desktop e mostra todos os painéis */
+        @media (min-width: 769px) {
+            .control-group.active { display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; }
+            .m-sub-nav { display: none !important; }
+            .set-item { display: flex !important; }
+        }
+
+        /* Sub-Navegação (Usada Apenas no Mobile) */
+        .m-sub-nav { display: flex; gap: 8px; }
         .m-sub-btn {
             background: var(--bg); border: 2px solid var(--border); color: var(--accent);
-            cursor: pointer; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 1 1 calc(25% - 8px); transition: all 0.2s; font-family: monospace; font-size: 0.65rem; font-weight: bold; text-transform: uppercase;
-            box-shadow: 2px 2px 0px rgba(0,0,0,0.1); position: relative;
+            cursor: pointer; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.2s; font-family: monospace; font-size: 0.65rem; font-weight: bold; text-transform: uppercase;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1); position: relative; text-align: center;
         }
         .m-sub-btn svg { width: 22px; height: 22px; margin-bottom: 4px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .m-sub-btn.active { color: var(--text); border-color: var(--text); box-shadow: 2px 2px 0px rgba(0,0,0,0.3); transform: translate(-1px,-1px); }
-        
         .badge { position: absolute; top: 2px; right: 2px; background: var(--text); color: var(--bg); font-size: 0.7rem; font-weight: bold; padding: 2px 4px; display: none; line-height: 1; pointer-events: none; z-index: 2; }
 
-        .sec-content { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .set-item { display: none; flex-direction: column; gap: 10px; width: 100%; align-items: center; text-align: center; background: var(--panel); border: 2px solid var(--border); padding: 12px; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
-        .set-item.active { display: flex; }
+        .sec-content { display: flex; flex-direction: column; width: 100%; gap: 15px; }
+        .set-item { display: none; flex-direction: column; gap: 10px; width: 100%; align-items: center; text-align: center; background: var(--panel); border: 2px solid var(--border); padding: 15px; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
+        .panel-label { display: block; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--text); width: 100%; text-align: center; margin-bottom: 4px; border-bottom: 2px solid var(--border-light); padding-bottom: 6px; }
 
-        /* Sliders e Controles Quadrados */
+        /* Sliders e Inputs */
         .slider-row { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
         .slider-row svg.lbl-icon { width: 24px; height: 24px; stroke: var(--text); fill: none; flex-shrink: 0; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         
-        input[type="range"] {
-            -webkit-appearance: none; appearance: none; width: 100%; height: 36px;
-            background: var(--canvas-chk); border: 2px solid var(--border); outline: none; cursor: pointer; box-shadow: inset 2px 2px 0 rgba(0,0,0,0.1);
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none; width: 24px; height: 36px;
-            background: var(--text); border: 2px solid var(--bg); cursor: ew-resize; box-shadow: 2px 0px 0px rgba(0,0,0,0.3);
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 20px; height: 32px; background: var(--text); border: 2px solid var(--bg);
-            cursor: ew-resize; box-shadow: 2px 0px 0px rgba(0,0,0,0.3);
-        }
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 36px; background: var(--canvas-chk); border: 2px solid var(--border); outline: none; cursor: pointer; box-shadow: inset 2px 2px 0 rgba(0,0,0,0.1); }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 36px; background: var(--text); border: 2px solid var(--bg); cursor: ew-resize; box-shadow: 2px 0px 0px rgba(0,0,0,0.3); }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 32px; background: var(--text); border: 2px solid var(--bg); cursor: ew-resize; box-shadow: 2px 0px 0px rgba(0,0,0,0.3); }
 
-        .icon-btn {
-            width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-            background: var(--bg); border: 2px solid var(--border); color: var(--text); cursor: pointer;
-            box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s; padding: 0;
-        }
+        .icon-btn { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 2px solid var(--border); color: var(--text); cursor: pointer; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s; padding: 0; }
         .icon-btn:hover { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
         .icon-btn:active { transform: translate(0,0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
         .icon-btn.active-state { background: var(--text); color: var(--bg); }
@@ -119,10 +128,7 @@
 
         select { width: 100%; height: 36px; cursor: pointer; border: 2px solid var(--border); font-family: monospace; background: var(--bg); color: var(--text); padding: 0 8px; font-size: 0.85rem; font-weight: bold; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
 
-        .std-btn {
-            padding: 8px 10px; height: 36px; background: var(--bg); border: 2px solid var(--border); color: var(--text);
-            font-family: monospace; cursor: pointer; font-size: 0.9rem; font-weight: bold; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s; display: flex; align-items: center; justify-content: center;
-        }
+        .std-btn { padding: 8px 10px; height: 36px; background: var(--bg); border: 2px solid var(--border); color: var(--text); font-family: monospace; cursor: pointer; font-size: 0.9rem; font-weight: bold; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s; display: flex; align-items: center; justify-content: center; }
         .std-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
         .std-btn:active:not(:disabled) { transform: translate(0, 0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
         
@@ -133,20 +139,22 @@
         .color-btn:hover { transform: scale(1.05); outline: 2px solid var(--text); outline-offset: -2px; }
 
         /* ================= VIEW AREA ================= */
-        #view { flex: 1; display: flex; justify-content: center; align-items: center; background-color: var(--canvas-bg); padding: 15px; overflow: hidden; position: relative; }
+        /* Padding 0 para ocupar a tela de fora a fora */
+        #view { flex: 1; display: flex; justify-content: center; align-items: center; background-color: var(--canvas-bg); padding: 0; overflow: hidden; position: relative; }
         #welcomeMsg { position: absolute; text-align: center; font-size: 1.2rem; color: var(--accent); cursor: pointer; display: flex; flex-direction: column; gap: 12px; align-items: center; transition: color 0.2s; }
         #welcomeMsg:hover { color: var(--text); }
         
-        #canvas-wrapper { position: relative; display: none; width: 100%; height: 100%; max-height: calc(100% - 100px); touch-action: none; transition: transform 0.1s; transform-origin: center; }
+        #canvas-wrapper { position: relative; display: none; width: 100%; height: 100%; touch-action: none; transition: transform 0.1s; transform-origin: center; }
         #canvas-wrapper.comparing { cursor: ew-resize; }
         #canvas-wrapper.tool-move { cursor: move; }
         #canvas-wrapper.tool-erase, #canvas-wrapper.tool-restore { cursor: crosshair; }
 
+        /* Canvas sem bordas ou margens para preencher perfeitamente */
         #outputCanvas {
             display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated;
-            border: 2px solid var(--border); background-color: var(--bg);
+            border: none; background-color: transparent;
             background-image: linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk)), linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk));
-            background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+            background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: none;
         }
         #originalCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: auto; clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); display: none; }
         #slider-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.5); z-index: 9; display: none; pointer-events: none; }
@@ -183,19 +191,19 @@
 
         #mobile-tab-bar { display: none; }
 
-        /* ================= MOBILE UI (CASCATA VERTICAL INVERTIDA) ================= */
+        /* ================= MOBILE UI ================= */
         @media (max-width: 768px) {
             body { flex-direction: column; }
-            #desktop-tabs { display: none; }
             #controls .title-area { display: none; }
+            .controls-layout { display: block; height: auto; overflow: visible; }
+            #desktop-tabs { display: none; }
             
             #mobile-header {
                 display: flex; height: 50px; min-height: 50px; border-bottom: 2px solid var(--border);
                 align-items: center; justify-content: center; background: var(--bg); z-index: 100;
             }
 
-            /* View empurra o menu para baixo */
-            #view { order: 1; flex: 1; padding: 10px; border-bottom: 2px solid var(--border); }
+            #view { order: 1; flex: 1; padding: 0; border-bottom: 2px solid var(--border); }
             #canvas-wrapper { max-height: calc(100% - 70px); }
             
             #top-bar { top: 10px; width: max-content; max-width: 90%; flex-wrap: wrap; padding: 6px; }
@@ -203,29 +211,27 @@
             #zoom-controls { bottom: 65px; right: 10px; }
             #brush-panel { bottom: 65px; }
 
-            /* Controles ficam embaixo e constroem de baixo pra cima! */
+            /* Estrutura invertida do mobile */
             #controls { 
                 order: 2; height: auto; min-height: fit-content; max-height: 45vh; width: 100%; border-right: none; 
                 padding: 10px; padding-bottom: 75px; background: var(--panel); overflow-y: auto; overflow-x: hidden;
             }
-
-            /* Inverte a ordem no mobile: Tabs embaixo, Sliders acima */
-            .control-group { display: none; flex-direction: column-reverse; gap: 12px; }
-            .control-group.active { display: flex; }
+            .panels-container { overflow: visible; padding-right: 0; }
+            .control-group.active { display: flex; flex-direction: column-reverse; gap: 12px; padding-bottom: 0; }
             
-            /* Tabs Secundárias (Ficam sobre as primárias) */
+            /* Sub-Tabs (Horizontal) */
             .m-sub-nav { 
-                display: flex; gap: 8px; overflow-x: auto; padding-top: 12px; margin-bottom: 0;
+                display: flex !important; flex-direction: row; gap: 8px; overflow-x: auto; padding-top: 12px; margin-bottom: 0;
                 border-top: 2px solid var(--border-light); scrollbar-width: none; flex-wrap: nowrap;
             }
             .m-sub-nav::-webkit-scrollbar { display: none; }
-            .m-sub-btn { flex: 0 0 auto; min-width: 75px; height: 60px; padding: 6px; }
+            .m-sub-btn { flex: 0 0 auto; min-width: 75px; height: 60px; padding: 6px; width: auto; min-height: auto; }
 
-            /* Painel do Controle Específico (Fica no topo do bloco) */
-            .sec-content { padding: 0; }
-            .set-item { padding: 12px 10px; }
+            .sec-content { gap: 0; }
+            .set-item { display: none !important; padding: 12px 10px; }
+            .set-item.active { display: flex !important; }
 
-            /* TAB BAR INFERIOR - Fixa na base */
+            /* TAB BAR INFERIOR */
             #mobile-tab-bar {
                 display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 2px solid var(--border);
                 height: 65px; z-index: 9999; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding: 0 5px; justify-content: flex-start;
@@ -250,7 +256,7 @@
         </div>
     </div>
 
-    <!-- MAIN APP: DESKTOP & MOBILE MENU -->
+    <!-- MAIN APP -->
     <div id="controls">
         <div class="title-area">
             <div class="title-main">
@@ -259,258 +265,284 @@
             </div>
         </div>
 
-        <div id="desktop-tabs">
-            <button class="d-tab active" data-target="group-ajustes">Ajustes</button>
-            <button class="d-tab" data-target="group-pixel">Pixel</button>
-            <button class="d-tab" data-target="group-textura">Textura</button>
-            <button class="d-tab" data-target="group-formas">Formas</button>
-            <button class="d-tab" data-target="group-cores">Cores</button>
-            <button class="d-tab" data-target="group-sistema">Sistema</button>
-        </div>
+        <div class="controls-layout">
+            <!-- Barra Lateral Desktop -->
+            <div id="desktop-tabs">
+                <button class="d-tab active" data-target="group-ajustes">
+                    <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                    Ajustes
+                </button>
+                <button class="d-tab" data-target="group-pixel">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Pixel
+                </button>
+                <button class="d-tab" data-target="group-textura">
+                    <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                    Textura
+                </button>
+                <button class="d-tab" data-target="group-formas">
+                    <svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="6"/><rect x="9" y="9" width="12" height="12" rx="2"/></svg>
+                    Formas
+                </button>
+                <button class="d-tab" data-target="group-cores">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"/></svg>
+                    Cores
+                </button>
+                <button class="d-tab" data-target="group-sistema">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Sistema
+                </button>
+            </div>
 
-        <!-- GRUPO: AJUSTES -->
-        <div class="control-group active" id="group-ajustes">
-            <div class="m-sub-nav">
-                <button class="m-sub-btn" data-target="set-est"><span class="badge" id="bdg-est"></span><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><span>Estrutura</span></button>
-                <button class="m-sub-btn" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg><span>Exposição</span></button>
-                <button class="m-sub-btn" data-target="set-bri"><span class="badge" id="bdg-bri"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19M2 12h2M20 12h2M5 19l1.5-1.5M17.5 6.5L19 5"></path></svg><span>Brilho</span></button>
-                <button class="m-sub-btn" data-target="set-con"><span class="badge" id="bdg-con"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"></path></svg><span>Contraste</span></button>
-                <button class="m-sub-btn" data-target="set-tem"><span class="badge" id="bdg-tem"></span><svg viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg><span>Temperat.</span></button>
-                <button class="m-sub-btn" data-target="set-sat"><span class="badge" id="bdg-sat"></span><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><span>Saturação</span></button>
-                <button class="m-sub-btn" data-target="set-som"><span class="badge" id="bdg-som"></span><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg><span>Sombras</span></button>
-                <button class="m-sub-btn" data-target="set-pos"><span class="badge" id="bdg-pos"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg><span>Posterizar</span></button>
-                <button class="m-sub-btn" data-target="set-abe"><span class="badge" id="bdg-abe"></span><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"></circle><circle cx="14" cy="12" r="6"></circle></svg><span>Aberração</span></button>
-                <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
-            </div>
-            <div class="sec-content">
-                <div class="set-item" id="set-est"><div class="slider-row"><input type="range" id="estrutura" min="0" max="100" value="0"></div></div>
-                <div class="set-item" id="set-exp"><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-bri"><div class="slider-row"><input type="range" id="brilho" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-con"><div class="slider-row"><input type="range" id="contraste" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-tem"><div class="slider-row"><input type="range" id="temperatura" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-sat"><div class="slider-row"><input type="range" id="saturacao" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-som">
-                    <div class="slider-row">
-                        <input type="range" id="sombras" min="-100" max="100" value="0">
-                        <button id="btnInvertShadows" class="icon-btn" title="Inverter Sombras"><svg viewBox="0 0 24 24"><path d="M12 2v20a10 10 0 1 0 0-20z" fill="currentColor"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
-                    </div>
-                </div>
-                <div class="set-item" id="set-pos"><div class="slider-row"><input type="range" id="posterize" min="0" max="100" value="0"></div></div>
-                <div class="set-item" id="set-abe"><div class="slider-row"><input type="range" id="rgbShift" min="0" max="15" value="0"></div></div>
-            </div>
-        </div>
+            <!-- Área de Painéis -->
+            <div class="panels-container">
 
-        <!-- GRUPO: PIXEL -->
-        <div class="control-group" id="group-pixel">
-            <div class="m-sub-nav">
-                <button class="m-sub-btn" data-target="set-pxSize"><span class="badge" id="bdg-px"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Tamanho</span></button>
-                <button class="m-sub-btn" data-target="set-pxGroup"><span class="badge" id="bdg-grp"></span><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect></svg><span>Agrupar</span></button>
-            </div>
-            <div class="sec-content">
-                <div class="set-item" id="set-pxSize">
-                    <div class="slider-row">
-                        <input type="range" id="pxSize" min="1" max="64" value="1">
-                        <button class="icon-btn lock-btn" data-target="pxSize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
-                        <button class="icon-btn shuffle-btn" data-target="pxSize"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                <!-- GRUPO: AJUSTES -->
+                <div class="control-group active" id="group-ajustes">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-est"><span class="badge" id="bdg-est"></span><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><span>Estrutura</span></button>
+                        <button class="m-sub-btn" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg><span>Exposição</span></button>
+                        <button class="m-sub-btn" data-target="set-bri"><span class="badge" id="bdg-bri"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19M2 12h2M20 12h2M5 19l1.5-1.5M17.5 6.5L19 5"></path></svg><span>Brilho</span></button>
+                        <button class="m-sub-btn" data-target="set-con"><span class="badge" id="bdg-con"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"></path></svg><span>Contraste</span></button>
+                        <button class="m-sub-btn" data-target="set-tem"><span class="badge" id="bdg-tem"></span><svg viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg><span>Temperat.</span></button>
+                        <button class="m-sub-btn" data-target="set-sat"><span class="badge" id="bdg-sat"></span><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><span>Saturação</span></button>
+                        <button class="m-sub-btn" data-target="set-som"><span class="badge" id="bdg-som"></span><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg><span>Sombras</span></button>
+                        <button class="m-sub-btn" data-target="set-pos"><span class="badge" id="bdg-pos"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg><span>Posterizar</span></button>
+                        <button class="m-sub-btn" data-target="set-abe"><span class="badge" id="bdg-abe"></span><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"></circle><circle cx="14" cy="12" r="6"></circle></svg><span>Aberração</span></button>
+                        <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
+                    </div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-est"><div class="panel-label">Estrutura</div><div class="slider-row"><input type="range" id="estrutura" min="0" max="100" value="0"></div></div>
+                        <div class="set-item" id="set-exp"><div class="panel-label">Exposição</div><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"></div></div>
+                        <div class="set-item" id="set-bri"><div class="panel-label">Brilho</div><div class="slider-row"><input type="range" id="brilho" min="-100" max="100" value="0"></div></div>
+                        <div class="set-item" id="set-con"><div class="panel-label">Contraste</div><div class="slider-row"><input type="range" id="contraste" min="-100" max="100" value="0"></div></div>
+                        <div class="set-item" id="set-tem"><div class="panel-label">Temperatura</div><div class="slider-row"><input type="range" id="temperatura" min="-100" max="100" value="0"></div></div>
+                        <div class="set-item" id="set-sat"><div class="panel-label">Saturação</div><div class="slider-row"><input type="range" id="saturacao" min="-100" max="100" value="0"></div></div>
+                        <div class="set-item" id="set-som"><div class="panel-label">Sombras</div>
+                            <div class="slider-row">
+                                <input type="range" id="sombras" min="-100" max="100" value="0">
+                                <button id="btnInvertShadows" class="icon-btn" title="Inverter Sombras"><svg viewBox="0 0 24 24"><path d="M12 2v20a10 10 0 1 0 0-20z" fill="currentColor"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-pos"><div class="panel-label">Posterizar</div><div class="slider-row"><input type="range" id="posterize" min="0" max="100" value="0"></div></div>
+                        <div class="set-item" id="set-abe"><div class="panel-label">Aberração Cromática</div><div class="slider-row"><input type="range" id="rgbShift" min="0" max="15" value="0"></div></div>
                     </div>
                 </div>
-                <div class="set-item" id="set-pxGroup">
-                    <div class="slider-row">
-                        <input type="range" id="groupStrength" min="0" max="100" value="0">
-                        <button id="btnGroupMean" class="icon-btn active-state" title="Modo Média"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg></button>
-                        <button id="btnGroupMode" class="icon-btn" title="Modo Moda (Mais Frequente)"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="4" height="10" fill="currentColor"/><rect x="10" y="4" width="4" height="16" fill="currentColor"/><rect x="16" y="14" width="4" height="6" fill="currentColor"/></svg></button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- GRUPO: TEXTURA -->
-        <div class="control-group" id="group-textura">
-            <div class="m-sub-nav">
-                <button class="m-sub-btn" data-target="set-dithPat"><span class="badge" id="bdg-dPat"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg><span>Padrão</span></button>
-                <button class="m-sub-btn" data-target="set-dithSca"><span class="badge" id="bdg-dSca"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Escala</span></button>
-                <button class="m-sub-btn" data-target="set-dithInt"><span class="badge" id="bdg-dInt"></span><svg viewBox="0 0 24 24"><path d="M4 21v-4m0-4V3m8 18v-6m0-4V3m8 18v-8m0-4V3"></path></svg><span>Intensid.</span></button>
-                <button class="m-sub-btn" data-target="set-dithAng"><span class="badge" id="bdg-dAng"></span><svg viewBox="0 0 24 24"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><span>Ângulo</span></button>
-                <button class="m-sub-btn" data-target="set-dithOpa"><span class="badge" id="bdg-opa"></span><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Opacidade</span></button>
-                <button class="m-sub-btn" data-target="set-dithEdg"><span class="badge" id="bdg-edg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="8" y="8" width="8" height="8"></rect></svg><span>Contorno</span></button>
-                <button class="m-sub-btn reset-btn" data-target="ditherSelect"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
-            </div>
-            <div class="sec-content">
-                <div class="set-item" id="set-dithPat">
-                    <div class="slider-row">
-                        <select id="ditherSelect">
-                            <option value="none">Padrão Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
-                            <option value="xerox">Xerox Distorcido</option><option value="linhas">Linhas de Scan</option><option value="checkerboard">Xadrez</option>
-                            <option value="diamonds">Losangos</option><option value="waves">Ondas Circulares</option><option value="scanlines">TV Analógica</option>
-                            <option value="maze">Malha Labirinto</option><option value="noise">Ruído Aleatório</option>
-                        </select>
-                        <button id="btnEffMidDither" class="icon-btn" title="Suavizar Tons Médios"><svg viewBox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+                <!-- GRUPO: PIXEL -->
+                <div class="control-group" id="group-pixel">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-pxSize"><span class="badge" id="bdg-px"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Tamanho</span></button>
+                        <button class="m-sub-btn" data-target="set-pxGroup"><span class="badge" id="bdg-grp"></span><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect></svg><span>Agrupar</span></button>
+                    </div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-pxSize"><div class="panel-label">Tamanho do Pixel</div>
+                            <div class="slider-row">
+                                <input type="range" id="pxSize" min="1" max="64" value="1">
+                                <button class="icon-btn lock-btn" data-target="pxSize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                                <button class="icon-btn shuffle-btn" data-target="pxSize"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-pxGroup"><div class="panel-label">Nível de Agrupamento</div>
+                            <div class="slider-row">
+                                <input type="range" id="groupStrength" min="0" max="100" value="0">
+                                <button id="btnGroupMean" class="icon-btn active-state" title="Modo Média"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg></button>
+                                <button id="btnGroupMode" class="icon-btn" title="Modo Moda (Mais Frequente)"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="4" height="10" fill="currentColor"/><rect x="10" y="4" width="4" height="16" fill="currentColor"/><rect x="16" y="14" width="4" height="6" fill="currentColor"/></svg></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="set-item" id="set-dithSca"><div class="slider-row"><input type="range" id="ditherScale" min="1" max="10" value="1"></div></div>
-                <div class="set-item" id="set-dithInt"><div class="slider-row"><input type="range" id="ditherIntensity" min="0" max="200" value="100"></div></div>
-                <div class="set-item" id="set-dithAng"><div class="slider-row"><input type="range" id="texAngle" min="0" max="180" value="45"></div></div>
-                <div class="set-item" id="set-dithOpa">
-                    <div class="slider-row">
-                        <svg class="lbl-icon" viewBox="0 0 24 24" title="Textura"><rect x="4" y="4" width="16" height="16" fill="currentColor"/></svg>
-                        <input type="range" id="textureOpacity" min="0" max="100" value="100">
-                        <svg class="lbl-icon" viewBox="0 0 24 24" title="Contorno"><rect x="4" y="4" width="16" height="16" fill="none"/></svg>
-                        <input type="range" id="edgeOpacity" min="0" max="100" value="100">
-                    </div>
-                </div>
-                <div class="set-item" id="set-dithEdg">
-                    <div class="slider-row">
-                        <input type="range" id="edgePixelSize" min="0" max="15" value="0" title="Espessura do Contorno">
-                        <input type="color" id="edgeColor" class="icon-btn" value="#000000" title="Cor do Contorno">
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- GRUPO: FORMAS -->
-        <div class="control-group" id="group-formas">
-            <div class="m-sub-nav">
-                <button class="m-sub-btn" data-target="set-shpGen"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg><span>Lista</span></button>
-                <button class="m-sub-btn" data-target="set-shpGeo"><span class="badge" id="bdg-shPnt"></span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Formato</span></button>
-                <button class="m-sub-btn" data-target="set-shpSiz"><span class="badge" id="bdg-shSiz"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Tamanho</span></button>
-                <button class="m-sub-btn" data-target="set-shpCol"><span class="badge" id="bdg-shCol"></span><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Cores</span></button>
-                <button class="m-sub-btn" data-target="set-shpOpa"><span class="badge" id="bdg-shOpa"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg><span>Bordas</span></button>
-                <button class="m-sub-btn reset-btn" data-target="shapes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
-            </div>
-            <div class="sec-content">
-                <div class="set-item" id="set-shpGen">
-                    <div class="slider-row">
-                        <select id="shapeListSelector"></select>
-                        <button id="btnNewShape" class="icon-btn std-btn">+</button>
-                        <button id="btnDelShape" class="icon-btn std-btn">-</button>
+                <!-- GRUPO: TEXTURA -->
+                <div class="control-group" id="group-textura">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-dithPat"><span class="badge" id="bdg-dPat"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg><span>Padrão</span></button>
+                        <button class="m-sub-btn" data-target="set-dithSca"><span class="badge" id="bdg-dSca"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Escala</span></button>
+                        <button class="m-sub-btn" data-target="set-dithInt"><span class="badge" id="bdg-dInt"></span><svg viewBox="0 0 24 24"><path d="M4 21v-4m0-4V3m8 18v-6m0-4V3m8 18v-8m0-4V3"></path></svg><span>Intensid.</span></button>
+                        <button class="m-sub-btn" data-target="set-dithAng"><span class="badge" id="bdg-dAng"></span><svg viewBox="0 0 24 24"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><span>Ângulo</span></button>
+                        <button class="m-sub-btn" data-target="set-dithOpa"><span class="badge" id="bdg-opa"></span><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Opacidade</span></button>
+                        <button class="m-sub-btn" data-target="set-dithEdg"><span class="badge" id="bdg-edg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="8" y="8" width="8" height="8"></rect></svg><span>Contorno</span></button>
+                        <button class="m-sub-btn reset-btn" data-target="ditherSelect"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
-                    <label class="custom-checkbox"><input type="checkbox" id="shapeEnable"><span class="checkmark"></span><span>Habilitar Forma</span></label>
-                    <select id="shapeLayer" style="margin-top:8px;"><option value="front">Renderizar na Frente</option><option value="back">Renderizar Atrás</option></select>
-                </div>
-                <div class="set-item" id="set-shpGeo">
-                    <div class="slider-row"><select id="shapeType"><option value="star">Estrela</option><option value="polygon">Polígono Regular</option><option value="concave">Polígono Côncavo</option><option value="irregular">Forma Irregular</option><option value="complex">Forma Complexa</option><option value="circle">Círculo / Elipse</option></select></div>
-                    <button id="btn-regerar-irregular" class="std-btn" style="display:none; width:100%; margin-bottom:8px;">Regerar Variação</button>
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Lados"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><input type="range" id="shapePoints" min="3" max="20" value="5"></div>
-                </div>
-                <div class="set-item" id="set-shpSiz">
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Forma"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><input type="range" id="shapeScale" min="30" max="300" value="100"></div>
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Rotação"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><input type="range" id="shapeRotation" min="0" max="360" value="0"></div>
-                    <div id="shapeEllipseControls" style="display:none; flex-direction:column; gap:10px; width:100%;">
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Largura (X)"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="8 8 4 12 8 16"></polyline><polyline points="16 8 20 12 16 16"></polyline></svg><input type="range" id="shapeEllipseX" min="30" max="200" value="100"></div>
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Altura (Y)"><line x1="12" y1="4" x2="12" y2="20"></line><polyline points="8 8 12 4 16 8"></polyline><polyline points="8 16 12 20 16 16"></polyline></svg><input type="range" id="shapeEllipseY" min="30" max="200" value="100"></div>
-                    </div>
-                    <div style="border-top:2px solid var(--border-light); margin-top:8px; padding-top:12px; width:100%;">
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Foto Original"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><input type="range" id="imageScale" min="30" max="200" value="100"></div>
-                    </div>
-                </div>
-                <div class="set-item" id="set-shpCol">
-                    <div class="slider-row">
-                        <input type="color" id="shapeColorInput" class="icon-btn" value="#E5533D">
-                        <button class="std-btn icon-btn" id="shapeColorShuffle" style="flex:1;"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg> Sortear</button>
-                    </div>
-                    <label class="custom-checkbox" style="margin-top:8px;"><input type="checkbox" id="shapeGradient"><span class="checkmark"></span><span>Aplicar Degradê</span></label>
-                    <div id="shapeGradientControls" style="display:none; flex-direction:column; gap:10px; margin-top: 12px; border-top: 2px solid var(--border); padding-top: 12px; width:100%;">
-                        <div id="shapeGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
-                        <div class="slider-row"><button id="btnShapeGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnShapeGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
-                        <select id="shapeGradType" style="margin-bottom:8px;"><option value="linear">Linear</option><option value="radial">Radial</option></select>
-                        <div id="shapeGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="shapeGradAngle" min="0" max="360" value="90"></div>
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="shapeGradSteps" min="0" max="30" value="0"></div>
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Posição Central"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="10"></circle></svg><input type="range" id="shapeGradPos" min="0" max="100" value="50"></div>
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Suavidade"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input type="range" id="shapeGradSmooth" min="0" max="100" value="100"></div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-dithPat"><div class="panel-label">Padrão Dither</div>
+                            <div class="slider-row">
+                                <select id="ditherSelect">
+                                    <option value="none">Padrão Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
+                                    <option value="xerox">Xerox Distorcido</option><option value="linhas">Linhas de Scan</option><option value="checkerboard">Xadrez</option>
+                                    <option value="diamonds">Losangos</option><option value="waves">Ondas Circulares</option><option value="scanlines">TV Analógica</option>
+                                    <option value="maze">Malha Labirinto</option><option value="noise">Ruído Aleatório</option>
+                                </select>
+                                <button id="btnEffMidDither" class="icon-btn" title="Suavizar Tons Médios"><svg viewBox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-dithSca"><div class="panel-label">Escala Textura</div><div class="slider-row"><input type="range" id="ditherScale" min="1" max="10" value="1"></div></div>
+                        <div class="set-item" id="set-dithInt"><div class="panel-label">Intensidade Dither</div><div class="slider-row"><input type="range" id="ditherIntensity" min="0" max="200" value="100"></div></div>
+                        <div class="set-item" id="set-dithAng"><div class="panel-label">Ângulo Textura</div><div class="slider-row"><input type="range" id="texAngle" min="0" max="180" value="45"></div></div>
+                        <div class="set-item" id="set-dithOpa"><div class="panel-label">Opacidade Dither e Contorno</div>
+                            <div class="slider-row">
+                                <svg class="lbl-icon" viewBox="0 0 24 24" title="Textura"><rect x="4" y="4" width="16" height="16" fill="currentColor"/></svg>
+                                <input type="range" id="textureOpacity" min="0" max="100" value="100">
+                                <svg class="lbl-icon" viewBox="0 0 24 24" title="Contorno"><rect x="4" y="4" width="16" height="16" fill="none"/></svg>
+                                <input type="range" id="edgeOpacity" min="0" max="100" value="100">
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-dithEdg"><div class="panel-label">Edge / Contorno Extra</div>
+                            <div class="slider-row">
+                                <input type="range" id="edgePixelSize" min="0" max="15" value="0" title="Espessura do Contorno">
+                                <input type="color" id="edgeColor" class="icon-btn" value="#000000" title="Cor do Contorno">
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="set-item" id="set-shpOpa">
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Opacidade"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20"></path></svg><input type="range" id="shapeOpacity" min="0" max="100" value="100"></div>
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Vazamento Interno"><rect x="4" y="4" width="16" height="16" fill="none"></rect><rect x="8" y="8" width="8" height="8" fill="none"></rect></svg><input type="range" id="shapeStrokeWidth" min="0" max="150" value="0"></div>
-                    <label class="custom-checkbox" style="margin-top:8px;"><input type="checkbox" id="shapeFill" checked><span class="checkmark"></span><span>Preencher Fundo</span></label>
-                </div>
-            </div>
-        </div>
 
-        <!-- GRUPO: CORES -->
-        <div class="control-group" id="group-cores">
-            <div class="m-sub-nav">
-                <button class="m-sub-btn" data-target="set-corPal"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Paleta</span></button>
-                <button class="m-sub-btn" data-target="set-corAju"><span class="badge" id="bdg-corAju"></span><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg><span>Ajuste</span></button>
-                <button class="m-sub-btn" data-target="set-corDeg"><span class="badge" id="bdg-corDeg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="12" x2="21" y2="12"></line></svg><span>Degradê</span></button>
-                <button class="m-sub-btn" data-target="set-corSal"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Salvas</span></button>
-                <button class="m-sub-btn reset-btn" data-target="colors"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
-            </div>
-            <div class="sec-content">
-                <div class="set-item" id="set-corPal">
-                    <div class="slider-row">
-                        <select id="colorSelect">
-                            <option value="2">2 Cores</option><option value="3">3 Cores</option><option value="4">4 Cores</option><option value="6">6 Cores</option>
-                            <option value="8">8 Cores</option><option value="12">12 Cores</option><option value="16">16 Cores</option><option value="24">24 Cores</option>
-                            <option value="32">32 Cores</option><option value="48">48 Cores</option><option value="64">64 Cores</option><option value="128">128 Cores</option>
-                            <option value="256">256 Cores</option><option value="all" selected>Todas as Cores</option>
-                        </select>
-                        <button class="icon-btn lock-btn" data-target="colorSelect"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
-                        <button class="icon-btn shuffle-btn" data-target="colors"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
-                        <button class="icon-btn" id="btnInvert" title="Inverter Cores"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"/></svg></button>
+                <!-- GRUPO: FORMAS -->
+                <div class="control-group" id="group-formas">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-shpGen"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg><span>Lista</span></button>
+                        <button class="m-sub-btn" data-target="set-shpGeo"><span class="badge" id="bdg-shPnt"></span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Formato</span></button>
+                        <button class="m-sub-btn" data-target="set-shpSiz"><span class="badge" id="bdg-shSiz"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Tamanho</span></button>
+                        <button class="m-sub-btn" data-target="set-shpCol"><span class="badge" id="bdg-shCol"></span><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Cores</span></button>
+                        <button class="m-sub-btn" data-target="set-shpOpa"><span class="badge" id="bdg-shOpa"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg><span>Bordas</span></button>
+                        <button class="m-sub-btn reset-btn" data-target="shapes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
-                    <div id="colorsGrid" class="colors-grid" style="margin-top:8px;"></div>
-                </div>
-                <div class="set-item" id="set-corAju">
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Desvio Matiz"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input type="range" id="palHue" min="-180" max="180" value="0"></div>
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Saturação Global"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><input type="range" id="palSat" min="-100" max="100" value="0"></div>
-                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Luminosidade Global"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg><input type="range" id="palLight" min="-100" max="100" value="0"></div>
-                </div>
-                <div class="set-item" id="set-corDeg">
-                    <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar Degradê Global</span></label>
-                    <div id="imgGradientControls" style="display:none; flex-direction:column; gap:10px; margin-top: 12px; border-top: 2px solid var(--border); padding-top: 12px; width:100%;">
-                        <div id="imgGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
-                        <div class="slider-row"><button id="btnImgGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnImgGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
-                        <select id="imgGradType"><option value="linear">Linear</option><option value="radial">Radial</option></select>
-                        <div id="imgGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="imgGradAngle" min="0" max="360" value="90"></div>
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="imgGradSteps" min="0" max="30" value="0"></div>
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Posição Central"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="10"></circle></svg><input type="range" id="imgGradPos" min="0" max="100" value="50"></div>
-                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Suavidade"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input type="range" id="imgGradSmooth" min="0" max="100" value="100"></div>
-                        <select id="imgGradBlend"><option value="source-atop">Substituição</option><option value="multiply">Multiplicação</option><option value="overlay">Sobreposição</option><option value="screen">Clarear</option><option value="color">Apenas Cores</option></select>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-shpGen"><div class="panel-label">Gerenciar Formas</div>
+                            <div class="slider-row">
+                                <select id="shapeListSelector"></select>
+                                <button id="btnNewShape" class="icon-btn std-btn">+</button>
+                                <button id="btnDelShape" class="icon-btn std-btn">-</button>
+                            </div>
+                            <label class="custom-checkbox"><input type="checkbox" id="shapeEnable"><span class="checkmark"></span><span>Habilitar Forma</span></label>
+                            <select id="shapeLayer" style="margin-top:4px;"><option value="front">Renderizar na Frente</option><option value="back">Renderizar Atrás</option></select>
+                        </div>
+                        <div class="set-item" id="set-shpGeo"><div class="panel-label">Geometria da Forma</div>
+                            <div class="slider-row"><select id="shapeType"><option value="star">Estrela</option><option value="polygon">Polígono Regular</option><option value="concave">Polígono Côncavo</option><option value="irregular">Forma Irregular</option><option value="complex">Forma Complexa</option><option value="circle">Círculo / Elipse</option></select></div>
+                            <button id="btn-regerar-irregular" class="std-btn" style="display:none; width:100%;">Regerar Variação</button>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Lados"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><input type="range" id="shapePoints" min="3" max="20" value="5"></div>
+                        </div>
+                        <div class="set-item" id="set-shpSiz"><div class="panel-label">Dimensões e Proporção</div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Forma"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><input type="range" id="shapeScale" min="30" max="300" value="100"></div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Rotação"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><input type="range" id="shapeRotation" min="0" max="360" value="0"></div>
+                            <div id="shapeEllipseControls" style="display:none; flex-direction:column; gap:4px; width:100%;">
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Largura (X)"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="8 8 4 12 8 16"></polyline><polyline points="16 8 20 12 16 16"></polyline></svg><input type="range" id="shapeEllipseX" min="30" max="200" value="100"></div>
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Altura (Y)"><line x1="12" y1="4" x2="12" y2="20"></line><polyline points="8 8 12 4 16 8"></polyline><polyline points="8 16 12 20 16 16"></polyline></svg><input type="range" id="shapeEllipseY" min="30" max="200" value="100"></div>
+                            </div>
+                            <div style="border-top:1px solid var(--border-light); margin-top:4px; padding-top:6px; width:100%;">
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Foto Original"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><input type="range" id="imageScale" min="30" max="200" value="100"></div>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-shpCol"><div class="panel-label">Preenchimento da Forma</div>
+                            <div class="slider-row">
+                                <input type="color" id="shapeColorInput" class="icon-btn" value="#E5533D">
+                                <button class="std-btn icon-btn" id="shapeColorShuffle" style="flex:1;"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg> Sortear</button>
+                            </div>
+                            <label class="custom-checkbox" style="margin-top:4px;"><input type="checkbox" id="shapeGradient"><span class="checkmark"></span><span>Aplicar Degradê</span></label>
+                            <div id="shapeGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top: 6px; border-top: 1px solid var(--border-light); padding-top: 6px; width:100%;">
+                                <div id="shapeGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:4px; justify-content:center;"></div>
+                                <div class="slider-row"><button id="btnShapeGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnShapeGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
+                                <select id="shapeGradType" style="margin-bottom:4px;"><option value="linear">Linear</option><option value="radial">Radial</option></select>
+                                <div id="shapeGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="shapeGradAngle" min="0" max="360" value="90"></div>
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="shapeGradSteps" min="0" max="30" value="0"></div>
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Posição Central"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="10"></circle></svg><input type="range" id="shapeGradPos" min="0" max="100" value="50"></div>
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Suavidade"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input type="range" id="shapeGradSmooth" min="0" max="100" value="100"></div>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-shpOpa"><div class="panel-label">Bordas e Fundo da Forma</div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Opacidade"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20"></path></svg><input type="range" id="shapeOpacity" min="0" max="100" value="100"></div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Vazamento Interno"><rect x="4" y="4" width="16" height="16" fill="none"></rect><rect x="8" y="8" width="8" height="8" fill="none"></rect></svg><input type="range" id="shapeStrokeWidth" min="0" max="150" value="0"></div>
+                            <label class="custom-checkbox" style="margin-top:4px;"><input type="checkbox" id="shapeFill" checked><span class="checkmark"></span><span>Preencher Fundo</span></label>
+                        </div>
                     </div>
                 </div>
-                <div class="set-item" id="set-corSal">
-                    <div style="display:flex; gap:6px; margin-bottom:12px; width:100%;"><button class="std-btn" id="btnOriginal" style="flex:1;">Voltar Original</button><button class="std-btn" id="btnSavePalette" style="flex:1;">Salvar Atual</button></div>
-                    <div id="savedPalettesGrid" style="display:flex; flex-direction:column; gap:6px; width:100%;"></div>
-                </div>
-            </div>
-        </div>
 
-        <!-- GRUPO: OPCOES -->
-        <div class="control-group" id="group-sistema">
-            <div class="m-sub-nav">
-                <button class="m-sub-btn" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
-                <button class="m-sub-btn" data-target="set-opTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
-                <button class="m-sub-btn" data-target="set-opExp"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
-            </div>
-            <div class="sec-content">
-                <div class="set-item" id="set-opFun">
-                    <label class="custom-checkbox"><input type="checkbox" id="fillBg"><span class="checkmark"></span><span>Preencher Fundo</span></label>
-                    <div class="slider-row" style="margin-top:12px;">
-                        <input type="color" id="btnBgColor" class="icon-btn" value="#ffffff" data-color="#ffffff">
-                        <input type="text" id="hexBgColor" value="#FFFFFF" maxlength="7" style="flex:1; max-width:120px; background: var(--bg); border:2px solid var(--border); color: var(--text); padding:8px; font-family: monospace; font-weight: bold; text-align:center; height:36px;">
+                <!-- GRUPO: CORES -->
+                <div class="control-group" id="group-cores">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-corPal"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Paleta</span></button>
+                        <button class="m-sub-btn" data-target="set-corAju"><span class="badge" id="bdg-corAju"></span><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg><span>Ajuste</span></button>
+                        <button class="m-sub-btn" data-target="set-corDeg"><span class="badge" id="bdg-corDeg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="12" x2="21" y2="12"></line></svg><span>Degradê</span></button>
+                        <button class="m-sub-btn" data-target="set-corSal"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Salvas</span></button>
+                        <button class="m-sub-btn reset-btn" data-target="colors"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
+                    </div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-corPal"><div class="panel-label">Modo Paleta de Cores</div>
+                            <div class="slider-row">
+                                <select id="colorSelect">
+                                    <option value="2">2 Cores</option><option value="3">3 Cores</option><option value="4">4 Cores</option><option value="6">6 Cores</option>
+                                    <option value="8">8 Cores</option><option value="12">12 Cores</option><option value="16">16 Cores</option><option value="24">24 Cores</option>
+                                    <option value="32">32 Cores</option><option value="48">48 Cores</option><option value="64">64 Cores</option><option value="128">128 Cores</option>
+                                    <option value="256">256 Cores</option><option value="all" selected>Todas as Cores</option>
+                                </select>
+                                <button class="icon-btn lock-btn" data-target="colorSelect"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                                <button class="icon-btn shuffle-btn" data-target="colors"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                                <button class="icon-btn" id="btnInvert" title="Inverter Cores"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"/></svg></button>
+                            </div>
+                            <div id="colorsGrid" class="colors-grid" style="margin-top:6px;"></div>
+                        </div>
+                        <div class="set-item" id="set-corAju"><div class="panel-label">Ajuste Global de Cores</div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Desvio Matiz"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input type="range" id="palHue" min="-180" max="180" value="0"></div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Saturação Global"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><input type="range" id="palSat" min="-100" max="100" value="0"></div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Luminosidade Global"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg><input type="range" id="palLight" min="-100" max="100" value="0"></div>
+                        </div>
+                        <div class="set-item" id="set-corDeg"><div class="panel-label">Filtro Degradê Global</div>
+                            <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar Degradê Global</span></label>
+                            <div id="imgGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top: 6px; border-top: 1px solid var(--border-light); padding-top: 6px; width:100%;">
+                                <div id="imgGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:4px; justify-content:center;"></div>
+                                <div class="slider-row"><button id="btnImgGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnImgGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
+                                <select id="imgGradType"><option value="linear">Linear</option><option value="radial">Radial</option></select>
+                                <div id="imgGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="imgGradAngle" min="0" max="360" value="90"></div>
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="imgGradSteps" min="0" max="30" value="0"></div>
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Posição Central"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="10"></circle></svg><input type="range" id="imgGradPos" min="0" max="100" value="50"></div>
+                                <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Suavidade"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input type="range" id="imgGradSmooth" min="0" max="100" value="100"></div>
+                                <select id="imgGradBlend"><option value="source-atop">Substituição</option><option value="multiply">Multiplicação</option><option value="overlay">Sobreposição</option><option value="screen">Clarear</option><option value="color">Apenas Cores</option></select>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-corSal"><div class="panel-label">Paletas Salvas</div>
+                            <div style="display:flex; gap:6px; margin-bottom:8px; width:100%;"><button class="std-btn" id="btnOriginal" style="flex:1;">Voltar Original</button><button class="std-btn" id="btnSavePalette" style="flex:1;">Salvar Atual</button></div>
+                            <div id="savedPalettesGrid" style="display:flex; flex-direction:column; gap:6px; width:100%;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="set-item" id="set-opTem">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width:100%;">
-                        <button class="std-btn" data-theme="Nintendo_DS">Nintendo DS</button>
-                        <button class="std-btn" data-theme="GameBoy">GameBoy</button>
-                        <button class="std-btn" data-theme="Nokia">Nokia 3310</button>
-                        <button class="std-btn" data-theme="PeB_Dither">P&B Raiz</button>
-                        <button class="std-btn" data-theme="VHS">Fita VHS</button>
-                        <button class="std-btn" data-theme="RaioX">Raio-X</button>
-                        <button class="std-btn" data-theme="Termica">Câmera Térmica</button>
+
+                <!-- GRUPO: OPCOES -->
+                <div class="control-group" id="group-sistema">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
+                        <button class="m-sub-btn" data-target="set-opTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
+                        <button class="m-sub-btn" data-target="set-opExp"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
+                    </div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
+                            <label class="custom-checkbox"><input type="checkbox" id="fillBg"><span class="checkmark"></span><span>Preencher Fundo</span></label>
+                            <div class="slider-row" style="margin-top:6px;">
+                                <input type="color" id="btnBgColor" class="icon-btn" value="#ffffff" data-color="#ffffff">
+                                <input type="text" id="hexBgColor" value="#FFFFFF" maxlength="7" style="flex:1; max-width:120px; background: var(--bg); border:2px solid var(--border); color: var(--text); font-family: monospace; font-weight: bold; text-align:center;">
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-opTem"><div class="panel-label">Temas Prontos</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width:100%;">
+                                <button class="std-btn" data-theme="Nintendo_DS">Nintendo DS</button>
+                                <button class="std-btn" data-theme="GameBoy">GameBoy</button>
+                                <button class="std-btn" data-theme="Nokia">Nokia 3310</button>
+                                <button class="std-btn" data-theme="PeB_Dither">P&B Raiz</button>
+                                <button class="std-btn" data-theme="VHS">Fita VHS</button>
+                                <button class="std-btn" data-theme="RaioX">Raio-X</button>
+                                <button class="std-btn" data-theme="Termica">Câmera Térmica</button>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-opExp"><div class="panel-label">Exportar / Importar Config.</div>
+                            <label class="std-btn" style="text-align: center; display: block; margin-bottom: 4px; cursor: pointer; width:100%;">
+                                Importar Configuração
+                                <input type="file" id="importImgConfig" accept="image/png" style="display:none;">
+                            </label>
+                            <button class="std-btn" id="btnSavePreset" style="width: 100%; margin-bottom: 4px;">Salvar Ajuste Atual</button>
+                            <button class="std-btn" id="btnResetImage" style="width: 100%; margin-bottom: 12px;">Limpar e Restaurar Foto</button>
+                            <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 4px; width:100%;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="set-item" id="set-opExp">
-                    <label class="std-btn" style="text-align: center; display: block; margin-bottom: 8px; cursor: pointer; width:100%;">
-                        Importar Configuração
-                        <input type="file" id="importImgConfig" accept="image/png" style="display:none;">
-                    </label>
-                    <button class="std-btn" id="btnSavePreset" style="width: 100%; margin-bottom: 8px;">Salvar Ajuste Atual</button>
-                    <button class="std-btn" id="btnResetImage" style="width: 100%; margin-bottom: 16px;">Limpar e Restaurar Foto</button>
-                    <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 6px; width:100%;"></div>
-                </div>
+
             </div>
         </div>
     </div>
@@ -545,9 +577,8 @@
             <input type="range" id="brushSize" min="5" max="300" value="40" style="height: 24px;">
         </div>
 
-        <!-- Esta barra flutuante fica contida no topo do limite do #view, logo acima dos controles no mobile -->
         <div id="floating-bar">
-            <button class="float-btn active-tool" id="btn-tool-move" title="Mover"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M19 9l3 3-3 3M9 19l3 3 3-3M2 12h20M12 2v20"/></svg></button>
+            <button class="float-btn active-tool" id="btn-tool-move" title="Mover"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M19 9l3 3-3 3M9 19l3 3-3 3M2 12h20M12 2v20"/></svg></button>
             <button class="float-btn" id="btn-tool-erase" title="Borracha"><svg viewBox="0 0 24 24"><path d="M20 20H7L3 16C2.5 15.5 2.5 14.5 3 14L13 4C13.5 3.5 14.5 3.5 15 4L20 9C20.5 9.5 20.5 10.5 20 11L11 20H20V20Z"/></svg></button>
             <button class="float-btn" id="btn-tool-restore" title="Restaurar"><svg viewBox="0 0 24 24"><path d="M12 19L21.5 9.5C22.3 8.7 22.3 7.4 21.5 6.6L17.4 2.5C16.6 1.7 15.3 1.7 14.5 2.5L5 12L12 19ZM5 12L2 22L12 19"/></svg></button>
             <div style="width: 2px; background: var(--border); margin: 0 2px; align-self: stretch;"></div>
@@ -592,10 +623,7 @@
                 const targetId = tab.getAttribute('data-target');
                 const targetGroup = document.getElementById(targetId);
                 
-                if (tab.classList.contains('active')) {
-                    allTabs.forEach(t => t.classList.remove('active'));
-                    if(targetGroup) targetGroup.classList.remove('active');
-                } else {
+                if (!tab.classList.contains('active')) {
                     allTabs.forEach(t => t.classList.remove('active'));
                     document.querySelectorAll('.control-group').forEach(g => g.classList.remove('active'));
                     document.querySelectorAll(`[data-target="${targetId}"]`).forEach(t => t.classList.add('active'));
@@ -628,17 +656,50 @@
             });
         });
 
-        if (window.innerWidth <= 768) {
-            document.querySelectorAll('.control-group, .set-item').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.m-tab, .m-sub-btn').forEach(el => el.classList.remove('active'));
-        }
-
         // ======= SISTEMA DE ZOOM =======
         let currentZoom = 1; const zoomStep = 0.2; const canvasWrapper = document.getElementById('canvas-wrapper');
         function updateZoom() { canvasWrapper.style.transform = `scale(${currentZoom})`; }
         document.getElementById('btn-zoom-in').addEventListener('click', () => { currentZoom += zoomStep; updateZoom(); });
         document.getElementById('btn-zoom-out').addEventListener('click', () => { currentZoom = Math.max(0.2, currentZoom - zoomStep); updateZoom(); });
 
+        // ======= FUNÇÃO PARA AJUSTAR ZOOM INICIAL (PREENCHER A TELA) =======
+        function fitImageToView() {
+            if (!sourceImg || !canvas.width) return;
+        
+            const view = document.getElementById('view');
+            const wrapper = document.getElementById('canvas-wrapper');
+            
+            const style = getComputedStyle(view);
+            const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+            const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+            
+            let availableHeight = view.clientHeight - padY;
+            let availableWidth = view.clientWidth - padX;
+            
+            if (availableHeight < 50) availableHeight = 50; 
+            if (availableWidth < 50) availableWidth = 50;
+            
+            const imgAspect = sourceImg.width / sourceImg.height;
+            const targetContentH = Math.min(availableHeight, availableWidth / imgAspect);
+            
+            const wrapperW = wrapper.clientWidth;
+            const wrapperH = wrapper.clientHeight;
+            if (wrapperW === 0 || wrapperH === 0) return;
+            
+            const renderedCanvasH = Math.min(wrapperH, wrapperW / imgAspect);
+            const imageScaleVal = parseInt(document.getElementById('imageScale').value, 10) / 100;
+            const canvasPadding = 1; // Ajustado para preencher de fora a fora
+            const contentFraction = imageScaleVal / canvasPadding;
+            
+            const renderedContentH = renderedCanvasH * contentFraction;
+            if (renderedContentH <= 0) return;
+            
+            const newZoom = targetContentH / renderedContentH;
+            
+            currentZoom = Math.max(0.2, Math.min(5, newZoom));
+            updateZoom();
+        }
+        
         // ======= CÓDIGO DA FERRAMENTA =======
         const themeBtn = document.getElementById('btnThemeToggle'); const rootHtml = document.documentElement;
         const moonIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
@@ -738,7 +799,6 @@
             });
         }
 
-        // UPDATE BADGES OVERRIDE
         function updateBadgeSingle(id, val, def, f='') {
             const el = document.getElementById(id);
             if(el) { const v = parseFloat(val); if(v !== def && v !== 0 && !isNaN(v)) { el.textContent = v + f; el.style.display = 'block'; } else { el.style.display = 'none'; } }
@@ -782,7 +842,6 @@
         globalCurrentPalette = [hexToRgb('#2C2C2C'), hexToRgb('#D62828'), hexToRgb('#FFD166'), hexToRgb('#00C2A8')]; setBasePalette(globalCurrentPalette);
         const canvas = document.getElementById('outputCanvas'); const ctx = canvas.getContext('2d'); const origCanvas = document.getElementById('originalCanvas'); const oCtx = origCanvas.getContext('2d');
 
-        // Botoes Iconizados Extras
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleProcess(); });
         document.getElementById('btnGroupMean').addEventListener('click', (e) => { groupMethod = 'mean'; e.currentTarget.classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); scheduleProcess(); });
         document.getElementById('btnGroupMode').addEventListener('click', (e) => { groupMethod = 'mode'; e.currentTarget.classList.add('active-state'); document.getElementById('btnGroupMean').classList.remove('active-state'); scheduleProcess(); });
@@ -863,7 +922,7 @@
             if(!sourceImg || !eraserCanvas.width) return;
             const scaleX = canvas.width / rectOut.width; const scaleY = canvas.height / rectOut.height; const canvasX = (clientX - rectOut.left) * scaleX; const canvasY = (clientY - rectOut.top) * scaleY;
             const px = parseInt(document.getElementById('pxSize').value, 10) || 1; const origW = sourceImg.width; const origH = sourceImg.height; const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
-            const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1; const canvasPadding = 2; const baseCanvasW = smallW * px * displayScale * canvasPadding; const baseCanvasH = smallH * px * displayScale * canvasPadding;
+            const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1; const canvasPadding = 1; const baseCanvasW = smallW * px * displayScale * canvasPadding; const baseCanvasH = smallH * px * displayScale * canvasPadding;
             const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100; const imgW = (baseCanvasW / canvasPadding) * imageScale; const imgH = (baseCanvasH / canvasPadding) * imageScale;
             const imgX = (baseCanvasW - imgW) / 2; const imgY = (baseCanvasH - imgH) / 2;
             let ex = ((canvasX - imgX) / imgW) * eraserCanvas.width; let ey = ((canvasY - imgY) / imgH) * eraserCanvas.height;
@@ -894,7 +953,9 @@
                             if (loadedState) { applyState(loadedState); } else {
                                 document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0; groupMethod = "mean"; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; document.getElementById('edgePixelSize').value = 0;
                                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; updateBadges(); scheduleProcess(); 
-                            } e.target.value = '';
+                            } 
+                            fitImageToView();
+                            e.target.value = '';
                         }; img.src = url;
                     }; txtReader.readAsText(slice);
                 });
@@ -906,15 +967,15 @@
             img.onload = () => {
                 sourceImg = img; eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height); document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none'; document.getElementById('groupStrength').value = 0; groupMethod = 'mean'; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; document.getElementById('edgePixelSize').value = 0;
                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
-                updateBadges(); scheduleProcess();
+                updateBadges(); scheduleProcess(); fitImageToView();
             }; img.src = originalSourceUrl;
         });
 
-        document.getElementById('importImgConfig').addEventListener('change', (e) => { const file = e.target.files[0]; if(!file) return; if(!sourceImg) { alert("Faça upload de uma foto na área central primeiro."); return; } const slice = file.slice(Math.max(0, file.size - 3000)); const txtReader = new FileReader(); txtReader.onload = (eTxt) => { const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/); if(metaMatch) { try { applyState(JSON.parse(metaMatch[1])); } catch(err) { alert("Falha na leitura das configurações."); } } else { alert("A imagem enviada não possui dados salvos ou não foi gerada no Pixelar."); } e.target.value = ''; }; txtReader.readAsText(slice); });
+        document.getElementById('importImgConfig').addEventListener('change', (e) => { const file = e.target.files[0]; if(!file) return; if(!sourceImg) { alert("Faça upload de uma foto na área central primeiro."); return; } const slice = file.slice(Math.max(0, file.size - 3000)); const txtReader = new FileReader(); txtReader.onload = (eTxt) => { const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/); if(metaMatch) { try { applyState(JSON.parse(metaMatch[1])); fitImageToView(); } catch(err) { alert("Falha na leitura das configurações."); } } else { alert("A imagem enviada não possui dados salvos ou não foi gerada no Pixelar."); } e.target.value = ''; }; txtReader.readAsText(slice); });
 
-        document.getElementById('btn-fs-view').addEventListener('click', () => { document.body.classList.toggle('is-fullscreen'); });
-        document.getElementById('btn-exit-fullscreen').addEventListener('click', () => { document.body.classList.remove('is-fullscreen'); });
-        document.addEventListener('keydown', (e) => { if(e.key === "Escape" && document.body.classList.contains('is-fullscreen')) { document.body.classList.remove('is-fullscreen'); } });
+        document.getElementById('btn-fs-view').addEventListener('click', () => { document.body.classList.toggle('is-fullscreen'); setTimeout(fitImageToView, 300); });
+        document.getElementById('btn-exit-fullscreen').addEventListener('click', () => { document.body.classList.remove('is-fullscreen'); setTimeout(fitImageToView, 300); });
+        document.addEventListener('keydown', (e) => { if(e.key === "Escape" && document.body.classList.contains('is-fullscreen')) { document.body.classList.remove('is-fullscreen'); setTimeout(fitImageToView, 300); } });
 
         document.querySelectorAll('button[data-theme]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1293,7 +1354,10 @@
             if (rgbShift > 0) {
                 let shiftTemp = new Uint8ClampedArray(d);
                 for(let y=0; y<smallH; y++) { for(let x=0; x<smallW; x++) { let i = (y*smallW + x)*4; let rx = x + rgbShift; if (rx >= 0 && rx < smallW) { d[i] = shiftTemp[(y*smallW + rx)*4]; } let bx = x - rgbShift; if (bx >= 0 && bx < smallW) { d[i+2] = shiftTemp[(y*smallW + bx)*4 + 2]; } } }
-            } sCtx.putImageData(imgData, 0, 0); renderCanvas(true);
+            } 
+            sCtx.putImageData(imgData, 0, 0); 
+            renderCanvas(true);
+            fitImageToView();
         }
 
         function renderCanvas(saveState = false) {
@@ -1303,7 +1367,8 @@
             const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
             const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
             const texOpacity = parseInt(document.getElementById('textureOpacity').value, 10) / 100; const edgeOpacity = parseInt(document.getElementById('edgeOpacity').value, 10) / 100;
-            const canvasPadding = 2; const baseCanvasW = smallW * px * displayScale * canvasPadding; const baseCanvasH = smallH * px * displayScale * canvasPadding;
+            const canvasPadding = 1; // 1 = sem margem, imagem toca as bordas do canvas
+            const baseCanvasW = smallW * px * displayScale * canvasPadding; const baseCanvasH = smallH * px * displayScale * canvasPadding;
             
             canvas.width = baseCanvasW; canvas.height = baseCanvasH;
             const imgW = (baseCanvasW / canvasPadding) * imageScale; const imgH = (baseCanvasH / canvasPadding) * imageScale;
