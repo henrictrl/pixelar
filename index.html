@@ -7,25 +7,25 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='8' height='8' fill='%23000'/%3E%3Crect x='8' y='8' width='8' height='8' fill='%23000'/%3E%3C/svg%3E">
     <style>
         :root {
-            --bg: #fff; --text: #000;
-            --border: #000; --border-light: #ddd;
+            --bg: #fff; --text: #000; --panel: #fafafa;
+            --border: #000; --border-light: #000;
             --hover: #f0f0f0; --btn-hover: #ddd;
             --canvas-bg: #eee; --canvas-chk: #e0e0e0;
-            --accent: #666;
+            --accent: #555;
         }
 
         [data-theme="dark"] {
-            --bg: #121212; --text: #eaeaea;
-            --border: #444; --border-light: #2a2a2a;
+            --bg: #121212; --text: #eaeaea; --panel: #1a1a1a;
+            --border: #444; --border-light: #333;
             --hover: #222; --btn-hover: #333;
             --canvas-bg: #0a0a0a; --canvas-chk: #1c1c1c;
-            --accent: #999;
+            --accent: #aaa;
         }
 
-        * { box-sizing: border-box; border-radius: 0 !important; margin: 0; padding: 0; }
+        * { box-sizing: border-box; border-radius: 0 !important; }
 
         body {
-            font-family: monospace; background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 0; font-family: monospace; background-color: var(--bg); color: var(--text);
             display: flex; flex-direction: row; height: 100vh; overflow: hidden;
             transition: background-color 0.2s, color 0.2s;
         }
@@ -36,112 +36,182 @@
         
         body.is-fullscreen #view {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 99999; border: none; background: #000; padding: 0 !important;
+            z-index: 99999; border: none; padding: 0; margin: 0; background: #000;
         }
-        body.is-fullscreen #canvas-wrapper { max-width: 95vw; max-height: 95vh; margin: auto; }
+        body.is-fullscreen #canvas-wrapper { max-width: 95vw; max-height: 95vh; }
         body.is-fullscreen #outputCanvas, body.is-fullscreen #originalCanvas { border: none; box-shadow: none; background: transparent; }
         body.is-fullscreen #btn-exit-fullscreen { display: flex; }
 
-        /* ================= LIGHTROOM-STYLE SIDEBAR ================= */
+        /* ================= DESKTOP SIDEBAR ================= */
         #controls {
-            width: 320px; min-width: 320px; height: 100%; overflow-y: auto; border-right: 1px solid var(--border-light);
-            display: flex; flex-direction: column; background: var(--bg); z-index: 10;
+            width: 360px; min-width: 360px; height: 100%; overflow-y: auto; border-right: 2px solid var(--border);
+            padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); z-index: 10;
         }
-        #controls::-webkit-scrollbar { width: 4px; }
-        #controls::-webkit-scrollbar-thumb { background: var(--border-light); }
+        #controls::-webkit-scrollbar { width: 6px; }
+        #controls::-webkit-scrollbar-thumb { background: var(--border); }
 
-        .title-area { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border-light); }
-        .title-main { display: flex; align-items: center; gap: 8px; }
+        .title-area { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 5px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+        .title-main { display: flex; align-items: center; gap: 10px; }
         .title-main svg rect { stroke: var(--text); }
-        h1 { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
+        h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
         #mobile-header { display: none; }
 
-        /* Desktop Tabs */
-        #desktop-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border-light); }
-        .d-tab { flex: 1 1 33.33%; background: var(--bg); border: none; border-bottom: 2px solid transparent; padding: 10px 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.65rem; color: var(--accent); transition: all 0.2s; font-family: monospace; }
-        .d-tab:hover { color: var(--text); }
-        .d-tab.active { color: var(--text); border-bottom-color: var(--text); }
+        /* Desktop Tabs (Oculto via Media Query no Desktop, usado no fluxo padrão) */
+        #desktop-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 12px; border-bottom: 2px solid var(--border-light); }
+        .d-tab { flex: 1 1 calc(33% - 6px); background: var(--bg); border: 2px solid var(--border); padding: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: var(--accent); transition: all 0.2s; font-family: monospace; }
+        .d-tab.active { background: var(--text); color: var(--bg); }
 
-        .control-group { display: none; flex-direction: column; padding: 4px; }
+        .control-group { display: none; flex-direction: column; gap: 12px; }
         .control-group.active { display: flex; }
-
-        /* Accordion Panels */
-        .panel { border-bottom: 1px solid var(--border-light); margin-bottom: 2px; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 6px; cursor: pointer; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; user-select: none; transition: background 0.1s; }
-        .panel-header:hover { background: var(--hover); }
-        .panel-header-title { display: flex; align-items: center; gap: 6px; }
-        .chevron { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform 0.2s; }
-        .panel.collapsed .chevron { transform: rotate(-90deg); }
-        .panel.collapsed .panel-body { display: none; }
-        .panel-body { display: flex; flex-direction: column; gap: 10px; padding: 6px 6px 12px 6px; }
-
-        .badge { background: var(--text); color: var(--bg); font-size: 0.6rem; padding: 1px 4px; font-weight: normal; display: none; line-height: 1; pointer-events: none; }
         
-        .lbl-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+        .m-sub-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+        .m-sub-btn {
+            background: var(--bg); border: 2px solid var(--border); color: var(--accent);
+            cursor: pointer; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex: 1 1 calc(25% - 8px); transition: all 0.2s; font-family: monospace; font-size: 0.65rem; font-weight: bold; text-transform: uppercase;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1); position: relative;
+        }
+        .m-sub-btn svg { width: 22px; height: 22px; margin-bottom: 4px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .m-sub-btn.active { color: var(--text); border-color: var(--text); box-shadow: 2px 2px 0px rgba(0,0,0,0.3); transform: translate(-1px,-1px); }
+        
+        .badge { position: absolute; top: 2px; right: 2px; background: var(--text); color: var(--bg); font-size: 0.7rem; font-weight: bold; padding: 2px 4px; display: none; line-height: 1; pointer-events: none; z-index: 2; }
 
-        /* Sliders e Controles */
-        .slider-wrapper { display: flex; flex-direction: column; width: 100%; }
-        .slider-row { display: flex; align-items: center; gap: 6px; width: 100%; }
+        .sec-content { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .set-item { display: none; flex-direction: column; gap: 10px; width: 100%; align-items: center; text-align: center; background: var(--panel); border: 2px solid var(--border); padding: 12px; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
+        .set-item.active { display: flex; }
+
+        /* Sliders e Controles Quadrados */
+        .slider-row { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+        .slider-row svg.lbl-icon { width: 24px; height: 24px; stroke: var(--text); fill: none; flex-shrink: 0; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         
         input[type="range"] {
-            -webkit-appearance: none; appearance: none; width: 100%; height: 18px;
-            background: linear-gradient(var(--border-light), var(--border-light)) no-repeat center;
-            background-size: 100% 2px; outline: none; cursor: pointer;
+            -webkit-appearance: none; appearance: none; width: 100%; height: 36px;
+            background: var(--canvas-chk); border: 2px solid var(--border); outline: none; cursor: pointer; box-shadow: inset 2px 2px 0 rgba(0,0,0,0.1);
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none; width: 10px; height: 18px;
-            background: var(--text); cursor: ew-resize; border: 1px solid var(--bg);
+            -webkit-appearance: none; appearance: none; width: 24px; height: 36px;
+            background: var(--text); border: 2px solid var(--bg); cursor: ew-resize; box-shadow: 2px 0px 0px rgba(0,0,0,0.3);
         }
         input[type="range"]::-moz-range-thumb {
-            width: 10px; height: 18px; background: var(--text);
-            cursor: ew-resize; border: 1px solid var(--bg);
+            width: 20px; height: 32px; background: var(--text); border: 2px solid var(--bg);
+            cursor: ew-resize; box-shadow: 2px 0px 0px rgba(0,0,0,0.3);
         }
 
-        .icon-btn, input[type="color"] {
-            width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-            background: transparent; border: 1px solid var(--border-light); color: var(--text); cursor: pointer;
-            transition: all 0.1s; padding: 0;
+        .icon-btn {
+            width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            background: var(--bg); border: 2px solid var(--border); color: var(--text); cursor: pointer;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s; padding: 0;
         }
-        .icon-btn:hover { background: var(--hover); border-color: var(--text); }
-        .icon-btn.active-state { background: var(--text); color: var(--bg); border-color: var(--text); }
-        .icon-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .icon-btn:hover { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
+        .icon-btn:active { transform: translate(0,0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
+        .icon-btn.active-state { background: var(--text); color: var(--bg); }
+        .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
+        input[type="color"] { -webkit-appearance: none; border: 2px solid var(--border); width: 36px; height: 36px; padding: 0; cursor: pointer; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; }
         
-        .custom-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 0.7rem; color: var(--text); width: 100%; height: 24px; }
+        .custom-checkbox { display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; user-select: none; font-size: 0.85rem; font-weight: bold; color: var(--text); width: 100%; height: 36px; border: 2px solid var(--border); background: var(--bg); box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: background 0.1s; }
         .custom-checkbox input[type="checkbox"] { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
-        .checkmark { height: 12px; width: 12px; background-color: transparent; border: 1px solid var(--border); display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
-        .custom-checkbox input[type="checkbox"]:checked ~ .checkmark { background-color: var(--text); }
-        .custom-checkbox input[type="checkbox"]:checked ~ .checkmark::after { content: ""; display: block; width: 6px; height: 6px; background: var(--bg); }
+        .checkmark { height: 18px; width: 18px; background-color: var(--bg); border: 2px solid var(--border); display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .custom-checkbox input[type="checkbox"]:checked ~ .checkmark { background-color: var(--text); border-color: var(--text); }
+        .custom-checkbox input[type="checkbox"]:checked ~ .checkmark::after { content: ""; display: block; width: 8px; height: 8px; background: var(--bg); }
 
-        select { width: 100%; height: 24px; cursor: pointer; border: 1px solid var(--border-light); font-family: monospace; background: transparent; color: var(--text); padding: 0 4px; font-size: 0.7rem; outline: none; }
-        select:hover { border-color: var(--text); }
+        select { width: 100%; height: 36px; cursor: pointer; border: 2px solid var(--border); font-family: monospace; background: var(--bg); color: var(--text); padding: 0 8px; font-size: 0.85rem; font-weight: bold; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
 
         .std-btn {
-            padding: 4px 8px; height: 24px; background: transparent; border: 1px solid var(--border-light); color: var(--text);
-            font-family: monospace; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; transition: all 0.1s; display: flex; align-items: center; justify-content: center; width: 100%;
+            padding: 8px 10px; height: 36px; background: var(--bg); border: 2px solid var(--border); color: var(--text);
+            font-family: monospace; cursor: pointer; font-size: 0.9rem; font-weight: bold; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s; display: flex; align-items: center; justify-content: center;
         }
-        .std-btn:hover:not(:disabled) { background: var(--hover); border-color: var(--text); }
+        .std-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
+        .std-btn:active:not(:disabled) { transform: translate(0, 0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
         
-        .colors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(20px, 1fr)); gap: 2px; max-height: 120px; overflow-y: auto; width: 100%; }
+        .colors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; max-height: 150px; overflow-y: auto; padding-right: 2px; width: 100%; }
         .colors-grid::-webkit-scrollbar { width: 4px; }
-        .colors-grid::-webkit-scrollbar-thumb { background: var(--border-light); }
-        .color-btn { width: 100%; height: 20px; border: 1px solid var(--border-light); }
-        .color-btn:hover { border-color: var(--text); }
+        .colors-grid::-webkit-scrollbar-thumb { background: var(--border); }
+        .color-btn { width: 100%; height: 36px; padding: 0; border: 2px solid var(--border); cursor: pointer; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: outline 0.1s, transform 0.1s; }
+        .color-btn:hover { transform: scale(1.05); outline: 2px solid var(--text); outline-offset: -2px; }
 
-        .global-reset { font-size: 0.6rem; color: var(--text); background: transparent; border: 1px solid var(--border-light); padding: 4px; cursor: pointer; font-family: monospace; text-transform: uppercase; margin: 8px 6px; text-align: center; }
-        .global-reset:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+        /* ================= OVERRIDES DO DESKTOP (PAINEL TOTALMENTE ABERTO) ================= */
+        .desktop-group-title, .desktop-label, .desktop-reset { display: none; }
+
+        @media (min-width: 769px) {
+            #desktop-tabs { display: none !important; }
+            
+            /* Mostra todos os grupos em lista */
+            .control-group { 
+                display: flex !important; 
+                padding-bottom: 25px; 
+                margin-bottom: 10px; 
+                border-bottom: 2px dashed var(--border-light);
+            }
+            
+            /* Título do grupo */
+            .desktop-group-title {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 1.1rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin-bottom: 12px;
+                padding: 6px 10px;
+                background: var(--text);
+                color: var(--bg);
+                border: 2px solid var(--border);
+                box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+            }
+
+            /* Botão de reset especial para o desktop */
+            .desktop-reset {
+                display: flex;
+                background: transparent;
+                border: 2px solid var(--bg);
+                color: var(--bg);
+                padding: 4px 8px;
+                font-size: 0.75rem;
+                cursor: pointer;
+                align-items: center;
+                gap: 4px;
+                font-weight: bold;
+                text-transform: uppercase;
+                font-family: monospace;
+                transition: all 0.1s;
+            }
+            .desktop-reset svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+            .desktop-reset:hover { background: var(--bg); color: var(--text); }
+            
+            /* Esconde as abas secundárias que alternavam os controles */
+            .m-sub-nav { display: none !important; }
+            
+            /* Força exibição de todos os itens */
+            .sec-content { gap: 10px; }
+            .set-item { 
+                display: flex !important; 
+                padding: 12px; 
+                background: var(--bg);
+                border: 1px solid var(--border-light);
+                box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+            }
+
+            /* Rótulo descritivo de cada controle (exclusivo do desktop) */
+            .desktop-label {
+                display: block;
+                font-size: 0.75rem;
+                font-weight: bold;
+                text-transform: uppercase;
+                color: var(--text);
+                width: 100%;
+                text-align: left;
+                margin-bottom: 8px;
+                padding-bottom: 4px;
+                border-bottom: 1px solid var(--border-light);
+            }
+        }
 
         /* ================= VIEW AREA ================= */
-        #view { 
-            flex: 1; display: flex; justify-content: center; align-items: center; 
-            background-color: var(--canvas-bg); 
-            background-image: linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk)), linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk));
-            background-size: 20px 20px; background-position: 0 0, 10px 10px;
-            padding: 15px; overflow: hidden; position: relative; 
-        }
-        #welcomeMsg { position: absolute; text-align: center; font-size: 1rem; color: var(--accent); cursor: pointer; display: flex; flex-direction: column; gap: 12px; align-items: center; transition: color 0.2s; }
+        #view { flex: 1; display: flex; justify-content: center; align-items: center; background-color: var(--canvas-bg); padding: 15px; overflow: hidden; position: relative; }
+        #welcomeMsg { position: absolute; text-align: center; font-size: 1.2rem; color: var(--accent); cursor: pointer; display: flex; flex-direction: column; gap: 12px; align-items: center; transition: color 0.2s; }
         #welcomeMsg:hover { color: var(--text); }
         
         #canvas-wrapper { position: relative; display: none; width: 100%; height: 100%; touch-action: none; transition: transform 0.1s; transform-origin: center; }
@@ -151,110 +221,109 @@
 
         #outputCanvas {
             display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated;
-            border: none; background-color: transparent;
+            border: 2px solid var(--border); background-color: var(--bg);
+            background-image: linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk)), linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk));
+            background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
         }
         #originalCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: auto; clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); display: none; }
-        #slider-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.5); z-index: 9; display: none; pointer-events: none; }
-        #slider-line::after { content: '↔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); color: var(--text); border: 1px solid var(--border); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 12px; line-height: 1; }
+        #slider-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.5); z-index: 9; display: none; pointer-events: none; }
+        #slider-line::after { content: '↔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); color: var(--text); border: 2px solid var(--border); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; box-shadow: 2px 2px 0px rgba(0,0,0,0.3); line-height: 1; padding-bottom: 2px; }
 
         /* ================= FLOATING BARS ================= */
-        .float-bar { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; background: var(--bg); border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 50; }
-        #top-bar { top: 15px; }
-        #floating-bar { bottom: 15px; }
+        #top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; background: var(--bg); justify-content: center; align-items: center; border: 2px solid var(--border); box-shadow: 4px 4px 0px rgba(0,0,0,0.3); z-index: 50; }
+        #floating-bar { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; background: var(--bg); justify-content: center; align-items: center; border: 2px solid var(--border); box-shadow: 4px 4px 0px rgba(0,0,0,0.3); z-index: 50; }
 
         .float-btn {
-            display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent;
-            color: var(--text); cursor: pointer; padding: 6px; width: 32px; height: 32px; transition: all 0.1s;
+            display: flex; align-items: center; justify-content: center; background: var(--bg); border: 2px solid var(--border);
+            color: var(--text); cursor: pointer; padding: 8px 12px; position: relative; z-index: 1; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s;
         }
-        .float-btn:hover:not(:disabled) { background: var(--hover); border-color: var(--border-light); }
-        .float-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .float-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
+        .float-btn:active:not(:disabled) { transform: translate(0, 0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
+        .float-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
         .float-btn.active-tool { background: var(--text); color: var(--bg); }
-        .float-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .float-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .float-btn input[type="file"] { display: none; }
 
-        #btn-random-global { color: var(--text); }
-        #btn-random-global:hover:not(:disabled) { background: var(--text); color: var(--bg); border-color: var(--text); }
+        #btn-random-global { background: var(--text); color: var(--bg); border-color: var(--text); }
+        #btn-random-global svg { stroke: var(--bg); }
+        #btn-random-global:hover:not(:disabled) { background: var(--bg); color: var(--text); }
+        #btn-random-global:hover:not(:disabled) svg { stroke: var(--text); }
 
-        #brush-panel { display: none; flex-direction: column; position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); background: var(--bg); border: 1px solid var(--border-light); padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 50; width: 200px; }
-        #zoom-controls { position: absolute; bottom: 15px; right: 15px; display: flex; flex-direction: column; gap: 4px; z-index: 50; }
+        #brush-panel { display: none; flex-direction: column; position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); background: var(--bg); border: 2px solid var(--border); padding: 12px; box-shadow: 4px 4px 0px rgba(0,0,0,0.3); z-index: 50; gap: 8px; width: 220px; }
+        #zoom-controls { position: absolute; bottom: 15px; right: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
 
-        .modal { display: none; position: fixed; z-index: 100000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .modal-content { background: var(--bg); padding: 20px; border: 1px solid var(--border-light); width: 400px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); color: var(--text); }
-        .modal-content h3 { font-size: 1rem; text-transform: uppercase; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 8px; }
-        .modal-desc { font-size: 0.75rem; color: var(--accent); margin-bottom: 12px; line-height: 1.4; }
-        #btn-exit-fullscreen { position: fixed; top: 15px; left: 15px; z-index: 100001; display: none; align-items: center; justify-content: center; padding: 8px 12px; background: var(--bg); color: var(--text); border: 1px solid var(--border-light); font-size: 0.7rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .modal { display: none; position: fixed; z-index: 100000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-content { background: var(--bg); padding: 24px; border: 2px solid var(--border); width: 440px; display: flex; flex-direction: column; gap: 10px; box-shadow: 6px 6px 0px rgba(0,0,0,0.4); color: var(--text); }
+        .modal-content h3 { margin: 0 0 5px 0; font-size: 1.3rem; text-transform: uppercase; }
+        .modal-desc { font-size: 0.8rem; color: var(--accent); margin-bottom: 12px; line-height: 1.4; font-weight: bold; }
+        #btn-exit-fullscreen { position: fixed; top: 15px; left: 15px; z-index: 100001; display: none; align-items: center; justify-content: center; padding: 10px 15px; background: var(--bg); color: var(--text); border: 2px solid var(--border); font-weight: bold; cursor: pointer; box-shadow: 4px 4px 0px rgba(0,0,0,0.3); }
 
         #mobile-tab-bar { display: none; }
 
-        /* ================= MOBILE UI ================= */
+        /* ================= MOBILE UI (CASCATA VERTICAL INVERTIDA) ================= */
         @media (max-width: 768px) {
-            body { flex-direction: column; position: relative; }
+            body { flex-direction: column; }
+            #desktop-tabs { display: none; }
+            #controls .title-area { display: none; }
             
-            #mobile-header { 
-                position: absolute; top: 15px; left: 0; width: 100%; display: flex; align-items: center; 
-                justify-content: center; background: transparent; border: none; z-index: 100; pointer-events: none;
+            #mobile-header {
+                display: flex; height: 50px; min-height: 50px; border-bottom: 2px solid var(--border);
+                align-items: center; justify-content: center; background: var(--bg); z-index: 100;
             }
-            #mobile-header h1 { text-shadow: 0 0 6px var(--bg); }
-            #mobile-header svg { filter: drop-shadow(0 0 3px var(--bg)); }
-            
-            #desktop-tabs, #controls .title-area { display: none; }
 
-            /* Imagem e Barras Flutuantes */
-            #view { 
-                order: 1; flex: 1; 
-                padding: 100px 10px 70px 10px; 
-            }
-            #canvas-wrapper { max-height: 100%; margin: auto; }
+            /* View empurra o menu para baixo */
+            #view { order: 1; flex: 1; padding: 10px; border-bottom: 2px solid var(--border); }
+            #canvas-wrapper { max-height: calc(100% - 70px); }
             
-            #top-bar { 
-                top: 55px; width: max-content; max-width: 95%; flex-wrap: nowrap; 
-                overflow-x: auto; scrollbar-width: none; justify-content: flex-start; pointer-events: auto;
-            }
-            #top-bar::-webkit-scrollbar { display: none; }
-            
-            #floating-bar { bottom: 15px; width: max-content; }
-            #zoom-controls { bottom: 60px; right: 10px; flex-direction: row; }
-            #brush-panel { bottom: 60px; }
+            #top-bar { top: 10px; width: max-content; max-width: 90%; flex-wrap: wrap; padding: 6px; }
+            #floating-bar { bottom: 10px; width: max-content; max-width: 90%; padding: 6px; }
+            #zoom-controls { bottom: 65px; right: 10px; }
+            #brush-panel { bottom: 65px; }
 
-            /* Painel de Controles (Recolhível) */
+            /* Controles ficam embaixo e constroem de baixo pra cima! */
             #controls { 
-                order: 2; width: 100%; height: auto; max-height: 45vh; 
-                border-right: none; border-top: 1px solid var(--border-light); 
-                padding-bottom: 0; position: relative; background: var(--bg);
-                display: none; /* Inicia escondido no mobile */
-            }
-            #controls.panel-open {
-                display: flex; /* Exibido apenas quando classe é adicionada */
+                order: 2; height: auto; min-height: fit-content; max-height: 45vh; width: 100%; border-right: none; 
+                padding: 10px; padding-bottom: 75px; background: var(--panel); overflow-y: auto; overflow-x: hidden;
             }
 
-            /* Tab Bar Inferior com reset rigoroso */
+            /* Inverte a ordem no mobile: Tabs embaixo, Sliders acima */
+            .control-group { display: none; flex-direction: column-reverse; gap: 12px; }
+            .control-group.active { display: flex; }
+            
+            /* Tabs Secundárias (Ficam sobre as primárias) */
+            .m-sub-nav { 
+                display: flex; gap: 8px; overflow-x: auto; padding-top: 12px; margin-bottom: 0;
+                border-top: 2px solid var(--border-light); scrollbar-width: none; flex-wrap: nowrap;
+            }
+            .m-sub-nav::-webkit-scrollbar { display: none; }
+            .m-sub-btn { flex: 0 0 auto; min-width: 75px; height: 60px; padding: 6px; }
+
+            /* Painel do Controle Específico (Fica no topo do bloco) */
+            .sec-content { padding: 0; }
+            .set-item { padding: 12px 10px; }
+
+            /* TAB BAR INFERIOR - Fixa na base */
             #mobile-tab-bar {
-                order: 3; display: flex; position: relative; bottom: auto; left: auto; right: auto;
-                background: var(--bg); border-top: 1px solid var(--border-light);
-                height: 55px; z-index: 9999; overflow-x: auto; white-space: nowrap; 
-                scrollbar-width: none; padding: 0; justify-content: space-between;
+                display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 2px solid var(--border);
+                height: 65px; z-index: 9999; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding: 0 5px; justify-content: flex-start;
             }
             .m-tab {
-                -webkit-appearance: none; appearance: none;
-                background: var(--bg); border: none; border-radius: 0; box-shadow: none; outline: none;
-                flex: 1; min-width: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-                color: var(--accent); padding: 6px 4px; font-family: monospace; font-size: 0.65rem; 
-                cursor: pointer; text-transform: uppercase; gap: 4px; margin: 0;
+                flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                padding: 5px 12px; background: transparent; border: none; color: var(--accent); min-width: 75px;
+                font-family: monospace; font-size: 0.65rem; font-weight: bold; cursor: pointer; text-transform: uppercase; position: relative;
             }
-            .m-tab * { pointer-events: none; /* Evita conflitos de clique com o SVG/Texto */ }
-            .m-tab svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; display: block; }
-            .m-tab.active { color: var(--text); background: var(--hover); }
-            .m-tab.active svg { stroke-width: 2; }
+            .m-tab svg { width: 22px; height: 22px; margin-bottom: 4px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+            .m-tab.active { color: var(--text); }
+            .m-tab.active svg { stroke-width: 2.5; }
         }
     </style>
 </head>
 <body>
 
-    <!-- LOGO (MOBILE) -->
     <div id="mobile-header">
         <div class="title-main">
-            <svg width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="2" y="12" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="12" width="10" height="10" fill="currentColor" stroke="none"></rect></svg>
-            <h1 style="font-size: 1rem;">PIXELAR</h1>
+            <svg width="24" height="24" viewBox="0 0 24 24"><rect x="2" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="2" y="12" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="12" width="10" height="10" fill="currentColor" stroke="none"></rect></svg>
+            <h1>PIXELAR</h1>
         </div>
     </div>
 
@@ -262,7 +331,7 @@
     <div id="controls">
         <div class="title-area">
             <div class="title-main">
-                <svg width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="2" y="12" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="12" width="10" height="10" fill="currentColor" stroke="none"></rect></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24"><rect x="2" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="2" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="2" y="12" width="10" height="10" fill="transparent" stroke-width="2"></rect><rect x="12" y="12" width="10" height="10" fill="currentColor" stroke="none"></rect></svg>
                 <h1>PIXELAR</h1>
             </div>
         </div>
@@ -278,79 +347,60 @@
 
         <!-- GRUPO: AJUSTES -->
         <div class="control-group active" id="group-ajustes">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title">
-                        <svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Básico
+            <div class="desktop-group-title">
+                Ajustes
+                <button class="reset-btn desktop-reset" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
+            </div>
+            <div class="m-sub-nav">
+                <button class="m-sub-btn" data-target="set-est"><span class="badge" id="bdg-est"></span><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><span>Estrutura</span></button>
+                <button class="m-sub-btn" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg><span>Exposição</span></button>
+                <button class="m-sub-btn" data-target="set-bri"><span class="badge" id="bdg-bri"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19M2 12h2M20 12h2M5 19l1.5-1.5M17.5 6.5L19 5"></path></svg><span>Brilho</span></button>
+                <button class="m-sub-btn" data-target="set-con"><span class="badge" id="bdg-con"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"></path></svg><span>Contraste</span></button>
+                <button class="m-sub-btn" data-target="set-tem"><span class="badge" id="bdg-tem"></span><svg viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg><span>Temperat.</span></button>
+                <button class="m-sub-btn" data-target="set-sat"><span class="badge" id="bdg-sat"></span><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><span>Saturação</span></button>
+                <button class="m-sub-btn" data-target="set-som"><span class="badge" id="bdg-som"></span><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg><span>Sombras</span></button>
+                <button class="m-sub-btn" data-target="set-pos"><span class="badge" id="bdg-pos"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18M9 21V9"></path></svg><span>Posterizar</span></button>
+                <button class="m-sub-btn" data-target="set-abe"><span class="badge" id="bdg-abe"></span><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"></circle><circle cx="14" cy="12" r="6"></circle></svg><span>Aberração</span></button>
+                <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
+            </div>
+            <div class="sec-content">
+                <div class="set-item" id="set-est"><div class="desktop-label">Estrutura</div><div class="slider-row"><input type="range" id="estrutura" min="0" max="100" value="0"></div></div>
+                <div class="set-item" id="set-exp"><div class="desktop-label">Exposição</div><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-bri"><div class="desktop-label">Brilho</div><div class="slider-row"><input type="range" id="brilho" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-con"><div class="desktop-label">Contraste</div><div class="slider-row"><input type="range" id="contraste" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-tem"><div class="desktop-label">Temperatura</div><div class="slider-row"><input type="range" id="temperatura" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-sat"><div class="desktop-label">Saturação</div><div class="slider-row"><input type="range" id="saturacao" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-som"><div class="desktop-label">Sombras</div>
+                    <div class="slider-row">
+                        <input type="range" id="sombras" min="-100" max="100" value="0">
+                        <button id="btnInvertShadows" class="icon-btn" title="Inverter Sombras"><svg viewBox="0 0 24 24"><path d="M12 2v20a10 10 0 1 0 0-20z" fill="currentColor"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
                     </div>
                 </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Estrutura</span><span class="badge" id="bdg-est"></span></div><div class="slider-row"><input type="range" id="estrutura" min="0" max="100" value="0"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Exposição</span><span class="badge" id="bdg-exp"></span></div><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Brilho</span><span class="badge" id="bdg-bri"></span></div><div class="slider-row"><input type="range" id="brilho" min="-100" max="100" value="0"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Contraste</span><span class="badge" id="bdg-con"></span></div><div class="slider-row"><input type="range" id="contraste" min="-100" max="100" value="0"></div></div>
-                </div>
+                <div class="set-item" id="set-pos"><div class="desktop-label">Posterizar</div><div class="slider-row"><input type="range" id="posterize" min="0" max="100" value="0"></div></div>
+                <div class="set-item" id="set-abe"><div class="desktop-label">Aberração Cromática</div><div class="slider-row"><input type="range" id="rgbShift" min="0" max="15" value="0"></div></div>
             </div>
-            
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Cor</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Temperatura</span><span class="badge" id="bdg-tem"></span></div><div class="slider-row"><input type="range" id="temperatura" min="-100" max="100" value="0"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Saturação</span><span class="badge" id="bdg-sat"></span></div><div class="slider-row"><input type="range" id="saturacao" min="-100" max="100" value="0"></div></div>
-                </div>
-            </div>
-
-            <div class="panel collapsed">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Efeitos</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper">
-                        <div class="lbl-row"><span>Sombras</span><span class="badge" id="bdg-som"></span></div>
-                        <div class="slider-row">
-                            <input type="range" id="sombras" min="-100" max="100" value="0">
-                            <button id="btnInvertShadows" class="icon-btn" title="Inverter Sombras"><svg viewBox="0 0 24 24"><path d="M12 2v20a10 10 0 1 0 0-20z" fill="currentColor"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
-                        </div>
-                    </div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Posterizar</span><span class="badge" id="bdg-pos"></span></div><div class="slider-row"><input type="range" id="posterize" min="0" max="100" value="0"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Aberração Cromática</span><span class="badge" id="bdg-abe"></span></div><div class="slider-row"><input type="range" id="rgbShift" min="0" max="15" value="0"></div></div>
-                </div>
-            </div>
-            <button class="global-reset" data-target="ajustes">Zerar Ajustes</button>
         </div>
 
         <!-- GRUPO: PIXEL -->
         <div class="control-group" id="group-pixel">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Resolução</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper">
-                        <div class="lbl-row"><span>Tamanho do Pixel</span><span class="badge" id="bdg-px"></span></div>
-                        <div class="slider-row">
-                            <input type="range" id="pxSize" min="1" max="64" value="1">
-                            <button class="icon-btn lock-btn" data-target="pxSize" title="Travar no Random"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
-                            <button class="icon-btn shuffle-btn" data-target="pxSize" title="Sortear"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
-                        </div>
+            <div class="desktop-group-title">Pixel</div>
+            <div class="m-sub-nav">
+                <button class="m-sub-btn" data-target="set-pxSize"><span class="badge" id="bdg-px"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Tamanho</span></button>
+                <button class="m-sub-btn" data-target="set-pxGroup"><span class="badge" id="bdg-grp"></span><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect></svg><span>Agrupar</span></button>
+            </div>
+            <div class="sec-content">
+                <div class="set-item" id="set-pxSize"><div class="desktop-label">Tamanho do Pixel</div>
+                    <div class="slider-row">
+                        <input type="range" id="pxSize" min="1" max="64" value="1">
+                        <button class="icon-btn lock-btn" data-target="pxSize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                        <button class="icon-btn shuffle-btn" data-target="pxSize"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
                     </div>
                 </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Agrupamento</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper">
-                        <div class="lbl-row"><span>Força do Agrupamento</span><span class="badge" id="bdg-grp"></span></div>
-                        <div class="slider-row">
-                            <input type="range" id="groupStrength" min="0" max="100" value="0">
-                            <button id="btnGroupMean" class="icon-btn active-state" title="Modo Média"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg></button>
-                            <button id="btnGroupMode" class="icon-btn" title="Modo Moda (Mais Frequente)"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="4" height="10" fill="currentColor"/><rect x="10" y="4" width="4" height="16" fill="currentColor"/><rect x="16" y="14" width="4" height="6" fill="currentColor"/></svg></button>
-                        </div>
+                <div class="set-item" id="set-pxGroup"><div class="desktop-label">Nível de Agrupamento</div>
+                    <div class="slider-row">
+                        <input type="range" id="groupStrength" min="0" max="100" value="0">
+                        <button id="btnGroupMean" class="icon-btn active-state" title="Modo Média"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg></button>
+                        <button id="btnGroupMode" class="icon-btn" title="Modo Moda (Mais Frequente)"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="4" height="10" fill="currentColor"/><rect x="10" y="4" width="4" height="16" fill="currentColor"/><rect x="16" y="14" width="4" height="6" fill="currentColor"/></svg></button>
                     </div>
                 </div>
             </div>
@@ -358,223 +408,203 @@
 
         <!-- GRUPO: TEXTURA -->
         <div class="control-group" id="group-textura">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Padrão</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper">
-                        <div class="lbl-row"><span>Estilo Dither</span><span class="badge" id="bdg-dPat"></span></div>
-                        <div class="slider-row">
-                            <select id="ditherSelect">
-                                <option value="none">Sólido (Sem Textura)</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
-                                <option value="xerox">Xerox Distorcido</option><option value="linhas">Linhas de Scan</option><option value="checkerboard">Xadrez</option>
-                                <option value="diamonds">Losangos</option><option value="waves">Ondas Circulares</option><option value="scanlines">TV Analógica</option>
-                                <option value="maze">Malha Labirinto</option><option value="noise">Ruído Aleatório</option>
-                            </select>
-                            <button id="btnEffMidDither" class="icon-btn" title="Aplicar Apenas nos Tons Médios"><svg viewBox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
-                        </div>
-                    </div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Escala da Textura</span><span class="badge" id="bdg-dSca"></span></div><div class="slider-row"><input type="range" id="ditherScale" min="1" max="10" value="1"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Intensidade</span><span class="badge" id="bdg-dInt"></span></div><div class="slider-row"><input type="range" id="ditherIntensity" min="0" max="200" value="100"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Ângulo</span><span class="badge" id="bdg-dAng"></span></div><div class="slider-row"><input type="range" id="texAngle" min="0" max="180" value="45"></div></div>
-                </div>
+            <div class="desktop-group-title">
+                Textura
+                <button class="reset-btn desktop-reset" data-target="ditherSelect"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
             </div>
-
-            <div class="panel collapsed">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Contorno e Mistura</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Opacidade Textura</span></div><div class="slider-row"><input type="range" id="textureOpacity" min="0" max="100" value="100"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Opacidade Contorno</span></div><div class="slider-row"><input type="range" id="edgeOpacity" min="0" max="100" value="100"></div></div>
-                    <div class="slider-wrapper">
-                        <div class="lbl-row"><span>Espessura Contorno Extra</span><span class="badge" id="bdg-edg"></span></div>
-                        <div class="slider-row">
-                            <input type="range" id="edgePixelSize" min="0" max="15" value="0">
-                            <input type="color" id="edgeColor" value="#000000" title="Cor do Contorno">
-                        </div>
+            <div class="m-sub-nav">
+                <button class="m-sub-btn" data-target="set-dithPat"><span class="badge" id="bdg-dPat"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg><span>Padrão</span></button>
+                <button class="m-sub-btn" data-target="set-dithSca"><span class="badge" id="bdg-dSca"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Escala</span></button>
+                <button class="m-sub-btn" data-target="set-dithInt"><span class="badge" id="bdg-dInt"></span><svg viewBox="0 0 24 24"><path d="M4 21v-4m0-4V3m8 18v-6m0-4V3m8 18v-8m0-4V3"></path></svg><span>Intensid.</span></button>
+                <button class="m-sub-btn" data-target="set-dithAng"><span class="badge" id="bdg-dAng"></span><svg viewBox="0 0 24 24"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><span>Ângulo</span></button>
+                <button class="m-sub-btn" data-target="set-dithOpa"><span class="badge" id="bdg-opa"></span><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Opacidade</span></button>
+                <button class="m-sub-btn" data-target="set-dithEdg"><span class="badge" id="bdg-edg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="8" y="8" width="8" height="8"></rect></svg><span>Contorno</span></button>
+                <button class="m-sub-btn reset-btn" data-target="ditherSelect"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
+            </div>
+            <div class="sec-content">
+                <div class="set-item" id="set-dithPat"><div class="desktop-label">Padrão Dither</div>
+                    <div class="slider-row">
+                        <select id="ditherSelect">
+                            <option value="none">Padrão Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
+                            <option value="xerox">Xerox Distorcido</option><option value="linhas">Linhas de Scan</option><option value="checkerboard">Xadrez</option>
+                            <option value="diamonds">Losangos</option><option value="waves">Ondas Circulares</option><option value="scanlines">TV Analógica</option>
+                            <option value="maze">Malha Labirinto</option><option value="noise">Ruído Aleatório</option>
+                        </select>
+                        <button id="btnEffMidDither" class="icon-btn" title="Suavizar Tons Médios"><svg viewBox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
                     </div>
                 </div>
+                <div class="set-item" id="set-dithSca"><div class="desktop-label">Escala Textura</div><div class="slider-row"><input type="range" id="ditherScale" min="1" max="10" value="1"></div></div>
+                <div class="set-item" id="set-dithInt"><div class="desktop-label">Intensidade Dither</div><div class="slider-row"><input type="range" id="ditherIntensity" min="0" max="200" value="100"></div></div>
+                <div class="set-item" id="set-dithAng"><div class="desktop-label">Ângulo Textura</div><div class="slider-row"><input type="range" id="texAngle" min="0" max="180" value="45"></div></div>
+                <div class="set-item" id="set-dithOpa"><div class="desktop-label">Opacidade Dither e Contorno</div>
+                    <div class="slider-row">
+                        <svg class="lbl-icon" viewBox="0 0 24 24" title="Textura"><rect x="4" y="4" width="16" height="16" fill="currentColor"/></svg>
+                        <input type="range" id="textureOpacity" min="0" max="100" value="100">
+                        <svg class="lbl-icon" viewBox="0 0 24 24" title="Contorno"><rect x="4" y="4" width="16" height="16" fill="none"/></svg>
+                        <input type="range" id="edgeOpacity" min="0" max="100" value="100">
+                    </div>
+                </div>
+                <div class="set-item" id="set-dithEdg"><div class="desktop-label">Edge / Contorno Extra</div>
+                    <div class="slider-row">
+                        <input type="range" id="edgePixelSize" min="0" max="15" value="0" title="Espessura do Contorno">
+                        <input type="color" id="edgeColor" class="icon-btn" value="#000000" title="Cor do Contorno">
+                    </div>
+                </div>
             </div>
-            <button class="global-reset" data-target="ditherSelect">Zerar Textura</button>
         </div>
 
         <!-- GRUPO: FORMAS -->
         <div class="control-group" id="group-formas">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Lista e Base</div>
-                </div>
-                <div class="panel-body">
+            <div class="desktop-group-title">
+                Formas
+                <button class="reset-btn desktop-reset" data-target="shapes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
+            </div>
+            <div class="m-sub-nav">
+                <button class="m-sub-btn" data-target="set-shpGen"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg><span>Lista</span></button>
+                <button class="m-sub-btn" data-target="set-shpGeo"><span class="badge" id="bdg-shPnt"></span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Formato</span></button>
+                <button class="m-sub-btn" data-target="set-shpSiz"><span class="badge" id="bdg-shSiz"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Tamanho</span></button>
+                <button class="m-sub-btn" data-target="set-shpCol"><span class="badge" id="bdg-shCol"></span><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Cores</span></button>
+                <button class="m-sub-btn" data-target="set-shpOpa"><span class="badge" id="bdg-shOpa"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg><span>Bordas</span></button>
+                <button class="m-sub-btn reset-btn" data-target="shapes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
+            </div>
+            <div class="sec-content">
+                <div class="set-item" id="set-shpGen"><div class="desktop-label">Gerenciar Formas</div>
                     <div class="slider-row">
                         <select id="shapeListSelector"></select>
-                        <button id="btnNewShape" class="std-btn" style="width:auto;" title="Adicionar Forma">+</button>
-                        <button id="btnDelShape" class="std-btn" style="width:auto;" title="Remover Forma">-</button>
+                        <button id="btnNewShape" class="icon-btn std-btn">+</button>
+                        <button id="btnDelShape" class="icon-btn std-btn">-</button>
                     </div>
-                    <label class="custom-checkbox"><input type="checkbox" id="shapeEnable"><span class="checkmark"></span><span>Exibir Forma</span></label>
-                    <select id="shapeLayer"><option value="front">Renderizar na Frente</option><option value="back">Renderizar Atrás</option></select>
+                    <label class="custom-checkbox"><input type="checkbox" id="shapeEnable"><span class="checkmark"></span><span>Habilitar Forma</span></label>
+                    <select id="shapeLayer" style="margin-top:8px;"><option value="front">Renderizar na Frente</option><option value="back">Renderizar Atrás</option></select>
                 </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Geometria</div>
+                <div class="set-item" id="set-shpGeo"><div class="desktop-label">Geometria da Forma</div>
+                    <div class="slider-row"><select id="shapeType"><option value="star">Estrela</option><option value="polygon">Polígono Regular</option><option value="concave">Polígono Côncavo</option><option value="irregular">Forma Irregular</option><option value="complex">Forma Complexa</option><option value="circle">Círculo / Elipse</option></select></div>
+                    <button id="btn-regerar-irregular" class="std-btn" style="display:none; width:100%; margin-bottom:8px;">Regerar Variação</button>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Lados"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><input type="range" id="shapePoints" min="3" max="20" value="5"></div>
                 </div>
-                <div class="panel-body">
-                    <select id="shapeType"><option value="star">Estrela</option><option value="polygon">Polígono Regular</option><option value="concave">Polígono Côncavo</option><option value="irregular">Forma Irregular</option><option value="complex">Forma Complexa</option><option value="circle">Círculo / Elipse</option></select>
-                    <button id="btn-regerar-irregular" class="std-btn" style="display:none;">Regerar Variação Aleatória</button>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Pontas/Lados</span><span class="badge" id="bdg-shPnt"></span></div><div class="slider-row"><input type="range" id="shapePoints" min="3" max="20" value="5"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Tamanho</span><span class="badge" id="bdg-shSiz"></span></div><div class="slider-row"><input type="range" id="shapeScale" min="30" max="300" value="100"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Rotação</span></div><div class="slider-row"><input type="range" id="shapeRotation" min="0" max="360" value="0"></div></div>
-                    <div id="shapeEllipseControls" style="display:none; flex-direction:column; gap:10px;">
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Largura (X)</span></div><div class="slider-row"><input type="range" id="shapeEllipseX" min="30" max="200" value="100"></div></div>
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Altura (Y)</span></div><div class="slider-row"><input type="range" id="shapeEllipseY" min="30" max="200" value="100"></div></div>
+                <div class="set-item" id="set-shpSiz"><div class="desktop-label">Dimensões e Proporção</div>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Forma"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><input type="range" id="shapeScale" min="30" max="300" value="100"></div>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Rotação"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><input type="range" id="shapeRotation" min="0" max="360" value="0"></div>
+                    <div id="shapeEllipseControls" style="display:none; flex-direction:column; gap:10px; width:100%;">
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Largura (X)"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="8 8 4 12 8 16"></polyline><polyline points="16 8 20 12 16 16"></polyline></svg><input type="range" id="shapeEllipseX" min="30" max="200" value="100"></div>
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Altura (Y)"><line x1="12" y1="4" x2="12" y2="20"></line><polyline points="8 8 12 4 16 8"></polyline><polyline points="8 16 12 20 16 16"></polyline></svg><input type="range" id="shapeEllipseY" min="30" max="200" value="100"></div>
+                    </div>
+                    <div style="border-top:2px solid var(--border-light); margin-top:8px; padding-top:12px; width:100%;">
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Foto Original"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><input type="range" id="imageScale" min="30" max="200" value="100"></div>
                     </div>
                 </div>
-            </div>
-
-            <div class="panel collapsed">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Preenchimento</div>
-                </div>
-                <div class="panel-body">
+                <div class="set-item" id="set-shpCol"><div class="desktop-label">Preenchimento da Forma</div>
                     <div class="slider-row">
-                        <input type="color" id="shapeColorInput" value="#E5533D">
-                        <button class="std-btn" id="shapeColorShuffle" style="flex:1;">Sortear Cor</button>
+                        <input type="color" id="shapeColorInput" class="icon-btn" value="#E5533D">
+                        <button class="std-btn icon-btn" id="shapeColorShuffle" style="flex:1;"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg> Sortear</button>
                     </div>
-                    <label class="custom-checkbox"><input type="checkbox" id="shapeGradient"><span class="checkmark"></span><span>Aplicar Degradê</span></label>
-                    <div id="shapeGradientControls" style="display:none; flex-direction:column; gap:10px; padding-top: 6px; border-top: 1px dashed var(--border-light);">
-                        <div id="shapeGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+                    <label class="custom-checkbox" style="margin-top:8px;"><input type="checkbox" id="shapeGradient"><span class="checkmark"></span><span>Aplicar Degradê</span></label>
+                    <div id="shapeGradientControls" style="display:none; flex-direction:column; gap:10px; margin-top: 12px; border-top: 2px solid var(--border); padding-top: 12px; width:100%;">
+                        <div id="shapeGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
                         <div class="slider-row"><button id="btnShapeGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnShapeGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
-                        <select id="shapeGradType"><option value="linear">Linear</option><option value="radial">Radial</option></select>
-                        <div class="slider-wrapper" id="shapeGradAngleContainer"><div class="lbl-row"><span>Ângulo</span></div><div class="slider-row"><input type="range" id="shapeGradAngle" min="0" max="360" value="90"></div></div>
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Faixas (Steps)</span><span class="badge" id="bdg-shCol"></span></div><div class="slider-row"><input type="range" id="shapeGradSteps" min="0" max="30" value="0"></div></div>
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Posição Central</span></div><div class="slider-row"><input type="range" id="shapeGradPos" min="0" max="100" value="50"></div></div>
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Suavidade</span></div><div class="slider-row"><input type="range" id="shapeGradSmooth" min="0" max="100" value="100"></div></div>
+                        <select id="shapeGradType" style="margin-bottom:8px;"><option value="linear">Linear</option><option value="radial">Radial</option></select>
+                        <div id="shapeGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="shapeGradAngle" min="0" max="360" value="90"></div>
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="shapeGradSteps" min="0" max="30" value="0"></div>
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Posição Central"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="10"></circle></svg><input type="range" id="shapeGradPos" min="0" max="100" value="50"></div>
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Suavidade"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input type="range" id="shapeGradSmooth" min="0" max="100" value="100"></div>
                     </div>
                 </div>
-            </div>
-
-            <div class="panel collapsed">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Bordas</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Opacidade</span><span class="badge" id="bdg-shOpa"></span></div><div class="slider-row"><input type="range" id="shapeOpacity" min="0" max="100" value="100"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Vazamento Interno</span></div><div class="slider-row"><input type="range" id="shapeStrokeWidth" min="0" max="150" value="0"></div></div>
-                    <label class="custom-checkbox"><input type="checkbox" id="shapeFill" checked><span class="checkmark"></span><span>Preencher Fundo</span></label>
+                <div class="set-item" id="set-shpOpa"><div class="desktop-label">Bordas e Fundo da Forma</div>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Opacidade"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20"></path></svg><input type="range" id="shapeOpacity" min="0" max="100" value="100"></div>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Vazamento Interno"><rect x="4" y="4" width="16" height="16" fill="none"></rect><rect x="8" y="8" width="8" height="8" fill="none"></rect></svg><input type="range" id="shapeStrokeWidth" min="0" max="150" value="0"></div>
+                    <label class="custom-checkbox" style="margin-top:8px;"><input type="checkbox" id="shapeFill" checked><span class="checkmark"></span><span>Preencher Fundo</span></label>
                 </div>
             </div>
-            
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Escala da Imagem</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Tamanho da Foto</span></div><div class="slider-row"><input type="range" id="imageScale" min="30" max="200" value="100"></div></div>
-                </div>
-            </div>
-            <button class="global-reset" data-target="shapes">Zerar Formas</button>
         </div>
 
         <!-- GRUPO: CORES -->
         <div class="control-group" id="group-cores">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Paleta</div>
-                </div>
-                <div class="panel-body">
+            <div class="desktop-group-title">
+                Cores
+                <button class="reset-btn desktop-reset" data-target="colors"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
+            </div>
+            <div class="m-sub-nav">
+                <button class="m-sub-btn" data-target="set-corPal"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Paleta</span></button>
+                <button class="m-sub-btn" data-target="set-corAju"><span class="badge" id="bdg-corAju"></span><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg><span>Ajuste</span></button>
+                <button class="m-sub-btn" data-target="set-corDeg"><span class="badge" id="bdg-corDeg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="12" x2="21" y2="12"></line></svg><span>Degradê</span></button>
+                <button class="m-sub-btn" data-target="set-corSal"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Salvas</span></button>
+                <button class="m-sub-btn reset-btn" data-target="colors"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
+            </div>
+            <div class="sec-content">
+                <div class="set-item" id="set-corPal"><div class="desktop-label">Modo Paleta de Cores</div>
                     <div class="slider-row">
                         <select id="colorSelect">
                             <option value="2">2 Cores</option><option value="3">3 Cores</option><option value="4">4 Cores</option><option value="6">6 Cores</option>
                             <option value="8">8 Cores</option><option value="12">12 Cores</option><option value="16">16 Cores</option><option value="24">24 Cores</option>
-                            <option value="32">32 Cores</option><option value="48">48 Cores</option><option value="64">64 Cores</option><option value="all" selected>Todas</option>
+                            <option value="32">32 Cores</option><option value="48">48 Cores</option><option value="64">64 Cores</option><option value="128">128 Cores</option>
+                            <option value="256">256 Cores</option><option value="all" selected>Todas as Cores</option>
                         </select>
-                        <button class="icon-btn lock-btn" data-target="colorSelect" title="Travar no Random"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
-                        <button class="icon-btn shuffle-btn" data-target="colors" title="Sortear Paleta"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                        <button class="icon-btn lock-btn" data-target="colorSelect"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                        <button class="icon-btn shuffle-btn" data-target="colors"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
                         <button class="icon-btn" id="btnInvert" title="Inverter Cores"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"/></svg></button>
                     </div>
-                    <div id="colorsGrid" class="colors-grid"></div>
+                    <div id="colorsGrid" class="colors-grid" style="margin-top:8px;"></div>
                 </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Ajuste Global <span class="badge" id="bdg-corAju"></span></div>
+                <div class="set-item" id="set-corAju"><div class="desktop-label">Ajuste Global de Cores</div>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Desvio Matiz"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input type="range" id="palHue" min="-180" max="180" value="0"></div>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Saturação Global"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><input type="range" id="palSat" min="-100" max="100" value="0"></div>
+                    <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Luminosidade Global"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg><input type="range" id="palLight" min="-100" max="100" value="0"></div>
                 </div>
-                <div class="panel-body">
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Desvio de Matiz</span></div><div class="slider-row"><input type="range" id="palHue" min="-180" max="180" value="0"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Saturação</span></div><div class="slider-row"><input type="range" id="palSat" min="-100" max="100" value="0"></div></div>
-                    <div class="slider-wrapper"><div class="lbl-row"><span>Luminosidade</span></div><div class="slider-row"><input type="range" id="palLight" min="-100" max="100" value="0"></div></div>
-                </div>
-            </div>
-
-            <div class="panel collapsed">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Filtro Degradê <span class="badge" id="bdg-corDeg"></span></div>
-                </div>
-                <div class="panel-body">
+                <div class="set-item" id="set-corDeg"><div class="desktop-label">Filtro Degradê Global</div>
                     <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar Degradê Global</span></label>
-                    <div id="imgGradientControls" style="display:none; flex-direction:column; gap:10px; padding-top: 6px; border-top: 1px dashed var(--border-light);">
-                        <div id="imgGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+                    <div id="imgGradientControls" style="display:none; flex-direction:column; gap:10px; margin-top: 12px; border-top: 2px solid var(--border); padding-top: 12px; width:100%;">
+                        <div id="imgGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
                         <div class="slider-row"><button id="btnImgGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnImgGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
-                        <select id="imgGradBlend"><option value="source-atop">Substituição</option><option value="multiply">Multiplicação</option><option value="overlay">Sobreposição</option><option value="screen">Clarear</option><option value="color">Apenas Cores</option></select>
                         <select id="imgGradType"><option value="linear">Linear</option><option value="radial">Radial</option></select>
-                        <div class="slider-wrapper" id="imgGradAngleContainer"><div class="lbl-row"><span>Ângulo</span></div><div class="slider-row"><input type="range" id="imgGradAngle" min="0" max="360" value="90"></div></div>
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Faixas (Steps)</span></div><div class="slider-row"><input type="range" id="imgGradSteps" min="0" max="30" value="0"></div></div>
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Posição</span></div><div class="slider-row"><input type="range" id="imgGradPos" min="0" max="100" value="50"></div></div>
-                        <div class="slider-wrapper"><div class="lbl-row"><span>Suavidade</span></div><div class="slider-row"><input type="range" id="imgGradSmooth" min="0" max="100" value="100"></div></div>
+                        <div id="imgGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="imgGradAngle" min="0" max="360" value="90"></div>
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="imgGradSteps" min="0" max="30" value="0"></div>
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Posição Central"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="10"></circle></svg><input type="range" id="imgGradPos" min="0" max="100" value="50"></div>
+                        <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Suavidade"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input type="range" id="imgGradSmooth" min="0" max="100" value="100"></div>
+                        <select id="imgGradBlend"><option value="source-atop">Substituição</option><option value="multiply">Multiplicação</option><option value="overlay">Sobreposição</option><option value="screen">Clarear</option><option value="color">Apenas Cores</option></select>
                     </div>
                 </div>
-            </div>
-
-            <div class="panel collapsed">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Salvas</div>
-                </div>
-                <div class="panel-body">
-                    <div class="slider-row"><button class="std-btn" id="btnOriginal" style="flex:1;">Restaurar</button><button class="std-btn" id="btnSavePalette" style="flex:1;">Salvar Atual</button></div>
-                    <div id="savedPalettesGrid" style="display:flex; flex-direction:column; gap:4px; margin-top:6px;"></div>
+                <div class="set-item" id="set-corSal"><div class="desktop-label">Paletas Salvas</div>
+                    <div style="display:flex; gap:6px; margin-bottom:12px; width:100%;"><button class="std-btn" id="btnOriginal" style="flex:1;">Voltar Original</button><button class="std-btn" id="btnSavePalette" style="flex:1;">Salvar Atual</button></div>
+                    <div id="savedPalettesGrid" style="display:flex; flex-direction:column; gap:6px; width:100%;"></div>
                 </div>
             </div>
-            <button class="global-reset" data-target="colors">Zerar Cores</button>
         </div>
 
-        <!-- GRUPO: SISTEMA -->
+        <!-- GRUPO: OPCOES -->
         <div class="control-group" id="group-sistema">
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Fundo e Temas</div>
-                </div>
-                <div class="panel-body">
+            <div class="desktop-group-title">Sistema</div>
+            <div class="m-sub-nav">
+                <button class="m-sub-btn" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
+                <button class="m-sub-btn" data-target="set-opTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
+                <button class="m-sub-btn" data-target="set-opExp"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
+            </div>
+            <div class="sec-content">
+                <div class="set-item" id="set-opFun"><div class="desktop-label">Fundo do Canvas</div>
                     <label class="custom-checkbox"><input type="checkbox" id="fillBg"><span class="checkmark"></span><span>Preencher Fundo</span></label>
-                    <div class="slider-row">
-                        <input type="color" id="btnBgColor" value="#ffffff" data-color="#ffffff">
-                        <input type="text" id="hexBgColor" value="#FFFFFF" maxlength="7" style="flex:1; max-width:100px; background: transparent; border:1px solid var(--border-light); color: var(--text); padding:2px; font-family: monospace; font-size: 0.7rem; text-align:center;">
+                    <div class="slider-row" style="margin-top:12px;">
+                        <input type="color" id="btnBgColor" class="icon-btn" value="#ffffff" data-color="#ffffff">
+                        <input type="text" id="hexBgColor" value="#FFFFFF" maxlength="7" style="flex:1; max-width:120px; background: var(--bg); border:2px solid var(--border); color: var(--text); padding:8px; font-family: monospace; font-weight: bold; text-align:center; height:36px;">
                     </div>
-                    <div class="lbl-row" style="margin-top:8px;"><span>Temas Rápidos</span></div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-                        <button class="std-btn" data-theme="Nintendo_DS">GameBoy Color</button>
+                </div>
+                <div class="set-item" id="set-opTem"><div class="desktop-label">Temas Prontos</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width:100%;">
+                        <button class="std-btn" data-theme="Nintendo_DS">Nintendo DS</button>
+                        <button class="std-btn" data-theme="GameBoy">GameBoy</button>
+                        <button class="std-btn" data-theme="Nokia">Nokia 3310</button>
                         <button class="std-btn" data-theme="PeB_Dither">P&B Raiz</button>
                         <button class="std-btn" data-theme="VHS">Fita VHS</button>
+                        <button class="std-btn" data-theme="RaioX">Raio-X</button>
                         <button class="std-btn" data-theme="Termica">Câmera Térmica</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">
-                    <div class="panel-header-title"><svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg> Exportar / Restaurar</div>
-                </div>
-                <div class="panel-body">
-                    <label class="std-btn" style="cursor: pointer;">
-                        Importar Config (.PNG)
+                <div class="set-item" id="set-opExp"><div class="desktop-label">Exportar / Importar Config.</div>
+                    <label class="std-btn" style="text-align: center; display: block; margin-bottom: 8px; cursor: pointer; width:100%;">
+                        Importar Configuração
                         <input type="file" id="importImgConfig" accept="image/png" style="display:none;">
                     </label>
-                    <button class="std-btn" id="btnSavePreset">Salvar Preset Atual</button>
-                    <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 4px; padding: 6px 0;"></div>
-                    <button class="std-btn" id="btnResetImage" style="border-color: #E5533D; color: #E5533D; margin-top: 8px;">Restaurar Imagem Original</button>
+                    <button class="std-btn" id="btnSavePreset" style="width: 100%; margin-bottom: 8px;">Salvar Ajuste Atual</button>
+                    <button class="std-btn" id="btnResetImage" style="width: 100%; margin-bottom: 16px;">Limpar e Restaurar Foto</button>
+                    <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 6px; width:100%;"></div>
                 </div>
             </div>
         </div>
@@ -583,15 +613,15 @@
     <!-- MAIN CANVAS VIEW -->
     <div id="view">
         <label id="welcomeMsg" for="imageUploadMsg">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            Faça upload de uma imagem<br>para começar
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Faça o upload de uma imagem<br>para começar
             <input type="file" id="imageUploadMsg" accept="image/*" style="display:none;">
         </label>
         
-        <div id="top-bar" class="float-bar">
+        <div id="top-bar">
             <label class="float-btn" id="btn-upload" title="Upload"><input type="file" id="imageUpload" accept="image/*"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></label>
-            <div style="width: 1px; background: var(--border-light); margin: 0 4px; align-self: stretch;"></div>
-            <button class="float-btn" id="btnThemeToggle" title="Alternar Tema UI"></button>
+            <div style="width: 2px; background: var(--border); margin: 0 2px; align-self: stretch;"></div>
+            <button class="float-btn" id="btnThemeToggle" title="Alternar Tema"></button>
             <button class="float-btn" id="btn-undo-view" disabled title="Desfazer Ação"><svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2"/></svg></button>
             <button class="float-btn" id="btn-redo-view" disabled title="Refazer Ação"><svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2"/></svg></button>
             <button class="float-btn" id="btn-compare" disabled title="Comparar Original"><svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20"/></svg></button>
@@ -606,21 +636,21 @@
         </div>
         
         <div id="brush-panel">
-            <div style="font-size:0.65rem; font-weight:bold; text-align:center; text-transform:uppercase;">Pincel: <span id="brushSizeVal">40 px</span></div>
-            <input type="range" id="brushSize" min="5" max="300" value="40">
+            <div style="font-size:0.75rem; font-weight:bold; text-align:center;">Tamanho: <span id="brushSizeVal">40 px</span></div>
+            <input type="range" id="brushSize" min="5" max="300" value="40" style="height: 24px;">
         </div>
 
-        <div id="floating-bar" class="float-bar">
+        <div id="floating-bar">
             <button class="float-btn active-tool" id="btn-tool-move" title="Mover"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M19 9l3 3-3 3M9 19l3 3-3 3M2 12h20M12 2v20"/></svg></button>
             <button class="float-btn" id="btn-tool-erase" title="Borracha"><svg viewBox="0 0 24 24"><path d="M20 20H7L3 16C2.5 15.5 2.5 14.5 3 14L13 4C13.5 3.5 14.5 3.5 15 4L20 9C20.5 9.5 20.5 10.5 20 11L11 20H20V20Z"/></svg></button>
             <button class="float-btn" id="btn-tool-restore" title="Restaurar"><svg viewBox="0 0 24 24"><path d="M12 19L21.5 9.5C22.3 8.7 22.3 7.4 21.5 6.6L17.4 2.5C16.6 1.7 15.3 1.7 14.5 2.5L5 12L12 19ZM5 12L2 22L12 19"/></svg></button>
-            <div style="width: 1px; background: var(--border-light); margin: 0 4px; align-self: stretch;"></div>
+            <div style="width: 2px; background: var(--border); margin: 0 2px; align-self: stretch;"></div>
             <button class="float-btn" id="btn-random-global" title="Mix Completo"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
         </div>
 
         <div id="zoom-controls">
-            <button class="float-btn" style="background:var(--bg); border:1px solid var(--border-light); box-shadow:0 2px 8px rgba(0,0,0,0.1);" id="btn-zoom-in" title="Aumentar Zoom"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            <button class="float-btn" style="background:var(--bg); border:1px solid var(--border-light); box-shadow:0 2px 8px rgba(0,0,0,0.1);" id="btn-zoom-out" title="Diminuir Zoom"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+            <button class="float-btn" id="btn-zoom-in" title="Aumentar Zoom"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+            <button class="float-btn" id="btn-zoom-out" title="Diminuir Zoom"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
         </div>
         
         <button id="btn-exit-fullscreen" title="Sair da Tela Cheia"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> VOLTAR</button>
@@ -628,76 +658,74 @@
 
     <!-- NAVEGAÇÃO MOBILE (TAB BAR INFERIOR) -->
     <div id="mobile-tab-bar">
-        <button class="m-tab" data-target="group-ajustes"><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>Ajustes</button>
+        <button class="m-tab active" data-target="group-ajustes"><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>Ajustes</button>
         <button class="m-tab" data-target="group-pixel"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Pixel</button>
         <button class="m-tab" data-target="group-textura"><svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>Textura</button>
         <button class="m-tab" data-target="group-formas"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="6"/><rect x="9" y="9" width="12" height="12" rx="2"/></svg>Formas</button>
         <button class="m-tab" data-target="group-cores"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"/></svg>Cores</button>
-        <button class="m-tab" data-target="group-sistema"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Sist.</button>
+        <button class="m-tab" data-target="group-sistema"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Sistema</button>
     </div>
 
     <!-- MODAL DOWNLOAD -->
     <div id="downloadModal" class="modal">
         <div class="modal-content">
             <h3>Baixar Arte</h3>
-            <div class="modal-desc">As configurações de edição ficam salvas magicamente dentro do arquivo PNG exportado.</div>
-            <button id="dl-png" class="std-btn" style="height:32px;">Imagem PNG (Área útil)</button>
-            <button id="dl-svg" class="std-btn" style="height:32px;">Vetor SVG (Área útil)</button>
-            <button id="dl-txt" class="std-btn" style="height:32px;">Apenas Configurações (.TXT)</button>
-            <button id="dl-close" class="std-btn" style="margin-top: 8px; border-color: transparent; height:32px;">Cancelar</button>
+            <div class="modal-desc">O Pixelar detectará os pixels e recortará a imagem na área exata. Suas configurações ficam salvas dentro do arquivo PNG.</div>
+            <button id="dl-png" class="std-btn">Imagem PNG (Área útil)</button>
+            <button id="dl-svg" class="std-btn">Vetor SVG (Área útil)</button>
+            <button id="dl-txt" class="std-btn">Apenas Configurações (.TXT)</button>
+            <button id="dl-close" class="std-btn" style="margin-top: 8px; border-color: transparent;">Cancelar</button>
         </div>
     </div>
 
     <script>
+        // ======= LÓGICA DE TABS CASCATA (MOBILE E DESKTOP UNIFICADOS) =======
         const allTabs = document.querySelectorAll('.m-tab, .d-tab');
-        const controlsContainer = document.getElementById('controls');
-
-        // Garante que inicie com os painéis fechados no mobile
-        if (window.innerWidth <= 768) {
-            allTabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.control-group').forEach(g => g.classList.remove('active'));
-            controlsContainer.classList.remove('panel-open');
-        }
-
         allTabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 const targetId = tab.getAttribute('data-target');
                 const targetGroup = document.getElementById(targetId);
-                const isMobile = window.innerWidth <= 768;
-                const isActive = tab.classList.contains('active');
                 
-                // Lógica de Ligar / Desligar (Toggle)
-                if (isActive && isMobile) {
-                    tab.classList.remove('active');
+                if (tab.classList.contains('active')) {
+                    allTabs.forEach(t => t.classList.remove('active'));
                     if(targetGroup) targetGroup.classList.remove('active');
-                    controlsContainer.classList.remove('panel-open');
                 } else {
                     allTabs.forEach(t => t.classList.remove('active'));
                     document.querySelectorAll('.control-group').forEach(g => g.classList.remove('active'));
-                    
                     document.querySelectorAll(`[data-target="${targetId}"]`).forEach(t => t.classList.add('active'));
                     if(targetGroup) targetGroup.classList.add('active');
-                    controlsContainer.classList.add('panel-open');
                 }
+            });
+        });
+
+        document.querySelectorAll('.m-sub-btn:not(.reset-btn)').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = btn.getAttribute('data-target');
+                const targetItem = document.getElementById(targetId);
+                const group = btn.closest('.control-group');
                 
-                // Reajusta o tamanho do canvas para ocupar o espaço liberado/ocupado
-                setTimeout(fitImageToView, 50);
+                if (btn.classList.contains('active')) {
+                    btn.classList.remove('active');
+                    if(targetItem) targetItem.classList.remove('active');
+                } else {
+                    group.querySelectorAll('.m-sub-btn:not(.reset-btn)').forEach(b => b.classList.remove('active'));
+                    group.querySelectorAll('.set-item').forEach(p => p.classList.remove('active'));
+                    
+                    btn.classList.add('active');
+                    if(targetItem) targetItem.classList.add('active');
+                    
+                    if(window.innerWidth <= 768) {
+                        const nav = btn.closest('.m-sub-nav');
+                        nav.scrollTo({ left: btn.offsetLeft - (nav.offsetWidth / 2) + (btn.offsetWidth / 2), behavior: 'smooth' });
+                    }
+                }
             });
         });
 
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) {
-                if (!document.querySelector('.d-tab.active')) { document.querySelector('.d-tab[data-target="group-ajustes"]').click(); }
-            }
-            fitImageToView();
-        });
-
-        // ======= LÓGICA DE ACCORDION (PANELS) =======
-        document.querySelectorAll('.panel-header').forEach(header => {
-            header.addEventListener('click', () => {
-                header.parentElement.classList.toggle('collapsed');
-            });
-        });
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.control-group, .set-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.m-tab, .m-sub-btn').forEach(el => el.classList.remove('active'));
+        }
 
         // ======= SISTEMA DE ZOOM =======
         let currentZoom = 1; const zoomStep = 0.2; const canvasWrapper = document.getElementById('canvas-wrapper');
@@ -705,32 +733,51 @@
         document.getElementById('btn-zoom-in').addEventListener('click', () => { currentZoom += zoomStep; updateZoom(); });
         document.getElementById('btn-zoom-out').addEventListener('click', () => { currentZoom = Math.max(0.2, currentZoom - zoomStep); updateZoom(); });
 
+        // ======= FUNÇÃO PARA AJUSTAR ZOOM INICIAL (PREENCHER ALTURA) =======
         function fitImageToView() {
             if (!sourceImg || !canvas.width) return;
-            const view = document.getElementById('view'); const wrapper = document.getElementById('canvas-wrapper');
+        
+            const view = document.getElementById('view');
+            const wrapper = document.getElementById('canvas-wrapper');
+            
             const style = getComputedStyle(view);
             const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
             const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-            let availableHeight = view.clientHeight - padY; let availableWidth = view.clientWidth - padX;
-            if (availableHeight < 50) availableHeight = 50; if (availableWidth < 50) availableWidth = 50;
+            
+            // Pega a área total do view ignorando as barras flutuantes
+            let availableHeight = view.clientHeight - padY;
+            let availableWidth = view.clientWidth - padX;
+            
+            if (availableHeight < 50) availableHeight = 50; 
+            if (availableWidth < 50) availableWidth = 50;
+            
             const imgAspect = sourceImg.width / sourceImg.height;
             const targetContentH = Math.min(availableHeight, availableWidth / imgAspect);
-            const wrapperW = wrapper.clientWidth; const wrapperH = wrapper.clientHeight;
+            
+            const wrapperW = wrapper.clientWidth;
+            const wrapperH = wrapper.clientHeight;
             if (wrapperW === 0 || wrapperH === 0) return;
+            
             const renderedCanvasH = Math.min(wrapperH, wrapperW / imgAspect);
+            
             const imageScaleVal = parseInt(document.getElementById('imageScale').value, 10) / 100;
-            const canvasPadding = 2; const contentFraction = imageScaleVal / canvasPadding;
+            const canvasPadding = 2; 
+            const contentFraction = imageScaleVal / canvasPadding;
+            
             const renderedContentH = renderedCanvasH * contentFraction;
             if (renderedContentH <= 0) return;
+            
             const newZoom = targetContentH / renderedContentH;
+            
             currentZoom = Math.max(0.2, Math.min(5, newZoom));
             updateZoom();
         }
         
-        // ======= TEMA =======
+        // ======= CÓDIGO DA FERRAMENTA =======
         const themeBtn = document.getElementById('btnThemeToggle'); const rootHtml = document.documentElement;
-        const moonIcon = `<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
-        const sunIcon = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+        const moonIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+        const sunIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
         function updateThemeIcon() { themeBtn.innerHTML = rootHtml.getAttribute('data-theme') === 'dark' ? sunIcon : moonIcon; }
         if (localStorage.getItem('pixelarTheme') === 'dark') { rootHtml.setAttribute('data-theme', 'dark'); } updateThemeIcon();
         themeBtn.addEventListener('click', () => {
@@ -738,7 +785,6 @@
             else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); } updateThemeIcon();
         });
 
-        // ======= LOCKS & RESETS =======
         const locks = { pxSize: false, groupStrength: false, colorSelect: false, colors: false, shapeType: false, shapePoints: false, shapeScale: false, shapeRotation: false, shapeEllipseX: false, shapeEllipseY: false, shapeColor: false };
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -762,7 +808,7 @@
             populateShapeForm(); scheduleProcess();
         }
 
-        document.querySelectorAll('.global-reset').forEach(btn => {
+        document.querySelectorAll('.reset-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const target = btn.getAttribute('data-target');
                 if (target === 'ajustes') resetAdjustments(e);
@@ -785,7 +831,7 @@
         function createDefaultShape() { return { enable: false, type: 'star', points: 5, scale: 100, rotation: 0, ellipseX: 100, ellipseY: 100, offsetX: 0, offsetY: 0, color: '#E5533D', useGradient: false, gradType: 'linear', gradAngle: 90, gradColors: ['#E5533D', '#FFD166'], gradSteps: 0, gradPos: 50, gradSmooth: 100, fill: true, strokeWidth: 0, layer: 'front', opacity: 100, irregularRadii: Array.from({ length: 40 }, () => 35) }; }
         let shapes = [createDefaultShape()]; let activeShapeIndex = 0;
 
-        const THEMES = { Nintendo_DS: ["#050505", "#DFE4E8"], PeB_Dither: ["#000000", "#000000", "#FFFFFF", "#FFFFFF"], VHS: ["#1E1E1E", "#00FFFF", "#FF00FF", "#F0F8FF"], Termica: ["#00008B", "#800080", "#FF0000", "#FFFF00", "#FFFFFF"] };
+        const THEMES = { Nintendo_DS: ["#050505", "#DFE4E8"], Nokia: ["#43523D", "#43523D", "#C7F0D8", "#C7F0D8"], PeB_Dither: ["#000000", "#000000", "#FFFFFF", "#FFFFFF"], GameBoy: ["#0F380F", "#306230", "#8BAC0F", "#9BBC0F"], VHS: ["#1E1E1E", "#00FFFF", "#FF00FF", "#F0F8FF"], RaioX: ["#000000", "#1A2421", "#008B8B", "#80CBC4", "#FFFFFF"], Termica: ["#00008B", "#800080", "#FF0000", "#FFFF00", "#FFFFFF"] };
 
         function hexToRgb(hex) { let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : {r:0, g:0, b:0}; }
         function rgbToHex(r, g, b) { return "#" + (1 << 24 | Math.max(0, Math.min(255, r)) << 16 | Math.max(0, Math.min(255, g)) << 8 | Math.max(0, Math.min(255, b))).toString(16).slice(1).toUpperCase(); }
@@ -826,9 +872,10 @@
             });
         }
 
+        // UPDATE BADGES OVERRIDE
         function updateBadgeSingle(id, val, def, f='') {
             const el = document.getElementById(id);
-            if(el) { const v = parseFloat(val); if(v !== def && v !== 0 && !isNaN(v)) { el.textContent = v + f; el.style.display = 'inline-block'; } else { el.style.display = 'none'; } }
+            if(el) { const v = parseFloat(val); if(v !== def && v !== 0 && !isNaN(v)) { el.textContent = v + f; el.style.display = 'block'; } else { el.style.display = 'none'; } }
         }
         function updateBadges() {
             updateBadgeSingle('bdg-est', document.getElementById('estrutura').value, 0); updateBadgeSingle('bdg-exp', document.getElementById('exposicao').value, 0); updateBadgeSingle('bdg-bri', document.getElementById('brilho').value, 0); updateBadgeSingle('bdg-con', document.getElementById('contraste').value, 0); updateBadgeSingle('bdg-tem', document.getElementById('temperatura').value, 0); updateBadgeSingle('bdg-sat', document.getElementById('saturacao').value, 0); updateBadgeSingle('bdg-som', document.getElementById('sombras').value, 0); updateBadgeSingle('bdg-pos', document.getElementById('posterize').value, 0); updateBadgeSingle('bdg-abe', document.getElementById('rgbShift').value, 0);
@@ -836,17 +883,21 @@
             updateBadgeSingle('bdg-dPat', document.getElementById('ditherSelect').value === 'none' ? 0 : 1, 0, '*');
             updateBadgeSingle('bdg-dSca', document.getElementById('ditherScale').value, 1); updateBadgeSingle('bdg-dInt', document.getElementById('ditherIntensity').value, 100, '%'); updateBadgeSingle('bdg-dAng', document.getElementById('texAngle').value, 45, '°'); updateBadgeSingle('bdg-edg', document.getElementById('edgePixelSize').value, 0);
             
-            updateBadgeSingle('bdg-shPnt', document.getElementById('shapePoints').value, 5); updateBadgeSingle('bdg-shOpa', document.getElementById('shapeOpacity').value, 100, '%');
+            const tO = document.getElementById('textureOpacity').value; const eO = document.getElementById('edgeOpacity').value; const bdgOpa = document.getElementById('bdg-opa');
+            if(bdgOpa) { if((tO != 100 && tO != 0) || (eO != 100 && eO != 0)) { bdgOpa.textContent = '*'; bdgOpa.style.display = 'block'; } else { bdgOpa.style.display = 'none'; } }
+
             const sScale = document.getElementById('shapeScale').value; const sRot = document.getElementById('shapeRotation').value; const eX = document.getElementById('shapeEllipseX').value; const eY = document.getElementById('shapeEllipseY').value; const bSiz = document.getElementById('bdg-shSiz');
-            if(bSiz) { if(sScale != 100 || sRot != 0 || eX != 100 || eY != 100) { bSiz.textContent = '*'; bSiz.style.display = 'inline-block'; } else { bSiz.style.display = 'none'; } }
+            if(bSiz) { if(sScale != 100 || sRot != 0 || eX != 100 || eY != 100) { bSiz.textContent = '*'; bSiz.style.display = 'block'; } else { bSiz.style.display = 'none'; } }
+            
+            updateBadgeSingle('bdg-shPnt', document.getElementById('shapePoints').value, 5); updateBadgeSingle('bdg-shOpa', document.getElementById('shapeOpacity').value, 100, '%');
             const gStp = document.getElementById('shapeGradSteps').value; const bCol = document.getElementById('bdg-shCol');
-            if(bCol) { if(gStp != 0) { bCol.textContent = '*'; bCol.style.display = 'inline-block'; } else { bCol.style.display = 'none'; } }
+            if(bCol) { if(gStp != 0) { bCol.textContent = '*'; bCol.style.display = 'block'; } else { bCol.style.display = 'none'; } }
 
             const ph = document.getElementById('palHue').value; const ps = document.getElementById('palSat').value; const pl = document.getElementById('palLight').value; const bcAju = document.getElementById('bdg-corAju');
-            if(bcAju) { if(ph != 0 || ps != 0 || pl != 0) { bcAju.textContent = '*'; bcAju.style.display = 'inline-block'; } else { bcAju.style.display = 'none'; } }
+            if(bcAju) { if(ph != 0 || ps != 0 || pl != 0) { bcAju.textContent = '*'; bcAju.style.display = 'block'; } else { bcAju.style.display = 'none'; } }
             
             const igStp = document.getElementById('imgGradSteps').value; const bcDeg = document.getElementById('bdg-corDeg');
-            if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'inline-block'; } else { bcDeg.style.display = 'none'; } }
+            if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'block'; } else { bcDeg.style.display = 'none'; } }
 
             document.getElementById('brushSizeVal').textContent = document.getElementById('brushSize').value + ' px';
         }
@@ -865,6 +916,7 @@
         globalCurrentPalette = [hexToRgb('#2C2C2C'), hexToRgb('#D62828'), hexToRgb('#FFD166'), hexToRgb('#00C2A8')]; setBasePalette(globalCurrentPalette);
         const canvas = document.getElementById('outputCanvas'); const ctx = canvas.getContext('2d'); const origCanvas = document.getElementById('originalCanvas'); const oCtx = origCanvas.getContext('2d');
 
+        // Botoes Iconizados Extras
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleProcess(); });
         document.getElementById('btnGroupMean').addEventListener('click', (e) => { groupMethod = 'mean'; e.currentTarget.classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); scheduleProcess(); });
         document.getElementById('btnGroupMode').addEventListener('click', (e) => { groupMethod = 'mode'; e.currentTarget.classList.add('active-state'); document.getElementById('btnGroupMean').classList.remove('active-state'); scheduleProcess(); });
@@ -977,6 +1029,7 @@
                                 document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0; groupMethod = "mean"; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; document.getElementById('edgePixelSize').value = 0;
                                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; updateBadges(); scheduleProcess(); 
                             } 
+                            // Ajusta zoom para preencher a altura após carregar
                             fitImageToView();
                             e.target.value = '';
                         }; img.src = url;
@@ -990,7 +1043,7 @@
             img.onload = () => {
                 sourceImg = img; eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height); document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none'; document.getElementById('groupStrength').value = 0; groupMethod = 'mean'; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; document.getElementById('edgePixelSize').value = 0;
                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
-                updateBadges(); scheduleProcess(); fitImageToView();
+                updateBadges(); scheduleProcess(); fitImageToView(); // Reajusta zoom
             }; img.src = originalSourceUrl;
         });
 
@@ -1006,7 +1059,8 @@
                     const themeName = e.target.getAttribute('data-theme');
                     if (THEMES[themeName]) {
                         isImageInverted = false; currentPaletteMode = 'preset';
-                        if (themeName === 'Nintendo_DS') { if (!locks.colorSelect) document.getElementById('colorSelect').value = "4"; if (!locks.ditherSelect) { document.getElementById('ditherSelect').value = "nintendo_ds"; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; } } 
+                        if (themeName === 'Nintendo_DS') { if (!locks.colorSelect) document.getElementById('colorSelect').value = "2"; if (!locks.ditherSelect) { document.getElementById('ditherSelect').value = "nintendo_ds"; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; } } 
+                        else if (themeName === 'GameBoy') { if (!locks.colorSelect) document.getElementById('colorSelect').value = "4"; if (!locks.ditherSelect) { document.getElementById('ditherSelect').value = "nintendo_ds"; document.getElementById('ditherScale').value = 1; } }
                         updateBadges(); let targetColors = parseInt(document.getElementById('colorSelect').value, 10);
                         if (isNaN(targetColors)) { targetColors = THEMES[themeName].length; document.getElementById('colorSelect').value = targetColors; }
                         globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors); setBasePalette(globalCurrentPalette);
@@ -1020,18 +1074,18 @@
         function renderPalettes() {
             const grid = document.getElementById('savedPalettesGrid'); grid.innerHTML = '';
             for(let key in savedPalettes) {
-                const div = document.createElement('div'); div.style.display = "flex"; div.style.width = "100%";
-                const b = document.createElement('button'); b.className = "std-btn"; b.style.flex = "1"; b.style.display = "flex"; b.style.alignItems = "center";
-                const colorStrip = document.createElement('div'); colorStrip.style.display = "flex"; colorStrip.style.flex = "1"; colorStrip.style.height = "16px"; colorStrip.style.marginRight = "6px";
+                const div = document.createElement('div'); div.style.display = "flex"; div.style.width = "100%"; div.style.marginBottom = "6px";
+                const b = document.createElement('button'); b.className = "std-btn"; b.style.flex = "1"; b.style.display = "flex"; b.style.alignItems = "center"; b.style.padding = "4px";
+                const colorStrip = document.createElement('div'); colorStrip.style.display = "flex"; colorStrip.style.flex = "1"; colorStrip.style.height = "18px"; colorStrip.style.marginRight = "8px";
                 let viewP = savedPalettes[key].slice(0, 8); viewP.forEach(c => { const cDiv = document.createElement('div'); cDiv.style.flex = "1"; cDiv.style.backgroundColor = rgbToHex(c.r, c.g, c.b); colorStrip.appendChild(cDiv); });
-                const label = document.createElement('span'); label.textContent = key; b.appendChild(colorStrip); b.appendChild(label);
+                const label = document.createElement('span'); label.textContent = key; label.style.fontSize = "0.75rem"; label.style.paddingRight = "6px"; b.appendChild(colorStrip); b.appendChild(label);
                 b.onclick = () => { if(!locks.colors) { isImageInverted = false; currentPaletteMode = 'preset'; globalCurrentPalette = [...savedPalettes[key]]; setBasePalette(globalCurrentPalette); scheduleProcess(); } };
                 const db = document.createElement('button'); db.className = "std-btn icon-btn"; db.innerHTML = "<svg viewBox='0 0 24 24'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>"; db.style.marginLeft = "4px";
                 db.onclick = () => { delete savedPalettes[key]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); };
                 div.appendChild(b); div.appendChild(db); grid.appendChild(div);
             }
         }
-        document.getElementById('btnSavePalette').addEventListener('click', () => { if(document.getElementById('colorSelect').value === 'all') { alert("Mude para um número específico de cores para gerar uma paleta e salvá-la."); return; } let name = prompt("Nome desta paleta:"); if(!name) return; savedPalettes[name] = [...globalCurrentPalette]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); });
+        document.getElementById('btnSavePalette').addEventListener('click', () => { if(document.getElementById('colorSelect').value === 'all') { alert("O modo cores originais está ativo. Mude para um número específico de cores para gerar uma paleta e salvá-la."); return; } let name = prompt("Dê um nome para esta paleta:"); if(!name) return; savedPalettes[name] = [...globalCurrentPalette]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); });
 
         window.lastRandomHue = window.lastRandomHue || Math.random();
         function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 10); } }
@@ -1177,7 +1231,7 @@
         function renderPresets() {
             const grid = document.getElementById('myPresetsGrid'); grid.innerHTML = '';
             for(let key in savedPresets) {
-                const div = document.createElement('div'); div.style.display = "flex"; div.style.gap = "4px"; div.style.width = "100%";
+                const div = document.createElement('div'); div.style.display = "flex"; div.style.gap = "6px"; div.style.width = "100%";
                 const b = document.createElement('button'); b.className = "std-btn"; b.textContent = key; b.style.flex = "1"; b.onclick = () => { applyState(savedPresets[key]); };
                 const db = document.createElement('button'); db.className = "std-btn icon-btn"; db.innerHTML = "<svg viewBox='0 0 24 24'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>";
                 db.onclick = () => { delete savedPresets[key]; try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch(e) {} renderPresets(); }; div.appendChild(b); div.appendChild(db); grid.appendChild(div);
@@ -1373,7 +1427,7 @@
                 }
             }
 
-            if (rgbShift > 0) {
+if (rgbShift > 0) {
                 let shiftTemp = new Uint8ClampedArray(d);
                 for(let y=0; y<smallH; y++) { for(let x=0; x<smallW; x++) { let i = (y*smallW + x)*4; let rx = x + rgbShift; if (rx >= 0 && rx < smallW) { d[i] = shiftTemp[(y*smallW + rx)*4]; } let bx = x - rgbShift; if (bx >= 0 && bx < smallW) { d[i+2] = shiftTemp[(y*smallW + bx)*4 + 2]; } } }
             } 
