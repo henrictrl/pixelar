@@ -56,7 +56,7 @@
         h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
         #mobile-header { display: none; }
 
-        /* Desktop Tabs (Oculto via Media Query no Desktop, usado no fluxo padrão) */
+        /* Desktop Tabs */
         #desktop-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 12px; border-bottom: 2px solid var(--border-light); }
         .d-tab { flex: 1 1 calc(33% - 6px); background: var(--bg); border: 2px solid var(--border); padding: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: var(--accent); transition: all 0.2s; font-family: monospace; }
         .d-tab.active { background: var(--text); color: var(--bg); }
@@ -132,89 +132,12 @@
         .color-btn { width: 100%; height: 36px; padding: 0; border: 2px solid var(--border); cursor: pointer; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: outline 0.1s, transform 0.1s; }
         .color-btn:hover { transform: scale(1.05); outline: 2px solid var(--text); outline-offset: -2px; }
 
-        /* ================= OVERRIDES DO DESKTOP (PAINEL TOTALMENTE ABERTO) ================= */
-        .desktop-group-title, .desktop-label, .desktop-reset { display: none; }
-
-        @media (min-width: 769px) {
-            #desktop-tabs { display: none !important; }
-            
-            /* Mostra todos os grupos em lista */
-            .control-group { 
-                display: flex !important; 
-                padding-bottom: 25px; 
-                margin-bottom: 10px; 
-                border-bottom: 2px dashed var(--border-light);
-            }
-            
-            /* Título do grupo */
-            .desktop-group-title {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                font-size: 1.1rem;
-                font-weight: bold;
-                text-transform: uppercase;
-                margin-bottom: 12px;
-                padding: 6px 10px;
-                background: var(--text);
-                color: var(--bg);
-                border: 2px solid var(--border);
-                box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-            }
-
-            /* Botão de reset especial para o desktop */
-            .desktop-reset {
-                display: flex;
-                background: transparent;
-                border: 2px solid var(--bg);
-                color: var(--bg);
-                padding: 4px 8px;
-                font-size: 0.75rem;
-                cursor: pointer;
-                align-items: center;
-                gap: 4px;
-                font-weight: bold;
-                text-transform: uppercase;
-                font-family: monospace;
-                transition: all 0.1s;
-            }
-            .desktop-reset svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
-            .desktop-reset:hover { background: var(--bg); color: var(--text); }
-            
-            /* Esconde as abas secundárias que alternavam os controles */
-            .m-sub-nav { display: none !important; }
-            
-            /* Força exibição de todos os itens */
-            .sec-content { gap: 10px; }
-            .set-item { 
-                display: flex !important; 
-                padding: 12px; 
-                background: var(--bg);
-                border: 1px solid var(--border-light);
-                box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
-            }
-
-            /* Rótulo descritivo de cada controle (exclusivo do desktop) */
-            .desktop-label {
-                display: block;
-                font-size: 0.75rem;
-                font-weight: bold;
-                text-transform: uppercase;
-                color: var(--text);
-                width: 100%;
-                text-align: left;
-                margin-bottom: 8px;
-                padding-bottom: 4px;
-                border-bottom: 1px solid var(--border-light);
-            }
-        }
-
         /* ================= VIEW AREA ================= */
         #view { flex: 1; display: flex; justify-content: center; align-items: center; background-color: var(--canvas-bg); padding: 15px; overflow: hidden; position: relative; }
         #welcomeMsg { position: absolute; text-align: center; font-size: 1.2rem; color: var(--accent); cursor: pointer; display: flex; flex-direction: column; gap: 12px; align-items: center; transition: color 0.2s; }
         #welcomeMsg:hover { color: var(--text); }
         
-        #canvas-wrapper { position: relative; display: none; width: 100%; height: 100%; touch-action: none; transition: transform 0.1s; transform-origin: center; }
+        #canvas-wrapper { position: relative; display: none; width: 100%; height: 100%; max-height: calc(100% - 100px); touch-action: none; transition: transform 0.1s; transform-origin: center; }
         #canvas-wrapper.comparing { cursor: ew-resize; }
         #canvas-wrapper.tool-move { cursor: move; }
         #canvas-wrapper.tool-erase, #canvas-wrapper.tool-restore { cursor: crosshair; }
@@ -347,10 +270,6 @@
 
         <!-- GRUPO: AJUSTES -->
         <div class="control-group active" id="group-ajustes">
-            <div class="desktop-group-title">
-                Ajustes
-                <button class="reset-btn desktop-reset" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
-            </div>
             <div class="m-sub-nav">
                 <button class="m-sub-btn" data-target="set-est"><span class="badge" id="bdg-est"></span><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><span>Estrutura</span></button>
                 <button class="m-sub-btn" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg><span>Exposição</span></button>
@@ -364,39 +283,38 @@
                 <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
             </div>
             <div class="sec-content">
-                <div class="set-item" id="set-est"><div class="desktop-label">Estrutura</div><div class="slider-row"><input type="range" id="estrutura" min="0" max="100" value="0"></div></div>
-                <div class="set-item" id="set-exp"><div class="desktop-label">Exposição</div><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-bri"><div class="desktop-label">Brilho</div><div class="slider-row"><input type="range" id="brilho" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-con"><div class="desktop-label">Contraste</div><div class="slider-row"><input type="range" id="contraste" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-tem"><div class="desktop-label">Temperatura</div><div class="slider-row"><input type="range" id="temperatura" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-sat"><div class="desktop-label">Saturação</div><div class="slider-row"><input type="range" id="saturacao" min="-100" max="100" value="0"></div></div>
-                <div class="set-item" id="set-som"><div class="desktop-label">Sombras</div>
+                <div class="set-item" id="set-est"><div class="slider-row"><input type="range" id="estrutura" min="0" max="100" value="0"></div></div>
+                <div class="set-item" id="set-exp"><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-bri"><div class="slider-row"><input type="range" id="brilho" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-con"><div class="slider-row"><input type="range" id="contraste" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-tem"><div class="slider-row"><input type="range" id="temperatura" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-sat"><div class="slider-row"><input type="range" id="saturacao" min="-100" max="100" value="0"></div></div>
+                <div class="set-item" id="set-som">
                     <div class="slider-row">
                         <input type="range" id="sombras" min="-100" max="100" value="0">
                         <button id="btnInvertShadows" class="icon-btn" title="Inverter Sombras"><svg viewBox="0 0 24 24"><path d="M12 2v20a10 10 0 1 0 0-20z" fill="currentColor"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
                     </div>
                 </div>
-                <div class="set-item" id="set-pos"><div class="desktop-label">Posterizar</div><div class="slider-row"><input type="range" id="posterize" min="0" max="100" value="0"></div></div>
-                <div class="set-item" id="set-abe"><div class="desktop-label">Aberração Cromática</div><div class="slider-row"><input type="range" id="rgbShift" min="0" max="15" value="0"></div></div>
+                <div class="set-item" id="set-pos"><div class="slider-row"><input type="range" id="posterize" min="0" max="100" value="0"></div></div>
+                <div class="set-item" id="set-abe"><div class="slider-row"><input type="range" id="rgbShift" min="0" max="15" value="0"></div></div>
             </div>
         </div>
 
         <!-- GRUPO: PIXEL -->
         <div class="control-group" id="group-pixel">
-            <div class="desktop-group-title">Pixel</div>
             <div class="m-sub-nav">
                 <button class="m-sub-btn" data-target="set-pxSize"><span class="badge" id="bdg-px"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Tamanho</span></button>
                 <button class="m-sub-btn" data-target="set-pxGroup"><span class="badge" id="bdg-grp"></span><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect></svg><span>Agrupar</span></button>
             </div>
             <div class="sec-content">
-                <div class="set-item" id="set-pxSize"><div class="desktop-label">Tamanho do Pixel</div>
+                <div class="set-item" id="set-pxSize">
                     <div class="slider-row">
                         <input type="range" id="pxSize" min="1" max="64" value="1">
                         <button class="icon-btn lock-btn" data-target="pxSize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                         <button class="icon-btn shuffle-btn" data-target="pxSize"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
                     </div>
                 </div>
-                <div class="set-item" id="set-pxGroup"><div class="desktop-label">Nível de Agrupamento</div>
+                <div class="set-item" id="set-pxGroup">
                     <div class="slider-row">
                         <input type="range" id="groupStrength" min="0" max="100" value="0">
                         <button id="btnGroupMean" class="icon-btn active-state" title="Modo Média"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg></button>
@@ -408,10 +326,6 @@
 
         <!-- GRUPO: TEXTURA -->
         <div class="control-group" id="group-textura">
-            <div class="desktop-group-title">
-                Textura
-                <button class="reset-btn desktop-reset" data-target="ditherSelect"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
-            </div>
             <div class="m-sub-nav">
                 <button class="m-sub-btn" data-target="set-dithPat"><span class="badge" id="bdg-dPat"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg><span>Padrão</span></button>
                 <button class="m-sub-btn" data-target="set-dithSca"><span class="badge" id="bdg-dSca"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Escala</span></button>
@@ -422,7 +336,7 @@
                 <button class="m-sub-btn reset-btn" data-target="ditherSelect"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
             </div>
             <div class="sec-content">
-                <div class="set-item" id="set-dithPat"><div class="desktop-label">Padrão Dither</div>
+                <div class="set-item" id="set-dithPat">
                     <div class="slider-row">
                         <select id="ditherSelect">
                             <option value="none">Padrão Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
@@ -433,10 +347,10 @@
                         <button id="btnEffMidDither" class="icon-btn" title="Suavizar Tons Médios"><svg viewBox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
                     </div>
                 </div>
-                <div class="set-item" id="set-dithSca"><div class="desktop-label">Escala Textura</div><div class="slider-row"><input type="range" id="ditherScale" min="1" max="10" value="1"></div></div>
-                <div class="set-item" id="set-dithInt"><div class="desktop-label">Intensidade Dither</div><div class="slider-row"><input type="range" id="ditherIntensity" min="0" max="200" value="100"></div></div>
-                <div class="set-item" id="set-dithAng"><div class="desktop-label">Ângulo Textura</div><div class="slider-row"><input type="range" id="texAngle" min="0" max="180" value="45"></div></div>
-                <div class="set-item" id="set-dithOpa"><div class="desktop-label">Opacidade Dither e Contorno</div>
+                <div class="set-item" id="set-dithSca"><div class="slider-row"><input type="range" id="ditherScale" min="1" max="10" value="1"></div></div>
+                <div class="set-item" id="set-dithInt"><div class="slider-row"><input type="range" id="ditherIntensity" min="0" max="200" value="100"></div></div>
+                <div class="set-item" id="set-dithAng"><div class="slider-row"><input type="range" id="texAngle" min="0" max="180" value="45"></div></div>
+                <div class="set-item" id="set-dithOpa">
                     <div class="slider-row">
                         <svg class="lbl-icon" viewBox="0 0 24 24" title="Textura"><rect x="4" y="4" width="16" height="16" fill="currentColor"/></svg>
                         <input type="range" id="textureOpacity" min="0" max="100" value="100">
@@ -444,7 +358,7 @@
                         <input type="range" id="edgeOpacity" min="0" max="100" value="100">
                     </div>
                 </div>
-                <div class="set-item" id="set-dithEdg"><div class="desktop-label">Edge / Contorno Extra</div>
+                <div class="set-item" id="set-dithEdg">
                     <div class="slider-row">
                         <input type="range" id="edgePixelSize" min="0" max="15" value="0" title="Espessura do Contorno">
                         <input type="color" id="edgeColor" class="icon-btn" value="#000000" title="Cor do Contorno">
@@ -455,10 +369,6 @@
 
         <!-- GRUPO: FORMAS -->
         <div class="control-group" id="group-formas">
-            <div class="desktop-group-title">
-                Formas
-                <button class="reset-btn desktop-reset" data-target="shapes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
-            </div>
             <div class="m-sub-nav">
                 <button class="m-sub-btn" data-target="set-shpGen"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg><span>Lista</span></button>
                 <button class="m-sub-btn" data-target="set-shpGeo"><span class="badge" id="bdg-shPnt"></span><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Formato</span></button>
@@ -468,7 +378,7 @@
                 <button class="m-sub-btn reset-btn" data-target="shapes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
             </div>
             <div class="sec-content">
-                <div class="set-item" id="set-shpGen"><div class="desktop-label">Gerenciar Formas</div>
+                <div class="set-item" id="set-shpGen">
                     <div class="slider-row">
                         <select id="shapeListSelector"></select>
                         <button id="btnNewShape" class="icon-btn std-btn">+</button>
@@ -477,12 +387,12 @@
                     <label class="custom-checkbox"><input type="checkbox" id="shapeEnable"><span class="checkmark"></span><span>Habilitar Forma</span></label>
                     <select id="shapeLayer" style="margin-top:8px;"><option value="front">Renderizar na Frente</option><option value="back">Renderizar Atrás</option></select>
                 </div>
-                <div class="set-item" id="set-shpGeo"><div class="desktop-label">Geometria da Forma</div>
+                <div class="set-item" id="set-shpGeo">
                     <div class="slider-row"><select id="shapeType"><option value="star">Estrela</option><option value="polygon">Polígono Regular</option><option value="concave">Polígono Côncavo</option><option value="irregular">Forma Irregular</option><option value="complex">Forma Complexa</option><option value="circle">Círculo / Elipse</option></select></div>
                     <button id="btn-regerar-irregular" class="std-btn" style="display:none; width:100%; margin-bottom:8px;">Regerar Variação</button>
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Lados"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><input type="range" id="shapePoints" min="3" max="20" value="5"></div>
                 </div>
-                <div class="set-item" id="set-shpSiz"><div class="desktop-label">Dimensões e Proporção</div>
+                <div class="set-item" id="set-shpSiz">
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Forma"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><input type="range" id="shapeScale" min="30" max="300" value="100"></div>
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Rotação"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><input type="range" id="shapeRotation" min="0" max="360" value="0"></div>
                     <div id="shapeEllipseControls" style="display:none; flex-direction:column; gap:10px; width:100%;">
@@ -493,7 +403,7 @@
                         <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Escala da Foto Original"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><input type="range" id="imageScale" min="30" max="200" value="100"></div>
                     </div>
                 </div>
-                <div class="set-item" id="set-shpCol"><div class="desktop-label">Preenchimento da Forma</div>
+                <div class="set-item" id="set-shpCol">
                     <div class="slider-row">
                         <input type="color" id="shapeColorInput" class="icon-btn" value="#E5533D">
                         <button class="std-btn icon-btn" id="shapeColorShuffle" style="flex:1;"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg> Sortear</button>
@@ -509,7 +419,7 @@
                         <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Suavidade"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input type="range" id="shapeGradSmooth" min="0" max="100" value="100"></div>
                     </div>
                 </div>
-                <div class="set-item" id="set-shpOpa"><div class="desktop-label">Bordas e Fundo da Forma</div>
+                <div class="set-item" id="set-shpOpa">
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Opacidade"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20"></path></svg><input type="range" id="shapeOpacity" min="0" max="100" value="100"></div>
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Vazamento Interno"><rect x="4" y="4" width="16" height="16" fill="none"></rect><rect x="8" y="8" width="8" height="8" fill="none"></rect></svg><input type="range" id="shapeStrokeWidth" min="0" max="150" value="0"></div>
                     <label class="custom-checkbox" style="margin-top:8px;"><input type="checkbox" id="shapeFill" checked><span class="checkmark"></span><span>Preencher Fundo</span></label>
@@ -519,10 +429,6 @@
 
         <!-- GRUPO: CORES -->
         <div class="control-group" id="group-cores">
-            <div class="desktop-group-title">
-                Cores
-                <button class="reset-btn desktop-reset" data-target="colors"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg> Zerar</button>
-            </div>
             <div class="m-sub-nav">
                 <button class="m-sub-btn" data-target="set-corPal"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Paleta</span></button>
                 <button class="m-sub-btn" data-target="set-corAju"><span class="badge" id="bdg-corAju"></span><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg><span>Ajuste</span></button>
@@ -531,7 +437,7 @@
                 <button class="m-sub-btn reset-btn" data-target="colors"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
             </div>
             <div class="sec-content">
-                <div class="set-item" id="set-corPal"><div class="desktop-label">Modo Paleta de Cores</div>
+                <div class="set-item" id="set-corPal">
                     <div class="slider-row">
                         <select id="colorSelect">
                             <option value="2">2 Cores</option><option value="3">3 Cores</option><option value="4">4 Cores</option><option value="6">6 Cores</option>
@@ -545,12 +451,12 @@
                     </div>
                     <div id="colorsGrid" class="colors-grid" style="margin-top:8px;"></div>
                 </div>
-                <div class="set-item" id="set-corAju"><div class="desktop-label">Ajuste Global de Cores</div>
+                <div class="set-item" id="set-corAju">
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Desvio Matiz"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input type="range" id="palHue" min="-180" max="180" value="0"></div>
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Saturação Global"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><input type="range" id="palSat" min="-100" max="100" value="0"></div>
                     <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Luminosidade Global"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg><input type="range" id="palLight" min="-100" max="100" value="0"></div>
                 </div>
-                <div class="set-item" id="set-corDeg"><div class="desktop-label">Filtro Degradê Global</div>
+                <div class="set-item" id="set-corDeg">
                     <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar Degradê Global</span></label>
                     <div id="imgGradientControls" style="display:none; flex-direction:column; gap:10px; margin-top: 12px; border-top: 2px solid var(--border); padding-top: 12px; width:100%;">
                         <div id="imgGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
@@ -563,7 +469,7 @@
                         <select id="imgGradBlend"><option value="source-atop">Substituição</option><option value="multiply">Multiplicação</option><option value="overlay">Sobreposição</option><option value="screen">Clarear</option><option value="color">Apenas Cores</option></select>
                     </div>
                 </div>
-                <div class="set-item" id="set-corSal"><div class="desktop-label">Paletas Salvas</div>
+                <div class="set-item" id="set-corSal">
                     <div style="display:flex; gap:6px; margin-bottom:12px; width:100%;"><button class="std-btn" id="btnOriginal" style="flex:1;">Voltar Original</button><button class="std-btn" id="btnSavePalette" style="flex:1;">Salvar Atual</button></div>
                     <div id="savedPalettesGrid" style="display:flex; flex-direction:column; gap:6px; width:100%;"></div>
                 </div>
@@ -572,21 +478,20 @@
 
         <!-- GRUPO: OPCOES -->
         <div class="control-group" id="group-sistema">
-            <div class="desktop-group-title">Sistema</div>
             <div class="m-sub-nav">
                 <button class="m-sub-btn" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
                 <button class="m-sub-btn" data-target="set-opTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
                 <button class="m-sub-btn" data-target="set-opExp"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
             </div>
             <div class="sec-content">
-                <div class="set-item" id="set-opFun"><div class="desktop-label">Fundo do Canvas</div>
+                <div class="set-item" id="set-opFun">
                     <label class="custom-checkbox"><input type="checkbox" id="fillBg"><span class="checkmark"></span><span>Preencher Fundo</span></label>
                     <div class="slider-row" style="margin-top:12px;">
                         <input type="color" id="btnBgColor" class="icon-btn" value="#ffffff" data-color="#ffffff">
                         <input type="text" id="hexBgColor" value="#FFFFFF" maxlength="7" style="flex:1; max-width:120px; background: var(--bg); border:2px solid var(--border); color: var(--text); padding:8px; font-family: monospace; font-weight: bold; text-align:center; height:36px;">
                     </div>
                 </div>
-                <div class="set-item" id="set-opTem"><div class="desktop-label">Temas Prontos</div>
+                <div class="set-item" id="set-opTem">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width:100%;">
                         <button class="std-btn" data-theme="Nintendo_DS">Nintendo DS</button>
                         <button class="std-btn" data-theme="GameBoy">GameBoy</button>
@@ -597,7 +502,7 @@
                         <button class="std-btn" data-theme="Termica">Câmera Térmica</button>
                     </div>
                 </div>
-                <div class="set-item" id="set-opExp"><div class="desktop-label">Exportar / Importar Config.</div>
+                <div class="set-item" id="set-opExp">
                     <label class="std-btn" style="text-align: center; display: block; margin-bottom: 8px; cursor: pointer; width:100%;">
                         Importar Configuração
                         <input type="file" id="importImgConfig" accept="image/png" style="display:none;">
@@ -640,8 +545,9 @@
             <input type="range" id="brushSize" min="5" max="300" value="40" style="height: 24px;">
         </div>
 
+        <!-- Esta barra flutuante fica contida no topo do limite do #view, logo acima dos controles no mobile -->
         <div id="floating-bar">
-            <button class="float-btn active-tool" id="btn-tool-move" title="Mover"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M19 9l3 3-3 3M9 19l3 3-3 3M2 12h20M12 2v20"/></svg></button>
+            <button class="float-btn active-tool" id="btn-tool-move" title="Mover"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M19 9l3 3-3 3M9 19l3 3 3-3M2 12h20M12 2v20"/></svg></button>
             <button class="float-btn" id="btn-tool-erase" title="Borracha"><svg viewBox="0 0 24 24"><path d="M20 20H7L3 16C2.5 15.5 2.5 14.5 3 14L13 4C13.5 3.5 14.5 3.5 15 4L20 9C20.5 9.5 20.5 10.5 20 11L11 20H20V20Z"/></svg></button>
             <button class="float-btn" id="btn-tool-restore" title="Restaurar"><svg viewBox="0 0 24 24"><path d="M12 19L21.5 9.5C22.3 8.7 22.3 7.4 21.5 6.6L17.4 2.5C16.6 1.7 15.3 1.7 14.5 2.5L5 12L12 19ZM5 12L2 22L12 19"/></svg></button>
             <div style="width: 2px; background: var(--border); margin: 0 2px; align-self: stretch;"></div>
@@ -733,46 +639,6 @@
         document.getElementById('btn-zoom-in').addEventListener('click', () => { currentZoom += zoomStep; updateZoom(); });
         document.getElementById('btn-zoom-out').addEventListener('click', () => { currentZoom = Math.max(0.2, currentZoom - zoomStep); updateZoom(); });
 
-        // ======= FUNÇÃO PARA AJUSTAR ZOOM INICIAL (PREENCHER ALTURA) =======
-        function fitImageToView() {
-            if (!sourceImg || !canvas.width) return;
-        
-            const view = document.getElementById('view');
-            const wrapper = document.getElementById('canvas-wrapper');
-            
-            const style = getComputedStyle(view);
-            const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-            const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-            
-            // Pega a área total do view ignorando as barras flutuantes
-            let availableHeight = view.clientHeight - padY;
-            let availableWidth = view.clientWidth - padX;
-            
-            if (availableHeight < 50) availableHeight = 50; 
-            if (availableWidth < 50) availableWidth = 50;
-            
-            const imgAspect = sourceImg.width / sourceImg.height;
-            const targetContentH = Math.min(availableHeight, availableWidth / imgAspect);
-            
-            const wrapperW = wrapper.clientWidth;
-            const wrapperH = wrapper.clientHeight;
-            if (wrapperW === 0 || wrapperH === 0) return;
-            
-            const renderedCanvasH = Math.min(wrapperH, wrapperW / imgAspect);
-            
-            const imageScaleVal = parseInt(document.getElementById('imageScale').value, 10) / 100;
-            const canvasPadding = 2; 
-            const contentFraction = imageScaleVal / canvasPadding;
-            
-            const renderedContentH = renderedCanvasH * contentFraction;
-            if (renderedContentH <= 0) return;
-            
-            const newZoom = targetContentH / renderedContentH;
-            
-            currentZoom = Math.max(0.2, Math.min(5, newZoom));
-            updateZoom();
-        }
-        
         // ======= CÓDIGO DA FERRAMENTA =======
         const themeBtn = document.getElementById('btnThemeToggle'); const rootHtml = document.documentElement;
         const moonIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
@@ -1028,10 +894,7 @@
                             if (loadedState) { applyState(loadedState); } else {
                                 document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0; groupMethod = "mean"; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; document.getElementById('edgePixelSize').value = 0;
                                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; updateBadges(); scheduleProcess(); 
-                            } 
-                            // Ajusta zoom para preencher a altura após carregar
-                            fitImageToView();
-                            e.target.value = '';
+                            } e.target.value = '';
                         }; img.src = url;
                     }; txtReader.readAsText(slice);
                 });
@@ -1043,15 +906,15 @@
             img.onload = () => {
                 sourceImg = img; eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height); document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none'; document.getElementById('groupStrength').value = 0; groupMethod = 'mean'; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; document.getElementById('edgePixelSize').value = 0;
                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
-                updateBadges(); scheduleProcess(); fitImageToView(); // Reajusta zoom
+                updateBadges(); scheduleProcess();
             }; img.src = originalSourceUrl;
         });
 
-        document.getElementById('importImgConfig').addEventListener('change', (e) => { const file = e.target.files[0]; if(!file) return; if(!sourceImg) { alert("Faça upload de uma foto na área central primeiro."); return; } const slice = file.slice(Math.max(0, file.size - 3000)); const txtReader = new FileReader(); txtReader.onload = (eTxt) => { const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/); if(metaMatch) { try { applyState(JSON.parse(metaMatch[1])); fitImageToView(); } catch(err) { alert("Falha na leitura das configurações."); } } else { alert("A imagem enviada não possui dados salvos ou não foi gerada no Pixelar."); } e.target.value = ''; }; txtReader.readAsText(slice); });
+        document.getElementById('importImgConfig').addEventListener('change', (e) => { const file = e.target.files[0]; if(!file) return; if(!sourceImg) { alert("Faça upload de uma foto na área central primeiro."); return; } const slice = file.slice(Math.max(0, file.size - 3000)); const txtReader = new FileReader(); txtReader.onload = (eTxt) => { const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/); if(metaMatch) { try { applyState(JSON.parse(metaMatch[1])); } catch(err) { alert("Falha na leitura das configurações."); } } else { alert("A imagem enviada não possui dados salvos ou não foi gerada no Pixelar."); } e.target.value = ''; }; txtReader.readAsText(slice); });
 
-        document.getElementById('btn-fs-view').addEventListener('click', () => { document.body.classList.toggle('is-fullscreen'); setTimeout(fitImageToView, 300); });
-        document.getElementById('btn-exit-fullscreen').addEventListener('click', () => { document.body.classList.remove('is-fullscreen'); setTimeout(fitImageToView, 300); });
-        document.addEventListener('keydown', (e) => { if(e.key === "Escape" && document.body.classList.contains('is-fullscreen')) { document.body.classList.remove('is-fullscreen'); setTimeout(fitImageToView, 300); } });
+        document.getElementById('btn-fs-view').addEventListener('click', () => { document.body.classList.toggle('is-fullscreen'); });
+        document.getElementById('btn-exit-fullscreen').addEventListener('click', () => { document.body.classList.remove('is-fullscreen'); });
+        document.addEventListener('keydown', (e) => { if(e.key === "Escape" && document.body.classList.contains('is-fullscreen')) { document.body.classList.remove('is-fullscreen'); } });
 
         document.querySelectorAll('button[data-theme]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1427,13 +1290,10 @@
                 }
             }
 
-if (rgbShift > 0) {
+            if (rgbShift > 0) {
                 let shiftTemp = new Uint8ClampedArray(d);
                 for(let y=0; y<smallH; y++) { for(let x=0; x<smallW; x++) { let i = (y*smallW + x)*4; let rx = x + rgbShift; if (rx >= 0 && rx < smallW) { d[i] = shiftTemp[(y*smallW + rx)*4]; } let bx = x - rgbShift; if (bx >= 0 && bx < smallW) { d[i+2] = shiftTemp[(y*smallW + bx)*4 + 2]; } } }
-            } 
-            sCtx.putImageData(imgData, 0, 0); 
-            renderCanvas(true);
-            fitImageToView();
+            } sCtx.putImageData(imgData, 0, 0); renderCanvas(true);
         }
 
         function renderCanvas(saveState = false) {
