@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixelar</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='8' height='8' fill='%23000'/%3E%3Crect x='8' y='8' width='8' height='8' fill='%23000'/%3E%3C/svg%3E">
-    
     <style>
         :root {
             --bg: #fff;
@@ -34,27 +33,25 @@
         }
 
         * { box-sizing: border-box; }
-        
+
         body {
             margin: 0; padding: 0; font-family: monospace; background-color: var(--bg); color: var(--text);
-            display: flex; flex-direction: row; height: 100vh; overflow: hidden; padding-bottom: 80px;
+            display: flex; flex-direction: row; height: 100vh; overflow: hidden; padding-bottom: 0px;
             transition: background-color 0.2s, color 0.2s;
         }
 
-        body.is-fullscreen #controls, 
-        body.is-fullscreen #floating-bar { display: none !important; }
+        body.is-fullscreen #controls,
+        body.is-fullscreen #floating-bar,
+        body.is-fullscreen #brush-panel { display: none !important; }
         body.is-fullscreen { padding-bottom: 0; }
         body.is-fullscreen #view {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 99999; border: none; padding: 0; margin: 0; background: #000;
         }
-        body.is-fullscreen #canvas-wrapper {
-            max-width: 95vw; max-height: 95vh;
-        }
+        body.is-fullscreen #canvas-wrapper { max-width: 95vw; max-height: 95vh; }
         body.is-fullscreen #outputCanvas,
-        body.is-fullscreen #originalCanvas {
-            border: none; box-shadow: none; background: transparent;
-        }
+        body.is-fullscreen #originalCanvas { border: none; box-shadow: none; background: transparent; }
+        body.is-fullscreen #btn-exit-fullscreen { display: flex; }
 
         #controls {
             width: 340px; min-width: 340px; height: 100%; overflow-y: auto; border-right: 2px solid var(--border);
@@ -75,59 +72,36 @@
         #welcomeMsg:hover { color: var(--text); }
 
         #canvas-wrapper {
-            position: relative;
-            display: none;
-            max-width: 100%;
-            max-height: 100%;
-            touch-action: none;
+            position: relative; display: none; max-width: 100%; max-height: 100%; touch-action: none;
         }
         #canvas-wrapper.comparing { cursor: ew-resize; }
+        #canvas-wrapper.tool-move { cursor: move; }
+        #canvas-wrapper.tool-erase, #canvas-wrapper.tool-restore { cursor: crosshair; }
 
         #outputCanvas {
-            display: block;
-            max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated;
+            display: block; max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated;
             border: 1px solid var(--border); background-color: var(--bg);
-            background-image: 
-                linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk)),
-                linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk));
+            background-image: linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk)),
+                              linear-gradient(45deg, var(--canvas-chk) 25%, transparent 25%, transparent 75%, var(--canvas-chk) 75%, var(--canvas-chk));
             background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
         }
 
         #originalCanvas {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: contain; image-rendering: auto;
-            clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
-            display: none;
+            clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); display: none;
         }
 
         #slider-line {
-            position: absolute;
-            top: 0; bottom: 0; left: 50%;
-            width: 2px; background: #fff;
-            box-shadow: 0 0 4px rgba(0,0,0,0.5);
-            z-index: 9; display: none; pointer-events: none;
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5); z-index: 9; display: none; pointer-events: none;
         }
         #slider-line::after {
-            content: '↔';
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--bg); color: var(--text);
-            border: 2px solid var(--border);
-            width: 30px; height: 30px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 15px;
-            box-shadow: 2px 2px 0px rgba(0,0,0,0.3);
-            line-height: 1; padding-bottom: 2px;
+            content: '↔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--bg); color: var(--text); border: 2px solid var(--border);
+            width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 15px; box-shadow: 2px 2px 0px rgba(0,0,0,0.3); line-height: 1; padding-bottom: 2px;
         }
-
-        #canvas-tools {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: none; gap: 6px; background: var(--bg);
-            border: 2px solid var(--border); padding: 6px; border-radius: 4px; box-shadow: 4px 4px 0px rgba(0,0,0,0.2); z-index: 50;
-        }
-        body.is-fullscreen #canvas-tools { bottom: 20px; left: 50%; transform: translateX(-50%); }
 
         .title-area {
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
@@ -136,11 +110,11 @@
         .title-main { display: flex; align-items: center; gap: 10px; }
         .title-main svg rect { stroke: var(--text); }
         h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); }
-        
+
         .setting-section { border: 2px solid var(--border); background: var(--panel); margin-bottom: 8px; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
         details.setting-section[open], div.setting-section { background: var(--bg); }
         div.setting-section { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        
+
         summary {
             font-weight: bold; font-size: 0.9rem; padding: 10px; cursor: pointer; display: flex;
             justify-content: space-between; align-items: center; user-select: none;
@@ -150,7 +124,7 @@
 
         .summary-title { flex: 1; display: flex; align-items: center; }
         .sec-tools { display: flex; gap: 6px; align-items: center; }
-        
+
         .tool-btn {
             background: var(--bg); border: 2px solid var(--border); cursor: pointer; padding: 6px;
             color: var(--text); border-radius: 2px; display: flex; align-items: center; justify-content: center;
@@ -165,9 +139,9 @@
         .tool-btn.locked .icon-unlock { display: none; }
 
         .sec-content { padding: 10px; border-top: 2px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-        
+
         input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--text); height: 6px; }
-        
+
         .custom-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 0.85rem; color: var(--text); }
         .custom-checkbox input[type="checkbox"] { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
         .checkmark {
@@ -184,11 +158,12 @@
             padding: 8px 10px; background: var(--bg); border: 2px solid var(--border); color: var(--text);
             font-family: monospace; cursor: pointer; font-size: 0.9rem; font-weight: bold; box-shadow: 2px 2px 0px rgba(0,0,0,0.2); transition: transform 0.1s, background 0.1s, color 0.1s;
         }
-        .std-btn:hover { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
-        .std-btn:active { transform: translate(0, 0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
+        .std-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
+        .std-btn:active:not(:disabled) { transform: translate(0, 0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
+        .std-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
         .std-btn.active-state { background: var(--text); color: var(--bg); font-weight: bold; }
 
-        .colors-grid { 
+        .colors-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px;
             margin-bottom: 6px; max-height: 150px; overflow-y: auto; padding-right: 2px;
         }
@@ -202,29 +177,30 @@
         .always-open { border-top: 2px solid var(--border); border-bottom: 2px solid var(--border); margin-top: 10px; padding-top: 14px; }
 
         #floating-bar {
-            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
-            width: auto; min-width: 340px; max-width: 95vw; background: var(--bg);
-            border: 2px solid var(--border); display: flex; gap: 8px; padding: 8px; z-index: 9999;
-            box-shadow: 4px 4px 0px rgba(0,0,0,0.3); border-radius: 4px;
-        }
-        #floating-progress {
-            position: absolute; top: 0; left: 0; height: 100%; width: 0%;
-            background: var(--btn-hover); z-index: 0; transition: width 0.1s ease-out; opacity: 0.4;
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; padding: 8px; background: var(--bg);
+            border: 2px solid var(--border); border-radius: 4px; box-shadow: 4px 4px 0px rgba(0,0,0,0.3); z-index: 50;
         }
         .float-btn {
-            flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px;
-            background: var(--bg); border: 2px solid var(--border);
-            color: var(--text); font-family: monospace; font-size: 0.85rem; font-weight: bold; cursor: pointer; 
-            padding: 8px 16px; position: relative; z-index: 1; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: center; background: var(--bg); border: 2px solid var(--border);
+            color: var(--text); font-family: monospace; font-size: 0.85rem; font-weight: bold; cursor: pointer;
+            padding: 8px 12px; position: relative; z-index: 1; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
             transition: transform 0.1s, background 0.1s, color 0.1s; border-radius: 2px;
         }
         .float-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0px rgba(0,0,0,0.3); }
         .float-btn:active:not(:disabled) { transform: translate(0, 0); box-shadow: 1px 1px 0px rgba(0,0,0,0.3); }
         .float-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+        .float-btn.active-tool { background: var(--text); color: var(--bg); }
         .float-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; }
         .float-btn input[type="file"] { display: none; }
 
-        .proc-indicator { position: absolute; top: 6px; right: 8px; font-size: 0.75rem; color: var(--accent); display: none; font-weight: bold; z-index: 2; }
+        #brush-panel {
+            display: none; position: absolute; bottom: 75px; left: 50%; transform: translateX(-50%);
+            background: var(--bg); border: 2px solid var(--border); padding: 8px 12px;
+            border-radius: 4px; box-shadow: 4px 4px 0px rgba(0,0,0,0.3); z-index: 50;
+            align-items: center; gap: 12px;
+        }
+
         .perf-warning { font-size: 0.75rem; color: var(--accent); text-align: left; margin-bottom: 6px; font-weight: bold; }
         #footer { margin-top: auto; padding: 12px 0; text-align: center; font-size: 0.85rem; color: var(--accent); }
 
@@ -243,12 +219,19 @@
         input[type="color"]::-webkit-color-swatch { border: none; }
         input[type="color"]::-moz-color-swatch { border: none; padding: 0; }
 
+        #btn-exit-fullscreen {
+            position: fixed; top: 10px; right: 10px; z-index: 100001;
+            display: none; width: 40px; height: 40px;
+            align-items: center; justify-content: center;
+        }
+
         @media (max-width: 768px) {
-            body { flex-direction: column; padding-bottom: 80px; }
+            body { flex-direction: column; padding-bottom: 0px; }
             #view { order: 1; height: 45vh; min-height: 45vh; border-bottom: 2px solid var(--border); padding: 8px; }
             #controls { order: 2; height: calc(55vh - 80px); width: 100%; min-width: 100%; border-right: none; }
-            #floating-bar { width: 92vw; min-width: unset; bottom: 10px; padding: 6px; gap: 6px; }
-            .float-btn { padding: 6px 10px; font-size: 0.75rem; }
+            #floating-bar { bottom: 10px; padding: 6px; gap: 6px; flex-wrap: wrap; justify-content: center; }
+            #brush-panel { bottom: 65px; }
+            .float-btn { padding: 6px 8px; }
             .float-btn svg { width: 16px; height: 16px; }
         }
     </style>
@@ -269,6 +252,7 @@
             <button class="tool-btn" id="btnThemeToggle" title="Alternar Tema"></button>
         </div>
 
+        <!-- Ajustes de Imagem -->
         <details class="setting-section">
             <summary>
                 <div class="summary-title">Ajustes de Imagem</div>
@@ -289,50 +273,39 @@
                 <input type="range" id="temperatura" min="-100" max="100" value="0">
                 <div class="sub-label">Saturação: <span id="satVal">0</span></div>
                 <input type="range" id="saturacao" min="-100" max="100" value="0">
-                
                 <div class="sub-label" style="display:flex; justify-content:space-between; align-items:center;">
                     <span>Sombras: <span id="somVal">0</span></span>
                     <button id="btnInvertShadows" class="std-btn" style="padding: 4px 8px; font-size: 0.7rem;" title="Inverter Sombras">Inverter</button>
                 </div>
                 <input type="range" id="sombras" min="-100" max="100" value="0">
-
                 <div class="sub-label">Posterização: <span id="postVal">0</span></div>
                 <input type="range" id="posterize" min="0" max="100" value="0">
-
                 <div class="sub-label">Aberração Cromática: <span id="rgbShiftVal">0</span></div>
                 <input type="range" id="rgbShift" min="0" max="15" value="0">
             </div>
         </details>
 
+        <!-- Tamanho Pixel -->
         <details open class="setting-section">
             <summary>
-                <div class="summary-title">Tamanho Pixel: <span id="pxVal" style="margin-left: 6px;">8</span></div>
+                <div class="summary-title">Tamanho Pixel: <span id="pxVal">1</span></div>
                 <div class="sec-tools">
                     <button class="tool-btn reset-btn" data-target="pxSize" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
-                    <button class="tool-btn lock-btn" data-target="pxSize" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    </button>
-                    <button class="tool-btn shuffle-btn" data-target="pxSize" title="Embaralhar">
-                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                    </button>
+                    <button class="tool-btn lock-btn" data-target="pxSize" title="Travar"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                    <button class="tool-btn shuffle-btn" data-target="pxSize" title="Embaralhar"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
                 </div>
             </summary>
-            <div class="sec-content"><input type="range" id="pxSize" min="1" max="64" value="8"></div>
+            <div class="sec-content"><input type="range" id="pxSize" min="1" max="64" value="1"></div>
         </details>
 
+        <!-- Agrupar -->
         <details open class="setting-section">
             <summary>
-                <div class="summary-title">Agrupar: <span id="groupVal" style="margin-left: 6px;">0</span></div>
+                <div class="summary-title">Agrupar: <span id="groupVal">0</span></div>
                 <div class="sec-tools">
                     <button class="tool-btn reset-btn" data-target="groupStrength" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
-                    <button class="tool-btn lock-btn" data-target="groupStrength" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    </button>
-                    <button class="tool-btn shuffle-btn" data-target="groupStrength" title="Embaralhar">
-                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                    </button>
+                    <button class="tool-btn lock-btn" data-target="groupStrength" title="Travar"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                    <button class="tool-btn shuffle-btn" data-target="groupStrength" title="Embaralhar"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
                 </div>
             </summary>
             <div class="sec-content">
@@ -345,18 +318,14 @@
             </div>
         </details>
 
+        <!-- Textura -->
         <details open class="setting-section">
             <summary>
                 <div class="summary-title">Textura</div>
                 <div class="sec-tools">
                     <button class="tool-btn reset-btn" data-target="ditherSelect" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
-                    <button class="tool-btn lock-btn" data-target="ditherSelect" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    </button>
-                    <button class="tool-btn shuffle-btn" data-target="ditherSelect" title="Embaralhar">
-                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                    </button>
+                    <button class="tool-btn lock-btn" data-target="ditherSelect" title="Travar"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                    <button class="tool-btn shuffle-btn" data-target="ditherSelect" title="Embaralhar"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
                 </div>
             </summary>
             <div class="sec-content">
@@ -379,7 +348,6 @@
                 <input type="range" id="ditherIntensity" min="0" max="200" value="100">
                 <div class="sub-label">Ângulo: <span id="texAngleVal">45° (Diag Dir)</span></div>
                 <input type="range" id="texAngle" min="0" max="180" value="45">
-                
                 <hr style="border:0; border-top:2px solid var(--border-light); margin: 6px 0;">
                 <label class="custom-checkbox">
                     <input type="checkbox" id="effMidDither">
@@ -389,78 +357,127 @@
             </div>
         </details>
 
-        <div style="padding: 0 10px 10px 10px;">
-            <div style="margin-bottom: 6px;">
-                <label class="custom-checkbox" style="margin-bottom:6px;">
-                    <input type="checkbox" id="effEdge">
-                    <span class="checkmark"></span>
-                    <span>Contorno</span>
-                </label>
-                <div style="display: flex; gap: 8px; align-items: center; margin-left: 24px;">
-                    <input type="color" id="edgeColor" value="#000000" style="width: 28px; height: 28px; padding: 0; cursor: pointer; border: 2px solid var(--border);">
-                    <span class="sub-label" style="margin:0;">Cor do Contorno</span>
-                </div>
-            </div>
-
-            <label class="custom-checkbox" style="margin-bottom:6px;">
-                <input type="checkbox" id="fillBg">
-                <span class="checkmark"></span>
-                <span>Preencher Fundo (PNG)</span>
-            </label>
-            <div style="display: flex; gap: 8px; align-items: center; margin-left: 24px; margin-bottom: 6px;">
-                <input type="color" id="btnBgColor" value="#ffffff" style="width: 28px; height: 28px; padding: 0; cursor: pointer; border: 2px solid var(--border);">
-                <input type="text" id="hexBgColor" value="#FFFFFF" maxlength="7" style="flex:1; background: var(--bg); border: 2px solid var(--border); color: var(--text); padding: 4px; font-family: monospace; text-align: center;">
-            </div>
-        </div>
-
-        <details open class="setting-section">
+        <!-- Formas -->
+        <details open class="setting-section" id="shapesSection">
             <summary>
-                <div class="summary-title">Quantidade de Cores</div>
+                <div class="summary-title">Formas</div>
                 <div class="sec-tools">
-                    <button class="tool-btn reset-btn" data-target="colorSelect" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
-                    <button class="tool-btn lock-btn" data-target="colorSelect" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    </button>
-                    <button class="tool-btn shuffle-btn" data-target="colorSelect" title="Embaralhar">
-                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                    </button>
+                    <button class="tool-btn lock-btn" data-target="shapesAll" title="Travar Todas"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                    <button class="tool-btn shuffle-btn" data-target="shapes" title="Embaralhar"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                    <button class="tool-btn reset-btn" data-target="shapes" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
                 </div>
             </summary>
             <div class="sec-content">
-                <select id="colorSelect">
-                    <option value="2">2 Cores</option><option value="3">3 Cores</option><option value="4">4 Cores</option>
-                    <option value="6">6 Cores</option><option value="8">8 Cores</option><option value="12">12 Cores</option>
-                    <option value="16" selected>16 Cores</option><option value="24">24 Cores</option><option value="32">32 Cores</option>
-                    <option value="48">48 Cores</option><option value="64">64 Cores</option><option value="128">128 Cores</option>
-                    <option value="256">256 Cores</option><option value="all">Todas</option>
+                <div class="sub-label" style="font-weight:bold; margin-top:0;">Gerenciar Formas:</div>
+                <div style="display:flex; gap:6px; margin-bottom:8px;">
+                    <select id="shapeListSelector" style="flex:1; border: 2px solid var(--border); background: var(--bg); color: var(--text); padding: 4px; font-family:monospace;"></select>
+                    <button id="btnNewShape" class="std-btn" style="padding: 4px 10px;" title="Adicionar Forma">+</button>
+                    <button id="btnDelShape" class="std-btn" style="padding: 4px 10px;" title="Remover Forma">-</button>
+                </div>
+
+                <label class="custom-checkbox" style="margin-bottom: 6px;">
+                    <input type="checkbox" id="shapeEnable">
+                    <span class="checkmark"></span>
+                    <span>Habilitar Forma Atual</span>
+                </label>
+
+                <div class="sub-label">Tipo de Forma:</div>
+                <select id="shapeType">
+                    <option value="star">Estrela</option>
+                    <option value="polygon">Polígono</option>
+                    <option value="concave">Côncavo</option>
+                    <option value="irregular">Irregular</option>
+                    <option value="complex">Complexo</option>
+                    <option value="circle">Círculo</option>
                 </select>
+
+                <button id="btn-regerar-irregular" class="std-btn" style="display:none; margin-top:4px;" title="Gerar nova variação">Regerar Forma</button>
+
+                <div class="sub-label">Número de Lados: <span id="shapePointsVal">5</span></div>
+                <input type="range" id="shapePoints" min="3" max="20" value="5">
+
+                <div class="sub-label">Tamanho: <span id="shapeScaleVal">100%</span></div>
+                <input type="range" id="shapeScale" min="30" max="300" value="100">
+
+                <div class="sub-label">Rotação: <span id="shapeRotationVal">0°</span></div>
+                <input type="range" id="shapeRotation" min="0" max="360" value="0">
+
+                <div id="shapeEllipseControls" style="display:none;">
+                    <div class="sub-label">Largura da Elipse: <span id="shapeEllipseXVal">100%</span></div>
+                    <input type="range" id="shapeEllipseX" min="30" max="200" value="100">
+                    <div class="sub-label">Altura da Elipse: <span id="shapeEllipseYVal">100%</span></div>
+                    <input type="range" id="shapeEllipseY" min="30" max="200" value="100">
+                </div>
+
+                <div class="sub-label">Camada da Forma:</div>
+                <select id="shapeLayer">
+                    <option value="front">Na frente</option>
+                    <option value="back">Atrás</option>
+                </select>
+
+                <div class="sub-label">Tamanho da Imagem Base: <span id="imageScaleVal">100%</span></div>
+                <input type="range" id="imageScale" min="30" max="200" value="100">
+
+                <div style="background: var(--hover); padding: 8px; border-radius: 4px; margin-top: 6px; border: 1px solid var(--border-light);">
+                    <div class="sub-label" style="margin-top:0;">Cor Sólida da Forma:</div>
+                    <div style="display:flex; gap:8px; align-items:center; margin-bottom: 8px;">
+                        <input type="color" id="shapeColorInput" value="#E5533D" style="width:28px; height:28px; padding:0; cursor:pointer; border:2px solid var(--border);">
+                        <button class="tool-btn" id="shapeColorShuffle" title="Sortear Cor da Paleta"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                    </div>
+
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="shapeGradient">
+                        <span class="checkmark"></span>
+                        <span style="font-weight:bold;">Usar Degradê (Paleta Global)</span>
+                    </label>
+                    
+                    <div id="shapeGradientControls" style="display:none; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+                        <div class="sub-label" style="margin-top:0;">Tipo de Degradê:</div>
+                        <select id="shapeGradType">
+                            <option value="linear">Linear</option>
+                            <option value="radial">Radial</option>
+                        </select>
+                        <div id="shapeGradAngleContainer">
+                            <div class="sub-label">Ângulo do Degradê: <span id="shapeGradAngleVal">90°</span></div>
+                            <input type="range" id="shapeGradAngle" min="0" max="360" value="90">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sub-label">Espessura do Contorno Interno: <span id="shapeStrokeWidthVal">0</span></div>
+                <input type="range" id="shapeStrokeWidth" min="0" max="150" value="0">
+                <label class="custom-checkbox" style="margin-top: 4px;">
+                    <input type="checkbox" id="shapeFill" checked>
+                    <span class="checkmark"></span>
+                    <span>Preencher Fundo da Forma</span>
+                </label>
+                
+                <div class="sub-label">Opacidade da Forma: <span id="shapeOpacityVal">100%</span></div>
+                <input type="range" id="shapeOpacity" min="0" max="100" value="100">
             </div>
         </details>
 
+        <!-- Cores -->
         <details open class="setting-section">
             <summary>
-                <div class="summary-title">Paleta</div>
+                <div class="summary-title">Cores Globais</div>
                 <div class="sec-tools">
                     <button class="tool-btn reset-btn" data-target="colors" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
-                    <button class="tool-btn" id="btnInvert" title="Inverter Cores (Negativo)">
-                        <svg viewBox="0 0 24 24" stroke-width="2">
-                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"/>
-                            <path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"/>
-                        </svg>
-                    </button>
-                    <button class="tool-btn lock-btn" data-target="colors" title="Travar">
-                        <svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        <svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    </button>
-                    <button class="tool-btn shuffle-btn" data-target="colors" title="Embaralhar">
-                        <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                    </button>
+                    <button class="tool-btn" id="btnInvert" title="Inverter Cores (Negativo)"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"/></svg></button>
+                    <button class="tool-btn lock-btn" data-target="colors" title="Travar"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                    <button class="tool-btn shuffle-btn" data-target="colors" title="Embaralhar"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
                 </div>
             </summary>
             <div class="sec-content">
+                <div class="sub-label">Quantidade de Cores:</div>
+                <select id="colorSelect">
+                    <option value="2">2 Cores</option><option value="3">3 Cores</option><option value="4">4 Cores</option>
+                    <option value="6">6 Cores</option><option value="8">8 Cores</option><option value="12">12 Cores</option>
+                    <option value="16">16 Cores</option><option value="24">24 Cores</option><option value="32">32 Cores</option>
+                    <option value="48">48 Cores</option><option value="64">64 Cores</option><option value="128">128 Cores</option>
+                    <option value="256">256 Cores</option><option value="all" selected>Todas</option>
+                </select>
                 <div id="colorsGrid" class="colors-grid"></div>
-
                 <div style="margin-top: 6px; border-top: 2px solid var(--border-light); padding-top: 8px;">
                     <div class="sub-label" style="font-weight:bold;">Ajuste Global de Cores:</div>
                     <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
@@ -478,6 +495,33 @@
                         </div>
                     </div>
                 </div>
+                
+                <div style="background: var(--hover); padding: 8px; border-radius: 4px; margin-top: 8px; border: 1px solid var(--border-light);">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="imgGradient">
+                        <span class="checkmark"></span>
+                        <span style="font-weight:bold;">Aplicar Degradê na Imagem</span>
+                    </label>
+                    <div id="imgGradientControls" style="display:none; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+                        <div class="sub-label" style="margin-top:0;">Tipo de Degradê:</div>
+                        <select id="imgGradType">
+                            <option value="linear">Linear</option>
+                            <option value="radial">Radial</option>
+                        </select>
+                        <div id="imgGradAngleContainer">
+                            <div class="sub-label">Ângulo do Degradê: <span id="imgGradAngleVal">90°</span></div>
+                            <input type="range" id="imgGradAngle" min="0" max="360" value="90">
+                        </div>
+                        <div class="sub-label">Modo de Mesclagem:</div>
+                        <select id="imgGradBlend">
+                            <option value="source-atop">Substituir Cor</option>
+                            <option value="multiply">Multiplicar</option>
+                            <option value="overlay">Sobrepor</option>
+                            <option value="screen">Clarear (Tela)</option>
+                            <option value="color">Colorir</option>
+                        </select>
+                    </div>
+                </div>
 
                 <div style="display:flex; gap:6px; margin-top:10px;">
                     <button class="std-btn" id="btnOriginal" style="flex:1;">Paleta Original</button>
@@ -487,8 +531,66 @@
             </div>
         </details>
 
+        <!-- Contorno da Imagem -->
+        <details class="setting-section" id="outlineSection">
+            <summary>
+                <div class="summary-title">Contorno da Imagem</div>
+                <div class="sec-tools">
+                    <button class="tool-btn reset-btn" data-target="outline" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
+                    <button class="tool-btn lock-btn" data-target="outline" title="Travar"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="effEdge">
+                    <span class="checkmark"></span>
+                    <span>Ativar Contorno</span>
+                </label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="color" id="edgeColor" value="#000000" style="width:28px; height:28px; padding:0; cursor:pointer; border:2px solid var(--border);">
+                    <span>Cor do Contorno</span>
+                </div>
+                <div class="sub-label">Tamanho do Contorno (Suave): <span id="edgePixelSizeVal">1</span></div>
+                <input type="range" id="edgePixelSize" min="1" max="15" value="1">
+            </div>
+        </details>
+
+        <!-- Opacidade Geral -->
+        <details class="setting-section" id="opacitySection">
+            <summary>
+                <div class="summary-title">Opacidade Geral</div>
+                <div class="sec-tools">
+                    <button class="tool-btn reset-btn" data-target="opacity" title="Restaurar Padrão"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg></button>
+                    <button class="tool-btn lock-btn" data-target="opacity" title="Travar"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                </div>
+            </summary>
+            <div class="sec-content">
+                <div class="sub-label">Textura: <span id="textureOpacityVal">100%</span></div>
+                <input type="range" id="textureOpacity" min="0" max="100" value="100">
+                <div class="sub-label">Contorno: <span id="edgeOpacityVal">100%</span></div>
+                <input type="range" id="edgeOpacity" min="0" max="100" value="100">
+            </div>
+        </details>
+
+        <!-- Fundo -->
+        <details class="setting-section" id="backgroundSection">
+            <summary><div class="summary-title">Fundo</div></summary>
+            <div class="sec-content">
+                <label class="custom-checkbox">
+                    <input type="checkbox" id="fillBg">
+                    <span class="checkmark"></span>
+                    <span>Preencher Fundo (PNG)</span>
+                </label>
+                <div style="display:flex; gap:8px; align-items:center; margin-left:24px;">
+                    <input type="color" id="btnBgColor" value="#ffffff" data-color="#ffffff" style="width:28px; height:28px; padding:0; cursor:pointer; border:2px solid var(--border);">
+                    <input type="text" id="hexBgColor" value="#FFFFFF" maxlength="7" style="flex:1; background: var(--bg); border:2px solid var(--border); color: var(--text); padding:4px; font-family: monospace; text-align:center;">
+                </div>
+            </div>
+        </details>
+
+        <!-- Presets -->
         <details class="setting-section">
-            <summary><div class="summary-title">Presets</div></summary>
+            <summary><div class="summary-title">Presets Temáticos</div></summary>
             <div class="sec-content preset-grid">
                 <button class="std-btn" data-theme="Nintendo_DS">Nintendo DS</button>
                 <button class="std-btn" data-theme="GameBoy">GameBoy</button>
@@ -500,15 +602,15 @@
             </div>
         </details>
 
+        <!-- Salvar/Importar -->
         <div class="setting-section always-open">
             <div class="perf-warning" style="font-weight:normal; line-height: 1.3;">Carregue um PNG gerado no site para extrair e aplicar seus efeitos nesta foto.</div>
-            
             <label class="std-btn" style="text-align: center; display: block; margin-bottom: 6px; cursor: pointer;">
                 Importar Efeitos
                 <input type="file" id="importImgConfig" accept="image/png" style="display:none;">
             </label>
-
             <button class="std-btn" id="btnSavePreset" style="width: 100%; margin-bottom: 6px;">Salvar Preset Atual</button>
+            <button class="std-btn" id="btnResetImage" style="width: 100%; margin-bottom: 6px;">Resetar Imagem Original</button>
             <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 6px;"></div>
         </div>
 
@@ -520,59 +622,62 @@
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
             Faça o upload de uma imagem<br>para começar
         </label>
-        
         <div id="canvas-wrapper">
             <canvas id="outputCanvas"></canvas>
             <canvas id="originalCanvas"></canvas>
             <div id="slider-line"></div>
         </div>
+        
+        <div id="brush-panel">
+            <span style="font-size:0.75rem; font-weight:bold;">Tamanho: <span id="brushSizeVal">40</span></span>
+            <input type="range" id="brushSize" min="5" max="300" value="40" style="width: 120px; accent-color: var(--text);">
+        </div>
 
-        <div id="canvas-tools">
-            <button class="tool-btn" id="btn-undo-view" disabled title="Voltar">
+        <div id="floating-bar">
+            <label class="float-btn" id="btn-upload" title="Upload">
+                <input type="file" id="imageUpload" accept="image/*">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </label>
+            <button class="float-btn active-tool" id="btn-tool-move" title="Mover Forma (Arraste na tela)">
+                <svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M19 9l3 3-3 3M9 19l3 3 3-3M2 12h20M12 2v20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="float-btn" id="btn-tool-erase" title="Borracha (Apaga imagem, revela o fundo)">
+                <svg viewBox="0 0 24 24"><path d="M20 20H7L3 16C2.5 15.5 2.5 14.5 3 14L13 4C13.5 3.5 14.5 3.5 15 4L20 9C20.5 9.5 20.5 10.5 20 11L11 20H20V20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="float-btn" id="btn-tool-restore" title="Pincel (Restaura o que a borracha apagou)">
+                <svg viewBox="0 0 24 24"><path d="M12 19L21.5 9.5C22.3 8.7 22.3 7.4 21.5 6.6L17.4 2.5C16.6 1.7 15.3 1.7 14.5 2.5L5 12L12 19ZM5 12L2 22L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div style="width: 2px; background: var(--border); margin: 0 4px;"></div>
+            <button class="float-btn" id="btn-undo-view" disabled title="Voltar">
                 <svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
-            <button class="tool-btn" id="btn-redo-view" disabled title="Refazer">
+            <button class="float-btn" id="btn-redo-view" disabled title="Refazer">
                 <svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
-            <button class="tool-btn" id="btn-compare" disabled title="Comparar (Antes/Depois)">
+            <button class="float-btn" id="btn-compare" disabled title="Comparar">
                 <svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
-            <button class="tool-btn" id="btn-fs-view" title="Tela Cheia (Esc para Sair)">
+            <button class="float-btn" id="btn-fs-view" title="Tela Cheia">
                 <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
+            <button class="float-btn" id="btn-random-global" title="Randomizar">
+                <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </button>
+            <button class="float-btn" id="btn-download" disabled title="Baixar">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </button>
         </div>
-    </div>
-
-    <!-- Barra Flutuante de Ações Principais -->
-    <div id="floating-bar">
-        <div id="floating-progress"></div>
-        <div class="proc-indicator" id="proc-text">0%</div>
-
-        <label class="float-btn" id="btn-upload">
-            <input type="file" id="imageUpload" accept="image/*">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-            <span>Upload</span>
-        </label>
-        
-        <button class="float-btn" id="btn-random-global">
-            <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-            <span>Randomizar</span>
-        </button>
-
-        <button class="float-btn" id="btn-download" disabled>
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-            <span>Baixar</span>
+        <button id="btn-exit-fullscreen" class="tool-btn" title="Sair da Tela Cheia">
+            <svg viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
     </div>
 
     <div id="downloadModal" class="modal">
         <div class="modal-content">
             <h3>Baixar</h3>
-            <div class="modal-desc">
-                Ao baixar a Imagem (PNG), suas configurações são salvas no arquivo! Use o <b>Importar Efeitos</b> para copiar este padrão em outras fotos depois.
-            </div>
-            <button id="dl-png" class="std-btn">Imagem (PNG)</button>
-            <button id="dl-svg" class="std-btn">Vetor (SVG)</button>
+            <div class="modal-desc">Ao baixar a arte, o Pixelar detectará automaticamente os pixels e recortará a imagem na área exata. Suas configurações ficam salvas no arquivo PNG!</div>
+            <button id="dl-png" class="std-btn">Imagem (PNG) (Área útil)</button>
+            <button id="dl-svg" class="std-btn">Vetor (SVG) (Área útil)</button>
             <button id="dl-txt" class="std-btn">Configurações (.TXT)</button>
             <button id="dl-close" class="std-btn" style="margin-top: 6px; border-color: transparent;">Cancelar</button>
         </div>
@@ -581,14 +686,12 @@
     <script>
         const themeBtn = document.getElementById('btnThemeToggle');
         const rootHtml = document.documentElement;
-        
         const moonIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
         const sunIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
 
         function updateThemeIcon() { themeBtn.innerHTML = rootHtml.getAttribute('data-theme') === 'dark' ? sunIcon : moonIcon; }
         if (localStorage.getItem('pixelarTheme') === 'dark') { rootHtml.setAttribute('data-theme', 'dark'); }
         updateThemeIcon();
-        
         themeBtn.addEventListener('click', () => {
             if (rootHtml.getAttribute('data-theme') === 'dark') { rootHtml.removeAttribute('data-theme'); localStorage.setItem('pixelarTheme', 'light'); } 
             else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); }
@@ -597,16 +700,36 @@
 
         document.querySelectorAll('.sec-tools').forEach(tool => { tool.addEventListener('click', e => e.preventDefault()); });
 
-        const locks = { pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, colors: false };
+        const locks = {
+            pxSize: false, groupStrength: false, ditherSelect: false, colorSelect: false, colors: false,
+            shapeType: false, shapePoints: false, shapeScale: false, shapeRotation: false, 
+            shapeEllipseX: false, shapeEllipseY: false, shapeColor: false,
+            outline: false, opacity: false
+        };
+
         document.querySelectorAll('.lock-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.getAttribute('data-target'); locks[target] = !locks[target];
-                btn.classList.toggle('locked', locks[target]);
+            btn.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const target = btn.getAttribute('data-target');
+                if (target === 'shapesAll') {
+                    const shapeTargets = ['shapeType', 'shapePoints', 'shapeScale', 'shapeRotation', 'shapeEllipseX', 'shapeEllipseY', 'shapeColor'];
+                    const allLocked = shapeTargets.every(t => locks[t]);
+                    shapeTargets.forEach(t => { locks[t] = !allLocked; });
+                    document.querySelectorAll('.lock-btn[data-target="shapeType"], .lock-btn[data-target="shapePoints"], .lock-btn[data-target="shapeScale"], .lock-btn[data-target="shapeRotation"], .lock-btn[data-target="shapeEllipseX"], .lock-btn[data-target="shapeEllipseY"], .lock-btn[data-target="shapeColor"]').forEach(b => {
+                        b.classList.toggle('locked', !allLocked);
+                    });
+                    btn.classList.toggle('locked', !allLocked);
+                } else {
+                    if (locks[target] !== undefined) {
+                        locks[target] = !locks[target];
+                        btn.classList.toggle('locked', locks[target]);
+                    }
+                }
             });
         });
 
         function resetAdjustments(e) {
-            if(e) e.stopPropagation(); 
+            if(e) e.stopPropagation();
             document.getElementById('estrutura').value = 0;
             document.getElementById('exposicao').value = 0; document.getElementById('brilho').value = 0;
             document.getElementById('contraste').value = 0; document.getElementById('temperatura').value = 0;
@@ -614,42 +737,75 @@
             document.getElementById('posterize').value = 0; document.getElementById('rgbShift').value = 0;
             isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
             updateLabels(); 
-            triggerProcess();
+            scheduleProcess();
+        }
+
+        function resetShapes(e) {
+            if(e) e.stopPropagation();
+            const s = shapes[activeShapeIndex];
+            if(s) {
+                s.enable = false; s.type = 'star'; s.points = 5; s.scale = 100; s.rotation = 0;
+                s.ellipseX = 100; s.ellipseY = 100; s.offsetX = 0; s.offsetY = 0;
+                s.color = '#E5533D'; s.useGradient = false; s.gradType = 'linear'; s.gradAngle = 90;
+                s.fill = true; s.strokeWidth = 0; s.layer = 'front'; s.opacity = 100;
+                s.irregularRadii = Array.from({ length: 40 }, () => 35);
+            }
+            populateShapeForm();
+            scheduleProcess();
         }
 
         document.querySelectorAll('.reset-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const target = btn.getAttribute('data-target');
                 if (target === 'ajustes') resetAdjustments(e);
-                if (target === 'pxSize') { document.getElementById('pxSize').value = 8; updateLabels(); triggerProcess(); }
-                if (target === 'groupStrength') { document.getElementById('groupStrength').value = 0; document.getElementById('groupMethod').value = 'mean'; updateLabels(); triggerProcess(); }
-                if (target === 'ditherSelect') { document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; document.getElementById('texAngle').value = 45; document.getElementById('effMidDither').checked = false; updateLabels(); triggerProcess(); }
-                if (target === 'colorSelect') { document.getElementById('colorSelect').value = '16'; updateLabels(); triggerProcess(); }
+                if (target === 'pxSize') { document.getElementById('pxSize').value = 1; updateLabels(); scheduleProcess(); }
+                if (target === 'groupStrength') { document.getElementById('groupStrength').value = 0; document.getElementById('groupMethod').value = 'mean'; updateLabels(); scheduleProcess(); }
+                if (target === 'ditherSelect') { document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; document.getElementById('texAngle').value = 45; document.getElementById('effMidDither').checked = false; updateLabels(); scheduleProcess(); }
                 if (target === 'colors') { document.getElementById('btnOriginal').click(); }
+                if (target === 'shapes') resetShapes(e);
+                if (target === 'outline') { document.getElementById('effEdge').checked = false; document.getElementById('edgeColor').value = '#000000'; document.getElementById('edgePixelSize').value = 1; updateLabels(); scheduleProcess(); }
+                if (target === 'opacity') { document.getElementById('textureOpacity').value = 100; document.getElementById('edgeOpacity').value = 100; updateLabels(); scheduleProcess(); }
             });
         });
 
+        // ESTRUTURAS GLOBAIS DE ESTADO
         let sourceImg = null;
-        let abortController = null;
-        let isProcessing = false;
-        
+        let originalSourceUrl = null;
+        let isRestoringState = false;
         const clone = (arr) => arr.map(c => ({...c}));
         let currentPaletteMode = 'manual'; 
         let globalCurrentPalette = []; 
         let basePalette = []; 
         let isImageInverted = false;
         let isShadowsInverted = false;
-        
-        let lastEngineImageData = null; 
-        
         let savedPresets = {};
         let savedPalettes = {};
+        
+        let ditherCanvas = document.createElement('canvas'); // Cache da imagem tratada (Pixels puros sem escala)
+        let eraserCanvas = document.createElement('canvas');
+        let eCtx = eraserCanvas.getContext('2d', {willReadFrequently: true});
+
+        let activeTool = 'move'; 
+        let currentImgScale = 1; // Para interações do mouse
+
         try { 
             savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {}; 
             savedPalettes = JSON.parse(localStorage.getItem('pixelarPalettes')) || {};
         } catch(e) {}
+        let historyArr = []; let historyIndex = -1;
         
-        let historyArr = []; let historyIndex = -1; let isNavigatingHistory = false;
+        // MÚLTIPLAS FORMAS
+        function createDefaultShape() {
+            return {
+                enable: false, type: 'star', points: 5, scale: 100, rotation: 0,
+                ellipseX: 100, ellipseY: 100, offsetX: 0, offsetY: 0,
+                color: '#E5533D', useGradient: false, gradType: 'linear', gradAngle: 90,
+                fill: true, strokeWidth: 0, layer: 'front', opacity: 100,
+                irregularRadii: Array.from({ length: 40 }, () => 35)
+            };
+        }
+        let shapes = [createDefaultShape()];
+        let activeShapeIndex = 0;
 
         const THEMES = {
             Nintendo_DS: ["#050505", "#DFE4E8"], Nokia: ["#43523D", "#43523D", "#C7F0D8", "#C7F0D8"], 
@@ -665,10 +821,6 @@
         function rgbToHex(r, g, b) {
             return "#" + (1 << 24 | Math.max(0, Math.min(255, r)) << 16 | Math.max(0, Math.min(255, g)) << 8 | Math.max(0, Math.min(255, b))).toString(16).slice(1).toUpperCase();
         }
-        function hexToRgba(hex, alpha) {
-            let rgb = hexToRgb(hex); return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
-        }
-        
         function rgbToHsl(r, g, b) {
             r /= 255; g /= 255; b /= 255;
             let max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -686,12 +838,10 @@
             }
             return {h, s, l};
         }
-
         function hslToRgb(h, s, l) {
             let r, g, b;
-            if (s === 0) {
-                r = g = b = l; 
-            } else {
+            if (s === 0) { r = g = b = l; } 
+            else {
                 const hue2rgb = (p, q, t) => {
                     if (t < 0) t += 1;
                     if (t > 1) t -= 1;
@@ -708,7 +858,6 @@
             }
             return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
         }
-
         function interpolatePalette(anchors, size) {
             if (size <= anchors.length) return anchors.slice(0, size);
             let result = [];
@@ -718,20 +867,12 @@
                 let idx1 = Math.floor(scaledT);
                 let idx2 = Math.min(idx1 + 1, anchors.length - 1);
                 let localT = scaledT - idx1;
-                
                 let c1 = anchors[idx1];
                 let c2 = anchors[idx2];
-                
-                result.push({
-                    r: Math.round(c1.r + (c2.r - c1.r) * localT),
-                    g: Math.round(c1.g + (c2.g - c1.g) * localT),
-                    b: Math.round(c1.b + (c2.b - c1.b) * localT)
-                });
+                result.push({ r: Math.round(c1.r + (c2.r - c1.r) * localT), g: Math.round(c1.g + (c2.g - c1.g) * localT), b: Math.round(c1.b + (c2.b - c1.b) * localT) });
             }
             return result;
         }
-
-        let activeColorIndex = -1;
 
         function setBasePalette(pal) {
             basePalette = clone(pal);
@@ -744,12 +885,11 @@
 
         const btnBgColor = document.getElementById('btnBgColor');
         const hexBgColor = document.getElementById('hexBgColor');
-        
-        btnBgColor.addEventListener('input', (e) => { hexBgColor.value = e.target.value.toUpperCase(); });
-        btnBgColor.addEventListener('change', (e) => { btnBgColor.setAttribute('data-color', e.target.value); triggerProcess(); });
+        btnBgColor.addEventListener('input', (e) => { hexBgColor.value = e.target.value.toUpperCase(); btnBgColor.setAttribute('data-color', e.target.value); });
+        btnBgColor.addEventListener('change', (e) => { btnBgColor.setAttribute('data-color', e.target.value); renderCanvas(); });
         hexBgColor.addEventListener('change', (e) => {
             let hex = e.target.value;
-            if(/^#[0-9A-F]{6}$/i.test(hex)) { btnBgColor.value = hex; btnBgColor.setAttribute('data-color', hex); triggerProcess(); } 
+            if(/^#[0-9A-F]{6}$/i.test(hex)) { btnBgColor.value = hex; btnBgColor.setAttribute('data-color', hex); renderCanvas(); } 
             else { hexBgColor.value = btnBgColor.value.toUpperCase(); }
         });
 
@@ -758,7 +898,6 @@
             let hOffset = parseInt(document.getElementById('palHue').value, 10) / 360; 
             let sOffset = parseInt(document.getElementById('palSat').value, 10) / 100; 
             let lOffset = parseInt(document.getElementById('palLight').value, 10) / 100; 
-
             globalCurrentPalette = basePalette.map(c => {
                 let hsl = rgbToHsl(c.r, c.g, c.b);
                 hsl.h = (hsl.h + hOffset + 1) % 1;
@@ -767,7 +906,7 @@
                 return hslToRgb(hsl.h, hsl.s, hsl.l);
             });
             buildColorInputs(globalCurrentPalette);
-            triggerProcess();
+            scheduleProcess();
         }
 
         function buildColorInputs(palette) {
@@ -775,204 +914,341 @@
             let viewPal = palette.slice(0, 64);
             viewPal.forEach((color, i) => {
                 const inp = document.createElement('input');
-                inp.type = 'color';
-                inp.className = 'color-btn';
+                inp.type = 'color'; inp.className = 'color-btn';
                 let hex = rgbToHex(color.r, color.g, color.b);
                 inp.value = hex; 
-                
-                inp.addEventListener('mouseenter', () => { if (activeColorIndex === -1) setHighlightColor(i); });
-                inp.addEventListener('mouseleave', () => { if (activeColorIndex === -1) clearHighlightColor(); });
-                
-                inp.addEventListener('click', () => { activeColorIndex = i; });
-                inp.addEventListener('blur', () => { setTimeout(() => { activeColorIndex = -1; clearHighlightColor(); }, 200); });
-                
                 inp.addEventListener('change', (e) => {
                     currentPaletteMode = 'manual';
                     basePalette = clone(globalCurrentPalette);
-                    document.getElementById('palHue').value = 0;
-                    document.getElementById('palSat').value = 0;
-                    document.getElementById('palLight').value = 0;
-                    updateLabels();
-                    
+                    document.getElementById('palHue').value = 0; document.getElementById('palSat').value = 0; document.getElementById('palLight').value = 0; updateLabels();
                     let newColor = hexToRgb(e.target.value);
-                    basePalette[i] = newColor;
-                    globalCurrentPalette[i] = newColor;
-                    
+                    basePalette[i] = newColor; globalCurrentPalette[i] = newColor;
                     buildColorInputs(globalCurrentPalette);
-                    triggerProcess();
-                    activeColorIndex = -1;
+                    scheduleProcess();
                 });
                 grid.appendChild(inp);
             });
         }
 
-        const inputsMap = {
+        const inputLabelsMap = {
             'pxSize': 'pxVal', 'groupStrength': 'groupVal', 'estrutura': 'estVal', 'exposicao': 'expVal', 'brilho': 'briVal', 'sombras': 'somVal', 'saturacao': 'satVal',
             'contraste': 'contVal', 'temperatura': 'tempVal', 'posterize': 'postVal', 'rgbShift': 'rgbShiftVal',
             'ditherScale': 'ditherScaleVal', 'ditherIntensity': 'ditherIntVal', 'texAngle': 'texAngleVal', 
-            'palHue': 'palHueVal', 'palSat': 'palSatVal', 'palLight': 'palLightVal'
+            'palHue': 'palHueVal', 'palSat': 'palSatVal', 'palLight': 'palLightVal',
+            'shapePoints': 'shapePointsVal', 'shapeScale': 'shapeScaleVal', 'shapeRotation': 'shapeRotationVal',
+            'shapeEllipseX': 'shapeEllipseXVal', 'shapeEllipseY': 'shapeEllipseYVal',
+            'shapeGradAngle': 'shapeGradAngleVal',
+            'textureOpacity': 'textureOpacityVal', 'edgeOpacity': 'edgeOpacityVal', 'shapeOpacity': 'shapeOpacityVal',
+            'edgePixelSize': 'edgePixelSizeVal', 'imageScale': 'imageScaleVal', 'shapeStrokeWidth': 'shapeStrokeWidthVal',
+            'imgGradAngle': 'imgGradAngleVal', 'brushSize': 'brushSizeVal'
         };
+
+        const processInputs = [
+            'pxSize', 'estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift',
+            'groupStrength', 'groupMethod', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'effMidDither',
+            'effEdge', 'edgeColor', 'edgePixelSize', 'colorSelect'
+        ];
+
+        const renderInputs = [
+            'imageScale', 'fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradBlend'
+        ];
+
+        // Mapeamento dinâmico do formulário para a Forma Ativa
+        const shapeBindings = [
+            { id: 'shapeEnable', key: 'enable', type: 'checkbox' },
+            { id: 'shapeType', key: 'type', type: 'value' },
+            { id: 'shapePoints', key: 'points', type: 'int' },
+            { id: 'shapeScale', key: 'scale', type: 'int' },
+            { id: 'shapeRotation', key: 'rotation', type: 'int' },
+            { id: 'shapeEllipseX', key: 'ellipseX', type: 'int' },
+            { id: 'shapeEllipseY', key: 'ellipseY', type: 'int' },
+            { id: 'shapeColorInput', key: 'color', type: 'value' },
+            { id: 'shapeGradient', key: 'useGradient', type: 'checkbox' },
+            { id: 'shapeGradType', key: 'gradType', type: 'value' },
+            { id: 'shapeGradAngle', key: 'gradAngle', type: 'int' },
+            { id: 'shapeFill', key: 'fill', type: 'checkbox' },
+            { id: 'shapeStrokeWidth', key: 'strokeWidth', type: 'int' },
+            { id: 'shapeLayer', key: 'layer', type: 'value' },
+            { id: 'shapeOpacity', key: 'opacity', type: 'int' }
+        ];
 
         globalCurrentPalette = [hexToRgb('#2C2C2C'), hexToRgb('#D62828'), hexToRgb('#FFD166'), hexToRgb('#00C2A8')];
         setBasePalette(globalCurrentPalette);
 
         const canvas = document.getElementById('outputCanvas'); const ctx = canvas.getContext('2d');
         const origCanvas = document.getElementById('originalCanvas'); const oCtx = origCanvas.getContext('2d');
-        const progressFill = document.getElementById('floating-progress'); const progressText = document.getElementById('proc-text');
-        const floatBtns = document.querySelectorAll('.float-btn');
 
-        function setHighlightColor(index) {
-            if (!lastEngineImageData || !sourceImg) return;
-            let targetRgb = globalCurrentPalette[index];
-            if (!targetRgb) return;
+        function updateShapeListUI() {
+            const sel = document.getElementById('shapeListSelector');
+            sel.innerHTML = '';
+            shapes.forEach((s, i) => {
+                const opt = document.createElement('option');
+                opt.value = i; opt.textContent = `Forma ${i + 1} (${s.type})`;
+                sel.appendChild(opt);
+            });
+            sel.value = activeShapeIndex;
+        }
 
-            let smallW = lastEngineImageData.width; let smallH = lastEngineImageData.height;
-            let smallCanvas = document.createElement('canvas'); smallCanvas.width = smallW; smallCanvas.height = smallH;
-            let sCtx = smallCanvas.getContext('2d');
-            
-            let tempData = new ImageData(new Uint8ClampedArray(lastEngineImageData.data), smallW, smallH);
-            let d = tempData.data;
-            for(let i=0; i<d.length; i+=4) {
-                if (d[i+3] === 0) continue;
-                if (d[i] !== targetRgb.r || d[i+1] !== targetRgb.g || d[i+2] !== targetRgb.b) {
-                    let luma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
-                    d[i] = Math.round(d[i] * 0.4 + luma * 0.3 + 40);
-                    d[i+1] = Math.round(d[i+1] * 0.4 + luma * 0.3 + 40);
-                    d[i+2] = Math.round(d[i+2] * 0.4 + luma * 0.3 + 40);
+        function populateShapeForm() {
+            const s = shapes[activeShapeIndex];
+            if(!s) return;
+            shapeBindings.forEach(b => {
+                const el = document.getElementById(b.id);
+                if (el) {
+                    if (b.type === 'checkbox') el.checked = s[b.key];
+                    else el.value = s[b.key];
                 }
+            });
+            updateShapeUI();
+            updateLabels();
+        }
+
+        function updateShapeUI() {
+            const s = shapes[activeShapeIndex]; if(!s) return;
+            const isCircle = s.type === 'circle';
+            document.getElementById('shapeEllipseControls').style.display = isCircle ? 'block' : 'none';
+            document.getElementById('shapePoints').disabled = isCircle;
+            document.getElementById('shapeScale').disabled = isCircle;
+            document.getElementById('shapeRotation').disabled = isCircle;
+            const regenBtn = document.getElementById('btn-regerar-irregular');
+            regenBtn.style.display = ['irregular', 'complex', 'concave'].includes(s.type) ? 'block' : 'none';
+            document.getElementById('shapeGradientControls').style.display = s.useGradient ? 'block' : 'none';
+            document.getElementById('shapeGradAngleContainer').style.display = s.gradType === 'linear' ? 'block' : 'none';
+        }
+        
+        function updateImgGradUI() {
+            const useGrad = document.getElementById('imgGradient').checked;
+            document.getElementById('imgGradientControls').style.display = useGrad ? 'block' : 'none';
+            document.getElementById('imgGradAngleContainer').style.display = document.getElementById('imgGradType').value === 'linear' ? 'block' : 'none';
+        }
+        document.getElementById('imgGradient').addEventListener('change', () => { updateImgGradUI(); renderCanvas(); });
+        document.getElementById('imgGradType').addEventListener('change', () => { updateImgGradUI(); renderCanvas(); });
+
+        document.getElementById('shapeListSelector').addEventListener('change', (e) => {
+            activeShapeIndex = parseInt(e.target.value, 10);
+            populateShapeForm();
+        });
+
+        document.getElementById('btnNewShape').addEventListener('click', () => {
+            shapes.push(createDefaultShape());
+            activeShapeIndex = shapes.length - 1;
+            updateShapeListUI(); populateShapeForm(); renderCanvas();
+        });
+
+        document.getElementById('btnDelShape').addEventListener('click', () => {
+            if (shapes.length > 1) {
+                shapes.splice(activeShapeIndex, 1);
+                activeShapeIndex = Math.max(0, activeShapeIndex - 1);
+                updateShapeListUI(); populateShapeForm(); renderCanvas();
             }
-            sCtx.putImageData(tempData, 0, 0);
-            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
-        }
+        });
 
-        function clearHighlightColor() {
-            if (!lastEngineImageData || !sourceImg) return;
-            let smallCanvas = document.createElement('canvas'); smallCanvas.width = lastEngineImageData.width; smallCanvas.height = lastEngineImageData.height;
-            let sCtx = smallCanvas.getContext('2d'); sCtx.putImageData(lastEngineImageData, 0, 0);
-            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
-        }
+        shapeBindings.forEach(b => {
+            document.getElementById(b.id).addEventListener('input', (e) => {
+                const s = shapes[activeShapeIndex];
+                if (b.type === 'checkbox') s[b.key] = e.target.checked;
+                else if (b.type === 'int') s[b.key] = parseInt(e.target.value, 10);
+                else s[b.key] = e.target.value;
+                if (b.id === 'shapeType' || b.id === 'shapeGradient' || b.id === 'shapeGradType') updateShapeUI();
+                renderCanvas();
+            });
+        });
 
-        for(let id in inputsMap) {
-            const el = document.getElementById(id); const valEl = document.getElementById(inputsMap[id]);
+        for(let id in inputLabelsMap) {
+            const el = document.getElementById(id); const valEl = document.getElementById(inputLabelsMap[id]);
             if(el && valEl) { 
                 el.addEventListener('input', () => { 
                     let v = el.value;
-                    if(id === 'texAngle') {
-                        let a = parseInt(v, 10);
-                        if(a===0 || a===180) v += '° (Hor)';
-                        else if(a===90) v += '° (Ver)';
-                        else if(a===45) v += '° (Diag Dir)';
-                        else if(a===135) v += '° (Diag Esq)';
-                        else v += '°';
-                    }
+                    if(id === 'texAngle' || id === 'shapeRotation' || id === 'shapeGradAngle' || id === 'imgGradAngle') v += '°';
+                    if (id === 'shapeScale' || id === 'shapeEllipseX' || id === 'shapeEllipseY' || id === 'textureOpacity' || id === 'edgeOpacity' || id === 'shapeOpacity' || id === 'imageScale') v += '%';
+                    if (id === 'brushSize') v += ' px';
                     valEl.textContent = v; 
-                    
-                    if (id === 'palHue' || id === 'palSat' || id === 'palLight') {
-                        applyGlobalPaletteOffsets();
-                    } else {
-                        triggerProcess(); 
-                    }
                 }); 
             }
         }
 
-        ['colorSelect', 'ditherSelect', 'groupMethod', 'effEdge', 'effMidDither', 'fillBg', 'edgeColor'].forEach(id => {
+        processInputs.forEach(id => {
             const el = document.getElementById(id);
-            if(el) {
-                el.addEventListener('input', () => {
-                    if (id === 'colorSelect') {
-                        let target = parseInt(el.value, 10);
-                        if (!isNaN(target)) {
-                            if (currentPaletteMode === 'random') randColorsGen(); 
-                            else if (currentPaletteMode === 'manual' || currentPaletteMode === 'preset') {
-                                globalCurrentPalette = interpolatePalette(globalCurrentPalette, target); 
-                                setBasePalette(globalCurrentPalette);
-                            }
-                        }
-                    }
-                    triggerProcess();
-                });
+            if(el) el.addEventListener('input', () => { scheduleProcess(); });
+        });
+
+        renderInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.addEventListener('input', () => { renderCanvas(); });
+        });
+
+        document.getElementById('palHue').addEventListener('input', applyGlobalPaletteOffsets);
+        document.getElementById('palSat').addEventListener('input', applyGlobalPaletteOffsets);
+        document.getElementById('palLight').addEventListener('input', applyGlobalPaletteOffsets);
+        
+        document.getElementById('shapeColorShuffle').addEventListener('click', () => {
+            if(globalCurrentPalette.length > 0) {
+                const randomColor = globalCurrentPalette[Math.floor(Math.random() * globalCurrentPalette.length)];
+                shapes[activeShapeIndex].color = rgbToHex(randomColor.r, randomColor.g, randomColor.b);
+                populateShapeForm(); renderCanvas();
             }
         });
 
-        document.getElementById('btnInvertShadows').addEventListener('click', (e) => {
-            isShadowsInverted = !isShadowsInverted; e.target.classList.toggle('active-state', isShadowsInverted); triggerProcess();
+        document.getElementById('btn-regerar-irregular').addEventListener('click', () => {
+            let arr = []; const style = Math.random(); let currentRadius = 10 + Math.random() * 40;
+            for (let i = 0; i < 40; i++) {
+                if (style < 0.33) arr.push(Math.random() > 0.5 ? (40 + Math.random() * 10) : (5 + Math.random() * 15));
+                else if (style < 0.66) arr.push(5 + Math.random() * 45);
+                else { if (Math.random() < 0.4) currentRadius = 5 + Math.random() * 45; arr.push(currentRadius); }
+            }
+            shapes[activeShapeIndex].irregularRadii = arr;
+            renderCanvas();
         });
 
+        document.getElementById('btnInvertShadows').addEventListener('click', (e) => {
+            isShadowsInverted = !isShadowsInverted; e.target.classList.toggle('active-state', isShadowsInverted); scheduleProcess();
+        });
         document.getElementById('btnInvert').addEventListener('click', (e) => {
             e.stopPropagation(); currentPaletteMode = 'manual'; isImageInverted = !isImageInverted;
             globalCurrentPalette = globalCurrentPalette.map(c => ({r: 255-c.r, g: 255-c.g, b: 255-c.b}));
-            setBasePalette(globalCurrentPalette); triggerProcess();
+            setBasePalette(globalCurrentPalette); scheduleProcess();
         });
 
+        const btnToolMove = document.getElementById('btn-tool-move');
+        const btnToolErase = document.getElementById('btn-tool-erase');
+        const btnToolRestore = document.getElementById('btn-tool-restore');
         const canvasWrapper = document.getElementById('canvas-wrapper');
+        const brushPanel = document.getElementById('brush-panel');
+
+        function setTool(tool) {
+            activeTool = tool;
+            btnToolMove.classList.toggle('active-tool', tool === 'move');
+            btnToolErase.classList.toggle('active-tool', tool === 'erase');
+            btnToolRestore.classList.toggle('active-tool', tool === 'restore');
+            canvasWrapper.className = tool === 'move' ? 'tool-move' : (tool === 'erase' ? 'tool-erase' : 'tool-restore');
+            if(isComparing) canvasWrapper.classList.add('comparing');
+            brushPanel.style.display = (tool === 'erase' || tool === 'restore') ? 'flex' : 'none';
+        }
+        btnToolMove.addEventListener('click', () => setTool('move'));
+        btnToolErase.addEventListener('click', () => setTool('erase'));
+        btnToolRestore.addEventListener('click', () => setTool('restore'));
+
+        let isPointerDown = false;
+        let lastPointerX = 0, lastPointerY = 0;
+        let lastEraserX = 0, lastEraserY = 0;
+
+        canvasWrapper.addEventListener('pointerdown', (e) => {
+            isPointerDown = true;
+            canvasWrapper.setPointerCapture(e.pointerId);
+            const rectWrap = canvasWrapper.getBoundingClientRect();
+            const rectOut = canvas.getBoundingClientRect();
+            
+            lastPointerX = e.clientX - rectWrap.left; 
+            lastPointerY = e.clientY - rectWrap.top;
+            
+            if ((activeTool === 'erase' || activeTool === 'restore') && !isComparing) {
+                applyEraser(e.clientX, e.clientY, rectOut);
+            }
+        });
+        
+        canvasWrapper.addEventListener('pointermove', (e) => {
+            if (!isPointerDown) return;
+            const rectWrap = canvasWrapper.getBoundingClientRect();
+            const rectOut = canvas.getBoundingClientRect();
+            
+            if (isComparing) {
+                let x = Math.max(0, Math.min(e.clientX - rectWrap.left, rectWrap.width));
+                updateCompareSlider((x / rectWrap.width) * 100);
+            } else if (activeTool === 'move') {
+                const currentX = e.clientX - rectWrap.left;
+                const currentY = e.clientY - rectWrap.top;
+                const deltaX = currentX - lastPointerX;
+                const deltaY = currentY - lastPointerY;
+                if (shapes[activeShapeIndex]) {
+                    shapes[activeShapeIndex].offsetX += (deltaX / rectWrap.width) * 100;
+                    shapes[activeShapeIndex].offsetY += (deltaY / rectWrap.height) * 100;
+                    populateShapeForm(); 
+                }
+                lastPointerX = currentX;
+                lastPointerY = currentY;
+                renderCanvas();
+            } else if (activeTool === 'erase' || activeTool === 'restore') {
+                applyEraser(e.clientX, e.clientY, rectOut, true);
+            }
+        });
+        
+        canvasWrapper.addEventListener('pointerup', (e) => {
+            isPointerDown = false;
+            canvasWrapper.releasePointerCapture(e.pointerId);
+            if (!isComparing) saveHistoryState();
+        });
+
+        function applyEraser(clientX, clientY, rectOut, isLine = false) {
+            if(!sourceImg || !eraserCanvas.width) return;
+            
+            // Transformações para encontrar a coordenada exata dentro do eraserCanvas
+            const scaleX = canvas.width / rectOut.width;
+            const scaleY = canvas.height / rectOut.height;
+            const canvasX = (clientX - rectOut.left) * scaleX;
+            const canvasY = (clientY - rectOut.top) * scaleY;
+            
+            // Posição e escala real da imagem renderizada
+            const px = parseInt(document.getElementById('pxSize').value, 10) || 1;
+            const origW = sourceImg.width; const origH = sourceImg.height;
+            const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
+            const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
+            const canvasPadding = 2;
+            const baseCanvasW = smallW * px * displayScale * canvasPadding;
+            const baseCanvasH = smallH * px * displayScale * canvasPadding;
+            const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
+            const imgW = (baseCanvasW / canvasPadding) * imageScale;
+            const imgH = (baseCanvasH / canvasPadding) * imageScale;
+            const imgX = (baseCanvasW - imgW) / 2;
+            const imgY = (baseCanvasH - imgH) / 2;
+
+            // Converter a coordenada do Canvas para a coordenada do Eraser (mesmo tamanho da original)
+            let ex = ((canvasX - imgX) / imgW) * eraserCanvas.width;
+            let ey = ((canvasY - imgY) / imgH) * eraserCanvas.height;
+            
+            eCtx.lineCap = 'round'; eCtx.lineJoin = 'round';
+            const bSize = parseInt(document.getElementById('brushSize').value, 10);
+            // Tamanho ajustado à proporção
+            eCtx.lineWidth = bSize * (eraserCanvas.width / imgW); 
+            
+            eCtx.globalCompositeOperation = activeTool === 'erase' ? 'source-over' : 'destination-out';
+            eCtx.strokeStyle = 'black'; eCtx.fillStyle = 'black';
+            
+            if (isLine) {
+                eCtx.beginPath();
+                eCtx.moveTo(lastEraserX, lastEraserY);
+                eCtx.lineTo(ex, ey);
+                eCtx.stroke();
+            } else {
+                eCtx.beginPath();
+                eCtx.arc(ex, ey, eCtx.lineWidth / 2, 0, Math.PI * 2);
+                eCtx.fill();
+            }
+            lastEraserX = ex;
+            lastEraserY = ey;
+            renderCanvas();
+        }
+
         const sliderLine = document.getElementById('slider-line');
         const btnCompare = document.getElementById('btn-compare');
         let isComparing = false;
-        let isDraggingSlider = false;
-
         btnCompare.addEventListener('click', () => {
             isComparing = !isComparing;
             if (isComparing) {
-                btnCompare.classList.add('locked');
+                btnCompare.classList.add('active-tool');
                 canvasWrapper.classList.add('comparing');
                 origCanvas.style.display = 'block';
                 sliderLine.style.display = 'block';
                 updateCompareSlider(50);
             } else {
-                btnCompare.classList.remove('locked');
+                btnCompare.classList.remove('active-tool');
                 canvasWrapper.classList.remove('comparing');
                 origCanvas.style.display = 'none';
                 sliderLine.style.display = 'none';
             }
         });
-
-        canvasWrapper.addEventListener('pointerdown', (e) => {
-            if (!isComparing) return;
-            isDraggingSlider = true;
-            canvasWrapper.setPointerCapture(e.pointerId);
-            handleCompareDrag(e);
-        });
-
-        canvasWrapper.addEventListener('pointermove', (e) => {
-            if (!isDraggingSlider) return;
-            handleCompareDrag(e);
-        });
-
-        canvasWrapper.addEventListener('pointerup', (e) => {
-            isDraggingSlider = false;
-            canvasWrapper.releasePointerCapture(e.pointerId);
-        });
-
-        function handleCompareDrag(e) {
-            const rect = canvasWrapper.getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            x = Math.max(0, Math.min(x, rect.width));
-            const pct = (x / rect.width) * 100;
-            updateCompareSlider(pct);
-        }
-
         function updateCompareSlider(pct) {
             origCanvas.style.clipPath = `polygon(0 0, ${pct}% 0, ${pct}% 100%, 0 100%)`;
             sliderLine.style.left = `${pct}%`;
-        }
-
-        function updateOriginalCanvasAndProcess() {
-            let maxDim = Math.max(sourceImg.width, sourceImg.height); 
-            let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
-            origCanvas.width = sourceImg.width * displayScale;
-            origCanvas.height = sourceImg.height * displayScale;
-            oCtx.imageSmoothingEnabled = true;
-            oCtx.drawImage(sourceImg, 0, 0, origCanvas.width, origCanvas.height);
-
-            if (isComparing) btnCompare.click();
-            historyArr = []; historyIndex = -1; isImageInverted = false;
-            resetAdjustments();
-            currentPaletteMode = 'original'; 
-            updateLabels(); 
-            triggerProcess();
         }
 
         const upload = document.getElementById('imageUpload');
@@ -980,52 +1256,69 @@
             const file = e.target.files[0]; if(!file) return;
             document.getElementById('welcomeMsg').style.display = 'none'; 
             canvasWrapper.style.display = 'flex';
-            document.getElementById('canvas-tools').style.display = 'flex';
-
+            const url = URL.createObjectURL(file);
+            originalSourceUrl = url;
             const slice = file.slice(Math.max(0, file.size - 3000));
             const txtReader = new FileReader();
-            
             txtReader.onload = (eTxt) => {
                 const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/);
                 let loadedState = null;
                 if(metaMatch) { try { loadedState = JSON.parse(metaMatch[1]); } catch(err) {} }
-
-                const url = URL.createObjectURL(file); const img = new Image();
+                const img = new Image();
                 img.onload = () => {
-                    sourceImg = img; lastEngineImageData = null;
-                    document.getElementById('btn-download').disabled = false;
-                    document.getElementById('btn-compare').disabled = false;
-                    historyArr = []; historyIndex = -1; isImageInverted = false;
-                    
+                    sourceImg = img;
+                    eraserCanvas.width = img.width; eraserCanvas.height = img.height;
+                    eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
+                    document.getElementById('btn-download').disabled = false; document.getElementById('btn-compare').disabled = false;
+                    historyArr = []; historyIndex = -1;
                     if (isComparing) btnCompare.click();
-
-                    let maxDim = Math.max(img.width, img.height); 
-                    let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
-                    origCanvas.width = img.width * displayScale;
-                    origCanvas.height = img.height * displayScale;
-                    oCtx.imageSmoothingEnabled = true;
-                    oCtx.drawImage(img, 0, 0, origCanvas.width, origCanvas.height);
-
+                    
                     if (loadedState) { applyState(loadedState); } 
                     else {
-                        document.getElementById('pxSize').value = 8; document.getElementById('colorSelect').value = "all";
-                        document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0;
+                        document.getElementById('pxSize').value = 1; 
+                        document.getElementById('colorSelect').value = "all";
+                        document.getElementById('ditherSelect').value = "none";
+                        document.getElementById('groupStrength').value = 0;
                         document.getElementById('groupMethod').value = "mean";
-                        document.getElementById('effEdge').checked = false; document.getElementById('effMidDither').checked = false;
+                        document.getElementById('effEdge').checked = false; 
+                        document.getElementById('effMidDither').checked = false;
+                        document.getElementById('imgGradient').checked = false;
                         resetAdjustments(); 
-                        currentPaletteMode = 'original'; updateLabels(); triggerProcess(); 
+                        resetShapes(); 
+                        currentPaletteMode = 'original'; updateLabels(); scheduleProcess(); 
                     }
-                    URL.revokeObjectURL(url); e.target.value = '';
+                    e.target.value = '';
                 };
                 img.src = url;
             };
             txtReader.readAsText(slice);
         });
 
+        document.getElementById('btnResetImage').addEventListener('click', () => {
+            if (!originalSourceUrl) return;
+            const img = new Image();
+            img.onload = () => {
+                sourceImg = img;
+                eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
+                document.getElementById('pxSize').value = 1;
+                document.getElementById('colorSelect').value = 'all';
+                document.getElementById('ditherSelect').value = 'none';
+                document.getElementById('groupStrength').value = 0;
+                document.getElementById('groupMethod').value = 'mean';
+                document.getElementById('effEdge').checked = false;
+                document.getElementById('effMidDither').checked = false;
+                document.getElementById('imgGradient').checked = false;
+                resetAdjustments(); resetShapes();
+                currentPaletteMode = 'original';
+                isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
+                updateLabels(); scheduleProcess();
+            };
+            img.src = originalSourceUrl;
+        });
+
         document.getElementById('importImgConfig').addEventListener('change', (e) => {
             const file = e.target.files[0]; if(!file) return;
             if(!sourceImg) { alert("Faça upload de uma foto na área central primeiro."); return; }
-            
             const slice = file.slice(Math.max(0, file.size - 3000)); const txtReader = new FileReader();
             txtReader.onload = (eTxt) => {
                 const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/);
@@ -1037,6 +1330,7 @@
         });
 
         document.getElementById('btn-fs-view').addEventListener('click', () => { document.body.classList.toggle('is-fullscreen'); });
+        document.getElementById('btn-exit-fullscreen').addEventListener('click', () => { document.body.classList.remove('is-fullscreen'); });
         document.addEventListener('keydown', (e) => { if(e.key === "Escape" && document.body.classList.contains('is-fullscreen')) { document.body.classList.remove('is-fullscreen'); } });
 
         document.querySelectorAll('.preset-grid button[data-theme]').forEach(btn => {
@@ -1045,37 +1339,27 @@
                     const themeName = e.target.getAttribute('data-theme');
                     if (THEMES[themeName]) {
                         isImageInverted = false; currentPaletteMode = 'preset';
-
                         if (themeName === 'Nintendo_DS') {
                             if (!locks.colorSelect) document.getElementById('colorSelect').value = "2";
-                            if (!locks.ditherSelect) {
-                                document.getElementById('ditherSelect').value = "nintendo_ds";
-                                document.getElementById('ditherScale').value = 1;
-                                document.getElementById('ditherIntensity').value = 100;
-                            }
-                            updateLabels();
+                            if (!locks.ditherSelect) { document.getElementById('ditherSelect').value = "nintendo_ds"; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; }
                         } else if (themeName === 'GameBoy') {
                             if (!locks.colorSelect) document.getElementById('colorSelect').value = "4";
-                            if (!locks.ditherSelect) {
-                                document.getElementById('ditherSelect').value = "nintendo_ds";
-                                document.getElementById('ditherScale').value = 1;
-                            }
-                            updateLabels();
+                            if (!locks.ditherSelect) { document.getElementById('ditherSelect').value = "nintendo_ds"; document.getElementById('ditherScale').value = 1; }
                         }
-
+                        updateLabels();
                         let targetColors = parseInt(document.getElementById('colorSelect').value, 10);
                         if (isNaN(targetColors)) { targetColors = THEMES[themeName].length; document.getElementById('colorSelect').value = targetColors; }
                         globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors); 
                         setBasePalette(globalCurrentPalette);
                     }
                 }
-                triggerProcess();
+                scheduleProcess();
             });
         });
 
         document.getElementById('btnOriginal').addEventListener('click', () => {
             if (!locks.colors) { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; updateLabels(); }
-            triggerProcess();
+            scheduleProcess();
         });
 
         function renderPalettes() {
@@ -1084,22 +1368,16 @@
                 const div = document.createElement('div'); div.style.display = "flex"; div.style.width = "100%"; div.style.marginBottom = "6px";
                 const b = document.createElement('button'); b.className = "std-btn"; b.style.flex = "1"; b.style.display = "flex"; b.style.alignItems = "center"; b.style.padding = "4px";
                 const colorStrip = document.createElement('div'); colorStrip.style.display = "flex"; colorStrip.style.flex = "1"; colorStrip.style.height = "18px"; colorStrip.style.marginRight = "8px";
-                
                 let viewP = savedPalettes[key].slice(0, 8);
                 viewP.forEach(c => { const cDiv = document.createElement('div'); cDiv.style.flex = "1"; cDiv.style.backgroundColor = rgbToHex(c.r, c.g, c.b); colorStrip.appendChild(cDiv); });
-                
                 const label = document.createElement('span'); label.textContent = key; label.style.fontSize = "0.75rem"; label.style.paddingRight = "6px";
                 b.appendChild(colorStrip); b.appendChild(label);
-                
-                b.onclick = () => { if(!locks.colors) { isImageInverted = false; currentPaletteMode = 'preset'; globalCurrentPalette = [...savedPalettes[key]]; setBasePalette(globalCurrentPalette); triggerProcess(); } };
-                
+                b.onclick = () => { if(!locks.colors) { isImageInverted = false; currentPaletteMode = 'preset'; globalCurrentPalette = [...savedPalettes[key]]; setBasePalette(globalCurrentPalette); scheduleProcess(); } };
                 const db = document.createElement('button'); db.className = "std-btn"; db.textContent = "X"; db.style.marginLeft = "4px";
                 db.onclick = () => { delete savedPalettes[key]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); };
-                
                 div.appendChild(b); div.appendChild(db); grid.appendChild(div);
             }
         }
-        
         document.getElementById('btnSavePalette').addEventListener('click', () => {
             if(document.getElementById('colorSelect').value === 'all') { alert("O modo cores originais está ativo. Mude para um número específico de cores para gerar uma paleta e salvá-la."); return; }
             let name = prompt("Dê um nome para esta paleta:"); if(!name) return;
@@ -1109,82 +1387,91 @@
         });
 
         function updateLabels() {
-            for(let id in inputsMap) { 
-                const el = document.getElementById(id); const valEl = document.getElementById(inputsMap[id]); 
+            for(let id in inputLabelsMap) { 
+                const el = document.getElementById(id); const valEl = document.getElementById(inputLabelsMap[id]); 
                 if(el && valEl) {
                     let v = el.value;
-                    if(id === 'texAngle') {
-                        let a = parseInt(v, 10);
-                        if(a===0 || a===180) v += '° (Hor)';
-                        else if(a===90) v += '° (Ver)';
-                        else if(a===45) v += '° (Diag Dir)';
-                        else if(a===135) v += '° (Diag Esq)';
-                        else v += '°';
-                    }
+                    if(id === 'texAngle' || id === 'shapeRotation' || id === 'shapeGradAngle' || id === 'imgGradAngle') v += '°';
+                    if (id === 'shapeScale' || id === 'shapeEllipseX' || id === 'shapeEllipseY' || id === 'textureOpacity' || id === 'edgeOpacity' || id === 'shapeOpacity' || id === 'imageScale') v += '%';
+                    if (id === 'brushSize') v += ' px';
                     valEl.textContent = v; 
                 } 
             }
+            updateImgGradUI();
         }
 
         window.lastRandomHue = window.lastRandomHue || Math.random();
-
-        function randPx() { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 10); updateLabels(); }
-        function randGrp() { document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); updateLabels(); }
+        function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 10); } }
+        function randGrp() { if(!locks.groupStrength) { document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); } }
         function randDith() { 
-            const d = ["none", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "diamonds", "waves", "scanlines", "maze", "noise"];
-            document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
+            if(!locks.ditherSelect) {
+                const d = ["none", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "diamonds", "waves", "scanlines", "maze", "noise"];
+                document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
+            }
         }
-        function randColQty() { const c = ["2", "4", "8", "16", "32", "64"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; }
-        
+        function randColQty() { if(!locks.colorSelect) { const c = ["2", "4", "8", "16", "32", "64"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; } }
         function randColorsGen() {
+            if (locks.colors) return;
             isImageInverted = false; 
             let qty = parseInt(document.getElementById('colorSelect').value, 10); if(isNaN(qty)) qty = 256; 
             currentPaletteMode = 'random';
-            
-            window.lastRandomHue = (window.lastRandomHue + 0.381966) % 1;
-            let baseHue = window.lastRandomHue;
-            
-            let anchors = [];
-            let algo = Math.floor(Math.random() * 4);
-            
-            if (algo === 0) {
-                anchors = [hslToRgb(baseHue, 0.9, 0.2), hslToRgb(baseHue, 0.8, 0.8), hslToRgb((baseHue + 0.5)%1, 0.9, 0.3), hslToRgb((baseHue + 0.5)%1, 0.8, 0.8)];
-            } else if (algo === 1) {
-                anchors = [hslToRgb(baseHue, 0.9, 0.2), hslToRgb((baseHue + 0.33)%1, 0.8, 0.5), hslToRgb((baseHue + 0.66)%1, 0.8, 0.5), hslToRgb(baseHue, 0.1, 0.9)];
-            } else if (algo === 2) {
-                anchors = [hslToRgb(baseHue, 0.9, 0.1), hslToRgb(baseHue, 1.0, 0.3), hslToRgb(baseHue, 0.8, 0.6), hslToRgb(baseHue, 0.6, 0.8), hslToRgb(baseHue, 0.2, 0.95)];
-            } else {
+            window.lastRandomHue = (window.lastRandomHue + 0.381966) % 1; let baseHue = window.lastRandomHue;
+            let anchors = []; let algo = Math.floor(Math.random() * 4);
+            if (algo === 0) anchors = [hslToRgb(baseHue, 0.9, 0.2), hslToRgb(baseHue, 0.8, 0.8), hslToRgb((baseHue + 0.5)%1, 0.9, 0.3), hslToRgb((baseHue + 0.5)%1, 0.8, 0.8)];
+            else if (algo === 1) anchors = [hslToRgb(baseHue, 0.9, 0.2), hslToRgb((baseHue + 0.33)%1, 0.8, 0.5), hslToRgb((baseHue + 0.66)%1, 0.8, 0.5), hslToRgb(baseHue, 0.1, 0.9)];
+            else if (algo === 2) anchors = [hslToRgb(baseHue, 0.9, 0.1), hslToRgb(baseHue, 1.0, 0.3), hslToRgb(baseHue, 0.8, 0.6), hslToRgb(baseHue, 0.6, 0.8), hslToRgb(baseHue, 0.2, 0.95)];
+            else {
                 let numAnchors = 3 + Math.floor(Math.random() * 4);
-                for(let i=0; i<numAnchors; i++) { anchors.push(hslToRgb((baseHue + i*0.08)%1, 0.7 + Math.random()*0.3, 0.1 + Math.random()*0.8)); }
+                for(let i=0; i<numAnchors; i++) anchors.push(hslToRgb((baseHue + i*0.08)%1, 0.7 + Math.random()*0.3, 0.1 + Math.random()*0.8));
                 anchors.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
             }
-            globalCurrentPalette = interpolatePalette(anchors, qty); 
-            setBasePalette(globalCurrentPalette);
+            globalCurrentPalette = interpolatePalette(anchors, qty); setBasePalette(globalCurrentPalette);
+            
+            if(!locks.shapeColor && globalCurrentPalette.length > 0) document.getElementById('shapeColorShuffle').click();
+        }
+        function randShapes() {
+            if (locks.shapesAll) return;
+            const s = shapes[activeShapeIndex]; if(!s) return;
+            const types = ['star', 'polygon', 'concave', 'irregular', 'complex', 'circle'];
+            if(!locks.shapeType) s.type = types[Math.floor(Math.random() * types.length)];
+            if(!locks.shapePoints) s.points = Math.floor(Math.random() * 8) + 4;
+            if(!locks.shapeScale) s.scale = Math.floor(Math.random() * 150) + 70;
+            if(!locks.shapeRotation) s.rotation = Math.floor(Math.random() * 360);
+            if(!locks.shapeEllipseX) s.ellipseX = Math.floor(Math.random() * 70) + 70;
+            if(!locks.shapeEllipseY) s.ellipseY = Math.floor(Math.random() * 70) + 70;
+            if(!locks.shapeColor) document.getElementById('shapeColorShuffle').click();
+            
+            if (['irregular', 'complex', 'concave'].includes(s.type)) {
+                let arr = []; const style = Math.random(); let currentRadius = 10 + Math.random() * 40;
+                for (let i = 0; i < 40; i++) {
+                    if (style < 0.33) arr.push(Math.random() > 0.5 ? (40 + Math.random() * 10) : (5 + Math.random() * 15));
+                    else if (style < 0.66) arr.push(5 + Math.random() * 45);
+                    else { if (Math.random() < 0.4) currentRadius = 5 + Math.random() * 45; arr.push(currentRadius); }
+                }
+                s.irregularRadii = arr;
+            }
+            populateShapeForm();
         }
 
         document.querySelectorAll('.shuffle-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return;
-                if(tgt === 'pxSize') randPx(); if(tgt === 'groupStrength') randGrp(); if(tgt === 'ditherSelect') randDith();
-                if(tgt === 'colorSelect') randColQty(); if(tgt === 'colors') randColorsGen(); 
-                triggerProcess();
+            btn.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const tgt = btn.getAttribute('data-target');
+                if (tgt === 'shapes') { randShapes(); updateLabels(); renderCanvas(); }
+                else if (locks[tgt]) return;
+                else {
+                    if(tgt === 'pxSize') randPx(); if(tgt === 'groupStrength') randGrp(); if(tgt === 'ditherSelect') randDith();
+                    if(tgt === 'colors') randColorsGen();
+                    updateLabels(); scheduleProcess();
+                }
             });
         });
-
         function randomizeAll() {
-            if(!locks.pxSize) randPx(); 
-            if(!locks.groupStrength) randGrp(); 
-            if(!locks.ditherSelect) randDith();
-            if(!locks.colorSelect) randColQty(); 
-            if(!locks.colors) randColorsGen();
-            
-            document.getElementById('ditherScale').value = Math.floor(Math.random() * 4) + 1;
-            document.getElementById('ditherIntensity').value = Math.floor(Math.random() * 100) + 50;
-            document.getElementById('texAngle').value = Math.floor(Math.random() * 180);
-            
-            updateLabels(); triggerProcess();
+            if(!locks.pxSize) randPx(); if(!locks.groupStrength) randGrp(); if(!locks.ditherSelect) randDith();
+            if(!locks.colorSelect) randColQty(); if(!locks.colors) randColorsGen();
+            if(document.getElementById('shapeEnable').checked) randShapes();
+            updateLabels(); scheduleProcess();
         }
-        
         document.getElementById('btn-random-global').addEventListener('click', () => randomizeAll());
 
         function getStateObject() {
@@ -1197,12 +1484,19 @@
                 fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), 
                 cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted,
                 rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value,
-                pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value
+                pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value,
+                edgePx: document.getElementById('edgePixelSize').value,
+                shapes: shapes,
+                imageScale: document.getElementById('imageScale').value,
+                texOp: document.getElementById('textureOpacity').value,
+                edgeOp: document.getElementById('edgeOpacity').value,
+                imgGrad: document.getElementById('imgGradient').checked, imgGradType: document.getElementById('imgGradType').value,
+                imgGradAngle: document.getElementById('imgGradAngle').value, imgGradBlend: document.getElementById('imgGradBlend').value,
+                eData: eraserCanvas.width ? eraserCanvas.toDataURL() : null
             };
         }
-
         function saveHistoryState() {
-            if (isNavigatingHistory) return;
+            if (isRestoringState) return;
             let state = getStateObject();
             if (historyIndex === -1 || JSON.stringify(historyArr[historyIndex]) !== JSON.stringify(state)) {
                 historyArr = historyArr.slice(0, historyIndex + 1); historyArr.push(state);
@@ -1210,18 +1504,17 @@
                 updateHistoryButtons();
             }
         }
-
         function updateHistoryButtons() {
             document.getElementById('btn-undo-view').disabled = historyIndex <= 0;
             document.getElementById('btn-redo-view').disabled = historyIndex >= historyArr.length - 1;
         }
 
         function applyState(p) {
+            isRestoringState = true;
             if (!locks.pxSize && p.px !== undefined) document.getElementById('pxSize').value = p.px;
             if (!locks.colorSelect && p.col !== undefined) document.getElementById('colorSelect').value = p.col;
             if (!locks.ditherSelect && p.dith !== undefined) document.getElementById('ditherSelect').value = p.dith;
             if (!locks.groupStrength && p.grp !== undefined) document.getElementById('groupStrength').value = p.grp;
-            
             if (p.gMod !== undefined) document.getElementById('groupMethod').value = p.gMod;
             document.getElementById('estrutura').value = p.est !== undefined ? p.est : 0;
             document.getElementById('exposicao').value = p.exp !== undefined ? p.exp : 0; document.getElementById('brilho').value = p.bri !== undefined ? p.bri : 0;
@@ -1230,48 +1523,74 @@
             document.getElementById('posterize').value = p.post !== undefined ? p.post : 0;
             document.getElementById('ditherScale').value = p.dScale !== undefined ? p.dScale : 1; document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100;
             document.getElementById('texAngle').value = p.tAng !== undefined ? p.tAng : 45;
-            
             document.getElementById('effEdge').checked = p.effEdge || false; document.getElementById('effMidDither').checked = p.effMidDither || false;
-            
-            isShadowsInverted = p.shInv || false;
-            document.getElementById('btnInvertShadows').classList.toggle('active-state', isShadowsInverted);
-            
+            isShadowsInverted = p.shInv || false; document.getElementById('btnInvertShadows').classList.toggle('active-state', isShadowsInverted);
             document.getElementById('fillBg').checked = p.fillBg || false;
-            if(p.bgColor) { 
-                document.getElementById('btnBgColor').value = p.bgColor;
-                document.getElementById('btnBgColor').setAttribute('data-color', p.bgColor); 
-                document.getElementById('hexBgColor').value = p.bgColor.toUpperCase(); 
-            }
-
+            if(p.bgColor) { document.getElementById('btnBgColor').value = p.bgColor; document.getElementById('btnBgColor').setAttribute('data-color', p.bgColor); document.getElementById('hexBgColor').value = p.bgColor.toUpperCase(); }
             document.getElementById('rgbShift').value = p.rSht !== undefined ? p.rSht : 0;
             if(p.edgC) document.getElementById('edgeColor').value = p.edgC;
-
-            updateLabels();
-
+            document.getElementById('edgePixelSize').value = p.edgePx !== undefined ? p.edgePx : 1;
+            document.getElementById('imageScale').value = p.imageScale !== undefined ? p.imageScale : 100;
+            document.getElementById('textureOpacity').value = p.texOp !== undefined ? p.texOp : 100;
+            document.getElementById('edgeOpacity').value = p.edgeOp !== undefined ? p.edgeOp : 100;
+            document.getElementById('imgGradient').checked = p.imgGrad || false;
+            if(p.imgGradType) document.getElementById('imgGradType').value = p.imgGradType;
+            if(p.imgGradAngle !== undefined) document.getElementById('imgGradAngle').value = p.imgGradAngle;
+            if(p.imgGradBlend) document.getElementById('imgGradBlend').value = p.imgGradBlend;
+            
+            // Legacy/Shapes Migration
+            if(p.shapes) { shapes = p.shapes; activeShapeIndex = 0; } 
+            else {
+                shapes = [createDefaultShape()];
+                shapes[0].enable = p.shapeEn || false; shapes[0].type = p.shapeType || 'star'; shapes[0].points = p.shapePoints || 5;
+                shapes[0].scale = p.shapeScale || 100; shapes[0].rotation = p.shapeRotation || 0; shapes[0].ellipseX = p.shapeEllipseX || 100;
+                shapes[0].ellipseY = p.shapeEllipseY || 100; shapes[0].offsetX = p.shapeOffsetX || 0; shapes[0].offsetY = p.shapeOffsetY || 0;
+                shapes[0].color = p.shapeColor || '#E5533D'; shapes[0].useGradient = p.shapeGrad || false; shapes[0].gradAngle = p.shapeGradAngle || 90;
+                shapes[0].fill = p.shapeFill !== undefined ? p.shapeFill : true; shapes[0].strokeWidth = p.shapeStrokeWidth || 0;
+                shapes[0].layer = p.shapeLayer || 'front'; shapes[0].opacity = p.shapeOp || 100; shapes[0].irregularRadii = p.irrRadii || Array.from({ length: 40 }, () => 35);
+            }
+            updateShapeListUI(); populateShapeForm();
+            
             if (!locks.colors) {
                 currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false;
-                if (p.cc && p.cc.length > 0) { 
-                    globalCurrentPalette = p.cc.map(hexToRgb); 
-                    setBasePalette(globalCurrentPalette);
-                }
+                if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); setBasePalette(globalCurrentPalette); }
             }
-            isNavigatingHistory = true; triggerProcess(); updateHistoryButtons();
-        }
 
+            const executeRestore = () => { isRestoringState = false; scheduleProcess(); updateHistoryButtons(); };
+            if (p.eData) {
+                const eImg = new Image();
+                eImg.onload = () => { eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height); eCtx.drawImage(eImg, 0, 0); executeRestore(); };
+                eImg.src = p.eData;
+            } else { eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height); executeRestore(); }
+        }
         document.getElementById('btn-undo-view').addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; applyState(historyArr[historyIndex]); } });
         document.getElementById('btn-redo-view').addEventListener('click', () => { if (historyIndex < historyArr.length - 1) { historyIndex++; applyState(historyArr[historyIndex]); } });
 
+        function trimCanvas(c) {
+            const tempCtx = c.getContext('2d'); const pixels = tempCtx.getImageData(0, 0, c.width, c.height);
+            const l = pixels.data.length; let bound = { top: null, left: null, right: null, bottom: null };
+            for (let i = 0; i < l; i += 4) {
+                if (pixels.data[i + 3] !== 0) {
+                    let x = (i / 4) % c.width, y = Math.floor((i / 4) / c.width);
+                    if (bound.top === null) bound.top = y;
+                    if (bound.left === null || x < bound.left) bound.left = x;
+                    if (bound.right === null || x > bound.right) bound.right = x;
+                    if (bound.bottom === null || y > bound.bottom) bound.bottom = y;
+                }
+            }
+            if (bound.top === null) return c; 
+            const tH = bound.bottom - bound.top + 1, tW = bound.right - bound.left + 1;
+            const trimmed = document.createElement('canvas'); trimmed.width = tW; trimmed.height = tH;
+            trimmed.getContext('2d').putImageData(tempCtx.getImageData(bound.left, bound.top, tW, tH), 0, 0);
+            return trimmed;
+        }
+
         const dlModal = document.getElementById('downloadModal');
-        document.getElementById('btn-download').addEventListener('click', () => { if(sourceImg && !isProcessing) dlModal.style.display = 'flex'; });
+        document.getElementById('btn-download').addEventListener('click', () => { if(sourceImg) dlModal.style.display = 'flex'; });
         document.getElementById('dl-close').addEventListener('click', () => { dlModal.style.display = 'none'; });
-        
         document.getElementById('dl-png').addEventListener('click', () => {
             const fileName = `pixelar_${Date.now()}.png`;
-            const triggerDownload = (url) => {
-                const a = document.createElement('a'); a.href = url; a.download = fileName; a.style.display = 'none';
-                document.body.appendChild(a); try { a.click(); } catch (error) { window.open(url, '_blank'); }
-                setTimeout(() => a.remove(), 1000); dlModal.style.display = 'none';
-            };
+            const triggerDownload = (url) => { const a = document.createElement('a'); a.href = url; a.download = fileName; a.style.display = 'none'; document.body.appendChild(a); try { a.click(); } catch (error) { window.open(url, '_blank'); } setTimeout(() => a.remove(), 1000); dlModal.style.display = 'none'; };
             const embedMetadataAndDownload = (blob) => {
                 if (!blob) return; const reader = new FileReader();
                 reader.onload = () => {
@@ -1283,27 +1602,23 @@
                 };
                 reader.readAsArrayBuffer(blob);
             };
-            if (canvas.toBlob) canvas.toBlob(embedMetadataAndDownload, 'image/png'); else triggerDownload(canvas.toDataURL('image/png'));
+            const finalCanvas = trimCanvas(canvas);
+            if (finalCanvas.toBlob) finalCanvas.toBlob(embedMetadataAndDownload, 'image/png'); else triggerDownload(finalCanvas.toDataURL('image/png'));
         });
-
         document.getElementById('dl-svg').addEventListener('click', () => {
-            const px = parseInt(document.getElementById('pxSize').value, 10);
-            const origW = sourceImg.width; const origH = sourceImg.height;
-            const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
-            const tmpCanvas = document.createElement('canvas'); tmpCanvas.width = canvas.width; tmpCanvas.height = canvas.height;
-            const tCtx = tmpCanvas.getContext('2d'); tCtx.drawImage(canvas, 0, 0);
+            const finalCanvas = trimCanvas(canvas); const px = parseInt(document.getElementById('pxSize').value, 10);
             const smallCtx = document.createElement('canvas').getContext('2d');
-            smallCtx.canvas.width = smallW; smallCtx.canvas.height = smallH; smallCtx.imageSmoothingEnabled = false;
-            smallCtx.drawImage(tmpCanvas, 0, 0, smallW, smallH);
-            let sCtxData = smallCtx.getImageData(0,0,smallW,smallH).data;
-            let svg = `<?xml version="1.0" encoding="utf-8"?>\n<svg width="${smallW * px}" height="${smallH * px}" viewBox="0 0 ${smallW * px} ${smallH * px}" xmlns="http://www.w3.org/2000/svg">`;
-            for(let y=0; y<smallH; y++) {
+            smallCtx.canvas.width = Math.floor(finalCanvas.width / px); smallCtx.canvas.height = Math.floor(finalCanvas.height / px); 
+            smallCtx.imageSmoothingEnabled = false; smallCtx.drawImage(finalCanvas, 0, 0, smallCtx.canvas.width, smallCtx.canvas.height);
+            let sCtxData = smallCtx.getImageData(0,0,smallCtx.canvas.width, smallCtx.canvas.height).data;
+            let svg = `<?xml version="1.0" encoding="utf-8"?>\n<svg width="${finalCanvas.width}" height="${finalCanvas.height}" viewBox="0 0 ${finalCanvas.width} ${finalCanvas.height}" xmlns="http://www.w3.org/2000/svg">`;
+            for(let y=0; y<smallCtx.canvas.height; y++) {
                 let startX = 0; let curColor = '';
-                for(let x=0; x<=smallW; x++) {
-                    let idx = (y*smallW + x)*4; let hex = x < smallW ? rgbToHex(sCtxData[idx], sCtxData[idx+1], sCtxData[idx+2]) : null;
+                for(let x=0; x<=smallCtx.canvas.width; x++) {
+                    let idx = (y*smallCtx.canvas.width + x)*4; let hex = x < smallCtx.canvas.width ? rgbToHex(sCtxData[idx], sCtxData[idx+1], sCtxData[idx+2]) : null;
                     let alpha = sCtxData[idx+3]; if (alpha < 127) hex = null; 
                     if (x === 0) { curColor = hex; continue; }
-                    if (hex !== curColor || x === smallW) {
+                    if (hex !== curColor || x === smallCtx.canvas.width) {
                         if (curColor !== null) { svg += `\n  <rect x="${startX * px}" y="${y * px}" width="${(x - startX) * px}" height="${px}" fill="${curColor}"/>`; }
                         startX = x; curColor = hex;
                     }
@@ -1315,7 +1630,6 @@
             document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1500);
             dlModal.style.display = 'none';
         });
-
         document.getElementById('dl-txt').addEventListener('click', () => {
             let pData = getStateObject(); let txt = `Pixelar - Exportação de Configurações\n\n`;
             for(let k in pData) { txt += `${k}: ${pData[k]}\n`; }
@@ -1335,42 +1649,11 @@
                 div.appendChild(b); div.appendChild(db); grid.appendChild(div);
             }
         }
-
         document.getElementById('btnSavePreset').addEventListener('click', () => {
             let name = prompt("Nome do Preset Atual:"); if(!name) return;
-            savedPresets[name] = getStateObject();
-            try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch (e) { }
-            renderPresets();
+            savedPresets[name] = getStateObject(); try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch (e) { } renderPresets();
         });
-
-        renderPalettes();
-        renderPresets();
-
-        const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
-
-        async function triggerProcess() {
-            if(!sourceImg) return;
-            if(abortController) abortController.abort();
-            abortController = new AbortController(); const signal = abortController.signal;
-            isProcessing = true;
-            
-            floatBtns.forEach(b => { if(b.id !== 'btn-upload') { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; } });
-            document.querySelectorAll('#canvas-tools .tool-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
-            
-            progressFill.style.width = '0%'; progressText.style.display = 'block';
-
-            try { await runEngineAsync(signal); if (!signal.aborted) { isNavigatingHistory = false; } } 
-            catch (e) {} 
-            finally {
-                if (!signal.aborted) {
-                    isProcessing = false; progressFill.style.width = '100%';
-                    setTimeout(() => { progressFill.style.width = '0%'; progressText.style.display = 'none'; }, 600);
-                    floatBtns.forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
-                    document.querySelectorAll('#canvas-tools .tool-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
-                    updateHistoryButtons();
-                }
-            }
-        }
+        renderPalettes(); renderPresets();
 
         function getMedianCut(pixels, count) {
             if(!pixels.length) return [{r:0,g:0,b:0, count:0}];
@@ -1397,14 +1680,23 @@
             });
         }
 
-        async function runEngineAsync(signal) {
+        // ================= SISTEMA DE RENDERIZAÇÃO =================
+
+        let processTimeout = null;
+        function scheduleProcess() {
+            if (processTimeout) clearTimeout(processTimeout);
+            processTimeout = setTimeout(() => { processImageCore(); }, 50);
+        }
+
+        // 1. Processamento Pesado (Filtros, Cores, Dithering) -> Guarda no ditherCanvas
+        function processImageCore() {
+            if(!sourceImg) return;
             const px = parseInt(document.getElementById('pxSize').value, 10);
             const cLimitStr = document.getElementById('colorSelect').value;
             const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
             const groupMethod = document.getElementById('groupMethod').value;
             const passes = Math.ceil(uiGroupStrength / 5); 
             const ditherMode = document.getElementById('ditherSelect').value;
-            
             const estBoost = parseInt(document.getElementById('estrutura').value, 10) / 100;
             const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
             const brBoost = parseInt(document.getElementById('brilho').value, 10);
@@ -1412,61 +1704,37 @@
             const satBoost = parseInt(document.getElementById('saturacao').value, 10) / 100;
             const contValue = parseInt(document.getElementById('contraste').value, 10);
             const tempBoost = parseInt(document.getElementById('temperatura').value, 10);
-            
             const postVal = parseInt(document.getElementById('posterize').value, 10);
             const posterLevels = postVal > 0 ? Math.max(2, Math.round(16 - (postVal / 100) * 14)) : 0;
-
             const dithScale = parseInt(document.getElementById('ditherScale').value, 10);
             const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100;
             const texAngle = parseInt(document.getElementById('texAngle').value, 10) * Math.PI / 180;
-            
-            const isEdgeEnabled = document.getElementById('effEdge').checked;
             const isMidDitherEnabled = document.getElementById('effMidDither').checked;
-            
-            const isFillBgEnabled = document.getElementById('fillBg').checked;
-            const bgColorHex = hexToRgb(document.getElementById('btnBgColor').getAttribute('data-color'));
-
             const rgbShift = parseInt(document.getElementById('rgbShift').value, 10);
+            const isEdgeEnabled = document.getElementById('effEdge').checked;
             const edgeRgb = hexToRgb(document.getElementById('edgeColor').value);
-
+            const edgePxSize = parseInt(document.getElementById('edgePixelSize').value, 10);
             const contFactor = (259 * (contValue + 255)) / (255 * (259 - contValue));
 
             const origW = sourceImg.width; const origH = sourceImg.height;
             const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
-
-            const smallCanvas = document.createElement('canvas');
-            smallCanvas.width = smallW; smallCanvas.height = smallH;
-            const sCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
             
-            sCtx.imageSmoothingEnabled = false; sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
+            ditherCanvas.width = smallW; ditherCanvas.height = smallH;
+            const sCtx = ditherCanvas.getContext('2d', { willReadFrequently: true });
+            sCtx.imageSmoothingEnabled = false; 
+            sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
+
             let imgData = sCtx.getImageData(0, 0, smallW, smallH); let d = imgData.data;
-
-            let maxDim = Math.max(origW, origH); let displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
-            canvas.width = origW * displayScale; canvas.height = origH * displayScale;
-            ctx.imageSmoothingEnabled = false;
-
-            const bayerMatrix = [
-                [ 0,  8,  2, 10],
-                [12,  4, 14,  6],
-                [ 3, 11,  1,  9],
-                [15,  7, 13,  5]
-            ];
-
-            const updateProgress = (pct) => { progressFill.style.width = pct + '%'; progressText.textContent = Math.floor(pct) + '%'; };
-            const chunkRows = Math.max(4, Math.floor(smallH / 20)); let minL=255, maxL=0;
+            const bayerMatrix = [[ 0, 8, 2, 10], [12, 4, 14, 6], [ 3, 11, 1, 9], [15, 7, 13, 5]];
+            let minL=255, maxL=0;
 
             if (estBoost > 0) {
                 let tempD = new Uint8ClampedArray(d);
                 for (let y = 1; y < smallH - 1; y++) {
                     for (let x = 1; x < smallW - 1; x++) {
-                        let i = (y * smallW + x) * 4;
-                        if(d[i+3] < 127) continue;
+                        let i = (y * smallW + x) * 4; if(d[i+3] < 127) continue;
                         for (let c = 0; c < 3; c++) {
-                            let val = 5 * tempD[i + c] 
-                                    - tempD[i - smallW*4 + c] 
-                                    - tempD[i + smallW*4 + c] 
-                                    - tempD[i - 4 + c] 
-                                    - tempD[i + 4 + c];
+                            let val = 5 * tempD[i + c] - tempD[i - smallW*4 + c] - tempD[i + smallW*4 + c] - tempD[i - 4 + c] - tempD[i + 4 + c];
                             d[i + c] = Math.min(255, Math.max(0, tempD[i + c] + (val - tempD[i + c]) * estBoost));
                         }
                     }
@@ -1474,45 +1742,27 @@
             }
 
             for(let y=0; y<smallH; y++) {
-                if(signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
                 for(let x=0; x<smallW; x++) {
                     let i = (y*smallW + x)*4;
-                    if(d[i+3] < 127) { 
-                        if (isFillBgEnabled) { d[i] = bgColorHex.r; d[i+1] = bgColorHex.g; d[i+2] = bgColorHex.b; d[i+3] = 255; } 
-                        else { d[i] = 0; d[i+1] = 0; d[i+2] = 0; d[i+3] = 0; continue; }
-                    } else { d[i+3] = 255; }
-                    
+                    if(d[i+3] < 127) { d[i] = 0; d[i+1] = 0; d[i+2] = 0; d[i+3] = 0; continue; } 
+                    else { d[i+3] = 255; }
                     let r=d[i], g=d[i+1], b=d[i+2];
                     r = r * expBoost + brBoost; g = g * expBoost + brBoost; b = b * expBoost + brBoost;
                     if (contValue !== 0) { r = contFactor * (r - 128) + 128; g = contFactor * (g - 128) + 128; b = contFactor * (b - 128) + 128; }
                     if (tempBoost !== 0) { r += tempBoost; b -= tempBoost; }
                     r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
-
                     if (isImageInverted) { r = 255 - r; g = 255 - g; b = 255 - b; }
-
                     let luma = 0.3*r + 0.59*g + 0.11*b;
-                    if (satBoost !== 0) {
-                        const satScale = 1 + satBoost;
-                        r = luma + (r - luma) * satScale; g = luma + (g - luma) * satScale; b = luma + (b - luma) * satScale;
-                    }
-                    if (shBoost !== 0 && luma < 128) {
-                        let factor = (128 - luma)/128; r += shBoost * factor; g += shBoost * factor; b += shBoost * factor;
-                    }
-
+                    if (satBoost !== 0) { const satScale = 1 + satBoost; r = luma + (r - luma) * satScale; g = luma + (g - luma) * satScale; b = luma + (b - luma) * satScale; }
+                    if (shBoost !== 0 && luma < 128) { let factor = (128 - luma)/128; r += shBoost * factor; g += shBoost * factor; b += shBoost * factor; }
                     if (posterLevels > 0) {
                         r = Math.round((r / 255) * (posterLevels - 1)) * (255 / (posterLevels - 1));
                         g = Math.round((g / 255) * (posterLevels - 1)) * (255 / (posterLevels - 1));
                         b = Math.round((b / 255) * (posterLevels - 1)) * (255 / (posterLevels - 1));
                     }
-
                     d[i] = Math.min(255, Math.max(0, r)); d[i+1] = Math.min(255, Math.max(0, g)); d[i+2] = Math.min(255, Math.max(0, b));
                     let fluma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
                     if(fluma < minL) minL = fluma; if(fluma > maxL) maxL = fluma;
-                }
-                
-                if (y % chunkRows === 0) { 
-                    updateProgress((y / smallH) * 15); sCtx.putImageData(imgData, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height); await yieldToMain(); 
                 }
             }
 
@@ -1520,10 +1770,8 @@
                 let srcData = new Uint8ClampedArray(d); let dstData = new Uint8ClampedArray(d);
                 for(let p=0; p<passes; p++) {
                     for(let y=0; y<smallH; y++) {
-                        if(signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
                         for(let x=0; x<smallW; x++) {
                             let idx = (y*smallW + x)*4; if(srcData[idx+3] === 0) { dstData[idx+3]=0; continue; }
-                            
                             if (groupMethod === 'mode') {
                                 let counts = new Map(); let maxCount = 0; let modeColor = {r:srcData[idx], g:srcData[idx+1], b:srcData[idx+2]};
                                 for(let dy=-1; dy<=1; dy++){
@@ -1556,10 +1804,6 @@
                                 dstData[idx] = sumR/count; dstData[idx+1] = sumG/count; dstData[idx+2] = sumB/count; dstData[idx+3] = srcData[idx+3];
                             }
                         }
-                        if (y % chunkRows === 0) { 
-                            updateProgress(15 + 25 * ((p * smallH + y) / (passes * smallH))); sCtx.putImageData(imgData, 0, 0);
-                            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height); await yieldToMain(); 
-                        }
                     }
                     srcData.set(dstData);
                 }
@@ -1578,13 +1822,26 @@
                         if (Math.abs(luma - rLuma) > 20 || Math.abs(luma - bLuma) > 20) { edgeMap[y * smallW + x] = 1; }
                     }
                 }
+                if (edgePxSize > 1) {
+                    const thickEdge = new Uint8Array(smallW * smallH);
+                    for (let y = 0; y < smallH; y++) {
+                        for (let x = 0; x < smallW; x++) {
+                            if (edgeMap[y * smallW + x] === 1) {
+                                for(let dy = 0; dy < edgePxSize; dy++) {
+                                    for(let dx = 0; dx < edgePxSize; dx++) {
+                                        let nx = x + dx, ny = y + dy;
+                                        if (nx < smallW && ny < smallH) thickEdge[ny * smallW + nx] = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    edgeMap = thickEdge;
+                }
             }
-            
-            updateProgress(40); await yieldToMain();
 
             let usePalette = (cLimitStr !== 'all'); let targetColors = usePalette ? parseInt(cLimitStr, 10) : 256;
             const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
-
             const getBalancedPalette = (mappedArr, targetSize) => {
                 mappedArr.sort((a,b) => b.count - a.count);
                 if (targetSize < 2 || mappedArr.length <= targetSize) return mappedArr.slice(0, targetSize).map(x => x.col);
@@ -1592,7 +1849,6 @@
                 if (pool.length < 2) return mappedArr.slice(0, targetSize).map(x => x.col);
                 pool.sort((a,b) => a.luma - b.luma);
                 let darkest = pool[0]; let lightest = pool[pool.length - 1]; let finalPalette = [darkest, lightest];
-                
                 mappedArr = mappedArr.filter(x => x !== darkest && x !== lightest); mappedArr.sort((a,b) => b.count - a.count);
                 for (let i = 0; i < targetSize - 2; i++) { if (mappedArr[i]) finalPalette.push(mappedArr[i]); }
                 return finalPalette.map(x => x.col);
@@ -1607,14 +1863,11 @@
                         let mapped = basePal.map(c => ({ col: {r: c.r, g: c.g, b: c.b}, count: c.count, luma: 0.3*c.r + 0.59*c.g + 0.11*c.b }));
                         globalCurrentPalette = getBalancedPalette(mapped, targetColors);
                     } else { globalCurrentPalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b})); }
-                    if (!isNavigatingHistory) { setBasePalette(globalCurrentPalette); }
+                    if (!isRestoringState) setBasePalette(globalCurrentPalette);
                 }
             }
-
-            let enginePalette = [...globalCurrentPalette];
             
-            updateProgress(45); await yieldToMain();
-
+            let enginePalette = [...globalCurrentPalette];
             const colorCache = new Map();
             const findClosestColor = (r, g, b, palette) => {
                 const key = (r & 0xF8) << 10 | (g & 0xF8) << 5 | (b & 0xF8); let cached = colorCache.get(key); if (cached) return cached;
@@ -1627,68 +1880,46 @@
             };
 
             for(let y=0; y<smallH; y++) {
-                if(signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
                 let sy = Math.floor(y / dithScale); let isEvenY = (sy % 2 === 0);
-
                 for(let x=0; x<smallW; x++) {
                     let i = (y*smallW + x) * 4; if(d[i+3] < 127) continue;
                     let r=d[i], g=d[i+1], b=d[i+2];
-
-                    if (isEdgeEnabled && edgeMap[y * smallW + x] === 1) { d[i]=edgeRgb.r; d[i+1]=edgeRgb.g; d[i+2]=edgeRgb.b; continue; }
-
+                    
+                    if (isEdgeEnabled && edgeMap[y * smallW + x] === 1) {
+                        d[i] = edgeRgb.r; d[i+1] = edgeRgb.g; d[i+2] = edgeRgb.b; 
+                        d[i+3] = 254; // Marcador especial de opacidade para a renderização separar a textura
+                        continue;
+                    }
+                    
                     let pxLuma = 0.3*r + 0.59*g + 0.11*b;
                     if (isShadowsInverted) { let norm = (pxLuma - minL) / (maxL - minL || 1); if (norm < 0.45) { r = 255 - r; g = 255 - g; b = 255 - b; } }
-
-                    let sx = Math.floor(x / dithScale); let factor = 0;
                     
+                    let sx = Math.floor(x / dithScale); let factor = 0;
                     if (ditherMode === 'halftone') {
-                        let size = Math.max(2, dithScale * 3);
-                        let sC = Math.sin(texAngle), cC = Math.cos(texAngle);
+                        let size = Math.max(2, dithScale * 3); let sC = Math.sin(texAngle), cC = Math.cos(texAngle);
                         let rx = x * cC - y * sC; let ry = x * sC + y * cC;
                         let cx = (Math.abs(rx) % size) - size / 2; let cy = (Math.abs(ry) % size) - size / 2;
-                        let dist = Math.sqrt(cx * cx + cy * cy); let maxDist = size / 1.5;
-                        factor = ((dist / maxDist) - 0.5) * 1.5;
+                        let dist = Math.sqrt(cx * cx + cy * cy); let maxDist = size / 1.5; factor = ((dist / maxDist) - 0.5) * 1.5;
                     }
-                    else if (ditherMode === 'nintendo_ds') {
-                        let bayer = (bayerMatrix[sy % 4][sx % 4] / 15) - 0.5;
-                        let lcd = (sx % 2 === 0) ? -0.25 : 0.25; 
-                        factor = (bayer * 0.7) + lcd;
-                    }
-                    else if (ditherMode === 'xerox') {
-                        let rand = Math.random(); let noise = rand > 0.7 ? 0.7 : (rand < 0.3 ? -0.7 : (rand - 0.5) * 0.2);
-                        let streak = (y % Math.max(3, dithScale * 4) === 0) && (Math.random() > 0.3) ? 0.6 : 0;
-                        factor = (noise + streak) * 1.2;
-                    }
-                    else if (ditherMode === 'linhas') {
-                        let sC = Math.sin(texAngle), cC = Math.cos(texAngle);
-                        let rx = x * cC - y * sC;
-                        let lineSize = Math.max(1, dithScale * 2);
-                        factor = Math.sin(rx * (Math.PI / lineSize)) > 0 ? 0.3 : -0.3;
-                    }
+                    else if (ditherMode === 'nintendo_ds') { let bayer = (bayerMatrix[sy % 4][sx % 4] / 15) - 0.5; let lcd = (sx % 2 === 0) ? -0.25 : 0.25; factor = (bayer * 0.7) + lcd; }
+                    else if (ditherMode === 'xerox') { let rand = Math.random(); let noise = rand > 0.7 ? 0.7 : (rand < 0.3 ? -0.7 : (rand - 0.5) * 0.2); let streak = (y % Math.max(3, dithScale * 4) === 0) && (Math.random() > 0.3) ? 0.6 : 0; factor = (noise + streak) * 1.2; }
+                    else if (ditherMode === 'linhas') { let sC = Math.sin(texAngle), cC = Math.cos(texAngle); let rx = x * cC - y * sC; let lineSize = Math.max(1, dithScale * 2); factor = Math.sin(rx * (Math.PI / lineSize)) > 0 ? 0.3 : -0.3; }
                     else if (ditherMode === 'checkerboard') factor = ((sx + sy) % 2 === 0) ? -0.3 : 0.3;
                     else if (ditherMode === 'diamonds') { let cx = sx % 6; let cy = sy % 6; factor = (Math.abs(cx - 3) + Math.abs(cy - 3) < 3) ? -0.4 : 0.2; }
                     else if (ditherMode === 'waves') factor = (Math.sin(sx * 0.5) + Math.cos(sy * 0.5)) * 0.25;
                     else if (ditherMode === 'scanlines') factor = (sy % 3 === 0) ? -0.4 : 0.1;
                     else if (ditherMode === 'maze') factor = ((sx * sy) % 3 === 0) ? -0.3 : 0.3;
                     else if (ditherMode === 'noise') factor = (Math.random() - 0.5) * 0.4;
-
+                    
                     factor *= dithInt;
-
                     if (isMidDitherEnabled) { let norm = (pxLuma - minL) / (maxL - minL || 1); if (norm < 0.25 || norm > 0.75) factor = 0; }
-
+                    
                     if (factor !== 0) {
                         let spread = 120;
                         r = Math.max(0, Math.min(255, r + factor * spread)); g = Math.max(0, Math.min(255, g + factor * spread)); b = Math.max(0, Math.min(255, b + factor * spread));
                     }
-                    
-                    if (usePalette && enginePalette && enginePalette.length > 0) {
-                        let closest = findClosestColor(r, g, b, enginePalette); d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
-                    } else { d[i] = r; d[i+1] = g; d[i+2] = b; }
-                }
-                
-                if (y % chunkRows === 0) { 
-                    updateProgress(45 + 55 * (y / smallH)); sCtx.putImageData(imgData, 0, 0);
-                    ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height); await yieldToMain(); 
+                    if (usePalette && enginePalette && enginePalette.length > 0) { let closest = findClosestColor(r, g, b, enginePalette); d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b; } 
+                    else { d[i] = r; d[i+1] = g; d[i+2] = b; }
                 }
             }
 
@@ -1697,19 +1928,170 @@
                 for(let y=0; y<smallH; y++) {
                     for(let x=0; x<smallW; x++) {
                         let i = (y*smallW + x)*4;
-                        let rx = x + rgbShift;
-                        if (rx >= 0 && rx < smallW) { d[i] = shiftTemp[(y*smallW + rx)*4]; }
-                        let bx = x - rgbShift;
-                        if (bx >= 0 && bx < smallW) { d[i+2] = shiftTemp[(y*smallW + bx)*4 + 2]; }
+                        let rx = x + rgbShift; if (rx >= 0 && rx < smallW) { d[i] = shiftTemp[(y*smallW + rx)*4]; }
+                        let bx = x - rgbShift; if (bx >= 0 && bx < smallW) { d[i+2] = shiftTemp[(y*smallW + bx)*4 + 2]; }
                     }
                 }
             }
+            sCtx.putImageData(imgData, 0, 0);
+            renderCanvas(true);
+        }
 
-            lastEngineImageData = new ImageData(new Uint8ClampedArray(d), smallW, smallH);
-            sCtx.putImageData(imgData, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(smallCanvas, 0, 0, canvas.width, canvas.height);
+        // 2. Renderização Leve (Formas, Fundo, Escala, Opacidades, Posições e Degradês de Sobreposição)
+        function renderCanvas(saveState = false) {
+            if(!sourceImg) return;
+            const px = parseInt(document.getElementById('pxSize').value, 10);
+            const origW = sourceImg.width; const origH = sourceImg.height;
+            const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
+            const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
             
-            updateProgress(100);
-            saveHistoryState();
+            const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
+            const texOpacity = parseInt(document.getElementById('textureOpacity').value, 10) / 100;
+            const edgeOpacity = parseInt(document.getElementById('edgeOpacity').value, 10) / 100;
+            
+            const canvasPadding = 2; 
+            const baseCanvasW = smallW * px * displayScale * canvasPadding;
+            const baseCanvasH = smallH * px * displayScale * canvasPadding;
+            canvas.width = baseCanvasW; canvas.height = baseCanvasH;
+
+            const imgW = (baseCanvasW / canvasPadding) * imageScale;
+            const imgH = (baseCanvasH / canvasPadding) * imageScale;
+            const imgX = (baseCanvasW - imgW) / 2;
+            const imgY = (baseCanvasH - imgH) / 2;
+
+            ctx.clearRect(0, 0, baseCanvasW, baseCanvasH);
+            ctx.imageSmoothingEnabled = false;
+
+            // Fundo
+            if (document.getElementById('fillBg').checked) {
+                ctx.fillStyle = document.getElementById('btnBgColor').getAttribute('data-color') || '#ffffff';
+                ctx.fillRect(imgX, imgY, imgW, imgH);
+            }
+
+            const generateGradient = (cType, cAngle, x, y, w, h) => {
+                let grad;
+                if (cType === 'linear') {
+                    const angleRad = cAngle * Math.PI / 180;
+                    const cx = x + w/2, cy = y + h/2;
+                    const r = Math.sqrt(w*w + h*h)/2;
+                    grad = ctx.createLinearGradient(
+                        cx - Math.cos(angleRad)*r, cy - Math.sin(angleRad)*r,
+                        cx + Math.cos(angleRad)*r, cy + Math.sin(angleRad)*r
+                    );
+                } else {
+                    grad = ctx.createRadialGradient(x + w/2, y + h/2, 0, x + w/2, y + h/2, Math.max(w, h)/2);
+                }
+                if (globalCurrentPalette.length > 0) {
+                    globalCurrentPalette.forEach((c, i) => {
+                        grad.addColorStop(i / Math.max(1, globalCurrentPalette.length - 1), rgbToHex(c.r, c.g, c.b));
+                    });
+                } else {
+                    grad.addColorStop(0, 'black'); grad.addColorStop(1, 'white');
+                }
+                return grad;
+            };
+
+            const drawImageLayer = () => {
+                if(!ditherCanvas.width) return;
+                
+                // Desenhar a base da imagem (Separando os Edges por Alpha = 254)
+                const tempC = document.createElement('canvas'); tempC.width = ditherCanvas.width; tempC.height = ditherCanvas.height;
+                const tCtx = tempC.getContext('2d'); tCtx.imageSmoothingEnabled = false;
+                tCtx.drawImage(ditherCanvas, 0, 0);
+                
+                if (texOpacity < 1 || edgeOpacity < 1) {
+                    const pixels = tCtx.getImageData(0,0, tempC.width, tempC.height);
+                    const d = pixels.data;
+                    for(let i=0; i<d.length; i+=4) {
+                        if (d[i+3] === 254) { d[i+3] = Math.round(255 * edgeOpacity); }
+                        else if (d[i+3] === 255) { d[i+3] = Math.round(255 * texOpacity); }
+                    }
+                    tCtx.putImageData(pixels, 0, 0);
+                }
+
+                ctx.save();
+                ctx.drawImage(tempC, imgX, imgY, imgW, imgH);
+                
+                // Aplicar Borracha (Subtrair máscara)
+                if (eraserCanvas.width) {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.drawImage(eraserCanvas, imgX, imgY, imgW, imgH);
+                }
+
+                // Degradê por cima da imagem processada
+                if (document.getElementById('imgGradient').checked) {
+                    ctx.globalCompositeOperation = document.getElementById('imgGradBlend').value;
+                    ctx.fillStyle = generateGradient(document.getElementById('imgGradType').value, parseInt(document.getElementById('imgGradAngle').value, 10), imgX, imgY, imgW, imgH);
+                    ctx.fillRect(imgX, imgY, imgW, imgH);
+                }
+                
+                ctx.restore();
+            };
+
+            const drawShapeLayer = (layerName) => {
+                shapes.forEach(s => {
+                    if (!s.enable || s.layer !== layerName) return;
+                    const shapeCenterX = baseCanvasW/2 + (s.offsetX / 100) * (baseCanvasW/canvasPadding);
+                    const shapeCenterY = baseCanvasH/2 + (s.offsetY / 100) * (baseCanvasH/canvasPadding);
+                    const shapeRadiusPx = Math.min(baseCanvasW/canvasPadding, baseCanvasH/canvasPadding) * 0.4 * (s.scale / 100);
+
+                    ctx.save();
+                    let fillStyle = `rgba(${hexToRgb(s.color).r}, ${hexToRgb(s.color).g}, ${hexToRgb(s.color).b}, ${s.opacity / 100})`;
+                    if (s.useGradient && globalCurrentPalette.length > 0) {
+                        ctx.globalAlpha = s.opacity / 100;
+                        fillStyle = generateGradient(s.gradType, s.gradAngle, shapeCenterX - shapeRadiusPx, shapeCenterY - shapeRadiusPx, shapeRadiusPx*2, shapeRadiusPx*2);
+                    }
+
+                    function generatePath(type, points, centerX, centerY, radius, sX, sY, rot) {
+                        const path = []; if (type === 'circle') { path.push({x: centerX, y: centerY, r: radius, isCircle: true}); return path; }
+                        const totalVertices = (type === 'polygon') ? points : points * 2;
+                        for (let i = 0; i < totalVertices; i++) {
+                            let angle = (i / totalVertices) * 2 * Math.PI - Math.PI / 2 + rot;
+                            let r = radius;
+                            if (type === 'star' && i % 2 === 1) r = radius * 0.44;
+                            else if (type === 'concave' && i % 2 === 1) r = radius * 0.16;
+                            else if (['irregular', 'complex'].includes(type)) {
+                                r = radius * ((s.irregularRadii[i] || 35) / 50);
+                                let chaoticAngle = type === 'complex' ? angle + (i % 2 === 0 ? 1.8 : -1.8) : angle;
+                                path.push({x: centerX + r * Math.cos(chaoticAngle) * sX, y: centerY + r * Math.sin(chaoticAngle) * sY});
+                                continue;
+                            }
+                            path.push({x: centerX + r * Math.cos(angle) * sX, y: centerY + r * Math.sin(angle) * sY});
+                            if (type === 'polygon') i++; 
+                        }
+                        return path;
+                    }
+
+                    if (s.type === 'circle') {
+                        ctx.beginPath();
+                        ctx.ellipse(shapeCenterX, shapeCenterY, shapeRadiusPx * (s.ellipseX / 100), shapeRadiusPx * (s.ellipseY / 100), 0, 0, 2 * Math.PI);
+                    } else {
+                        const path = generatePath(s.type, s.points, shapeCenterX, shapeCenterY, shapeRadiusPx, s.type === 'circle' ? s.ellipseX/100 : 1, s.type === 'circle' ? s.ellipseY/100 : 1, s.rotation * Math.PI / 180);
+                        ctx.beginPath();
+                        ctx.moveTo(path[0].x, path[0].y);
+                        for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+                        ctx.closePath();
+                    }
+
+                    if (s.fill) { ctx.fillStyle = fillStyle; ctx.fill(); }
+                    if (s.strokeWidth > 0) {
+                        ctx.clip(); // Corta para o contorno crescer apenas para dentro
+                        ctx.strokeStyle = fillStyle;
+                        ctx.lineWidth = s.strokeWidth * 2;
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                });
+            };
+
+            drawShapeLayer('back');
+            drawImageLayer();
+            drawShapeLayer('front');
+
+            origCanvas.width = baseCanvasW; origCanvas.height = baseCanvasH;
+            oCtx.clearRect(0, 0, baseCanvasW, baseCanvasH); oCtx.drawImage(sourceImg, imgX, imgY, imgW, imgH);
+
+            if (saveState && !isRestoringState) saveHistoryState();
         }
         
         updateLabels();
