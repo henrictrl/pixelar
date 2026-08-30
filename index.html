@@ -428,10 +428,17 @@
                     <label class="custom-checkbox">
                         <input type="checkbox" id="shapeGradient">
                         <span class="checkmark"></span>
-                        <span style="font-weight:bold;">Usar Degradê (Paleta Global)</span>
+                        <span style="font-weight:bold;">Usar Degradê</span>
                     </label>
                     
                     <div id="shapeGradientControls" style="display:none; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+                        <div class="sub-label" style="margin-top:0;">Cores do Degradê:</div>
+                        <div id="shapeGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 8px;"></div>
+                        <div style="display:flex; gap:6px; margin-bottom: 8px;">
+                            <button id="btnShapeGradAddCol" class="std-btn" style="flex:1; padding:4px; font-size:0.75rem;">+ Cor</button>
+                            <button id="btnShapeGradRemCol" class="std-btn" style="flex:1; padding:4px; font-size:0.75rem;">- Cor</button>
+                        </div>
+                        
                         <div class="sub-label" style="margin-top:0;">Tipo de Degradê:</div>
                         <select id="shapeGradType">
                             <option value="linear">Linear</option>
@@ -441,6 +448,14 @@
                             <div class="sub-label">Ângulo do Degradê: <span id="shapeGradAngleVal">90°</span></div>
                             <input type="range" id="shapeGradAngle" min="0" max="360" value="90">
                         </div>
+                        
+                        <div class="sub-label">Faixas (0 = Suave): <span id="shapeGradStepsVal">0</span></div>
+                        <input type="range" id="shapeGradSteps" min="0" max="30" value="0">
+                        
+                        <div class="sub-label">Posição da Mesclagem: <span id="shapeGradPosVal">50%</span></div>
+                        <input type="range" id="shapeGradPos" min="0" max="100" value="50">
+                        <div class="sub-label">Suavidade da Transição: <span id="shapeGradSmoothVal">100%</span></div>
+                        <input type="range" id="shapeGradSmooth" min="0" max="100" value="100">
                     </div>
                 </div>
 
@@ -503,6 +518,13 @@
                         <span style="font-weight:bold;">Aplicar Degradê na Imagem</span>
                     </label>
                     <div id="imgGradientControls" style="display:none; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+                        <div class="sub-label" style="margin-top:0;">Cores do Degradê:</div>
+                        <div id="imgGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 8px;"></div>
+                        <div style="display:flex; gap:6px; margin-bottom: 8px;">
+                            <button id="btnImgGradAddCol" class="std-btn" style="flex:1; padding:4px; font-size:0.75rem;">+ Cor</button>
+                            <button id="btnImgGradRemCol" class="std-btn" style="flex:1; padding:4px; font-size:0.75rem;">- Cor</button>
+                        </div>
+                        
                         <div class="sub-label" style="margin-top:0;">Tipo de Degradê:</div>
                         <select id="imgGradType">
                             <option value="linear">Linear</option>
@@ -512,7 +534,16 @@
                             <div class="sub-label">Ângulo do Degradê: <span id="imgGradAngleVal">90°</span></div>
                             <input type="range" id="imgGradAngle" min="0" max="360" value="90">
                         </div>
-                        <div class="sub-label">Modo de Mesclagem:</div>
+                        
+                        <div class="sub-label">Faixas (0 = Suave): <span id="imgGradStepsVal">0</span></div>
+                        <input type="range" id="imgGradSteps" min="0" max="30" value="0">
+                        
+                        <div class="sub-label">Posição da Mesclagem: <span id="imgGradPosVal">50%</span></div>
+                        <input type="range" id="imgGradPos" min="0" max="100" value="50">
+                        <div class="sub-label">Suavidade da Transição: <span id="imgGradSmoothVal">100%</span></div>
+                        <input type="range" id="imgGradSmooth" min="0" max="100" value="100">
+                        
+                        <div class="sub-label" style="margin-top: 8px;">Modo de Mesclagem:</div>
                         <select id="imgGradBlend">
                             <option value="source-atop">Substituir Cor</option>
                             <option value="multiply">Multiplicar</option>
@@ -652,7 +683,7 @@
                 <svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
             <button class="float-btn" id="btn-redo-view" disabled title="Refazer">
-                <svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M21 9H8a5 5 0 0 0 0 10h2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             </button>
             <button class="float-btn" id="btn-compare" disabled title="Comparar">
                 <svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20" stroke="currentColor" stroke-width="2" fill="none"/></svg>
@@ -747,6 +778,8 @@
                 s.enable = false; s.type = 'star'; s.points = 5; s.scale = 100; s.rotation = 0;
                 s.ellipseX = 100; s.ellipseY = 100; s.offsetX = 0; s.offsetY = 0;
                 s.color = '#E5533D'; s.useGradient = false; s.gradType = 'linear'; s.gradAngle = 90;
+                s.gradColors = ['#E5533D', '#FFD166']; s.gradSteps = 0;
+                s.gradPos = 50; s.gradSmooth = 100;
                 s.fill = true; s.strokeWidth = 0; s.layer = 'front'; s.opacity = 100;
                 s.irregularRadii = Array.from({ length: 40 }, () => 35);
             }
@@ -768,7 +801,6 @@
             });
         });
 
-        // ESTRUTURAS GLOBAIS DE ESTADO
         let sourceImg = null;
         let originalSourceUrl = null;
         let isRestoringState = false;
@@ -781,12 +813,14 @@
         let savedPresets = {};
         let savedPalettes = {};
         
-        let ditherCanvas = document.createElement('canvas'); // Cache da imagem tratada (Pixels puros sem escala)
+        let currentImgGradColors = ['#FF00FF', '#00FFFF'];
+        
+        let ditherCanvas = document.createElement('canvas');
         let eraserCanvas = document.createElement('canvas');
         let eCtx = eraserCanvas.getContext('2d', {willReadFrequently: true});
 
         let activeTool = 'move'; 
-        let currentImgScale = 1; // Para interações do mouse
+        let currentImgScale = 1;
 
         try { 
             savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {}; 
@@ -794,12 +828,13 @@
         } catch(e) {}
         let historyArr = []; let historyIndex = -1;
         
-        // MÚLTIPLAS FORMAS
         function createDefaultShape() {
             return {
                 enable: false, type: 'star', points: 5, scale: 100, rotation: 0,
                 ellipseX: 100, ellipseY: 100, offsetX: 0, offsetY: 0,
                 color: '#E5533D', useGradient: false, gradType: 'linear', gradAngle: 90,
+                gradColors: ['#E5533D', '#FFD166'], gradSteps: 0,
+                gradPos: 50, gradSmooth: 100,
                 fill: true, strokeWidth: 0, layer: 'front', opacity: 100,
                 irregularRadii: Array.from({ length: 40 }, () => 35)
             };
@@ -820,6 +855,13 @@
         }
         function rgbToHex(r, g, b) {
             return "#" + (1 << 24 | Math.max(0, Math.min(255, r)) << 16 | Math.max(0, Math.min(255, g)) << 8 | Math.max(0, Math.min(255, b))).toString(16).slice(1).toUpperCase();
+        }
+        function interpolateColorHex(hex1, hex2, t) {
+            const c1 = hexToRgb(hex1); const c2 = hexToRgb(hex2);
+            const r = Math.round(c1.r + (c2.r - c1.r) * t);
+            const g = Math.round(c1.g + (c2.g - c1.g) * t);
+            const b = Math.round(c1.b + (c2.b - c1.b) * t);
+            return rgbToHex(r, g, b);
         }
         function rgbToHsl(r, g, b) {
             r /= 255; g /= 255; b /= 255;
@@ -937,10 +979,11 @@
             'palHue': 'palHueVal', 'palSat': 'palSatVal', 'palLight': 'palLightVal',
             'shapePoints': 'shapePointsVal', 'shapeScale': 'shapeScaleVal', 'shapeRotation': 'shapeRotationVal',
             'shapeEllipseX': 'shapeEllipseXVal', 'shapeEllipseY': 'shapeEllipseYVal',
-            'shapeGradAngle': 'shapeGradAngleVal',
+            'shapeGradAngle': 'shapeGradAngleVal', 'shapeGradSteps': 'shapeGradStepsVal', 'shapeGradPos': 'shapeGradPosVal', 'shapeGradSmooth': 'shapeGradSmoothVal',
             'textureOpacity': 'textureOpacityVal', 'edgeOpacity': 'edgeOpacityVal', 'shapeOpacity': 'shapeOpacityVal',
             'edgePixelSize': 'edgePixelSizeVal', 'imageScale': 'imageScaleVal', 'shapeStrokeWidth': 'shapeStrokeWidthVal',
-            'imgGradAngle': 'imgGradAngleVal', 'brushSize': 'brushSizeVal'
+            'imgGradAngle': 'imgGradAngleVal', 'imgGradSteps': 'imgGradStepsVal', 'imgGradPos': 'imgGradPosVal', 'imgGradSmooth': 'imgGradSmoothVal',
+            'brushSize': 'brushSizeVal'
         };
 
         const processInputs = [
@@ -950,10 +993,9 @@
         ];
 
         const renderInputs = [
-            'imageScale', 'fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradBlend'
+            'imageScale', 'fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'
         ];
 
-        // Mapeamento dinâmico do formulário para a Forma Ativa
         const shapeBindings = [
             { id: 'shapeEnable', key: 'enable', type: 'checkbox' },
             { id: 'shapeType', key: 'type', type: 'value' },
@@ -966,6 +1008,9 @@
             { id: 'shapeGradient', key: 'useGradient', type: 'checkbox' },
             { id: 'shapeGradType', key: 'gradType', type: 'value' },
             { id: 'shapeGradAngle', key: 'gradAngle', type: 'int' },
+            { id: 'shapeGradSteps', key: 'gradSteps', type: 'int' },
+            { id: 'shapeGradPos', key: 'gradPos', type: 'int' },
+            { id: 'shapeGradSmooth', key: 'gradSmooth', type: 'int' },
             { id: 'shapeFill', key: 'fill', type: 'checkbox' },
             { id: 'shapeStrokeWidth', key: 'strokeWidth', type: 'int' },
             { id: 'shapeLayer', key: 'layer', type: 'value' },
@@ -989,29 +1034,57 @@
             sel.value = activeShapeIndex;
         }
 
+        function renderImgGradColors() {
+            const container = document.getElementById('imgGradColorsContainer');
+            container.innerHTML = '';
+            currentImgGradColors.forEach((col, i) => {
+                const inp = document.createElement('input');
+                inp.type = 'color'; inp.value = col;
+                inp.style = "width:28px; height:28px; padding:0; cursor:pointer; border:2px solid var(--border);";
+                inp.title = `Cor ${i+1}`;
+                inp.addEventListener('input', (e) => { currentImgGradColors[i] = e.target.value; renderCanvas(); });
+                container.appendChild(inp);
+            });
+        }
+        document.getElementById('btnImgGradAddCol').addEventListener('click', () => { currentImgGradColors.push('#ffffff'); renderImgGradColors(); renderCanvas(); });
+        document.getElementById('btnImgGradRemCol').addEventListener('click', () => { if(currentImgGradColors.length > 2) { currentImgGradColors.pop(); renderImgGradColors(); renderCanvas(); } });
+        renderImgGradColors();
+
+        function renderShapeGradColors() {
+            const s = shapes[activeShapeIndex]; if(!s) return;
+            const container = document.getElementById('shapeGradColorsContainer');
+            container.innerHTML = '';
+            s.gradColors.forEach((col, i) => {
+                const inp = document.createElement('input');
+                inp.type = 'color'; inp.value = col;
+                inp.style = "width:28px; height:28px; padding:0; cursor:pointer; border:2px solid var(--border);";
+                inp.title = `Cor ${i+1}`;
+                inp.addEventListener('input', (e) => { s.gradColors[i] = e.target.value; renderCanvas(); });
+                container.appendChild(inp);
+            });
+        }
+        document.getElementById('btnShapeGradAddCol').addEventListener('click', () => { const s = shapes[activeShapeIndex]; if(s) { s.gradColors.push('#ffffff'); renderShapeGradColors(); renderCanvas(); } });
+        document.getElementById('btnShapeGradRemCol').addEventListener('click', () => { const s = shapes[activeShapeIndex]; if(s && s.gradColors.length > 2) { s.gradColors.pop(); renderShapeGradColors(); renderCanvas(); } });
+
         function populateShapeForm() {
-            const s = shapes[activeShapeIndex];
-            if(!s) return;
+            const s = shapes[activeShapeIndex]; if(!s) return;
             shapeBindings.forEach(b => {
                 const el = document.getElementById(b.id);
                 if (el) {
-                    if (b.type === 'checkbox') el.checked = s[b.key];
+                    if (b.type === 'checkbox') el.checked = s[b.key] || false;
                     else el.value = s[b.key];
                 }
             });
-            updateShapeUI();
-            updateLabels();
+            renderShapeGradColors();
+            updateShapeUI(); updateLabels();
         }
 
         function updateShapeUI() {
             const s = shapes[activeShapeIndex]; if(!s) return;
             const isCircle = s.type === 'circle';
             document.getElementById('shapeEllipseControls').style.display = isCircle ? 'block' : 'none';
-            document.getElementById('shapePoints').disabled = isCircle;
-            document.getElementById('shapeScale').disabled = isCircle;
-            document.getElementById('shapeRotation').disabled = isCircle;
-            const regenBtn = document.getElementById('btn-regerar-irregular');
-            regenBtn.style.display = ['irregular', 'complex', 'concave'].includes(s.type) ? 'block' : 'none';
+            document.getElementById('shapePoints').disabled = isCircle; document.getElementById('shapeScale').disabled = isCircle; document.getElementById('shapeRotation').disabled = isCircle;
+            document.getElementById('btn-regerar-irregular').style.display = ['irregular', 'complex', 'concave'].includes(s.type) ? 'block' : 'none';
             document.getElementById('shapeGradientControls').style.display = s.useGradient ? 'block' : 'none';
             document.getElementById('shapeGradAngleContainer').style.display = s.gradType === 'linear' ? 'block' : 'none';
         }
@@ -1024,24 +1097,9 @@
         document.getElementById('imgGradient').addEventListener('change', () => { updateImgGradUI(); renderCanvas(); });
         document.getElementById('imgGradType').addEventListener('change', () => { updateImgGradUI(); renderCanvas(); });
 
-        document.getElementById('shapeListSelector').addEventListener('change', (e) => {
-            activeShapeIndex = parseInt(e.target.value, 10);
-            populateShapeForm();
-        });
-
-        document.getElementById('btnNewShape').addEventListener('click', () => {
-            shapes.push(createDefaultShape());
-            activeShapeIndex = shapes.length - 1;
-            updateShapeListUI(); populateShapeForm(); renderCanvas();
-        });
-
-        document.getElementById('btnDelShape').addEventListener('click', () => {
-            if (shapes.length > 1) {
-                shapes.splice(activeShapeIndex, 1);
-                activeShapeIndex = Math.max(0, activeShapeIndex - 1);
-                updateShapeListUI(); populateShapeForm(); renderCanvas();
-            }
-        });
+        document.getElementById('shapeListSelector').addEventListener('change', (e) => { activeShapeIndex = parseInt(e.target.value, 10); populateShapeForm(); });
+        document.getElementById('btnNewShape').addEventListener('click', () => { shapes.push(createDefaultShape()); activeShapeIndex = shapes.length - 1; updateShapeListUI(); populateShapeForm(); renderCanvas(); });
+        document.getElementById('btnDelShape').addEventListener('click', () => { if (shapes.length > 1) { shapes.splice(activeShapeIndex, 1); activeShapeIndex = Math.max(0, activeShapeIndex - 1); updateShapeListUI(); populateShapeForm(); renderCanvas(); } });
 
         shapeBindings.forEach(b => {
             document.getElementById(b.id).addEventListener('input', (e) => {
@@ -1060,22 +1118,15 @@
                 el.addEventListener('input', () => { 
                     let v = el.value;
                     if(id === 'texAngle' || id === 'shapeRotation' || id === 'shapeGradAngle' || id === 'imgGradAngle') v += '°';
-                    if (id === 'shapeScale' || id === 'shapeEllipseX' || id === 'shapeEllipseY' || id === 'textureOpacity' || id === 'edgeOpacity' || id === 'shapeOpacity' || id === 'imageScale') v += '%';
+                    if (['shapeScale', 'shapeEllipseX', 'shapeEllipseY', 'textureOpacity', 'edgeOpacity', 'shapeOpacity', 'imageScale', 'shapeGradPos', 'shapeGradSmooth', 'imgGradPos', 'imgGradSmooth'].includes(id)) v += '%';
                     if (id === 'brushSize') v += ' px';
                     valEl.textContent = v; 
                 }); 
             }
         }
 
-        processInputs.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.addEventListener('input', () => { scheduleProcess(); });
-        });
-
-        renderInputs.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.addEventListener('input', () => { renderCanvas(); });
-        });
+        processInputs.forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('input', () => { scheduleProcess(); }); });
+        renderInputs.forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('input', () => { renderCanvas(); }); });
 
         document.getElementById('palHue').addEventListener('input', applyGlobalPaletteOffsets);
         document.getElementById('palSat').addEventListener('input', applyGlobalPaletteOffsets);
@@ -1137,95 +1188,58 @@
             canvasWrapper.setPointerCapture(e.pointerId);
             const rectWrap = canvasWrapper.getBoundingClientRect();
             const rectOut = canvas.getBoundingClientRect();
-            
-            lastPointerX = e.clientX - rectWrap.left; 
-            lastPointerY = e.clientY - rectWrap.top;
-            
-            if ((activeTool === 'erase' || activeTool === 'restore') && !isComparing) {
-                applyEraser(e.clientX, e.clientY, rectOut);
-            }
+            lastPointerX = e.clientX - rectWrap.left; lastPointerY = e.clientY - rectWrap.top;
+            if ((activeTool === 'erase' || activeTool === 'restore') && !isComparing) applyEraser(e.clientX, e.clientY, rectOut);
         });
         
         canvasWrapper.addEventListener('pointermove', (e) => {
             if (!isPointerDown) return;
             const rectWrap = canvasWrapper.getBoundingClientRect();
             const rectOut = canvas.getBoundingClientRect();
-            
             if (isComparing) {
                 let x = Math.max(0, Math.min(e.clientX - rectWrap.left, rectWrap.width));
                 updateCompareSlider((x / rectWrap.width) * 100);
             } else if (activeTool === 'move') {
-                const currentX = e.clientX - rectWrap.left;
-                const currentY = e.clientY - rectWrap.top;
-                const deltaX = currentX - lastPointerX;
-                const deltaY = currentY - lastPointerY;
-                if (shapes[activeShapeIndex]) {
-                    shapes[activeShapeIndex].offsetX += (deltaX / rectWrap.width) * 100;
-                    shapes[activeShapeIndex].offsetY += (deltaY / rectWrap.height) * 100;
-                    populateShapeForm(); 
-                }
-                lastPointerX = currentX;
-                lastPointerY = currentY;
-                renderCanvas();
+                const currentX = e.clientX - rectWrap.left; const currentY = e.clientY - rectWrap.top;
+                const deltaX = currentX - lastPointerX; const deltaY = currentY - lastPointerY;
+                if (shapes[activeShapeIndex]) { shapes[activeShapeIndex].offsetX += (deltaX / rectWrap.width) * 100; shapes[activeShapeIndex].offsetY += (deltaY / rectWrap.height) * 100; populateShapeForm(); }
+                lastPointerX = currentX; lastPointerY = currentY; renderCanvas();
             } else if (activeTool === 'erase' || activeTool === 'restore') {
                 applyEraser(e.clientX, e.clientY, rectOut, true);
             }
         });
         
         canvasWrapper.addEventListener('pointerup', (e) => {
-            isPointerDown = false;
-            canvasWrapper.releasePointerCapture(e.pointerId);
+            isPointerDown = false; canvasWrapper.releasePointerCapture(e.pointerId);
             if (!isComparing) saveHistoryState();
         });
 
         function applyEraser(clientX, clientY, rectOut, isLine = false) {
             if(!sourceImg || !eraserCanvas.width) return;
-            
-            // Transformações para encontrar a coordenada exata dentro do eraserCanvas
-            const scaleX = canvas.width / rectOut.width;
-            const scaleY = canvas.height / rectOut.height;
-            const canvasX = (clientX - rectOut.left) * scaleX;
-            const canvasY = (clientY - rectOut.top) * scaleY;
-            
-            // Posição e escala real da imagem renderizada
+            const scaleX = canvas.width / rectOut.width; const scaleY = canvas.height / rectOut.height;
+            const canvasX = (clientX - rectOut.left) * scaleX; const canvasY = (clientY - rectOut.top) * scaleY;
             const px = parseInt(document.getElementById('pxSize').value, 10) || 1;
             const origW = sourceImg.width; const origH = sourceImg.height;
             const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
             const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
             const canvasPadding = 2;
-            const baseCanvasW = smallW * px * displayScale * canvasPadding;
-            const baseCanvasH = smallH * px * displayScale * canvasPadding;
+            const baseCanvasW = smallW * px * displayScale * canvasPadding; const baseCanvasH = smallH * px * displayScale * canvasPadding;
             const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
-            const imgW = (baseCanvasW / canvasPadding) * imageScale;
-            const imgH = (baseCanvasH / canvasPadding) * imageScale;
-            const imgX = (baseCanvasW - imgW) / 2;
-            const imgY = (baseCanvasH - imgH) / 2;
+            const imgW = (baseCanvasW / canvasPadding) * imageScale; const imgH = (baseCanvasH / canvasPadding) * imageScale;
+            const imgX = (baseCanvasW - imgW) / 2; const imgY = (baseCanvasH - imgH) / 2;
 
-            // Converter a coordenada do Canvas para a coordenada do Eraser (mesmo tamanho da original)
             let ex = ((canvasX - imgX) / imgW) * eraserCanvas.width;
             let ey = ((canvasY - imgY) / imgH) * eraserCanvas.height;
             
             eCtx.lineCap = 'round'; eCtx.lineJoin = 'round';
             const bSize = parseInt(document.getElementById('brushSize').value, 10);
-            // Tamanho ajustado à proporção
             eCtx.lineWidth = bSize * (eraserCanvas.width / imgW); 
-            
             eCtx.globalCompositeOperation = activeTool === 'erase' ? 'source-over' : 'destination-out';
             eCtx.strokeStyle = 'black'; eCtx.fillStyle = 'black';
             
-            if (isLine) {
-                eCtx.beginPath();
-                eCtx.moveTo(lastEraserX, lastEraserY);
-                eCtx.lineTo(ex, ey);
-                eCtx.stroke();
-            } else {
-                eCtx.beginPath();
-                eCtx.arc(ex, ey, eCtx.lineWidth / 2, 0, Math.PI * 2);
-                eCtx.fill();
-            }
-            lastEraserX = ex;
-            lastEraserY = ey;
-            renderCanvas();
+            if (isLine) { eCtx.beginPath(); eCtx.moveTo(lastEraserX, lastEraserY); eCtx.lineTo(ex, ey); eCtx.stroke(); } 
+            else { eCtx.beginPath(); eCtx.arc(ex, ey, eCtx.lineWidth / 2, 0, Math.PI * 2); eCtx.fill(); }
+            lastEraserX = ex; lastEraserY = ey; renderCanvas();
         }
 
         const sliderLine = document.getElementById('slider-line');
@@ -1234,58 +1248,36 @@
         btnCompare.addEventListener('click', () => {
             isComparing = !isComparing;
             if (isComparing) {
-                btnCompare.classList.add('active-tool');
-                canvasWrapper.classList.add('comparing');
-                origCanvas.style.display = 'block';
-                sliderLine.style.display = 'block';
-                updateCompareSlider(50);
+                btnCompare.classList.add('active-tool'); canvasWrapper.classList.add('comparing'); origCanvas.style.display = 'block'; sliderLine.style.display = 'block'; updateCompareSlider(50);
             } else {
-                btnCompare.classList.remove('active-tool');
-                canvasWrapper.classList.remove('comparing');
-                origCanvas.style.display = 'none';
-                sliderLine.style.display = 'none';
+                btnCompare.classList.remove('active-tool'); canvasWrapper.classList.remove('comparing'); origCanvas.style.display = 'none'; sliderLine.style.display = 'none';
             }
         });
         function updateCompareSlider(pct) {
-            origCanvas.style.clipPath = `polygon(0 0, ${pct}% 0, ${pct}% 100%, 0 100%)`;
-            sliderLine.style.left = `${pct}%`;
+            origCanvas.style.clipPath = `polygon(0 0, ${pct}% 0, ${pct}% 100%, 0 100%)`; sliderLine.style.left = `${pct}%`;
         }
 
         const upload = document.getElementById('imageUpload');
         upload.addEventListener('change', (e) => {
             const file = e.target.files[0]; if(!file) return;
-            document.getElementById('welcomeMsg').style.display = 'none'; 
-            canvasWrapper.style.display = 'flex';
-            const url = URL.createObjectURL(file);
-            originalSourceUrl = url;
-            const slice = file.slice(Math.max(0, file.size - 3000));
-            const txtReader = new FileReader();
+            document.getElementById('welcomeMsg').style.display = 'none'; canvasWrapper.style.display = 'flex';
+            const url = URL.createObjectURL(file); originalSourceUrl = url;
+            const slice = file.slice(Math.max(0, file.size - 3000)); const txtReader = new FileReader();
             txtReader.onload = (eTxt) => {
                 const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/);
-                let loadedState = null;
-                if(metaMatch) { try { loadedState = JSON.parse(metaMatch[1]); } catch(err) {} }
+                let loadedState = null; if(metaMatch) { try { loadedState = JSON.parse(metaMatch[1]); } catch(err) {} }
                 const img = new Image();
                 img.onload = () => {
-                    sourceImg = img;
-                    eraserCanvas.width = img.width; eraserCanvas.height = img.height;
-                    eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
+                    sourceImg = img; eraserCanvas.width = img.width; eraserCanvas.height = img.height; eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
                     document.getElementById('btn-download').disabled = false; document.getElementById('btn-compare').disabled = false;
                     historyArr = []; historyIndex = -1;
                     if (isComparing) btnCompare.click();
-                    
                     if (loadedState) { applyState(loadedState); } 
                     else {
-                        document.getElementById('pxSize').value = 1; 
-                        document.getElementById('colorSelect').value = "all";
-                        document.getElementById('ditherSelect').value = "none";
-                        document.getElementById('groupStrength').value = 0;
-                        document.getElementById('groupMethod').value = "mean";
-                        document.getElementById('effEdge').checked = false; 
-                        document.getElementById('effMidDither').checked = false;
-                        document.getElementById('imgGradient').checked = false;
-                        resetAdjustments(); 
-                        resetShapes(); 
-                        currentPaletteMode = 'original'; updateLabels(); scheduleProcess(); 
+                        document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none";
+                        document.getElementById('groupStrength').value = 0; document.getElementById('groupMethod').value = "mean"; document.getElementById('effEdge').checked = false; 
+                        document.getElementById('effMidDither').checked = false; document.getElementById('imgGradient').checked = false;
+                        resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; updateLabels(); scheduleProcess(); 
                     }
                     e.target.value = '';
                 };
@@ -1298,18 +1290,11 @@
             if (!originalSourceUrl) return;
             const img = new Image();
             img.onload = () => {
-                sourceImg = img;
-                eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
-                document.getElementById('pxSize').value = 1;
-                document.getElementById('colorSelect').value = 'all';
-                document.getElementById('ditherSelect').value = 'none';
-                document.getElementById('groupStrength').value = 0;
-                document.getElementById('groupMethod').value = 'mean';
-                document.getElementById('effEdge').checked = false;
-                document.getElementById('effMidDither').checked = false;
-                document.getElementById('imgGradient').checked = false;
-                resetAdjustments(); resetShapes();
-                currentPaletteMode = 'original';
+                sourceImg = img; eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
+                document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none';
+                document.getElementById('groupStrength').value = 0; document.getElementById('groupMethod').value = 'mean'; document.getElementById('effEdge').checked = false;
+                document.getElementById('effMidDither').checked = false; document.getElementById('imgGradient').checked = false;
+                resetAdjustments(); resetShapes(); currentPaletteMode = 'original';
                 isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
                 updateLabels(); scheduleProcess();
             };
@@ -1357,10 +1342,7 @@
             });
         });
 
-        document.getElementById('btnOriginal').addEventListener('click', () => {
-            if (!locks.colors) { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; updateLabels(); }
-            scheduleProcess();
-        });
+        document.getElementById('btnOriginal').addEventListener('click', () => { if (!locks.colors) { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; updateLabels(); } scheduleProcess(); });
 
         function renderPalettes() {
             const grid = document.getElementById('savedPalettesGrid'); grid.innerHTML = '';
@@ -1381,9 +1363,7 @@
         document.getElementById('btnSavePalette').addEventListener('click', () => {
             if(document.getElementById('colorSelect').value === 'all') { alert("O modo cores originais está ativo. Mude para um número específico de cores para gerar uma paleta e salvá-la."); return; }
             let name = prompt("Dê um nome para esta paleta:"); if(!name) return;
-            savedPalettes[name] = [...globalCurrentPalette];
-            try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){}
-            renderPalettes();
+            savedPalettes[name] = [...globalCurrentPalette]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes();
         });
 
         function updateLabels() {
@@ -1392,7 +1372,7 @@
                 if(el && valEl) {
                     let v = el.value;
                     if(id === 'texAngle' || id === 'shapeRotation' || id === 'shapeGradAngle' || id === 'imgGradAngle') v += '°';
-                    if (id === 'shapeScale' || id === 'shapeEllipseX' || id === 'shapeEllipseY' || id === 'textureOpacity' || id === 'edgeOpacity' || id === 'shapeOpacity' || id === 'imageScale') v += '%';
+                    if (['shapeScale', 'shapeEllipseX', 'shapeEllipseY', 'textureOpacity', 'edgeOpacity', 'shapeOpacity', 'imageScale', 'shapeGradPos', 'shapeGradSmooth', 'imgGradPos', 'imgGradSmooth'].includes(id)) v += '%';
                     if (id === 'brushSize') v += ' px';
                     valEl.textContent = v; 
                 } 
@@ -1403,12 +1383,7 @@
         window.lastRandomHue = window.lastRandomHue || Math.random();
         function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 10); } }
         function randGrp() { if(!locks.groupStrength) { document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); } }
-        function randDith() { 
-            if(!locks.ditherSelect) {
-                const d = ["none", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "diamonds", "waves", "scanlines", "maze", "noise"];
-                document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)];
-            }
-        }
+        function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "diamonds", "waves", "scanlines", "maze", "noise"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
         function randColQty() { if(!locks.colorSelect) { const c = ["2", "4", "8", "16", "32", "64"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; } }
         function randColorsGen() {
             if (locks.colors) return;
@@ -1426,7 +1401,6 @@
                 anchors.sort((a,b) => (0.3*a.r+0.59*a.g+0.11*a.b) - (0.3*b.r+0.59*b.g+0.11*b.b));
             }
             globalCurrentPalette = interpolatePalette(anchors, qty); setBasePalette(globalCurrentPalette);
-            
             if(!locks.shapeColor && globalCurrentPalette.length > 0) document.getElementById('shapeColorShuffle').click();
         }
         function randShapes() {
@@ -1492,6 +1466,8 @@
                 edgeOp: document.getElementById('edgeOpacity').value,
                 imgGrad: document.getElementById('imgGradient').checked, imgGradType: document.getElementById('imgGradType').value,
                 imgGradAngle: document.getElementById('imgGradAngle').value, imgGradBlend: document.getElementById('imgGradBlend').value,
+                imgGradColors: [...currentImgGradColors], imgGradSteps: document.getElementById('imgGradSteps').value,
+                imgGradPos: document.getElementById('imgGradPos').value, imgGradSmooth: document.getElementById('imgGradSmooth').value,
                 eData: eraserCanvas.width ? eraserCanvas.toDataURL() : null
             };
         }
@@ -1533,23 +1509,36 @@
             document.getElementById('imageScale').value = p.imageScale !== undefined ? p.imageScale : 100;
             document.getElementById('textureOpacity').value = p.texOp !== undefined ? p.texOp : 100;
             document.getElementById('edgeOpacity').value = p.edgeOp !== undefined ? p.edgeOp : 100;
+            
             document.getElementById('imgGradient').checked = p.imgGrad || false;
             if(p.imgGradType) document.getElementById('imgGradType').value = p.imgGradType;
             if(p.imgGradAngle !== undefined) document.getElementById('imgGradAngle').value = p.imgGradAngle;
             if(p.imgGradBlend) document.getElementById('imgGradBlend').value = p.imgGradBlend;
             
-            // Legacy/Shapes Migration
-            if(p.shapes) { shapes = p.shapes; activeShapeIndex = 0; } 
-            else {
+            if (p.imgGradColors) currentImgGradColors = [...p.imgGradColors];
+            else if (p.imgGradC1 && p.imgGradC2) currentImgGradColors = [p.imgGradC1, p.imgGradC2];
+            else currentImgGradColors = ['#FF00FF', '#00FFFF'];
+            
+            if(p.imgGradSteps !== undefined) document.getElementById('imgGradSteps').value = p.imgGradSteps;
+            if(p.imgGradPos !== undefined) document.getElementById('imgGradPos').value = p.imgGradPos;
+            if(p.imgGradSmooth !== undefined) document.getElementById('imgGradSmooth').value = p.imgGradSmooth;
+            
+            if(p.shapes) { 
+                shapes = p.shapes.map(s => ({...createDefaultShape(), ...s}));
+                activeShapeIndex = 0; 
+            } else {
                 shapes = [createDefaultShape()];
                 shapes[0].enable = p.shapeEn || false; shapes[0].type = p.shapeType || 'star'; shapes[0].points = p.shapePoints || 5;
                 shapes[0].scale = p.shapeScale || 100; shapes[0].rotation = p.shapeRotation || 0; shapes[0].ellipseX = p.shapeEllipseX || 100;
                 shapes[0].ellipseY = p.shapeEllipseY || 100; shapes[0].offsetX = p.shapeOffsetX || 0; shapes[0].offsetY = p.shapeOffsetY || 0;
                 shapes[0].color = p.shapeColor || '#E5533D'; shapes[0].useGradient = p.shapeGrad || false; shapes[0].gradAngle = p.shapeGradAngle || 90;
+                shapes[0].gradColors = p.shapeGradColors || (p.shapeGradC1 && p.shapeGradC2 ? [p.shapeGradC1, p.shapeGradC2] : ['#E5533D', '#FFD166']);
+                shapes[0].gradSteps = p.shapeGradSteps !== undefined ? p.shapeGradSteps : 0;
+                shapes[0].gradPos = p.shapeGradPos !== undefined ? p.shapeGradPos : 50; shapes[0].gradSmooth = p.shapeGradSmooth !== undefined ? p.shapeGradSmooth : 100;
                 shapes[0].fill = p.shapeFill !== undefined ? p.shapeFill : true; shapes[0].strokeWidth = p.shapeStrokeWidth || 0;
                 shapes[0].layer = p.shapeLayer || 'front'; shapes[0].opacity = p.shapeOp || 100; shapes[0].irregularRadii = p.irrRadii || Array.from({ length: 40 }, () => 35);
             }
-            updateShapeListUI(); populateShapeForm();
+            renderImgGradColors(); updateShapeListUI(); populateShapeForm();
             
             if (!locks.colors) {
                 currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false;
@@ -1688,7 +1677,7 @@
             processTimeout = setTimeout(() => { processImageCore(); }, 50);
         }
 
-        // 1. Processamento Pesado (Filtros, Cores, Dithering) -> Guarda no ditherCanvas
+        // 1. Processamento Pesado
         function processImageCore() {
             if(!sourceImg) return;
             const px = parseInt(document.getElementById('pxSize').value, 10);
@@ -1887,7 +1876,7 @@
                     
                     if (isEdgeEnabled && edgeMap[y * smallW + x] === 1) {
                         d[i] = edgeRgb.r; d[i+1] = edgeRgb.g; d[i+2] = edgeRgb.b; 
-                        d[i+3] = 254; // Marcador especial de opacidade para a renderização separar a textura
+                        d[i+3] = 254; 
                         continue;
                     }
                     
@@ -1937,7 +1926,7 @@
             renderCanvas(true);
         }
 
-        // 2. Renderização Leve (Formas, Fundo, Escala, Opacidades, Posições e Degradês de Sobreposição)
+        // 2. Renderização Leve
         function renderCanvas(saveState = false) {
             if(!sourceImg) return;
             const px = parseInt(document.getElementById('pxSize').value, 10);
@@ -1968,7 +1957,7 @@
                 ctx.fillRect(imgX, imgY, imgW, imgH);
             }
 
-            const generateGradient = (cType, cAngle, x, y, w, h) => {
+            const generateGradient = (cType, cAngle, x, y, w, h, colorsArr, posPct, smoothPct, steps) => {
                 let grad;
                 if (cType === 'linear') {
                     const angleRad = cAngle * Math.PI / 180;
@@ -1981,12 +1970,50 @@
                 } else {
                     grad = ctx.createRadialGradient(x + w/2, y + h/2, 0, x + w/2, y + h/2, Math.max(w, h)/2);
                 }
-                if (globalCurrentPalette.length > 0) {
-                    globalCurrentPalette.forEach((c, i) => {
-                        grad.addColorStop(i / Math.max(1, globalCurrentPalette.length - 1), rgbToHex(c.r, c.g, c.b));
-                    });
-                } else {
-                    grad.addColorStop(0, 'black'); grad.addColorStop(1, 'white');
+
+                if (!colorsArr || colorsArr.length === 0) return grad;
+                if (colorsArr.length === 1) { grad.addColorStop(0, colorsArr[0]); grad.addColorStop(1, colorsArr[0]); return grad; }
+
+                const p = posPct / 100;
+                const s = smoothPct / 100;
+                let startSpread = p - s/2;
+                let spreadSize = s;
+
+                if (steps <= 0) { 
+                    grad.addColorStop(0, colorsArr[0]);
+                    let lastStop = 0;
+                    for (let i = 0; i < colorsArr.length; i++) {
+                        let def = colorsArr.length > 1 ? i / (colorsArr.length - 1) : 0;
+                        let stop = startSpread + def * spreadSize;
+                        stop = Math.max(lastStop, Math.min(1, stop));
+                        grad.addColorStop(stop, colorsArr[i]);
+                        lastStop = stop;
+                    }
+                    grad.addColorStop(1, colorsArr[colorsArr.length - 1]);
+                } else { 
+                    let totalBands = colorsArr.length > 1 ? (colorsArr.length - 1) * steps : 1;
+                    grad.addColorStop(0, colorsArr[0]);
+                    let lastEnd = 0;
+                    for (let i = 0; i < totalBands; i++) {
+                        let t_color = totalBands > 1 ? i / (totalBands - 1) : 0;
+                        let t_seg = t_color * (colorsArr.length - 1);
+                        let seg = Math.min(Math.floor(t_seg), colorsArr.length - 2);
+                        let t_local = t_seg - seg;
+                        let bandColor = interpolateColorHex(colorsArr[seg], colorsArr[seg+1], t_local);
+
+                        let startPct = startSpread + (i / totalBands) * spreadSize;
+                        let endPct = startSpread + ((i + 1) / totalBands) * spreadSize;
+
+                        startPct = Math.max(lastEnd, Math.min(1, startPct));
+                        endPct = Math.max(startPct, Math.min(1, endPct));
+
+                        if (startPct < endPct) {
+                            grad.addColorStop(startPct, bandColor);
+                            grad.addColorStop(endPct, bandColor);
+                        }
+                        lastEnd = endPct;
+                    }
+                    grad.addColorStop(1, colorsArr[colorsArr.length - 1]);
                 }
                 return grad;
             };
@@ -1994,7 +2021,6 @@
             const drawImageLayer = () => {
                 if(!ditherCanvas.width) return;
                 
-                // Desenhar a base da imagem (Separando os Edges por Alpha = 254)
                 const tempC = document.createElement('canvas'); tempC.width = ditherCanvas.width; tempC.height = ditherCanvas.height;
                 const tCtx = tempC.getContext('2d'); tCtx.imageSmoothingEnabled = false;
                 tCtx.drawImage(ditherCanvas, 0, 0);
@@ -2009,22 +2035,43 @@
                     tCtx.putImageData(pixels, 0, 0);
                 }
 
-                ctx.save();
-                ctx.drawImage(tempC, imgX, imgY, imgW, imgH);
-                
-                // Aplicar Borracha (Subtrair máscara)
-                if (eraserCanvas.width) {
-                    ctx.globalCompositeOperation = 'destination-out';
-                    ctx.drawImage(eraserCanvas, imgX, imgY, imgW, imgH);
+                const layerC = document.createElement('canvas');
+                layerC.width = baseCanvasW; layerC.height = baseCanvasH;
+                const lCtx = layerC.getContext('2d');
+                lCtx.imageSmoothingEnabled = false;
+
+                lCtx.drawImage(tempC, imgX, imgY, imgW, imgH);
+
+                if (document.getElementById('imgGradient').checked && currentImgGradColors.length > 0) {
+                    const gradC = document.createElement('canvas');
+                    gradC.width = baseCanvasW; gradC.height = baseCanvasH;
+                    const gCtx = gradC.getContext('2d');
+                    
+                    const gType = document.getElementById('imgGradType').value;
+                    const gAngle = parseInt(document.getElementById('imgGradAngle').value, 10);
+                    const gSteps = parseInt(document.getElementById('imgGradSteps').value, 10);
+                    const gPos = parseInt(document.getElementById('imgGradPos').value, 10);
+                    const gSmooth = parseInt(document.getElementById('imgGradSmooth').value, 10);
+                    
+                    gCtx.fillStyle = generateGradient(gType, gAngle, imgX, imgY, imgW, imgH, currentImgGradColors, gPos, gSmooth, gSteps);
+                    gCtx.fillRect(imgX, imgY, imgW, imgH);
+                    
+                    gCtx.globalCompositeOperation = 'destination-in';
+                    gCtx.drawImage(layerC, 0, 0);
+                    
+                    lCtx.globalCompositeOperation = document.getElementById('imgGradBlend').value;
+                    lCtx.drawImage(gradC, 0, 0);
+                    
+                    lCtx.globalCompositeOperation = 'source-over';
                 }
 
-                // Degradê por cima da imagem processada
-                if (document.getElementById('imgGradient').checked) {
-                    ctx.globalCompositeOperation = document.getElementById('imgGradBlend').value;
-                    ctx.fillStyle = generateGradient(document.getElementById('imgGradType').value, parseInt(document.getElementById('imgGradAngle').value, 10), imgX, imgY, imgW, imgH);
-                    ctx.fillRect(imgX, imgY, imgW, imgH);
+                if (eraserCanvas.width) {
+                    lCtx.globalCompositeOperation = 'destination-out';
+                    lCtx.drawImage(eraserCanvas, imgX, imgY, imgW, imgH);
                 }
-                
+
+                ctx.save();
+                ctx.drawImage(layerC, 0, 0);
                 ctx.restore();
             };
 
@@ -2037,9 +2084,12 @@
 
                     ctx.save();
                     let fillStyle = `rgba(${hexToRgb(s.color).r}, ${hexToRgb(s.color).g}, ${hexToRgb(s.color).b}, ${s.opacity / 100})`;
-                    if (s.useGradient && globalCurrentPalette.length > 0) {
+                    if (s.useGradient && s.gradColors && s.gradColors.length > 0) {
                         ctx.globalAlpha = s.opacity / 100;
-                        fillStyle = generateGradient(s.gradType, s.gradAngle, shapeCenterX - shapeRadiusPx, shapeCenterY - shapeRadiusPx, shapeRadiusPx*2, shapeRadiusPx*2);
+                        const gPos = (s.gradPos !== undefined ? s.gradPos : 50);
+                        const gSmooth = (s.gradSmooth !== undefined ? s.gradSmooth : 100);
+                        const gSteps = (s.gradSteps !== undefined ? s.gradSteps : 0);
+                        fillStyle = generateGradient(s.gradType, s.gradAngle, shapeCenterX - shapeRadiusPx, shapeCenterY - shapeRadiusPx, shapeRadiusPx*2, shapeRadiusPx*2, s.gradColors, gPos, gSmooth, gSteps);
                     }
 
                     function generatePath(type, points, centerX, centerY, radius, sX, sY, rot) {
@@ -2075,7 +2125,7 @@
 
                     if (s.fill) { ctx.fillStyle = fillStyle; ctx.fill(); }
                     if (s.strokeWidth > 0) {
-                        ctx.clip(); // Corta para o contorno crescer apenas para dentro
+                        ctx.clip(); 
                         ctx.strokeStyle = fillStyle;
                         ctx.lineWidth = s.strokeWidth * 2;
                         ctx.stroke();
