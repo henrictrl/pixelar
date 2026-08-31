@@ -234,6 +234,31 @@
         #slider-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; z-index: 9; display: none; pointer-events: none; }
         #slider-line::after { content: '↔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); color: var(--text); border: 2px solid var(--border); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border-radius: 50%; }
 
+        /* ================= BARRA DE CARREGAMENTO ================= */
+        #loading-bar-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: transparent;
+            z-index: 1000;
+            pointer-events: none;
+            display: none;
+            overflow: hidden;
+        }
+        #loading-bar {
+            height: 100%;
+            width: 30%;
+            background: var(--text);
+            border-radius: 0;
+            animation: loading-slide 1s infinite linear;
+        }
+        @keyframes loading-slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(350%); }
+        }
+
         /* Barras Flutuantes */
         #top-bar, #floating-bar, #zoom-controls {
             display: flex; gap: 8px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px);
@@ -628,6 +653,9 @@
 
     <!-- MAIN CANVAS VIEW -->
     <div id="view">
+        <!-- Barra de carregamento sutil -->
+        <div id="loading-bar-container"><div id="loading-bar"></div></div>
+
         <label id="welcomeMsg" for="imageUploadMsg">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
             Faça o upload de uma imagem<br>para começar
@@ -748,6 +776,25 @@
 
             currentZoom = Math.max(0.2, Math.min(5, targetContentH / renderedCanvasH));
             updateZoom();
+        }
+
+        // ======= BARRA DE CARREGAMENTO =======
+        const loadingContainer = document.getElementById('loading-bar-container');
+        let loadingTimeout = null;
+
+        function showLoading() {
+            if (loadingTimeout) clearTimeout(loadingTimeout);
+            loadingTimeout = setTimeout(() => {
+                loadingContainer.style.display = 'block';
+            }, 100); // Só mostra se demorar mais de 100ms
+        }
+
+        function hideLoading() {
+            if (loadingTimeout) {
+                clearTimeout(loadingTimeout);
+                loadingTimeout = null;
+            }
+            loadingContainer.style.display = 'none';
         }
 
         // ======= CÓDIGO DA FERRAMENTA =======
@@ -1312,12 +1359,16 @@
         let pendingProcess = null;
         function scheduleProcess() {
             if(pendingProcess) clearTimeout(pendingProcess);
+            showLoading(); // Mostra barra se demorar
             pendingProcess = setTimeout(() => { processCoreEffects(); }, 150);
         }
 
         let engineDataCache = null;
         function processCoreEffects() {
-            if(!sourceImg) return;
+            if(!sourceImg) { hideLoading(); return; }
+            // ... (processamento pesado) ...
+            // Ao final, chama renderCanvas() que cuidará de esconder a barra
+            // (o código original continua igual)
             const px = parseInt(document.getElementById('pxSize').value, 10);
             const cLimitStr = document.getElementById('colorSelect').value;
             const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
@@ -1458,7 +1509,7 @@
             }
 
             engineDataCache = { data: new Uint8ClampedArray(d), w: smallW, h: smallH, minL: minL, maxL: maxL, palette: [...globalCurrentPalette], usePal: usePalette };
-            renderCanvas();
+            renderCanvas(); // renderCanvas vai esconder a barra ao final
         }
 
         const colorCache = new Map();
@@ -1573,7 +1624,7 @@
         }
 
         function renderCanvas() {
-            if(!engineDataCache) return;
+            if(!engineDataCache) { hideLoading(); return; }
             colorCache.clear();
             const { w, h, minL, maxL, palette, usePal } = engineDataCache;
             let d = new Uint8ClampedArray(engineDataCache.data);
@@ -1735,6 +1786,7 @@
             ctx.drawImage(ditherCanvas, 0, 0, w, h, 0, 0, baseCanvasW, baseCanvasH);
 
             isRestoringState = false;
+            hideLoading(); // Esconde barra ao final
             saveHistoryState();
         }
     </script>
