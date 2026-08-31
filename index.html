@@ -244,38 +244,50 @@
             .m-sub-nav { 
                 display: flex !important; flex-direction: row; gap: 8px; overflow-x: auto; padding-top: 12px; margin-bottom: 0;
                 border-top: 1px dashed var(--border-light); scrollbar-width: none; flex-wrap: nowrap;
-                /* Ajustes para não cortar o último botão */
                 padding-right: 20px;
                 scroll-padding: 0 10px;
                 -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                flex-shrink: 0;
             }
             .m-sub-nav::-webkit-scrollbar { display: none; }
             .m-sub-btn { flex: 0 0 auto; min-width: 75px; height: auto; padding: 8px 6px; }
 
-            .sec-content { gap: 4px; }
-            .set-item { display: none !important; padding: 8px; border: 1px dashed var(--border-light); }
+            .sec-content { gap: 4px; width: 100%; max-width: 100%; }
+            .set-item { display: none !important; padding: 8px; border: 1px dashed var(--border-light); width: 100%; max-width: 100%; }
             .set-item.active { display: flex !important; }
 
-            /* Evita overflow horizontal de itens */
-            body, #controls, .panels-container, .control-group, .sec-content, .set-item {
+            /* Prevenir overflow horizontal em todos os contêineres */
+            body, #controls, .panels-container, .control-group, .sec-content, .set-item, .slider-row,
+            .custom-checkbox, .colors-grid, .modal-content, .std-btn, select, input[type="color"], input[type="range"] {
                 max-width: 100%;
                 overflow-x: hidden;
             }
+
             .slider-row {
                 flex-wrap: wrap;
                 row-gap: 4px;
                 column-gap: 6px;
+                width: 100%;
             }
             .slider-row > * {
                 min-width: 0;
+                flex-shrink: 1;
             }
             input[type="range"] {
-                flex-shrink: 1;
+                flex: 1 1 auto;
                 min-width: 0;
+                max-width: 100%;
             }
-            select, input[type="color"], button.icon-btn {
+            select, input[type="color"], button.icon-btn, .std-btn {
                 flex-shrink: 0;
+                max-width: 100%;
             }
+            input[type="color"].icon-btn {
+                width: 28px;
+                flex: 0 0 28px;
+            }
+
             /* Opacidade: dois sliders lado a lado sem estourar */
             #set-dithOpa .slider-row {
                 flex-wrap: wrap;
@@ -335,6 +347,30 @@
             }
             .m-tab svg { width: 20px; height: 20px; margin-bottom: 4px; stroke: currentColor; fill: none; }
             .m-tab.active { color: var(--text); font-weight: bold; }
+
+            /* Garantir que labels e checkboxes não estourem */
+            .custom-checkbox {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .custom-checkbox .checkmark {
+                flex-shrink: 0;
+            }
+
+            /* Ajuste para botões com texto longo */
+            .std-btn {
+                font-size: 0.75rem;
+                padding: 4px;
+            }
+
+            /* Grid de paletas salvas */
+            #savedPalettesGrid > div, #myPresetsGrid > div {
+                flex-wrap: wrap;
+            }
+            #savedPalettesGrid .std-btn, #myPresetsGrid .std-btn {
+                min-width: 0;
+                flex: 1 1 auto;
+            }
         }
     </style>
 </head>
