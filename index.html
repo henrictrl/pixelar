@@ -132,6 +132,14 @@
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; }
         
+        /* Ajuste específico para que a classe icon-btn não interfira no input color */
+        input[type="color"].icon-btn {
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
         .custom-checkbox { display: flex; align-items: center; justify-content: flex-start; gap: 8px; cursor: pointer; user-select: none; font-size: 0.8rem; color: var(--text); width: auto; height: auto; border: none; background: transparent; box-shadow: none; }
         .custom-checkbox input[type="checkbox"] { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
         .checkmark { height: 14px; width: 14px; background-color: var(--bg); border: 1px solid var(--border); display: flex; justify-content: center; align-items: center; flex-shrink: 0; border-radius: 2px; }
@@ -236,6 +244,9 @@
             .m-sub-nav { 
                 display: flex !important; flex-direction: row; gap: 8px; overflow-x: auto; padding-top: 12px; margin-bottom: 0;
                 border-top: 1px dashed var(--border-light); scrollbar-width: none; flex-wrap: nowrap;
+                /* Ajustes para não cortar o último botão */
+                padding-right: 20px;
+                scroll-padding: 0 10px;
             }
             .m-sub-nav::-webkit-scrollbar { display: none; }
             .m-sub-btn { flex: 0 0 auto; min-width: 75px; height: auto; padding: 8px 6px; }
@@ -243,6 +254,63 @@
             .sec-content { gap: 4px; }
             .set-item { display: none !important; padding: 8px; border: 1px dashed var(--border-light); }
             .set-item.active { display: flex !important; }
+
+            /* Evita overflow horizontal de itens */
+            .set-item, .slider-row, .sec-content, .panels-container, #controls {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+            .slider-row {
+                flex-wrap: wrap;
+                row-gap: 4px;
+                column-gap: 6px;
+            }
+            .slider-row > * {
+                flex-shrink: 0;
+            }
+            .slider-row input[type="range"] {
+                flex: 1 1 100px;
+                min-width: 0;
+            }
+            .slider-row .icon-btn, .slider-row input[type="color"] {
+                flex-shrink: 0;
+            }
+            /* Ajuste para opacidade (dois sliders lado a lado) */
+            #set-dithOpa .slider-row {
+                flex-wrap: wrap;
+            }
+            #set-dithOpa .slider-row input[type="range"] {
+                flex: 1 1 40%;
+                min-width: 0;
+            }
+            #set-dithOpa .slider-row svg.lbl-icon {
+                flex-shrink: 0;
+            }
+            /* Contorno: input color não deve quebrar */
+            #set-dithEdg .slider-row {
+                flex-wrap: nowrap;
+                overflow-x: visible;
+            }
+            #set-dithEdg .slider-row input[type="range"] {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            #set-dithEdg .slider-row input[type="color"] {
+                flex-shrink: 0;
+            }
+            /* Degradê: botões + e - na mesma linha */
+            #shapeGradColorsContainer, #imgGradColorsContainer {
+                flex-wrap: wrap;
+            }
+            .slider-row .std-btn {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            /* Seletor de camada forma */
+            #shapeLayer {
+                width: 100%;
+                max-width: 100%;
+            }
 
             /* TAB BAR INFERIOR */
             #mobile-tab-bar {
