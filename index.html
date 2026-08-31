@@ -247,6 +247,7 @@
                 /* Ajustes para não cortar o último botão */
                 padding-right: 20px;
                 scroll-padding: 0 10px;
+                -webkit-overflow-scrolling: touch;
             }
             .m-sub-nav::-webkit-scrollbar { display: none; }
             .m-sub-btn { flex: 0 0 auto; min-width: 75px; height: auto; padding: 8px 6px; }
@@ -256,7 +257,7 @@
             .set-item.active { display: flex !important; }
 
             /* Evita overflow horizontal de itens */
-            .set-item, .slider-row, .sec-content, .panels-container, #controls {
+            body, #controls, .panels-container, .control-group, .sec-content, .set-item {
                 max-width: 100%;
                 overflow-x: hidden;
             }
@@ -266,27 +267,29 @@
                 column-gap: 6px;
             }
             .slider-row > * {
-                flex-shrink: 0;
-            }
-            .slider-row input[type="range"] {
-                flex: 1 1 100px;
                 min-width: 0;
             }
-            .slider-row .icon-btn, .slider-row input[type="color"] {
+            input[type="range"] {
+                flex-shrink: 1;
+                min-width: 0;
+            }
+            select, input[type="color"], button.icon-btn {
                 flex-shrink: 0;
             }
-            /* Ajuste para opacidade (dois sliders lado a lado) */
+            /* Opacidade: dois sliders lado a lado sem estourar */
             #set-dithOpa .slider-row {
                 flex-wrap: wrap;
+                row-gap: 4px;
+            }
+            #set-dithOpa .slider-row svg.lbl-icon {
+                flex-shrink: 0;
             }
             #set-dithOpa .slider-row input[type="range"] {
                 flex: 1 1 40%;
                 min-width: 0;
             }
-            #set-dithOpa .slider-row svg.lbl-icon {
-                flex-shrink: 0;
-            }
-            /* Contorno: input color não deve quebrar */
+
+            /* Contorno: range e cor na mesma linha */
             #set-dithEdg .slider-row {
                 flex-wrap: nowrap;
                 overflow-x: visible;
@@ -297,19 +300,23 @@
             }
             #set-dithEdg .slider-row input[type="color"] {
                 flex-shrink: 0;
+                width: 28px;
+                padding: 0;
             }
-            /* Degradê: botões + e - na mesma linha */
-            #shapeGradColorsContainer, #imgGradColorsContainer {
-                flex-wrap: wrap;
-            }
-            .slider-row .std-btn {
-                flex: 1 1 auto;
-                min-width: 0;
-            }
-            /* Seletor de camada forma */
+
+            /* Seletor de camada da forma */
             #shapeLayer {
                 width: 100%;
                 max-width: 100%;
+            }
+
+            /* Degradê: botões + e - na mesma linha com largura flexível */
+            .slider-row .std-btn {
+                flex: 1 1 auto;
+                min-width: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             /* TAB BAR INFERIOR */
@@ -318,6 +325,8 @@
                 background: var(--bg); border-top: 2px solid var(--border);
                 height: auto; min-height: 60px; z-index: 9999; overflow-x: auto; white-space: nowrap; 
                 scrollbar-width: none; padding: 0 5px; padding-bottom: 25px; justify-content: flex-start;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
             }
             .m-tab {
                 flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
