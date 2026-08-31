@@ -38,6 +38,7 @@
             margin: 0; padding: 0; font-family: monospace; background-color: var(--bg); color: var(--text);
             display: flex; flex-direction: row; height: 100vh; overflow: hidden;
             transition: background-color 0.2s, color 0.2s;
+            max-width: 100vw;
         }
 
         ::-webkit-scrollbar { width: 6px; }
@@ -86,9 +87,9 @@
         .d-tab.active { background: var(--panel); color: var(--text); border: 1px dashed var(--border-light); font-weight: bold; }
 
         /* Área de Scroll dos Painéis (Desktop) */
-        .panels-container { flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; display: flex; flex-direction: column; }
+        .panels-container { flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; display: flex; flex-direction: column; max-width: 100%; }
 
-        .control-group { display: none; }
+        .control-group { display: none; max-width: 100%; }
         
         /* Oculta navegação secundária no desktop e mostra todos os painéis */
         @media (min-width: 769px) {
@@ -110,15 +111,16 @@
         .badge { position: absolute; top: 2px; right: 2px; background: var(--text); color: var(--bg); font-size: 0.65rem; font-weight: bold; padding: 2px 4px; display: none; line-height: 1; pointer-events: none; z-index: 2; border-radius: 2px; }
 
         /* ================= ESTILOS REDUZIDOS / COMPACTOS ================= */
-        .sec-content { display: flex; flex-direction: column; width: 100%; gap: 4px; }
-        .set-item { display: none; flex-direction: column; gap: 6px; width: 100%; align-items: stretch; text-align: left; background: var(--panel); border: 1px dashed var(--border-light); padding: 8px; }
+        .sec-content { display: flex; flex-direction: column; width: 100%; max-width: 100%; gap: 4px; }
+        .set-item { display: none; flex-direction: column; gap: 6px; width: 100%; max-width: 100%; align-items: stretch; text-align: left; background: var(--panel); border: 1px dashed var(--border-light); padding: 8px; overflow: hidden; }
         .panel-label { display: block; font-size: 0.8rem; font-weight: normal; color: var(--text); width: 100%; text-align: left; margin-bottom: 4px; }
 
         /* Sliders e Inputs */
-        .slider-row { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: flex-start; }
+        .slider-row { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 100%; justify-content: flex-start; flex-wrap: nowrap; overflow: hidden; }
+        .slider-row > * { min-width: 0; }
         .slider-row svg.lbl-icon { width: 16px; height: 16px; stroke: var(--text); fill: none; flex-shrink: 0; stroke-width: 1.5; }
         
-        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--text); -webkit-appearance: auto; appearance: auto; height: auto; background: transparent; border: none; box-shadow: none; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--text); -webkit-appearance: auto; appearance: auto; height: auto; background: transparent; border: none; box-shadow: none; flex: 1 1 0%; min-width: 10px; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: auto; appearance: auto; }
         input[type="range"]::-moz-range-thumb { -webkit-appearance: auto; appearance: auto; }
 
@@ -128,7 +130,7 @@
         .icon-btn.active-state { background: var(--text); color: var(--bg); border-color: var(--text); }
         .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
 
-        input[type="color"] { -webkit-appearance: none; appearance: none; border: 1px solid var(--border); width: 28px; height: 28px; padding: 0; cursor: pointer; border-radius: 0; }
+        input[type="color"] { -webkit-appearance: none; appearance: none; border: 1px solid var(--border); width: 28px; height: 28px; padding: 0; cursor: pointer; border-radius: 0; flex-shrink: 0; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; }
         
@@ -140,21 +142,21 @@
             flex-shrink: 0;
         }
 
-        .custom-checkbox { display: flex; align-items: center; justify-content: flex-start; gap: 8px; cursor: pointer; user-select: none; font-size: 0.8rem; color: var(--text); width: auto; height: auto; border: none; background: transparent; box-shadow: none; }
+        .custom-checkbox { display: flex; align-items: center; justify-content: flex-start; gap: 8px; cursor: pointer; user-select: none; font-size: 0.8rem; color: var(--text); width: auto; height: auto; border: none; background: transparent; box-shadow: none; flex-shrink: 0; }
         .custom-checkbox input[type="checkbox"] { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
         .checkmark { height: 14px; width: 14px; background-color: var(--bg); border: 1px solid var(--border); display: flex; justify-content: center; align-items: center; flex-shrink: 0; border-radius: 2px; }
         .custom-checkbox:hover input[type="checkbox"] ~ .checkmark { background-color: var(--hover); }
         .custom-checkbox input[type="checkbox"]:checked ~ .checkmark { background-color: var(--text); border-color: var(--text); }
         .custom-checkbox input[type="checkbox"]:checked ~ .checkmark::after { content: ""; display: block; width: 6px; height: 6px; background: var(--bg); border-radius: 1px; }
 
-        select { width: 100%; cursor: pointer; border: 1px solid var(--border); font-family: monospace; background: var(--bg); color: var(--text); padding: 4px; font-size: 0.85rem; box-shadow: none; height: auto; font-weight: normal; border-radius: 0; }
+        select { width: 100%; cursor: pointer; border: 1px solid var(--border); font-family: monospace; background: var(--bg); color: var(--text); padding: 4px; font-size: 0.85rem; box-shadow: none; height: auto; font-weight: normal; border-radius: 0; flex: 1 1 0%; min-width: 0; }
 
-        .std-btn { padding: 6px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: monospace; cursor: pointer; font-size: 0.85rem; font-weight: normal; box-shadow: none; transition: background 0.1s; display: flex; align-items: center; justify-content: center; height: auto; border-radius: 0; }
+        .std-btn { padding: 6px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: monospace; cursor: pointer; font-size: 0.85rem; font-weight: normal; box-shadow: none; transition: background 0.1s; display: flex; align-items: center; justify-content: center; height: auto; border-radius: 0; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .std-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); transform: none; box-shadow: none; }
         .std-btn:active:not(:disabled) { transform: none; box-shadow: none; }
         
         .colors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(32px, 1fr)); gap: 4px; margin-bottom: 4px; max-height: 140px; overflow-y: auto; padding-right: 2px; width: 100%; }
-        .color-btn { width: 100%; height: 32px; padding: 0; border: 1px solid var(--border); cursor: pointer; border-radius: 0; transition: outline 0.1s; box-shadow: none; }
+        .color-btn { width: 100%; height: 32px; padding: 0; border: 1px solid var(--border); cursor: pointer; border-radius: 0; transition: outline 0.1s; box-shadow: none; flex-shrink: 0; }
         .color-btn:hover { transform: none; outline: 2px solid var(--text); outline-offset: -2px; }
 
         /* ================= VIEW AREA ================= */
@@ -190,7 +192,7 @@
         #zoom-controls { position: absolute; bottom: 20px; right: 20px; flex-direction: column; }
 
         .float-btn {
-            background: transparent; border: 1px solid transparent; cursor: pointer; padding: 6px; color: var(--text); border-radius: 4px; display: flex; align-items: center; justify-content: center; box-shadow: none; transition: background 0.1s; position: relative; z-index: 1;
+            background: transparent; border: 1px solid transparent; cursor: pointer; padding: 6px; color: var(--text); border-radius: 4px; display: flex; align-items: center; justify-content: center; box-shadow: none; transition: background 0.1s; position: relative; z-index: 1; flex-shrink: 0;
         }
         .float-btn:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--border); transform: none; box-shadow: none; }
         .float-btn:active:not(:disabled) { transform: none; box-shadow: none; }
@@ -235,7 +237,7 @@
             /* Estrutura invertida do mobile */
             #controls { 
                 order: 2; height: auto; min-height: fit-content; max-height: 45vh; width: 100%; border-right: none; 
-                padding: 10px; padding-bottom: 10px; background: var(--panel); overflow-y: auto; overflow-x: hidden;
+                padding: 10px; padding-bottom: 30px; background: var(--panel); overflow-y: auto; overflow-x: hidden;
             }
             .panels-container { overflow: visible; padding-right: 0; }
             .control-group.active { display: flex; flex-direction: column-reverse; gap: 8px; padding-bottom: 0; }
@@ -244,79 +246,41 @@
             .m-sub-nav { 
                 display: flex !important; flex-direction: row; gap: 8px; overflow-x: auto; padding-top: 12px; margin-bottom: 0;
                 border-top: 1px dashed var(--border-light); scrollbar-width: none; flex-wrap: nowrap;
-                /* Ajustes para não cortar o último botão */
-                padding-right: 20px;
+                padding-right: 0px; 
                 scroll-padding: 0 10px;
                 -webkit-overflow-scrolling: touch;
             }
             .m-sub-nav::-webkit-scrollbar { display: none; }
+            .m-sub-nav::after { content: ""; flex: 0 0 15px; width: 15px; } /* Evita corte no fim do scroll */
             .m-sub-btn { flex: 0 0 auto; min-width: 75px; height: auto; padding: 8px 6px; }
 
             .sec-content { gap: 4px; }
             .set-item { display: none !important; padding: 8px; border: 1px dashed var(--border-light); }
             .set-item.active { display: flex !important; }
 
-            /* Evita overflow horizontal de itens */
-            body, #controls, .panels-container, .control-group, .sec-content, .set-item {
-                max-width: 100%;
-                overflow-x: hidden;
-            }
             .slider-row {
                 flex-wrap: wrap;
-                row-gap: 4px;
-                column-gap: 6px;
+                row-gap: 8px;
             }
             .slider-row > * {
                 min-width: 0;
             }
-            input[type="range"] {
-                flex-shrink: 1;
-                min-width: 0;
-            }
-            select, input[type="color"], button.icon-btn {
-                flex-shrink: 0;
-            }
-            /* Opacidade: dois sliders lado a lado sem estourar */
+            /* Opacidade em grid para manter na mesma linha sem quebrar a tela */
             #set-dithOpa .slider-row {
-                flex-wrap: wrap;
-                row-gap: 4px;
+                display: grid;
+                grid-template-columns: auto 1fr auto 1fr;
+                gap: 4px;
             }
             #set-dithOpa .slider-row svg.lbl-icon {
                 flex-shrink: 0;
             }
             #set-dithOpa .slider-row input[type="range"] {
-                flex: 1 1 40%;
+                flex: 1 1 auto;
                 min-width: 0;
             }
-
-            /* Contorno: range e cor na mesma linha */
             #set-dithEdg .slider-row {
                 flex-wrap: nowrap;
                 overflow-x: visible;
-            }
-            #set-dithEdg .slider-row input[type="range"] {
-                flex: 1 1 auto;
-                min-width: 0;
-            }
-            #set-dithEdg .slider-row input[type="color"] {
-                flex-shrink: 0;
-                width: 28px;
-                padding: 0;
-            }
-
-            /* Seletor de camada da forma */
-            #shapeLayer {
-                width: 100%;
-                max-width: 100%;
-            }
-
-            /* Degradê: botões + e - na mesma linha com largura flexível */
-            .slider-row .std-btn {
-                flex: 1 1 auto;
-                min-width: 0;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
             }
 
             /* TAB BAR INFERIOR */
@@ -530,8 +494,11 @@
                             </div>
                             <label class="custom-checkbox" style="margin-top:2px;"><input type="checkbox" id="shapeGradient"><span class="checkmark"></span><span>Aplicar Degradê</span></label>
                             <div id="shapeGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top: 4px; border-top: 1px dashed var(--border-light); padding-top: 6px; width:100%;">
-                                <div id="shapeGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-start;"></div>
-                                <div class="slider-row"><button id="btnShapeGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnShapeGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
+                                <div class="slider-row" style="flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px;">
+                                    <div id="shapeGradColorsContainer" style="display:flex; gap:4px; flex-shrink: 0;"></div>
+                                    <button id="btnShapeGradAddCol" class="std-btn" style="padding: 4px 8px; flex-shrink:0; width: auto; white-space: nowrap;">+ Cor</button>
+                                    <button id="btnShapeGradRemCol" class="std-btn" style="padding: 4px 8px; flex-shrink:0; width: auto; white-space: nowrap;">- Cor</button>
+                                </div>
                                 <select id="shapeGradType" style="margin-bottom:2px;"><option value="linear">Linear</option><option value="radial">Radial</option></select>
                                 <div id="shapeGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="shapeGradAngle" min="0" max="360" value="90"></div>
                                 <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="shapeGradSteps" min="0" max="30" value="0"></div>
@@ -579,8 +546,11 @@
                         <div class="set-item" id="set-corDeg"><div class="panel-label">Filtro Degradê Global</div>
                             <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar Degradê Global</span></label>
                             <div id="imgGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top: 4px; border-top: 1px dashed var(--border-light); padding-top: 6px; width:100%;">
-                                <div id="imgGradColorsContainer" style="display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-start;"></div>
-                                <div class="slider-row"><button id="btnImgGradAddCol" class="std-btn" style="flex:1;">+ Cor</button><button id="btnImgGradRemCol" class="std-btn" style="flex:1;">- Cor</button></div>
+                                <div class="slider-row" style="flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px;">
+                                    <div id="imgGradColorsContainer" style="display:flex; gap:4px; flex-shrink:0;"></div>
+                                    <button id="btnImgGradAddCol" class="std-btn" style="padding: 4px 8px; flex-shrink:0; width: auto; white-space: nowrap;">+ Cor</button>
+                                    <button id="btnImgGradRemCol" class="std-btn" style="padding: 4px 8px; flex-shrink:0; width: auto; white-space: nowrap;">- Cor</button>
+                                </div>
                                 <select id="imgGradType"><option value="linear">Linear</option><option value="radial">Radial</option></select>
                                 <div id="imgGradAngleContainer" class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Ângulo"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input type="range" id="imgGradAngle" min="0" max="360" value="90"></div>
                                 <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24" title="Faixas (Steps)"><line x1="4" y1="20" x2="8" y2="20"></line><line x1="8" y1="20" x2="8" y2="16"></line><line x1="8" y1="16" x2="12" y2="16"></line><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="12"></line><line x1="16" y1="12" x2="16" y2="8"></line><line x1="16" y1="8" x2="20" y2="8"></line></svg><input type="range" id="imgGradSteps" min="0" max="30" value="0"></div>
@@ -771,9 +741,8 @@
             if (wrapperW === 0 || wrapperH === 0) return;
             
             const renderedCanvasH = Math.min(wrapperH, wrapperW / imgAspect);
-            const imageScaleVal = parseInt(document.getElementById('imageScale').value, 10) / 100;
             const canvasPadding = 1; 
-            const contentFraction = imageScaleVal / canvasPadding;
+            const contentFraction = 1 / canvasPadding; // imagem interna já controlada por imageScale na renderização nativa
             
             const renderedContentH = renderedCanvasH * contentFraction;
             if (renderedContentH <= 0) return;
@@ -919,8 +888,8 @@
             if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'block'; } else { bcDeg.style.display = 'none'; } }
         }
 
-        const processInputs = ['pxSize', 'estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'groupStrength', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'colorSelect'];
-        const renderInputs = ['imageScale', 'fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
+        const processInputs = ['pxSize', 'estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'groupStrength', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'colorSelect', 'imageScale'];
+        const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
 
         const shapeBindings = [
             { id: 'shapeEnable', key: 'enable', type: 'checkbox' }, { id: 'shapeType', key: 'type', type: 'value' }, { id: 'shapePoints', key: 'points', type: 'int' },
@@ -1020,7 +989,7 @@
                             document.getElementById('btn-download').disabled = false; document.getElementById('btn-compare').disabled = false; historyArr = []; historyIndex = -1;
                             if (isComparing) btnCompare.click();
                             if (loadedState) { applyState(loadedState); } else {
-                                document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0; groupMethod = "mean"; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0;
+                                document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0; groupMethod = "mean"; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0; document.getElementById('imageScale').value = 100;
                                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; globalCurrentPalette = []; setBasePalette([]); scheduleProcess(); 
                             } 
                             fitImageToView();
@@ -1035,7 +1004,7 @@
             if (!originalSourceUrl) return; const img = new Image();
             img.onload = () => {
                 sourceImg = img;
-                document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none'; document.getElementById('groupStrength').value = 0; groupMethod = 'mean'; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0;
+                document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none'; document.getElementById('groupStrength').value = 0; groupMethod = 'mean'; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0; document.getElementById('imageScale').value = 100;
                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; globalCurrentPalette = []; setBasePalette([]); isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
                 scheduleProcess(); fitImageToView();
             }; img.src = originalSourceUrl;
@@ -1219,14 +1188,9 @@
             const origW = sourceImg.width; const origH = sourceImg.height;
             const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1;
             const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
-            const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
             const canvasPadding = 1; 
             const baseCanvasW = smallW * px * displayScale * canvasPadding;
             const baseCanvasH = smallH * px * displayScale * canvasPadding;
-            const imgW = (baseCanvasW / canvasPadding) * imageScale;
-            const imgH = (baseCanvasH / canvasPadding) * imageScale;
-            const imgX = (baseCanvasW - imgW) / 2;
-            const imgY = (baseCanvasH - imgH) / 2;
 
             const tCanvas = document.createElement('canvas'); tCanvas.width = baseCanvasW; tCanvas.height = baseCanvasH;
             const tCtx = tCanvas.getContext('2d');
@@ -1372,12 +1336,26 @@
             const postVal = parseInt(document.getElementById('posterize').value, 10);
             const posterLevels = postVal > 0 ? Math.max(2, Math.round(16 - (postVal / 100) * 14)) : 0;
             const contFactor = (259 * (contValue + 255)) / (255 * (259 - contValue));
+            
             const origW = sourceImg.width; const origH = sourceImg.height;
-            const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
+            const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
+            const scaledW = origW * imageScale;
+            const scaledH = origH * imageScale;
+            
+            const smallW = Math.max(1, Math.floor(origW / px)); 
+            const smallH = Math.max(1, Math.floor(origH / px));
+            
+            const targetSmallW = Math.max(1, Math.floor(scaledW / px));
+            const targetSmallH = Math.max(1, Math.floor(scaledH / px));
+            
+            const offsetX = (smallW - targetSmallW) / 2;
+            const offsetY = (smallH - targetSmallH) / 2;
 
             const smallCanvas = document.createElement('canvas'); smallCanvas.width = smallW; smallCanvas.height = smallH;
             const sCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
-            sCtx.imageSmoothingEnabled = false; sCtx.drawImage(sourceImg, 0, 0, smallW, smallH);
+            sCtx.imageSmoothingEnabled = false; 
+            sCtx.drawImage(sourceImg, 0, 0, origW, origH, offsetX, offsetY, targetSmallW, targetSmallH);
+            
             let imgData = sCtx.getImageData(0, 0, smallW, smallH); let d = imgData.data;
 
             let minL=255, maxL=0;
@@ -1496,20 +1474,25 @@
             colorCache.set(key, closest); return closest;
         };
 
-        function drawShape(sCtx, s, cx, cy) {
+        function drawShape(sCtx, s, cx, cy, w, h) {
+            const baseR = Math.min(w, h) / 3;
+            
             sCtx.beginPath();
-            if (s.type === 'circle') { sCtx.ellipse(cx, cy, s.ellipseX / 2, s.ellipseY / 2, 0, 0, Math.PI * 2); } 
+            if (s.type === 'circle') { 
+                sCtx.ellipse(cx, cy, baseR * (s.ellipseX / 100), baseR * (s.ellipseY / 100), 0, 0, Math.PI * 2); 
+            } 
             else if (s.type === 'irregular') {
                 const step = (Math.PI * 2) / 40;
                 for (let i = 0; i < 40; i++) {
-                    const r = s.irregularRadii[i] * (s.scale / 100);
+                    const r = baseR * (s.irregularRadii[i] / 50) * (s.scale / 100);
                     const x = cx + Math.cos(i * step) * r;
                     const y = cy + Math.sin(i * step) * r;
                     if (i === 0) sCtx.moveTo(x, y); else sCtx.lineTo(x, y);
                 }
                 sCtx.closePath();
             } else {
-                const R = 50 * (s.scale / 100); const n = s.points;
+                const R = baseR * (s.scale / 100); 
+                const n = s.points;
                 for (let i = 0; i < n * 2; i++) {
                     let rad = (i * Math.PI) / n;
                     let r = R;
@@ -1525,12 +1508,13 @@
 
             if (s.useGradient) {
                 let grad;
+                const rMax = baseR * 2 * (s.scale / 100);
                 if (s.gradType === 'radial') {
-                    const gx = cx; const gy = cy; const rMax = 100 * (s.scale / 100);
+                    const gx = cx; const gy = cy;
                     grad = sCtx.createRadialGradient(gx, gy, 0, gx, gy, rMax);
                 } else {
-                    const R = 100 * (s.scale / 100); const ang = (s.gradAngle - 90) * Math.PI / 180;
-                    const dx = Math.cos(ang) * R; const dy = Math.sin(ang) * R;
+                    const R_grad = rMax; const ang = (s.gradAngle - 90) * Math.PI / 180;
+                    const dx = Math.cos(ang) * R_grad; const dy = Math.sin(ang) * R_grad;
                     grad = sCtx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy);
                 }
                 
@@ -1627,17 +1611,18 @@
             canvas.width = baseCanvasW; canvas.height = baseCanvasH;
             ctx.imageSmoothingEnabled = false;
 
-            const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
-            const imgW = (baseCanvasW / canvasPadding) * imageScale;
-            const imgH = (baseCanvasH / canvasPadding) * imageScale;
-            const imgX = (baseCanvasW - imgW) / 2;
-            const imgY = (baseCanvasH - imgH) / 2;
-
             if (sourceImg && oCtx) {
                 origCanvas.width = baseCanvasW;
                 origCanvas.height = baseCanvasH;
                 oCtx.clearRect(0, 0, baseCanvasW, baseCanvasH);
-                oCtx.drawImage(sourceImg, 0, 0, sourceImg.width, sourceImg.height, imgX, imgY, imgW, imgH);
+                
+                const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100;
+                const scaledW = baseCanvasW * imageScale;
+                const scaledH = baseCanvasH * imageScale;
+                const offsetX = (baseCanvasW - scaledW) / 2;
+                const offsetY = (baseCanvasH - scaledH) / 2;
+                
+                oCtx.drawImage(sourceImg, 0, 0, sourceImg.width, sourceImg.height, offsetX, offsetY, scaledW, scaledH);
             }
 
             const shapeCanvasFront = document.createElement('canvas'); shapeCanvasFront.width = w; shapeCanvasFront.height = h;
@@ -1655,7 +1640,7 @@
                     activeCtx.rotate((s.rotation * Math.PI) / 180);
                     activeCtx.translate(-cx, -cy);
                     activeCtx.globalAlpha = s.opacity / 100;
-                    drawShape(activeCtx, s, cx, cy);
+                    drawShape(activeCtx, s, cx, cy, w, h);
                     activeCtx.restore();
                 }
             });
@@ -1785,7 +1770,7 @@
             if (isFillBgEnabled) { ctx.fillStyle = document.getElementById('btnBgColor').getAttribute('data-color'); ctx.fillRect(0,0,baseCanvasW,baseCanvasH); }
             else { ctx.clearRect(0,0,baseCanvasW,baseCanvasH); }
             
-            ctx.drawImage(ditherCanvas, 0, 0, w, h, imgX, imgY, imgW, imgH);
+            ctx.drawImage(ditherCanvas, 0, 0, w, h, 0, 0, baseCanvasW, baseCanvasH);
             
             isRestoringState = false;
             saveHistoryState();
