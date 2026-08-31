@@ -45,7 +45,7 @@
 
         body.is-fullscreen #controls, body.is-fullscreen #mobile-header,
         body.is-fullscreen #floating-bar, body.is-fullscreen #top-bar,
-        body.is-fullscreen #mobile-tab-bar, body.is-fullscreen #brush-panel, body.is-fullscreen #zoom-controls { display: none !important; }
+        body.is-fullscreen #mobile-tab-bar, body.is-fullscreen #zoom-controls { display: none !important; }
         
         body.is-fullscreen #view {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -128,7 +128,7 @@
         .icon-btn.active-state { background: var(--text); color: var(--bg); border-color: var(--text); }
         .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
 
-        input[type="color"] { -webkit-appearance: none; border: 1px solid var(--border); width: 28px; height: 28px; padding: 0; cursor: pointer; border-radius: 0; }
+        input[type="color"] { -webkit-appearance: none; appearance: none; border: 1px solid var(--border); width: 28px; height: 28px; padding: 0; cursor: pointer; border-radius: 0; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; }
         
@@ -157,7 +157,6 @@
         #canvas-wrapper { position: relative; display: none; width: 100%; height: 100%; touch-action: none; transition: transform 0.1s; transform-origin: center; }
         #canvas-wrapper.comparing { cursor: ew-resize; }
         #canvas-wrapper.tool-move { cursor: move; }
-        #canvas-wrapper.tool-erase, #canvas-wrapper.tool-restore { cursor: crosshair; }
 
         #outputCanvas {
             display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated;
@@ -170,17 +169,16 @@
         #slider-line::after { content: '↔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); color: var(--text); border: 2px solid var(--border); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.5); line-height: 1; padding-bottom: 2px; border-radius: 50%; }
 
         /* ================= FLOATING BARS ================= */
-        #top-bar, #floating-bar, #brush-panel, #zoom-controls { 
+        #top-bar, #floating-bar, #zoom-controls { 
             display: flex; gap: 8px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); 
             border: 1px solid var(--border); padding: 6px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 50; 
         }
-        [data-theme="dark"] #top-bar, [data-theme="dark"] #floating-bar, [data-theme="dark"] #brush-panel, [data-theme="dark"] #zoom-controls { 
+        [data-theme="dark"] #top-bar, [data-theme="dark"] #floating-bar, [data-theme="dark"] #zoom-controls { 
             background: rgba(30, 30, 30, 0.85); border-color: #555; 
         }
         
         #top-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); justify-content: center; align-items: center; }
         #floating-bar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); justify-content: center; align-items: center; }
-        #brush-panel { display: none; flex-direction: column; position: absolute; bottom: 75px; left: 50%; transform: translateX(-50%); width: 220px; }
         #zoom-controls { position: absolute; bottom: 20px; right: 20px; flex-direction: column; }
 
         .float-btn {
@@ -225,12 +223,11 @@
             #top-bar { top: 10px; width: max-content; max-width: 90%; flex-wrap: wrap; padding: 6px; }
             #floating-bar { bottom: 10px; width: max-content; max-width: 90%; padding: 6px; }
             #zoom-controls { bottom: 65px; right: 10px; }
-            #brush-panel { bottom: 65px; }
 
             /* Estrutura invertida do mobile */
             #controls { 
                 order: 2; height: auto; min-height: fit-content; max-height: 45vh; width: 100%; border-right: none; 
-                padding: 10px; padding-bottom: 75px; background: var(--panel); overflow-y: auto; overflow-x: hidden;
+                padding: 10px; padding-bottom: 10px; background: var(--panel); overflow-y: auto; overflow-x: hidden;
             }
             .panels-container { overflow: visible; padding-right: 0; }
             .control-group.active { display: flex; flex-direction: column-reverse; gap: 8px; padding-bottom: 0; }
@@ -249,8 +246,10 @@
 
             /* TAB BAR INFERIOR */
             #mobile-tab-bar {
-                display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 2px solid var(--border);
-                height: 60px; z-index: 9999; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding: 0 5px; justify-content: flex-start;
+                display: flex; position: relative; order: 3; width: 100%; flex-shrink: 0; 
+                background: var(--bg); border-top: 2px solid var(--border);
+                height: auto; min-height: 60px; z-index: 9999; overflow-x: auto; white-space: nowrap; 
+                scrollbar-width: none; padding: 0 5px; padding-bottom: 25px; justify-content: flex-start;
             }
             .m-tab {
                 flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -574,8 +573,6 @@
             <label class="float-btn" id="btn-upload" title="Upload"><input type="file" id="imageUpload" accept="image/*"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></label>
             <div style="width: 1px; background: var(--border); margin: 0 2px; align-self: stretch;"></div>
             <button class="float-btn" id="btnThemeToggle" title="Alternar Tema"></button>
-            <button class="float-btn" id="btn-undo-view" disabled title="Desfazer Ação"><svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2"/></svg></button>
-            <button class="float-btn" id="btn-redo-view" disabled title="Refazer Ação"><svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2"/></svg></button>
             <button class="float-btn" id="btn-compare" disabled title="Comparar Original"><svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20"/></svg></button>
             <button class="float-btn" id="btn-fs-view" title="Tela Cheia"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
             <button class="float-btn" id="btn-download" disabled title="Baixar Arquivo"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
@@ -586,16 +583,12 @@
             <canvas id="originalCanvas"></canvas>
             <div id="slider-line"></div>
         </div>
-        
-        <div id="brush-panel">
-            <div style="font-size:0.75rem; font-weight:normal; text-align:center;">Tamanho: <span id="brushSizeVal">40 px</span></div>
-            <input type="range" id="brushSize" min="5" max="300" value="40">
-        </div>
 
         <div id="floating-bar">
             <button class="float-btn active-tool" id="btn-tool-move" title="Mover"><svg viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M19 9l3 3-3 3M9 19l3 3-3 3M2 12h20M12 2v20"/></svg></button>
-            <button class="float-btn" id="btn-tool-erase" title="Borracha"><svg viewBox="0 0 24 24"><path d="M20 20H7L3 16C2.5 15.5 2.5 14.5 3 14L13 4C13.5 3.5 14.5 3.5 15 4L20 9C20.5 9.5 20.5 10.5 20 11L11 20H20V20Z"/></svg></button>
-            <button class="float-btn" id="btn-tool-restore" title="Restaurar"><svg viewBox="0 0 24 24"><path d="M12 19L21.5 9.5C22.3 8.7 22.3 7.4 21.5 6.6L17.4 2.5C16.6 1.7 15.3 1.7 14.5 2.5L5 12L12 19ZM5 12L2 22L12 19"/></svg></button>
+            <div style="width: 1px; background: var(--border); margin: 0 2px; align-self: stretch;"></div>
+            <button class="float-btn" id="btn-undo-view" disabled title="Desfazer Ação"><svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2"/></svg></button>
+            <button class="float-btn" id="btn-redo-view" disabled title="Refazer Ação"><svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2"/></svg></button>
             <div style="width: 1px; background: var(--border); margin: 0 2px; align-self: stretch;"></div>
             <button class="float-btn" id="btn-random-global" title="Mix Completo"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
         </div>
@@ -773,7 +766,7 @@
         let isImageInverted = false; let isShadowsInverted = false; let isMidDitherEnabled = false; let groupMethod = 'mean';
         let savedPresets = {}; let savedPalettes = {}; let currentImgGradColors = ['#FF00FF', '#00FFFF'];
         
-        let ditherCanvas = document.createElement('canvas'); let eraserCanvas = document.createElement('canvas'); let eCtx = eraserCanvas.getContext('2d', {willReadFrequently: true});
+        let ditherCanvas = document.createElement('canvas'); 
         let activeTool = 'move'; let historyArr = []; let historyIndex = -1;
         
         try { savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {}; savedPalettes = JSON.parse(localStorage.getItem('pixelarPalettes')) || {}; } catch(e) {}
@@ -847,8 +840,6 @@
             
             const igStp = document.getElementById('imgGradSteps').value; const bcDeg = document.getElementById('bdg-corDeg');
             if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'block'; } else { bcDeg.style.display = 'none'; } }
-
-            document.getElementById('brushSizeVal').textContent = document.getElementById('brushSize').value + ' px';
         }
 
         const processInputs = ['pxSize', 'estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'groupStrength', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'colorSelect'];
@@ -913,7 +904,6 @@
 
         processInputs.forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('input', () => { updateBadges(); scheduleProcess(); }); });
         renderInputs.forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('input', () => { updateBadges(); renderCanvas(); }); });
-        document.getElementById('brushSize').addEventListener('input', () => { updateBadges(); });
 
         document.getElementById('palHue').addEventListener('input', applyGlobalPaletteOffsets); document.getElementById('palSat').addEventListener('input', applyGlobalPaletteOffsets); document.getElementById('palLight').addEventListener('input', applyGlobalPaletteOffsets);
         
@@ -921,39 +911,18 @@
         document.getElementById('btn-regerar-irregular').addEventListener('click', () => { let arr = []; const style = Math.random(); let currentRadius = 10 + Math.random() * 40; for (let i = 0; i < 40; i++) { if (style < 0.33) arr.push(Math.random() > 0.5 ? (40 + Math.random() * 10) : (5 + Math.random() * 15)); else if (style < 0.66) arr.push(5 + Math.random() * 45); else { if (Math.random() < 0.4) currentRadius = 5 + Math.random() * 45; arr.push(currentRadius); } } shapes[activeShapeIndex].irregularRadii = arr; renderCanvas(); });
         document.getElementById('btnInvert').addEventListener('click', (e) => { e.stopPropagation(); currentPaletteMode = 'manual'; isImageInverted = !isImageInverted; globalCurrentPalette = globalCurrentPalette.map(c => ({r: 255-c.r, g: 255-c.g, b: 255-c.b})); setBasePalette(globalCurrentPalette); scheduleProcess(); });
 
-        const btnToolMove = document.getElementById('btn-tool-move'); const btnToolErase = document.getElementById('btn-tool-erase'); const btnToolRestore = document.getElementById('btn-tool-restore'); const brushPanel = document.getElementById('brush-panel');
-
-        function setTool(tool) {
-            activeTool = tool; btnToolMove.classList.toggle('active-tool', tool === 'move'); btnToolErase.classList.toggle('active-tool', tool === 'erase'); btnToolRestore.classList.toggle('active-tool', tool === 'restore');
-            canvasWrapper.className = tool === 'move' ? 'tool-move' : (tool === 'erase' ? 'tool-erase' : 'tool-restore');
-            if(isComparing) canvasWrapper.classList.add('comparing'); brushPanel.style.display = (tool === 'erase' || tool === 'restore') ? 'flex' : 'none';
-        }
-        btnToolMove.addEventListener('click', () => setTool('move')); btnToolErase.addEventListener('click', () => setTool('erase')); btnToolRestore.addEventListener('click', () => setTool('restore'));
-
-        let isPointerDown = false; let lastPointerX = 0, lastPointerY = 0; let lastEraserX = 0, lastEraserY = 0;
-        canvasWrapper.addEventListener('pointerdown', (e) => { isPointerDown = true; canvasWrapper.setPointerCapture(e.pointerId); const rectWrap = canvasWrapper.getBoundingClientRect(); const rectOut = canvas.getBoundingClientRect(); lastPointerX = e.clientX - rectWrap.left; lastPointerY = e.clientY - rectWrap.top; if ((activeTool === 'erase' || activeTool === 'restore') && !isComparing) applyEraser(e.clientX, e.clientY, rectOut); });
+        const btnToolMove = document.getElementById('btn-tool-move');
+        
+        let isPointerDown = false; let lastPointerX = 0, lastPointerY = 0;
+        canvasWrapper.addEventListener('pointerdown', (e) => { isPointerDown = true; canvasWrapper.setPointerCapture(e.pointerId); const rectWrap = canvasWrapper.getBoundingClientRect(); lastPointerX = e.clientX - rectWrap.left; lastPointerY = e.clientY - rectWrap.top; });
         canvasWrapper.addEventListener('pointermove', (e) => {
-            if (!isPointerDown) return; const rectWrap = canvasWrapper.getBoundingClientRect(); const rectOut = canvas.getBoundingClientRect();
+            if (!isPointerDown) return; const rectWrap = canvasWrapper.getBoundingClientRect();
             if (isComparing) { let x = Math.max(0, Math.min(e.clientX - rectWrap.left, rectWrap.width)); updateCompareSlider((x / rectWrap.width) * 100); } else if (activeTool === 'move') {
                 const currentX = e.clientX - rectWrap.left; const currentY = e.clientY - rectWrap.top; const deltaX = currentX - lastPointerX; const deltaY = currentY - lastPointerY;
                 if (shapes[activeShapeIndex]) { shapes[activeShapeIndex].offsetX += (deltaX / rectWrap.width) * 100; shapes[activeShapeIndex].offsetY += (deltaY / rectWrap.height) * 100; populateShapeForm(); } lastPointerX = currentX; lastPointerY = currentY; renderCanvas();
-            } else if (activeTool === 'erase' || activeTool === 'restore') { applyEraser(e.clientX, e.clientY, rectOut, true); }
+            }
         });
         canvasWrapper.addEventListener('pointerup', (e) => { isPointerDown = false; canvasWrapper.releasePointerCapture(e.pointerId); if (!isComparing) saveHistoryState(); });
-
-        function applyEraser(clientX, clientY, rectOut, isLine = false) {
-            if(!sourceImg || !eraserCanvas.width) return;
-            const scaleX = canvas.width / rectOut.width; const scaleY = canvas.height / rectOut.height; const canvasX = (clientX - rectOut.left) * scaleX; const canvasY = (clientY - rectOut.top) * scaleY;
-            const px = parseInt(document.getElementById('pxSize').value, 10) || 1; const origW = sourceImg.width; const origH = sourceImg.height; const smallW = Math.max(1, Math.floor(origW / px)); const smallH = Math.max(1, Math.floor(origH / px));
-            const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1; const canvasPadding = 1; const baseCanvasW = smallW * px * displayScale * canvasPadding; const baseCanvasH = smallH * px * displayScale * canvasPadding;
-            const imageScale = parseInt(document.getElementById('imageScale').value, 10) / 100; const imgW = (baseCanvasW / canvasPadding) * imageScale; const imgH = (baseCanvasH / canvasPadding) * imageScale;
-            const imgX = (baseCanvasW - imgW) / 2; const imgY = (baseCanvasH - imgH) / 2;
-            let ex = ((canvasX - imgX) / imgW) * eraserCanvas.width; let ey = ((canvasY - imgY) / imgH) * eraserCanvas.height;
-            eCtx.lineCap = 'round'; eCtx.lineJoin = 'round'; const bSize = parseInt(document.getElementById('brushSize').value, 10); eCtx.lineWidth = bSize * (eraserCanvas.width / imgW); 
-            eCtx.globalCompositeOperation = activeTool === 'erase' ? 'source-over' : 'destination-out'; eCtx.strokeStyle = 'black'; eCtx.fillStyle = 'black';
-            if (isLine) { eCtx.beginPath(); eCtx.moveTo(lastEraserX, lastEraserY); eCtx.lineTo(ex, ey); eCtx.stroke(); } else { eCtx.beginPath(); eCtx.arc(ex, ey, eCtx.lineWidth / 2, 0, Math.PI * 2); eCtx.fill(); }
-            lastEraserX = ex; lastEraserY = ey; renderCanvas();
-        }
 
         const sliderLine = document.getElementById('slider-line'); const btnCompare = document.getElementById('btn-compare'); let isComparing = false;
         btnCompare.addEventListener('click', () => { isComparing = !isComparing; if (isComparing) { btnCompare.classList.add('active-tool'); canvasWrapper.classList.add('comparing'); origCanvas.style.display = 'block'; sliderLine.style.display = 'block'; updateCompareSlider(50); } else { btnCompare.classList.remove('active-tool'); canvasWrapper.classList.remove('comparing'); origCanvas.style.display = 'none'; sliderLine.style.display = 'none'; } });
@@ -970,7 +939,7 @@
                         let loadedState = null; if(metaMatch) { try { loadedState = JSON.parse(metaMatch[1]); } catch(err) {} }
                         const img = new Image();
                         img.onload = () => {
-                            sourceImg = img; eraserCanvas.width = img.width; eraserCanvas.height = img.height; eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
+                            sourceImg = img;
                             document.getElementById('btn-download').disabled = false; document.getElementById('btn-compare').disabled = false; historyArr = []; historyIndex = -1;
                             if (isComparing) btnCompare.click();
                             if (loadedState) { applyState(loadedState); } else {
@@ -988,7 +957,7 @@
         document.getElementById('btnResetImage').addEventListener('click', () => {
             if (!originalSourceUrl) return; const img = new Image();
             img.onload = () => {
-                sourceImg = img; eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height);
+                sourceImg = img;
                 document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none'; document.getElementById('groupStrength').value = 0; groupMethod = 'mean'; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0;
                 resetAdjustments(); resetShapes(); currentPaletteMode = 'original'; globalCurrentPalette = []; setBasePalette([]); isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
                 scheduleProcess(); fitImageToView();
@@ -1103,7 +1072,7 @@
                 tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value,
                 iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value,
                 iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value,
-                iGradBld: document.getElementById('imgGradBlend').value, shps: JSON.parse(JSON.stringify(shapes)), eraser: eraserCanvas.toDataURL()
+                iGradBld: document.getElementById('imgGradBlend').value, shps: JSON.parse(JSON.stringify(shapes))
             };
         }
 
@@ -1155,12 +1124,6 @@
             if (!locks.colors) {
                 currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false;
                 if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); setBasePalette(globalCurrentPalette); }
-            }
-
-            if (p.eraser && eCtx) {
-                const img = new Image();
-                img.onload = () => { eCtx.clearRect(0,0, eraserCanvas.width, eraserCanvas.height); eCtx.globalCompositeOperation = 'source-over'; eCtx.drawImage(img, 0, 0); isRestoringState = true; scheduleProcess(); updateHistoryButtons(); };
-                img.src = p.eraser; return;
             }
 
             isRestoringState = true; scheduleProcess(); updateHistoryButtons();
@@ -1228,7 +1191,7 @@
                     const buffer = reader.result; const metaStr = "PIXELAR_META:" + JSON.stringify(getStateObject());
                     const metaBytes = new TextEncoder().encode(metaStr); const combined = new Uint8Array(buffer.byteLength + metaBytes.length);
                     combined.set(new Uint8Array(buffer), 0); combined.set(metaBytes, buffer.byteLength);
-                    const finalBlob = new Blob([combined], {type: 'image/png'}); const url = URL.createObjectURL(finalBlob);
+                    finalBlob = new Blob([combined], {type: 'image/png'}); const url = URL.createObjectURL(finalBlob);
                     triggerDownload(url); setTimeout(() => URL.revokeObjectURL(url), 1500);
                 };
                 reader.readAsArrayBuffer(blob);
@@ -1593,6 +1556,13 @@
             const imgX = (baseCanvasW - imgW) / 2;
             const imgY = (baseCanvasH - imgH) / 2;
 
+            if (sourceImg && oCtx) {
+                origCanvas.width = baseCanvasW;
+                origCanvas.height = baseCanvasH;
+                oCtx.clearRect(0, 0, baseCanvasW, baseCanvasH);
+                oCtx.drawImage(sourceImg, 0, 0, sourceImg.width, sourceImg.height, imgX, imgY, imgW, imgH);
+            }
+
             const shapeCanvasFront = document.createElement('canvas'); shapeCanvasFront.width = w; shapeCanvasFront.height = h;
             const shapeCanvasBack = document.createElement('canvas'); shapeCanvasBack.width = w; shapeCanvasBack.height = h;
             const sCtxF = shapeCanvasFront.getContext('2d', { willReadFrequently: true });
@@ -1740,12 +1710,6 @@
             
             ctx.drawImage(ditherCanvas, 0, 0, w, h, imgX, imgY, imgW, imgH);
             
-            if (eraserCanvas.width > 0) {
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.drawImage(eraserCanvas, 0, 0, eraserCanvas.width, eraserCanvas.height, imgX, imgY, imgW, imgH);
-                ctx.globalCompositeOperation = 'source-over';
-            }
-
             isRestoringState = false;
             saveHistoryState();
         }
