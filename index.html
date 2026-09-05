@@ -40,7 +40,7 @@
         ::-webkit-scrollbar-thumb { background: var(--bg); border: 1px solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); }
         ::-webkit-scrollbar-thumb:hover { background: var(--text); }
 
-        body.is-fullscreen #controls, body.is-fullscreen #floating-bar,
+        body.is-fullscreen #controls, body.is-fullscreen #floating-bar, body.is-fullscreen #video-timeline-bar,
         body.is-fullscreen #top-bar, body.is-fullscreen #zoom-controls { display: none !important; }
         body.is-fullscreen #view { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; padding: 0; background: var(--bg); border: none; }
         body.is-fullscreen #canvas-wrapper { max-width: 100vw; max-height: 100vh; }
@@ -116,12 +116,14 @@
         #loading-bar { height: 100%; width: 0%; background: var(--text); transition: width 0.1s linear; display: flex; align-items: center; justify-content: flex-end; overflow: hidden; }
         #loading-text { position: absolute; width: 100%; text-align: center; top: 2px; font-size: 12px; font-weight: bold; color: var(--bg); mix-blend-mode: difference; }
 
-        #top-bar, #floating-bar, #zoom-controls { display: flex; gap: 6px; background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); padding: 6px; border-radius: 0; z-index: 50; box-shadow: 2px 2px 0 var(--shadow); }
-        #top-bar { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); align-items: center; }
+        #top-bar, #floating-bar, #video-timeline-bar, #zoom-controls { display: flex; gap: 6px; background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); padding: 6px; border-radius: 0; z-index: 50; box-shadow: 2px 2px 0 var(--shadow); }
+        #top-bar { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); align-items: center; width: auto; max-width: 90%; }
         #floating-bar { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); align-items: center; }
         #zoom-controls { position: absolute; bottom: 16px; right: 16px; flex-direction: column; }
+        
+        #video-timeline-bar { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; align-items: center; }
 
-        .float-btn { background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); cursor: pointer; padding: 6px; color: var(--text); border-radius: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-shadow: 1px 1px 0 var(--shadow); width: 40px; height: 40px; min-width: 40px; }
+        .float-btn { background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); cursor: pointer; padding: 6px; color: var(--text); border-radius: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-shadow: 1px 1px 0 var(--shadow); width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
         .float-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
         
         #btn-exit-fullscreen { position: fixed; top: 16px; left: 16px; z-index: 100001; display: none; padding: 8px var(--pad); background: var(--bg); color: var(--text); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-weight: normal; text-transform: uppercase; cursor: pointer; box-shadow: 2px 2px 0 var(--shadow); min-height: 44px; font-size: var(--font-size-base);}
@@ -131,7 +133,7 @@
         .modal-content h3 { font-size: var(--font-size-title); text-transform: uppercase; border-bottom: var(--border-width) solid var(--border); padding-bottom: 6px; margin-bottom: 6px; font-weight: normal; background: var(--accent); color: #FFFFFF; padding-left: 8px;}
         .modal-desc { font-size: var(--font-size-base); color: var(--text); margin-bottom: 8px; line-height: 1.4; }
 
-        #toast-container { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 100002; pointer-events: none; }
+        #toast-container { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 100002; pointer-events: none; }
         .toast { background: var(--bg); color: var(--text); padding: 12px 20px; border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-size: var(--font-size-base); text-transform: uppercase; box-shadow: 2px 2px 0 var(--shadow); transform: translateY(10px); opacity: 0; transition: transform 0.1s, opacity 0.1s; }
         .toast.show { opacity: 1; transform: translateY(0); }
 
@@ -141,6 +143,8 @@
         .lock-btn .icon-lock { display: none; }
         .lock-btn.active-state .icon-unlock { display: none; }
         .lock-btn.active-state .icon-lock { display: inline; }
+
+        #videoTimeDisplay { font-size: var(--font-size-small); font-weight: bold; min-width: 45px; text-align: center; }
 
         @media (max-width: 768px) {
             body { flex-direction: column-reverse; } 
@@ -163,6 +167,7 @@
             .icon-btn, .float-btn { width: 36px; height: 36px; min-width: 36px; }
             .std-btn { min-height: 36px; padding: 6px 10px; }
             input[type="range"] { min-height: 32px; }
+            #video-timeline-bar { bottom: 64px; padding: 4px 8px; }
         }
     </style>
 </head>
@@ -180,6 +185,7 @@
             </div>
 
             <div class="panels-container active">
+                <!-- Group Ajustes -->
                 <div class="control-group active" id="group-ajustes">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg><span>Expo.</span></button>
@@ -209,6 +215,7 @@
                     </div>
                 </div>
 
+                <!-- Group Pixel -->
                 <div class="control-group" id="group-pixel">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-pxSize"><span class="badge" id="bdg-px"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Tamanho</span></button>
@@ -250,6 +257,7 @@
                     </div>
                 </div>
 
+                <!-- Group Cores -->
                 <div class="control-group" id="group-cores">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-corPal"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Paleta</span></button>
@@ -316,6 +324,7 @@
                     </div>
                 </div>
 
+                <!-- Group Filtros -->
                 <div class="control-group" id="group-filtros">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-filTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
@@ -333,6 +342,7 @@
                     </div>
                 </div>
 
+                <!-- Group Configurações -->
                 <div class="control-group" id="group-config">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
@@ -376,18 +386,23 @@
                 <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
             </label>
             <div style="width: 1px; background: var(--border-light); margin: 0 2px; align-self: stretch;"></div>
+
             <button class="float-btn" id="btnThemeToggle" title="Alternar Tema"></button>
             <button class="float-btn" id="btn-compare" disabled title="Comparar Original"><svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20"/></svg></button>
             <button class="float-btn" id="btn-fs-view" title="Tela Cheia"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
-            <!-- Controle de Vídeo (Oculto por padrão) -->
-            <button class="float-btn hidden-ui" id="btn-play-pause" title="Play/Pause"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
         </div>
 
         <div id="canvas-wrapper">
-            <video id="sourceVideo" style="display:none;" muted playsinline loop crossorigin="anonymous"></video>
+            <video id="sourceVideo" style="display:none;" crossorigin="anonymous"></video>
             <canvas id="outputCanvas"></canvas>
             <canvas id="originalCanvas"></canvas>
             <div id="slider-line"></div>
+        </div>
+        
+        <!-- Timeline Bar Exclusiva -->
+        <div id="video-timeline-bar" class="hidden-ui">
+            <span id="videoTimeDisplay">00:00</span>
+            <input type="range" id="videoTimeline" min="0" max="100" value="0" style="flex: 1;">
         </div>
 
         <div id="floating-bar">
@@ -408,7 +423,7 @@
         <button id="btn-exit-fullscreen" title="Sair da Tela Cheia"><svg viewBox="0 0 24 24" style="width:12px;height:12px;margin-right:4px;"><path d="M15 18l-6-6 6-6"/></svg> VOLTAR</button>
     </div>
 
-    <!-- MODALS AND NOTIFICATIONS -->
+    <!-- MODALS E NOTIFICAÇÕES -->
     <div id="toast-container"></div>
 
     <div id="universalExportModal" class="modal">
@@ -416,20 +431,31 @@
             <h3 id="exportModalTitle">Exportar Arte</h3>
             <div class="modal-desc" id="exportModalDesc">Escolha o formato de saída ideal para o seu projeto.</div>
             
-            <!-- Opções de Imagem -->
             <div id="export-image-options" style="display: flex; flex-direction: column; gap: 8px;">
                 <button id="dl-png" class="std-btn">Imagem PNG (Área útil)</button>
                 <button id="dl-svg" class="std-btn">Vetor SVG (Área útil)</button>
                 <button id="dl-txt" class="std-btn">Apenas Configurações (.TXT)</button>
             </div>
             
-            <!-- Opções de Vídeo -->
             <div id="export-video-options" style="display: none; flex-direction: column; gap: 8px;">
                 <div style="background: var(--panel); border: 1px dashed var(--text); padding: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 4px;">
-                    ⚠️ O vídeo será reproduzido <b>com som</b> em tempo real para gravação.<br>
+                    Selecione a qualidade desejada para o processamento em duas etapas.
                 </div>
-                <button class="std-btn" id="btnChoiceMp4" style="background:var(--accent); color:#fff; font-weight:bold;">Exportar em MP4</button>
-                <button class="std-btn" id="btnChoiceWebm">Exportar em WebM (Padrão)</button>
+                
+                <div class="slider-row" style="margin-bottom: 8px;">
+                    <select id="exportFps" style="flex:1;">
+                        <option value="30">30 FPS</option>
+                        <option value="60" selected>60 FPS</option>
+                    </select>
+                    <select id="exportRes" style="flex:1;">
+                        <option value="720">HD (720p)</option>
+                        <option value="1080" selected>Full HD (1080p)</option>
+                        <option value="2160">4K (2160p)</option>
+                    </select>
+                </div>
+
+                <button class="std-btn" id="btnChoiceMp4" style="background:var(--accent); color:#fff; font-weight:bold;">Renderizar MP4 Sincronizado</button>
+                <button class="std-btn" id="btnChoiceWebm">Renderizar WebM Sincronizado</button>
             </div>
 
             <button id="dl-close" class="std-btn" style="margin-top: 8px; border-color: transparent;">Cancelar</button>
@@ -541,14 +567,13 @@
 
         function initPresetPool() { sessionPresetsPool = []; Object.keys(THEMES).forEach(k => sessionPresetsPool.push({ type: 'theme', name: k })); Object.keys(savedPresets).forEach(k => sessionPresetsPool.push({ type: 'preset', name: k })); sessionPresetsPool = sessionPresetsPool.sort(() => Math.random() - 0.5); isNextRandomAPreset = true; }
 
-        // Elementos Canvas (Comuns)
         const canvas = document.getElementById('outputCanvas'); const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const origCanvas = document.getElementById('originalCanvas'); const oCtx = origCanvas.getContext('2d', { willReadFrequently: true });
         const smallCanvas = document.createElement('canvas'); const sCtx = smallCanvas.getContext('2d', { willReadFrequently: true });
         const ditherCanvas = document.createElement('canvas'); const dCtx = ditherCanvas.getContext('2d', { willReadFrequently: true });
 
         // ==========================================
-        // SISTEMA DE CACHE E OTIMIZAÇÃO EXTREMA
+        // SISTEMA DE CACHE E OTIMIZAÇÃO
         // ==========================================
         let colorLUTCache = new Uint8Array(32768);
         let lastColorLUTHash = "";
@@ -603,7 +628,6 @@
         }
 
         let sharedBufferShift = new Uint8ClampedArray(0);
-
         let sharedGradCanvas = document.createElement('canvas');
         let sharedGradCtx = sharedGradCanvas.getContext('2d', { willReadFrequently: true });
         let cachedGradHash = "";
@@ -618,9 +642,7 @@
             const gBlend = document.getElementById('imgGradBlend').value;
             const hash = `${w}x${h}_${gType}_${gAngle}_${gSteps}_${gPos}_${gSmooth}_${gBlend}_${currentImgGradColors.join('-')}`;
             
-            if (cachedGradData && cachedGradHash === hash) {
-                return { d: cachedGradData, b: gBlend };
-            }
+            if (cachedGradData && cachedGradHash === hash) return { d: cachedGradData, b: gBlend };
             
             sharedGradCanvas.width = w; sharedGradCanvas.height = h;
             let grad;
@@ -654,25 +676,33 @@
             sharedGradCtx.fillStyle = grad; sharedGradCtx.fillRect(0,0,w,h); 
             cachedGradData = sharedGradCtx.getImageData(0,0,w,h).data;
             cachedGradHash = hash;
-            
             return { d: cachedGradData, b: gBlend };
         }
 
         // ==========================================
-        // GERENCIADOR DE MEDIA E UPLOAD
+        // GERENCIADOR DE MEDIA E UPLOAD (SLIDER ADDED)
         // ==========================================
-        let isVideoPlaying = false; 
-        let isRecording = false; 
-        let mediaRecorder; let recordedChunks = [];
-        const btnPlayPause = document.getElementById('btn-play-pause');
+        let isVideoRendering = false;
+        let renderFrames = [];
+
+        const videoTimeline = document.getElementById('videoTimeline');
+        const videoTimeDisplay = document.getElementById('videoTimeDisplay');
         const btnDownloadConfig = document.getElementById('btnDownloadConfig');
 
-        function togglePlayPause() {
-            if(currentMediaType !== 'video' || !hasMediaLoaded) return;
-            if(isVideoPlaying) { sourceVideo.pause(); isVideoPlaying = false; btnPlayPause.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`; }
-            else { sourceVideo.play(); isVideoPlaying = true; btnPlayPause.innerHTML = `<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`; }
-        }
-        btnPlayPause.addEventListener('click', togglePlayPause);
+        videoTimeline.addEventListener('input', (e) => {
+            if (currentMediaType !== 'video' || !hasMediaLoaded || isVideoRendering) return;
+            let time = (e.target.value / 100) * sourceVideo.duration;
+            sourceVideo.currentTime = time;
+            let m = Math.floor(time / 60).toString().padStart(2, '0');
+            let s = Math.floor(time % 60).toString().padStart(2, '0');
+            videoTimeDisplay.textContent = `${m}:${s}`;
+        });
+
+        sourceVideo.addEventListener('seeked', () => {
+            if (currentMediaType === 'video' && !isVideoRendering) {
+                processVideoFrameSynchronously();
+            }
+        });
 
         function fitMediaToView() {
             if (!hasMediaLoaded) return;
@@ -701,39 +731,36 @@
                     const file = e.target.files[0]; if(!file) return; 
                     document.getElementById('welcomeMsg').style.display = 'none'; 
                     canvasWrapper.style.display = 'block'; currentZoom = 1; updateZoom();
-                    
                     const url = URL.createObjectURL(file);
                     originalSourceUrl = url;
                     
                     currentMediaType = file.type.startsWith('video/') ? 'video' : 'image';
                     
-                    btnPlayPause.classList.toggle('hidden-ui', currentMediaType !== 'video');
+                    // Exibe a barra de timeline apenas se for vídeo
+                    const timelineBar = document.getElementById('video-timeline-bar');
+                    if(currentMediaType === 'video') timelineBar.classList.remove('hidden-ui');
+                    else timelineBar.classList.add('hidden-ui');
+
                     document.getElementById('set-corDeg').style.display = currentMediaType === 'video' ? 'none' : 'flex';
                     
                     btnDownloadConfig.textContent = currentMediaType === 'video' ? 'Gravar Vídeo' : 'Exportar Arte';
                     if (currentMediaType === 'video') {
-                        btnDownloadConfig.style.background = 'var(--accent)';
-                        btnDownloadConfig.style.color = '#fff';
-                        btnDownloadConfig.style.fontWeight = 'bold';
+                        btnDownloadConfig.style.background = 'var(--accent)'; btnDownloadConfig.style.color = '#fff'; btnDownloadConfig.style.fontWeight = 'bold';
                     } else {
-                        btnDownloadConfig.style.background = 'var(--bg)';
-                        btnDownloadConfig.style.color = 'var(--text)';
-                        btnDownloadConfig.style.fontWeight = 'normal';
+                        btnDownloadConfig.style.background = 'var(--bg)'; btnDownloadConfig.style.color = 'var(--text)'; btnDownloadConfig.style.fontWeight = 'normal';
                     }
 
                     document.getElementById('btn-compare').disabled = false;
                     historyArr = []; historyIndex = -1; initPresetPool();
 
                     if (currentMediaType === 'image') {
-                        if(isVideoPlaying) { sourceVideo.pause(); isVideoPlaying = false; }
                         const slice = file.slice(Math.max(0, file.size - 3000)); const txtReader = new FileReader();
                         txtReader.onload = (eTxt) => {
                             const tailStr = eTxt.target.result; const metaMatch = tailStr.match(/PIXELAR_META:(\{.*\})/);
                             let loadedState = null; if(metaMatch) { try { loadedState = JSON.parse(metaMatch[1]); } catch(err) {} }
                             const img = new Image();
                             img.onload = () => {
-                                sourceImg = img;
-                                hasMediaLoaded = true;
+                                sourceImg = img; hasMediaLoaded = true;
                                 if (isComparing) btnCompare.click();
                                 if (loadedState) { applyState(loadedState); } else { resetToDefaultState(); scheduleAppProcess(); }
                                 fitMediaToView(); e.target.value = ''; 
@@ -743,19 +770,10 @@
                         sourceVideo.src = url;
                         sourceVideo.onloadedmetadata = () => {
                             hasMediaLoaded = true;
-                            sourceVideo.currentTime = 0.5;
                             if (isComparing) btnCompare.click();
                             fitMediaToView(); e.target.value = '';
-                            resetToDefaultState(); scheduleAppProcess();
-                            
-                            isVideoPlaying = true; sourceVideo.play();
-                            btnPlayPause.innerHTML = `<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
-                            
-                            if ('requestVideoFrameCallback' in sourceVideo) {
-                                sourceVideo.requestVideoFrameCallback(onVideoFrame);
-                            } else {
-                                requestAnimationFrame(onVideoFrame);
-                            }
+                            resetToDefaultState();
+                            sourceVideo.currentTime = 0; // Dispara o 'seeked' e processa o frame inicial
                         };
                     }
                 });
@@ -767,12 +785,14 @@
             document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0; document.getElementById('imageScale').value = 100;
             resetAdjustments(); currentPaletteMode = 'original'; globalCurrentPalette = []; referencePalette = []; setBasePalette([]);
             isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
+            if(currentMediaType === 'video') { videoTimeline.value = 0; videoTimeDisplay.textContent = '00:00'; }
         }
 
         document.getElementById('btnResetImage').addEventListener('click', () => {
             if (!originalSourceUrl || !hasMediaLoaded) return; 
             resetToDefaultState();
-            scheduleAppProcess(); fitMediaToView();
+            if(currentMediaType === 'video') sourceVideo.currentTime = 0; else scheduleAppProcess(); 
+            fitMediaToView();
         });
 
         document.getElementById('importImgConfig').addEventListener('change', (e) => { 
@@ -981,36 +1001,20 @@
         // ROTEAMENTO UNIVERSAL DE PROCESSAMENTO
         // ==========================================
         let currentProcessId = 0;
-        let uiUpdateTimeout = null;
         
         function scheduleAppProcess() {
-            if(!hasMediaLoaded) return;
+            if(!hasMediaLoaded || isVideoRendering) return;
             if (currentMediaType === 'image') {
                 currentProcessId++; const myId = currentProcessId;
                 setTimeout(() => { if (myId === currentProcessId) { showLoading(); processImageCoreEffects(myId); } }, 50);
             } else if (currentMediaType === 'video') {
-                if(!isVideoPlaying && !isRecording) {
-                    clearTimeout(uiUpdateTimeout);
-                    uiUpdateTimeout = setTimeout(() => { processVideoFrameSynchronously(); }, 32);
-                }
-            }
-        }
-
-        function onVideoFrame(now, metadata) {
-            if (currentMediaType === 'video' && (isVideoPlaying || isRecording)) {
-                processVideoFrameSynchronously();
-            }
-            if (currentMediaType === 'video') {
-                if ('requestVideoFrameCallback' in sourceVideo) {
-                    sourceVideo.requestVideoFrameCallback(onVideoFrame);
-                } else {
-                    requestAnimationFrame(onVideoFrame);
-                }
+                currentProcessId++; const myId = currentProcessId;
+                setTimeout(() => { if (myId === currentProcessId) { processVideoFrameSynchronously(); } }, 32);
             }
         }
 
         // ==========================================
-        // ENGINE: IMAGEM (ASSÍNCRONO C/ YIELD)
+        // ENGINE: IMAGEM (ASSÍNCRONO)
         // ==========================================
         let engineDataCache = null;
         async function processImageCoreEffects(myId) {
@@ -1158,7 +1162,6 @@
             if (document.getElementById('fillBg').checked) { ctx.fillStyle = document.getElementById('btnBgColor').getAttribute('data-color'); ctx.fillRect(0,0,baseCanvasW,baseCanvasH); } else { ctx.clearRect(0,0,baseCanvasW,baseCanvasH); }
             ctx.drawImage(ditherCanvas, 0, 0, w, h, 0, 0, baseCanvasW, baseCanvasH);
 
-            // Desenha as bordas fisicamente finas no final
             const edgePixelSize = parseInt(document.getElementById('edgePixelSize').value, 10);
             if (edgePixelSize > 0) {
                 ctx.fillStyle = document.getElementById('edgeColor').value;
@@ -1185,9 +1188,9 @@
         }
 
         // ==========================================
-        // ENGINE: VÍDEO (SÍNCRONO LIMITADO)
+        // ENGINE: VÍDEO (SÍNCRONO)
         // ==========================================
-        function processVideoFrameSynchronously() {
+        function processVideoFrameSynchronously(isExporting = false, targetRes = null) {
             if(!hasMediaLoaded || !sourceVideo.videoWidth) return;
 
             const px = parseInt(document.getElementById('pxSize').value, 10);
@@ -1235,11 +1238,20 @@
                 let fluma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2]; if(fluma < minL) minL = fluma; if(fluma > maxL) maxL = fluma;
             }
 
-            const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1; const canvasPadding = 1;
-            const baseCanvasW = smallW * px * displayScale * canvasPadding; const baseCanvasH = smallH * px * displayScale * canvasPadding;
+            const maxDim = Math.max(origW, origH); 
+            let displayScale = maxDim > 2000 ? 2000 / maxDim : 1; 
+            
+            // Força a escala na hora de exportar para atingir a resolução escolhida no modal
+            if (isExporting && targetRes) {
+                displayScale = targetRes / (smallH * px);
+            }
+            
+            const canvasPadding = 1;
+            const baseCanvasW = Math.round(smallW * px * displayScale * canvasPadding); 
+            const baseCanvasH = Math.round(smallH * px * displayScale * canvasPadding);
             canvas.width = baseCanvasW; canvas.height = baseCanvasH; ctx.imageSmoothingEnabled = false;
 
-            if (isComparing && oCtx) {
+            if (isComparing && oCtx && !isVideoRendering) {
                 origCanvas.width = baseCanvasW; origCanvas.height = baseCanvasH; oCtx.clearRect(0, 0, baseCanvasW, baseCanvasH);
                 const scaledCompW = baseCanvasW * imageScale; const scaledCompH = baseCanvasH * imageScale;
                 const offsetCompX = (baseCanvasW - scaledCompW) / 2; const offsetCompY = (baseCanvasH - scaledCompH) / 2;
@@ -1319,16 +1331,21 @@
             }
 
             isRestoringState = false;
+            
+            // Adicionado: Salva o estado no histórico se não for durante a gravação/exportação
+            if (!isExporting) {
+                saveHistoryState();
+            }
         }
 
         // ==========================================
-        // EXPORTAÇÃO (IMAGEM E VÍDEO)
+        // EXPORTAÇÃO (IMAGEM E GRAVAÇÃO TWO-PASS)
         // ==========================================
         const exportModal = document.getElementById('universalExportModal');
 
         function openExportModal() {
             if (!hasMediaLoaded) { showToast("Carregue uma mídia primeiro."); return; }
-            if (isRecording) { showToast("Uma gravação já está em andamento."); return; }
+            if (isVideoRendering) { showToast("Uma gravação já está em andamento."); return; }
             
             document.getElementById('export-image-options').style.display = currentMediaType === 'image' ? 'flex' : 'none';
             document.getElementById('export-video-options').style.display = currentMediaType === 'video' ? 'flex' : 'none';
@@ -1392,33 +1409,122 @@
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt)); el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el); exportModal.style.display = 'none';
         });
 
-        // Gravação de Vídeo
-        document.getElementById('btnChoiceMp4').addEventListener('click', () => { exportModal.style.display = 'none'; startVideoRecording('video/mp4', 'mp4'); });
-        document.getElementById('btnChoiceWebm').addEventListener('click', () => { exportModal.style.display = 'none'; startVideoRecording('video/webm; codecs=vp9', 'webm'); });
 
-        function startVideoRecording(mimeType, fileExtension) {
-            if (!MediaRecorder.isTypeSupported(mimeType)) { showToast("Formato não suportado. Alternando para WebM."); mimeType = 'video/webm'; fileExtension = 'webm'; }
-            showToast(`Iniciando gravação a 60 FPS em .${fileExtension}... Aguarde!`);
-            isRecording = true; document.getElementById('btnRecordVideoFloat').style.background = '#800000'; recordedChunks = [];
+        // ==========================================
+        // SISTEMA TWO-PASS DE RENDER DE VÍDEO
+        // ==========================================
+        document.getElementById('btnChoiceMp4').addEventListener('click', () => { exportModal.style.display = 'none'; startTwoPassRender('mp4'); });
+        document.getElementById('btnChoiceWebm').addEventListener('click', () => { exportModal.style.display = 'none'; startTwoPassRender('webm'); });
+
+        async function startTwoPassRender(fileExtension) {
+            isVideoRendering = true;
+            renderFrames = [];
+            showToast("Etapa 1 de 2: Processando quadros na resolução selecionada (Aguarde...)");
+            document.getElementById('loading-bar-container').style.display = 'block';
             
-            sourceVideo.pause(); sourceVideo.currentTime = 0; sourceVideo.loop = false; sourceVideo.muted = false;
-            sourceVideo.onseeked = () => {
-                sourceVideo.onseeked = null; const canvasStream = canvas.captureStream(60); let combinedStream = canvasStream;
-                if (typeof sourceVideo.captureStream === 'function') { const videoStream = sourceVideo.captureStream(); const audioTracks = videoStream.getAudioTracks(); if (audioTracks.length > 0) { combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]); } } 
-                else if (sourceVideo.mozCaptureStream) { const videoStream = sourceVideo.mozCaptureStream(); const audioTracks = videoStream.getAudioTracks(); if (audioTracks.length > 0) { combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]); } }
+            sourceVideo.pause();
+            sourceVideo.muted = true;
+            
+            let duration = sourceVideo.duration;
+            let videoFPS = parseInt(document.getElementById('exportFps').value, 10);
+            let exportRes = parseInt(document.getElementById('exportRes').value, 10);
+            let totalFrames = Math.ceil(duration * videoFPS);
+            let currentFrame = 0;
 
-                try { mediaRecorder = new MediaRecorder(combinedStream, { mimeType: mimeType, videoBitsPerSecond: 8000000 }); } catch (e) { mediaRecorder = new MediaRecorder(combinedStream); }
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || `video/${fileExtension}` }); const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `pixelar_video_${Date.now()}.${fileExtension}`; document.body.appendChild(a); a.click();
-                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-                    isRecording = false; sourceVideo.loop = true; sourceVideo.muted = true; document.getElementById('btnRecordVideoFloat').style.background = 'var(--bg)';
-                    showToast("Gravação concluída com sucesso."); togglePlayPause();
-                };
-                mediaRecorder.start(100); sourceVideo.play();
+            sourceVideo.onseeked = async () => {
+                // Passa os parâmetros de exportação para escalar a arte baseada na resolução final
+                processVideoFrameSynchronously(true, exportRes);
+
+                let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.90));
+                renderFrames.push(URL.createObjectURL(blob));
+
+                currentFrame++;
+                setProgress(Math.round((currentFrame / totalFrames) * 100));
+
+                let nextTime = currentFrame / videoFPS;
+                
+                if (nextTime < duration && currentFrame < totalFrames) {
+                    sourceVideo.currentTime = nextTime;
+                } else {
+                    sourceVideo.onseeked = null;
+                    startRenderPhase2(fileExtension, videoFPS);
+                }
             };
-            sourceVideo.onended = () => { if(isRecording && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); };
+            sourceVideo.currentTime = 0; // Aciona o loop onseeked
+        }
+
+        function startRenderPhase2(fileExtension, videoFPS) {
+            showToast("Etapa 2 de 2: Gravando arquivo de vídeo final...");
+            setProgress(0);
+
+            let mimeType = fileExtension === 'mp4' ? 'video/mp4' : 'video/webm; codecs=vp9';
+            if (!MediaRecorder.isTypeSupported(mimeType)) { mimeType = 'video/webm'; fileExtension = 'webm'; }
+
+            const canvasStream = canvas.captureStream(videoFPS);
+            let combinedStream = canvasStream;
+            let videoStream = (sourceVideo.captureStream || sourceVideo.mozCaptureStream).call(sourceVideo);
+            let audioTracks = videoStream.getAudioTracks();
+            
+            if (audioTracks.length > 0) {
+                combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
+            }
+
+            let recorder;
+            try { recorder = new MediaRecorder(combinedStream, { mimeType: mimeType, videoBitsPerSecond: 16000000 }); } 
+            catch (e) { recorder = new MediaRecorder(combinedStream); }
+
+            let chunks = [];
+            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const finalBlob = new Blob(chunks, { type: recorder.mimeType });
+                const url = URL.createObjectURL(finalBlob);
+                const a = document.createElement('a'); a.href = url; a.download = `pixelar_video_${Date.now()}.${fileExtension}`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                // Limpeza de RAM
+                renderFrames.forEach(u => URL.revokeObjectURL(u));
+                renderFrames = [];
+                isVideoRendering = false;
+                document.getElementById('loading-bar-container').style.display = 'none';
+                
+                // Retorna o canvas para o tamanho padrão de visualização
+                processVideoFrameSynchronously();
+                showToast("Gravação concluída em alta qualidade!");
+            };
+
+            // Loop de reprodução sincronizado com tempo real
+            sourceVideo.currentTime = 0;
+            sourceVideo.muted = false;
+
+            let currentPlaybackFrame = 0;
+            let playImg = new Image();
+            
+            recorder.start();
+            sourceVideo.play();
+
+            playImg.onload = () => {
+                ctx.drawImage(playImg, 0, 0);
+                currentPlaybackFrame++;
+                setProgress(Math.round((currentPlaybackFrame / renderFrames.length) * 100));
+                
+                if (currentPlaybackFrame < renderFrames.length) {
+                    let nextTime = currentPlaybackFrame / videoFPS;
+                    let waitTime = (nextTime - sourceVideo.currentTime) * 1000;
+                    
+                    setTimeout(() => {
+                        playImg.src = renderFrames[currentPlaybackFrame];
+                    }, Math.max(0, waitTime));
+                } else {
+                    setTimeout(() => {
+                        recorder.stop();
+                        sourceVideo.pause();
+                    }, 100);
+                }
+            };
+            
+            // Inicia cadeia de reprodução
+            playImg.src = renderFrames[0];
         }
     </script>
 </body>
