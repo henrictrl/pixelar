@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pixelar Studio (Imagem & Vídeo)</title>
+    <title>Pixelar</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3Crect x='9' y='0' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='0' y='9' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='9' y='9' width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3C/svg%3E">
     <style>
         @font-face {
@@ -182,8 +182,7 @@
             <div class="panels-container active">
                 <div class="control-group active" id="group-ajustes">
                     <div class="m-sub-nav">
-                        <button class="m-sub-btn active" data-target="set-est"><span class="badge" id="bdg-est"></span><svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon></svg><span>Estr.</span></button>
-                        <button class="m-sub-btn" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg><span>Expo.</span></button>
+                        <button class="m-sub-btn active" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg><span>Expo.</span></button>
                         <button class="m-sub-btn" data-target="set-bri"><span class="badge" id="bdg-bri"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19"></path></svg><span>Bril.</span></button>
                         <button class="m-sub-btn" data-target="set-con"><span class="badge" id="bdg-con"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"></path></svg><span>Cont.</span></button>
                         <button class="m-sub-btn" data-target="set-tem"><span class="badge" id="bdg-tem"></span><svg viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg><span>Temp.</span></button>
@@ -194,8 +193,7 @@
                         <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
-                        <div class="set-item active" id="set-est"><div class="panel-label">Estrutura</div><div class="slider-row"><input type="range" id="estrutura" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="estrutura"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
-                        <div class="set-item" id="set-exp"><div class="panel-label">Exposição</div><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"><button class="icon-btn lock-btn" data-target="exposicao"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
+                        <div class="set-item active" id="set-exp"><div class="panel-label">Exposição</div><div class="slider-row"><input type="range" id="exposicao" min="-100" max="100" value="0"><button class="icon-btn lock-btn" data-target="exposicao"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
                         <div class="set-item" id="set-bri"><div class="panel-label">Brilho</div><div class="slider-row"><input type="range" id="brilho" min="-100" max="100" value="0"><button class="icon-btn lock-btn" data-target="brilho"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
                         <div class="set-item" id="set-con"><div class="panel-label">Contraste</div><div class="slider-row"><input type="range" id="contraste" min="-100" max="100" value="0"><button class="icon-btn lock-btn" data-target="contraste"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
                         <div class="set-item" id="set-tem"><div class="panel-label">Temperatura</div><div class="slider-row"><input type="range" id="temperatura" min="-100" max="100" value="0"><button class="icon-btn lock-btn" data-target="temperatura"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
@@ -214,7 +212,6 @@
                 <div class="control-group" id="group-pixel">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-pxSize"><span class="badge" id="bdg-px"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Tamanho</span></button>
-                        <button class="m-sub-btn" data-target="set-pxGroup"><span class="badge" id="bdg-grp"></span><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect></svg><span>Agrupar</span></button>
                         <button class="m-sub-btn" data-target="set-dithPat"><span class="badge" id="bdg-dPat"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg><span>Padrão</span></button>
                         <button class="m-sub-btn" data-target="set-dithSca"><span class="badge" id="bdg-dSca"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Escala</span></button>
                         <button class="m-sub-btn" data-target="set-dithInt"><span class="badge" id="bdg-dInt"></span><svg viewBox="0 0 24 24"><path d="M4 21v-4m0-4V3m8 18v-6m0-4V3m8 18v-8m0-4V3"></path></svg><span>Intensid.</span></button>
@@ -228,14 +225,6 @@
                                 <input type="range" id="pxSize" min="1" max="64" value="1">
                                 <button class="icon-btn lock-btn" data-target="pxSize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                                 <button class="icon-btn shuffle-btn" data-target="pxSize"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
-                            </div>
-                        </div>
-                        <div class="set-item" id="set-pxGroup"><div class="panel-label">Nível de Agrupamento</div>
-                            <div class="slider-row">
-                                <input type="range" id="groupStrength" min="0" max="100" value="0">
-                                <button class="icon-btn lock-btn" data-target="groupStrength"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
-                                <button id="btnGroupMean" class="icon-btn active-state" title="Modo Média"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg></button>
-                                <button id="btnGroupMode" class="icon-btn" title="Modo Moda"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="4" height="10" fill="currentColor"/><rect x="10" y="4" width="4" height="16" fill="currentColor"/><rect x="16" y="14" width="4" height="6" fill="currentColor"/></svg></button>
                             </div>
                         </div>
                         <div class="set-item" id="set-dithPat"><div class="panel-label">Padrão Dither</div>
@@ -438,7 +427,6 @@
             <div id="export-video-options" style="display: none; flex-direction: column; gap: 8px;">
                 <div style="background: var(--panel); border: 1px dashed var(--text); padding: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 4px;">
                     ⚠️ O vídeo será reproduzido <b>com som</b> em tempo real para gravação.<br>
-                    <small>Dica: Para vídeos lisos a 60fps, evite efeitos pesados como <b>Agrupar</b> e <b>Estrutura</b>.</small>
                 </div>
                 <button class="std-btn" id="btnChoiceMp4" style="background:var(--accent); color:#fff; font-weight:bold;">Exportar em MP4</button>
                 <button class="std-btn" id="btnChoiceWebm">Exportar em WebM (Padrão)</button>
@@ -510,7 +498,7 @@
         themeBtn.addEventListener('click', () => { if (rootHtml.getAttribute('data-theme') === 'dark') { rootHtml.removeAttribute('data-theme'); localStorage.setItem('pixelarTheme', 'light'); } else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); } updateThemeIcon(); });
 
         // Locks
-        const lockTargets = [ 'pxSize', 'groupStrength', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight' ];
+        const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight' ];
         const locks = {}; lockTargets.forEach(t => locks[t] = false);
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const target = btn.getAttribute('data-target'); if (locks[target] !== undefined) { locks[target] = !locks[target]; btn.classList.toggle('active-state', locks[target]); } });
@@ -542,7 +530,7 @@
         let referencePalette = []; 
         let basePalette = [];
         
-        let isImageInverted = false; let isShadowsInverted = false; let isMidDitherEnabled = false; let groupMethod = 'mean';
+        let isImageInverted = false; let isShadowsInverted = false; let isMidDitherEnabled = false;
         let savedPresets = {}; let savedPalettes = {}; let currentImgGradColors = ['#FF00FF', '#00FFFF'];
         let sessionPresetsPool = []; let isNextRandomAPreset = true;
 
@@ -614,10 +602,7 @@
             return ditherMapCache;
         }
 
-        let sharedBufferEst = new Uint8ClampedArray(0);
         let sharedBufferShift = new Uint8ClampedArray(0);
-        let sharedBufferGroupSrc = new Uint8ClampedArray(0);
-        let sharedBufferGroupDst = new Uint8ClampedArray(0);
 
         // ==========================================
         // GERENCIADOR DE MEDIA E UPLOAD
@@ -667,18 +652,7 @@
                     originalSourceUrl = url;
                     
                     currentMediaType = file.type.startsWith('video/') ? 'video' : 'image';
-// Trava de performance para vídeo
-const isVid = (currentMediaType === 'video');
-document.getElementById('estrutura').disabled = isVid;
-document.getElementById('groupStrength').disabled = isVid;
-document.getElementById('set-est').style.opacity = isVid ? '0.4' : '1';
-document.getElementById('set-pxGroup').style.opacity = isVid ? '0.4' : '1';
-document.getElementById('set-est').style.pointerEvents = isVid ? 'none' : 'auto';
-document.getElementById('set-pxGroup').style.pointerEvents = isVid ? 'none' : 'auto';
-if (isVid) {
-    document.getElementById('estrutura').value = 0;
-    document.getElementById('groupStrength').value = 0;
-}
+                    
                     btnPlayPause.classList.toggle('hidden-ui', currentMediaType !== 'video');
                     btnDownloadConfig.textContent = currentMediaType === 'video' ? 'Gravar Vídeo' : 'Exportar Arte';
                     if (currentMediaType === 'video') {
@@ -729,7 +703,7 @@ if (isVid) {
         attachUploadLogic('mediaUpload'); attachUploadLogic('mediaUploadMsg');
 
         function resetToDefaultState() {
-            document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0; groupMethod = "mean"; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0; document.getElementById('imageScale').value = 100;
+            document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0; document.getElementById('imageScale').value = 100;
             resetAdjustments(); currentPaletteMode = 'original'; globalCurrentPalette = []; referencePalette = []; setBasePalette([]);
             isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
         }
@@ -760,7 +734,7 @@ if (isVid) {
         // ==========================================
         function resetAdjustments(e) {
             if(e) e.stopPropagation();
-            ['estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift'].forEach(id => document.getElementById(id).value = 0);
+            ['exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift'].forEach(id => document.getElementById(id).value = 0);
             isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state'); updateBadges(); scheduleAppProcess();
         }
 
@@ -769,7 +743,7 @@ if (isVid) {
                 const target = btn.getAttribute('data-target');
                 if (target === 'ajustes') resetAdjustments(e);
                 if (target === 'colors') { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); scheduleAppProcess(); }
-                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('groupStrength').value = 0; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; document.getElementById('texAngle').value = 45; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; updateBadges(); scheduleAppProcess(); }
+                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; document.getElementById('texAngle').value = 45; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; updateBadges(); scheduleAppProcess(); }
             });
         });
 
@@ -803,8 +777,8 @@ if (isVid) {
 
         function updateBadgeSingle(id, val, def, f='') { const el = document.getElementById(id); if(el) { const v = parseFloat(val); if(v !== def && v !== 0 && !isNaN(v)) { el.textContent = v + f; el.style.display = 'block'; } else { el.style.display = 'none'; } } }
         function updateBadges() {
-            updateBadgeSingle('bdg-est', document.getElementById('estrutura').value, 0); updateBadgeSingle('bdg-exp', document.getElementById('exposicao').value, 0); updateBadgeSingle('bdg-bri', document.getElementById('brilho').value, 0); updateBadgeSingle('bdg-con', document.getElementById('contraste').value, 0); updateBadgeSingle('bdg-tem', document.getElementById('temperatura').value, 0); updateBadgeSingle('bdg-sat', document.getElementById('saturacao').value, 0); updateBadgeSingle('bdg-som', document.getElementById('sombras').value, 0); updateBadgeSingle('bdg-pos', document.getElementById('posterize').value, 0); updateBadgeSingle('bdg-abe', document.getElementById('rgbShift').value, 0);
-            updateBadgeSingle('bdg-px', document.getElementById('pxSize').value, 1); updateBadgeSingle('bdg-grp', document.getElementById('groupStrength').value, 0);
+            updateBadgeSingle('bdg-exp', document.getElementById('exposicao').value, 0); updateBadgeSingle('bdg-bri', document.getElementById('brilho').value, 0); updateBadgeSingle('bdg-con', document.getElementById('contraste').value, 0); updateBadgeSingle('bdg-tem', document.getElementById('temperatura').value, 0); updateBadgeSingle('bdg-sat', document.getElementById('saturacao').value, 0); updateBadgeSingle('bdg-som', document.getElementById('sombras').value, 0); updateBadgeSingle('bdg-pos', document.getElementById('posterize').value, 0); updateBadgeSingle('bdg-abe', document.getElementById('rgbShift').value, 0);
+            updateBadgeSingle('bdg-px', document.getElementById('pxSize').value, 1);
             updateBadgeSingle('bdg-dPat', document.getElementById('ditherSelect').value === 'none' ? 0 : 1, 0, '*');
             updateBadgeSingle('bdg-dSca', document.getElementById('ditherScale').value, 1); updateBadgeSingle('bdg-dInt', document.getElementById('ditherIntensity').value, 100, '%'); updateBadgeSingle('bdg-dAng', document.getElementById('texAngle').value, 45, '°'); 
             updateBadgeSingle('bdg-edg', document.getElementById('edgePixelSize').value, 0);
@@ -813,12 +787,10 @@ if (isVid) {
             const igStp = document.getElementById('imgGradSteps').value; const bcDeg = document.getElementById('bdg-corDeg'); if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'block'; } else { bcDeg.style.display = 'none'; } }
         }
 
-        const processInputs = ['pxSize', 'estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'groupStrength', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'imageScale'];
+        const processInputs = ['pxSize', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'imageScale'];
         const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
 
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleAppProcess(); });
-        document.getElementById('btnGroupMean').addEventListener('click', (e) => { groupMethod = 'mean'; e.currentTarget.classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); scheduleAppProcess(); });
-        document.getElementById('btnGroupMode').addEventListener('click', (e) => { groupMethod = 'mode'; e.currentTarget.classList.add('active-state'); document.getElementById('btnGroupMean').classList.remove('active-state'); scheduleAppProcess(); });
         document.getElementById('btnEffMidDither').addEventListener('click', (e) => { isMidDitherEnabled = !isMidDitherEnabled; e.currentTarget.classList.toggle('active-state', isMidDitherEnabled); scheduleAppProcess(); });
 
         function renderImgGradColors() { const container = document.getElementById('imgGradColorsContainer'); container.innerHTML = ''; currentImgGradColors.forEach((col, i) => { const inp = document.createElement('input'); inp.type = 'color'; inp.className = 'icon-btn'; inp.value = col; inp.addEventListener('input', (e) => { currentImgGradColors[i] = e.target.value; scheduleAppProcess(); }); container.appendChild(inp); }); }
@@ -882,21 +854,12 @@ if (isVid) {
         document.getElementById('btnSavePalette').addEventListener('click', () => { if(document.getElementById('colorSelect').value === 'all') { showToast("Mude para um número específico de cores para salvar."); return; } let name = promptModal("Dê um nome para esta paleta:", "Minha Paleta"); if(!name) return; savedPalettes[name] = [...globalCurrentPalette]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); });
 
         function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 4); } }
-       function randGrp() { 
-    if (currentMediaType === 'video') {
-        document.getElementById('groupStrength').value = 0;
-        return; 
-    }
-    if(!locks.groupStrength) { 
-        document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); 
-    } 
-}
         function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "diamonds", "waves", "scanlines", "maze", "noise"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
         function randColQty() { if(!locks.colorSelect) { const c = ["2", "3", "4", "6", "8", "12", "16", "24", "32"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; } }
-        document.querySelectorAll('.shuffle-btn').forEach(btn => { btn.addEventListener('click', () => { const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return; if(tgt === 'pxSize') randPx(); if(tgt === 'pxGroup') randGrp(); if(tgt === 'ditherSelect') randDith(); updateBadges(); scheduleAppProcess(); }); });
+        document.querySelectorAll('.shuffle-btn').forEach(btn => { btn.addEventListener('click', () => { const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return; if(tgt === 'pxSize') randPx(); if(tgt === 'ditherSelect') randDith(); updateBadges(); scheduleAppProcess(); }); });
         
         function applyTrueRandom() {
-            if(!locks.pxSize) randPx(); if(!locks.groupStrength) randGrp(); if(!locks.ditherSelect) randDith();
+            if(!locks.pxSize) randPx(); if(!locks.ditherSelect) randDith();
             if(!locks.colors) { if(!locks.colorSelect) randColQty(); let qty = parseInt(document.getElementById('colorSelect').value, 10); if(isNaN(qty)) { qty = [4,6,8,12,16][Math.floor(Math.random() * 5)]; document.getElementById('colorSelect').value = qty.toString(); } currentPaletteMode = 'random'; globalCurrentPalette = generateHarmonyPalette(qty); referencePalette = clone(globalCurrentPalette); setBasePalette(globalCurrentPalette); }
             if(!locks.ditherScale) document.getElementById('ditherScale').value = Math.floor(Math.random() * 3) + 1;
             if(!locks.ditherIntensity) document.getElementById('ditherIntensity').value = Math.floor(Math.random() * 80) + 40;
@@ -910,7 +873,7 @@ if (isVid) {
 
         function getStateObject() {
             return {
-                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, grp: document.getElementById('groupStrength').value, gMod: groupMethod, est: document.getElementById('estrutura').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, tAng: document.getElementById('texAngle').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value
+                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, tAng: document.getElementById('texAngle').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value
             };
         }
 
@@ -918,9 +881,8 @@ if (isVid) {
         function updateHistoryButtons() { document.getElementById('btn-undo-view').disabled = historyIndex <= 0; document.getElementById('btn-redo-view').disabled = historyIndex >= historyArr.length - 1; }
 
         function applyState(p) {
-            if (!locks.pxSize && p.px !== undefined) document.getElementById('pxSize').value = p.px; if (!locks.colorSelect && p.col !== undefined) document.getElementById('colorSelect').value = p.col; if (!locks.ditherSelect && p.dith !== undefined) document.getElementById('ditherSelect').value = p.dith; if (!locks.groupStrength && p.grp !== undefined) document.getElementById('groupStrength').value = p.grp;
-            if (p.gMod !== undefined) { groupMethod = p.gMod; document.getElementById('btnGroupMean').classList.toggle('active-state', groupMethod === 'mean'); document.getElementById('btnGroupMode').classList.toggle('active-state', groupMethod === 'mode'); }
-            document.getElementById('estrutura').value = p.est !== undefined ? p.est : 0; document.getElementById('exposicao').value = p.exp !== undefined ? p.exp : 0; document.getElementById('brilho').value = p.bri !== undefined ? p.bri : 0; document.getElementById('sombras').value = p.som !== undefined ? p.som : 0; document.getElementById('saturacao').value = p.sat !== undefined ? p.sat : 0; document.getElementById('contraste').value = p.cont !== undefined ? p.cont : 0; document.getElementById('temperatura').value = p.temp !== undefined ? p.temp : 0; document.getElementById('posterize').value = p.post !== undefined ? p.post : 0; document.getElementById('ditherScale').value = p.dScale !== undefined ? p.dScale : 1; document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100; document.getElementById('texAngle').value = p.tAng !== undefined ? p.tAng : 45;
+            if (!locks.pxSize && p.px !== undefined) document.getElementById('pxSize').value = p.px; if (!locks.colorSelect && p.col !== undefined) document.getElementById('colorSelect').value = p.col; if (!locks.ditherSelect && p.dith !== undefined) document.getElementById('ditherSelect').value = p.dith;
+            document.getElementById('exposicao').value = p.exp !== undefined ? p.exp : 0; document.getElementById('brilho').value = p.bri !== undefined ? p.bri : 0; document.getElementById('sombras').value = p.som !== undefined ? p.som : 0; document.getElementById('saturacao').value = p.sat !== undefined ? p.sat : 0; document.getElementById('contraste').value = p.cont !== undefined ? p.cont : 0; document.getElementById('temperatura').value = p.temp !== undefined ? p.temp : 0; document.getElementById('posterize').value = p.post !== undefined ? p.post : 0; document.getElementById('ditherScale').value = p.dScale !== undefined ? p.dScale : 1; document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100; document.getElementById('texAngle').value = p.tAng !== undefined ? p.tAng : 45;
             isMidDitherEnabled = p.effMidDither || false; document.getElementById('btnEffMidDither').classList.toggle('active-state', isMidDitherEnabled);
             isShadowsInverted = p.shInv || false; document.getElementById('btnInvertShadows').classList.toggle('active-state', isShadowsInverted);
             document.getElementById('fillBg').checked = p.fillBg || false; if(p.bgColor) { document.getElementById('btnBgColor').value = p.bgColor; document.getElementById('btnBgColor').setAttribute('data-color', p.bgColor); document.getElementById('hexBgColor').value = p.bgColor.toUpperCase(); }
@@ -928,11 +890,8 @@ if (isVid) {
             if(p.tOpa !== undefined) document.getElementById('textureOpacity').value = p.tOpa; if(p.eOpa !== undefined) document.getElementById('edgeOpacity').value = p.eOpa; if(p.iSca !== undefined) document.getElementById('imageScale').value = p.iSca;
             document.getElementById('imgGradient').checked = p.iGrad || false; if(p.iGradTyp) document.getElementById('imgGradType').value = p.iGradTyp; if(p.iGradAng !== undefined) document.getElementById('imgGradAngle').value = p.iGradAng; if(p.iGradStp !== undefined) document.getElementById('imgGradSteps').value = p.iGradStp; if(p.iGradPos !== undefined) document.getElementById('imgGradPos').value = p.iGradPos; if(p.iGradSmt !== undefined) document.getElementById('imgGradSmooth').value = p.iGradSmt; if(p.iGradBld) document.getElementById('imgGradBlend').value = p.iGradBld; if(p.iGradCol) { currentImgGradColors = p.iGradCol; renderImgGradColors(); }
             if (!locks.colors) { currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false; if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); if (p.rc && p.rc.length > 0) { referencePalette = p.rc.map(hexToRgb); } else { referencePalette = clone(globalCurrentPalette); } setBasePalette(globalCurrentPalette); } }
-if (currentMediaType === 'video') { 
-    document.getElementById('estrutura').value = 0; 
-    document.getElementById('groupStrength').value = 0; 
-}
-isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();        }
+            isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();
+        }
         document.getElementById('btn-undo-view').addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; applyState(historyArr[historyIndex]); } });
         document.getElementById('btn-redo-view').addEventListener('click', () => { if (historyIndex < historyArr.length - 1) { historyIndex++; applyState(historyArr[historyIndex]); } });
 
@@ -997,9 +956,6 @@ isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();        }
             setProgress(5); await yieldToMain();
             const px = parseInt(document.getElementById('pxSize').value, 10);
             const cLimitStr = document.getElementById('colorSelect').value;
-            const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
-            const passes = Math.ceil(uiGroupStrength / 5);
-            const estBoost = parseInt(document.getElementById('estrutura').value, 10) / 100;
             const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
             const brBoost = parseInt(document.getElementById('brilho').value, 10);
             const shBoost = parseInt(document.getElementById('sombras').value, 10);
@@ -1025,18 +981,6 @@ isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();        }
             setProgress(20); await yieldToMain(); if (myId !== currentProcessId) return;
             let minL=255, maxL=0;
 
-            if (estBoost > 0) {
-                if(sharedBufferEst.length < d.length) sharedBufferEst = new Uint8ClampedArray(d.length);
-                sharedBufferEst.set(d);
-                for (let y = 1; y < smallH - 1; y++) {
-                    for (let x = 1; x < smallW - 1; x++) {
-                        let i = (y * smallW + x) * 4;
-                        if(d[i+3] < 127) continue;
-                        for (let c = 0; c < 3; c++) { let val = 5 * sharedBufferEst[i + c] - sharedBufferEst[i - smallW*4 + c] - sharedBufferEst[i + smallW*4 + c] - sharedBufferEst[i - 4 + c] - sharedBufferEst[i + 4 + c]; d[i + c] = Math.min(255, Math.max(0, sharedBufferEst[i + c] + (val - sharedBufferEst[i + c]) * estBoost)); }
-                    }
-                }
-            }
-
             for(let i=0; i<d.length; i+=4) {
                 if(d[i+3] < 127) { d[i]=0; d[i+1]=0; d[i+2]=0; d[i+3]=0; continue; }
                 let r=d[i], g=d[i+1], b=d[i+2];
@@ -1054,42 +998,6 @@ isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();        }
             }
 
             setProgress(40); await yieldToMain(); if (myId !== currentProcessId) return;
-
-            if (passes > 0) {
-                if(sharedBufferGroupSrc.length < d.length) sharedBufferGroupSrc = new Uint8ClampedArray(d.length);
-                if(sharedBufferGroupDst.length < d.length) sharedBufferGroupDst = new Uint8ClampedArray(d.length);
-                sharedBufferGroupSrc.set(d); sharedBufferGroupDst.set(d);
-                for(let p=0; p<passes; p++) {
-                    for(let y=0; y<smallH; y++) {
-                        for(let x=0; x<smallW; x++) {
-                            let idx = (y*smallW + x)*4; if(sharedBufferGroupSrc[idx+3] === 0) { sharedBufferGroupDst[idx+3]=0; continue; }
-                            if (groupMethod === 'mode') {
-                                let counts = new Map(); let maxCount = 0; let modeColor = {r:sharedBufferGroupSrc[idx], g:sharedBufferGroupSrc[idx+1], b:sharedBufferGroupSrc[idx+2]};
-                                for(let dy=-1; dy<=1; dy++){
-                                    let ny = y+dy; if(ny<0 || ny>=smallH) continue;
-                                    for(let dx=-1; dx<=1; dx++){
-                                        let nx = x+dx; if(nx<0 || nx>=smallW) continue; let nidx = (ny*smallW + nx)*4;
-                                        if(sharedBufferGroupSrc[nidx+3] > 0) { let key = (sharedBufferGroupSrc[nidx]<<16) | (sharedBufferGroupSrc[nidx+1]<<8) | sharedBufferGroupSrc[nidx+2]; let curr = (counts.get(key) || 0) + 1; counts.set(key, curr); if (curr > maxCount) { maxCount = curr; modeColor = {r:sharedBufferGroupSrc[nidx], g:sharedBufferGroupSrc[nidx+1], b:sharedBufferGroupSrc[nidx+2]}; } }
-                                    }
-                                }
-                                sharedBufferGroupDst[idx] = modeColor.r; sharedBufferGroupDst[idx+1] = modeColor.g; sharedBufferGroupDst[idx+2] = modeColor.b; sharedBufferGroupDst[idx+3] = sharedBufferGroupSrc[idx+3];
-                            } else {
-                                let r=sharedBufferGroupSrc[idx], g=sharedBufferGroupSrc[idx+1], b=sharedBufferGroupSrc[idx+2]; let sumR=0, sumG=0, sumB=0, count=0;
-                                for(let dy=-1; dy<=1; dy++){
-                                    let ny = y+dy; if(ny<0 || ny>=smallH) continue;
-                                    for(let dx=-1; dx<=1; dx++){
-                                        let nx = x+dx; if(nx<0 || nx>=smallW) continue; let nidx = (ny*smallW + nx)*4;
-                                        if(sharedBufferGroupSrc[nidx+3] > 0) { let nr=sharedBufferGroupSrc[nidx], ng=sharedBufferGroupSrc[nidx+1], nb=sharedBufferGroupSrc[nidx+2]; if (Math.abs(nr-r) + Math.abs(ng-g) + Math.abs(nb-b) < 150) { sumR += nr; sumG += ng; sumB += nb; count++; } }
-                                    }
-                                }
-                                sharedBufferGroupDst[idx] = sumR/count; sharedBufferGroupDst[idx+1] = sumG/count; sharedBufferGroupDst[idx+2] = sumB/count; sharedBufferGroupDst[idx+3] = sharedBufferGroupSrc[idx+3];
-                            }
-                        }
-                    }
-                    sharedBufferGroupSrc.set(sharedBufferGroupDst); setProgress(40 + Math.round((p / passes) * 30)); await yieldToMain(); if (myId !== currentProcessId) return;
-                }
-                d.set(sharedBufferGroupDst);
-            } else { setProgress(70); await yieldToMain(); if (myId !== currentProcessId) return; }
 
             let usePalette = (cLimitStr !== 'all'); let targetColors = usePalette ? parseInt(cLimitStr, 10) : 256;
             const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
@@ -1214,10 +1122,7 @@ isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();        }
 
             const px = parseInt(document.getElementById('pxSize').value, 10);
             const cLimitStr = document.getElementById('colorSelect').value;
-            const uiGroupStrength = parseInt(document.getElementById('groupStrength').value, 10);
-            const passes = Math.ceil(uiGroupStrength / 5);
 
-            const estBoost = parseInt(document.getElementById('estrutura').value, 10) / 100;
             const expBoost = Math.pow(2, parseInt(document.getElementById('exposicao').value, 10) / 50);
             const brBoost = parseInt(document.getElementById('brilho').value, 10);
             const shBoost = parseInt(document.getElementById('sombras').value, 10);
@@ -1244,17 +1149,6 @@ isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();        }
             let imgData = sCtx.getImageData(0, 0, smallW, smallH); let d = imgData.data;
             let minL=255, maxL=0;
 
-            if (estBoost > 0) {
-                if(sharedBufferEst.length < d.length) sharedBufferEst = new Uint8ClampedArray(d.length);
-                sharedBufferEst.set(d);
-                for (let y = 1; y < smallH - 1; y++) {
-                    for (let x = 1; x < smallW - 1; x++) {
-                        let i = (y * smallW + x) * 4; if(d[i+3] < 127) continue;
-                        for (let c = 0; c < 3; c++) { let val = 5 * sharedBufferEst[i + c] - sharedBufferEst[i - smallW*4 + c] - sharedBufferEst[i + smallW*4 + c] - sharedBufferEst[i - 4 + c] - sharedBufferEst[i + 4 + c]; d[i + c] = Math.min(255, Math.max(0, sharedBufferEst[i + c] + (val - sharedBufferEst[i + c]) * estBoost)); }
-                    }
-                }
-            }
-
             for(let i=0; i<d.length; i+=4) {
                 if(d[i+3] < 127) { d[i]=0; d[i+1]=0; d[i+2]=0; d[i+3]=0; continue; }
                 let r=d[i], g=d[i+1], b=d[i+2];
@@ -1269,36 +1163,6 @@ isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();        }
                 if (posterLevels > 0) { r = Math.round((r / 255) * (posterLevels - 1)) * (255 / (posterLevels - 1)); g = Math.round((g / 255) * (posterLevels - 1)) * (255 / (posterLevels - 1)); b = Math.round((b / 255) * (posterLevels - 1)) * (255 / (posterLevels - 1)); }
                 d[i] = Math.min(255, Math.max(0, r)); d[i+1] = Math.min(255, Math.max(0, g)); d[i+2] = Math.min(255, Math.max(0, b)); d[i+3] = 255;
                 let fluma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2]; if(fluma < minL) minL = fluma; if(fluma > maxL) maxL = fluma;
-            }
-
-            if (passes > 0) {
-                if(sharedBufferGroupSrc.length < d.length) sharedBufferGroupSrc = new Uint8ClampedArray(d.length);
-                if(sharedBufferGroupDst.length < d.length) sharedBufferGroupDst = new Uint8ClampedArray(d.length);
-                sharedBufferGroupSrc.set(d); sharedBufferGroupDst.set(d);
-                for(let p=0; p<passes; p++) {
-                    for(let y=0; y<smallH; y++) {
-                        for(let x=0; x<smallW; x++) {
-                            let idx = (y*smallW + x)*4; if(sharedBufferGroupSrc[idx+3] === 0) { sharedBufferGroupDst[idx+3]=0; continue; }
-                            if (groupMethod === 'mode') {
-                                let counts = new Map(); let maxCount = 0; let modeColor = {r:sharedBufferGroupSrc[idx], g:sharedBufferGroupSrc[idx+1], b:sharedBufferGroupSrc[idx+2]};
-                                for(let dy=-1; dy<=1; dy++){
-                                    let ny = y+dy; if(ny<0 || ny>=smallH) continue;
-                                    for(let dx=-1; dx<=1; dx++){ let nx = x+dx; if(nx<0 || nx>=smallW) continue; let nidx = (ny*smallW + nx)*4; if(sharedBufferGroupSrc[nidx+3] > 0) { let key = (sharedBufferGroupSrc[nidx]<<16) | (sharedBufferGroupSrc[nidx+1]<<8) | sharedBufferGroupSrc[nidx+2]; let curr = (counts.get(key) || 0) + 1; counts.set(key, curr); if (curr > maxCount) { maxCount = curr; modeColor = {r:sharedBufferGroupSrc[nidx], g:sharedBufferGroupSrc[nidx+1], b:sharedBufferGroupSrc[nidx+2]}; } } }
-                                }
-                                sharedBufferGroupDst[idx] = modeColor.r; sharedBufferGroupDst[idx+1] = modeColor.g; sharedBufferGroupDst[idx+2] = modeColor.b; sharedBufferGroupDst[idx+3] = sharedBufferGroupSrc[idx+3];
-                            } else {
-                                let r=sharedBufferGroupSrc[idx], g=sharedBufferGroupSrc[idx+1], b=sharedBufferGroupSrc[idx+2]; let sumR=0, sumG=0, sumB=0, count=0;
-                                for(let dy=-1; dy<=1; dy++){
-                                    let ny = y+dy; if(ny<0 || ny>=smallH) continue;
-                                    for(let dx=-1; dx<=1; dx++){ let nx = x+dx; if(nx<0 || nx>=smallW) continue; let nidx = (ny*smallW + nx)*4; if(sharedBufferGroupSrc[nidx+3] > 0) { let nr=sharedBufferGroupSrc[nidx], ng=sharedBufferGroupSrc[nidx+1], nb=sharedBufferGroupSrc[nidx+2]; if (Math.abs(nr-r) + Math.abs(ng-g) + Math.abs(nb-b) < 150) { sumR += nr; sumG += ng; sumB += nb; count++; } } }
-                                }
-                                sharedBufferGroupDst[idx] = sumR/count; sharedBufferGroupDst[idx+1] = sumG/count; sharedBufferGroupDst[idx+2] = sumB/count; sharedBufferGroupDst[idx+3] = sharedBufferGroupSrc[idx+3];
-                            }
-                        }
-                    }
-                    sharedBufferGroupSrc.set(sharedBufferGroupDst);
-                }
-                d.set(sharedBufferGroupDst);
             }
 
             const maxDim = Math.max(origW, origH); const displayScale = maxDim > 2000 ? 2000 / maxDim : 1; const canvasPadding = 1;
