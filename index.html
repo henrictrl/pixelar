@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pixelar</title>
+    <title>Pixelar Studio (Imagem & Vídeo)</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3Crect x='9' y='0' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='0' y='9' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='9' y='9' width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3C/svg%3E">
     <style>
         @font-face {
@@ -603,6 +603,61 @@
         }
 
         let sharedBufferShift = new Uint8ClampedArray(0);
+        let sharedEdgeMap = new Uint8Array(0);
+
+        let sharedGradCanvas = document.createElement('canvas');
+        let sharedGradCtx = sharedGradCanvas.getContext('2d', { willReadFrequently: true });
+        let cachedGradHash = "";
+        let cachedGradData = null;
+
+        function getGradientData(w, h) {
+            const gType = document.getElementById('imgGradType').value;
+            const gAngle = document.getElementById('imgGradAngle').value;
+            const gSteps = document.getElementById('imgGradSteps').value;
+            const gPos = document.getElementById('imgGradPos').value;
+            const gSmooth = document.getElementById('imgGradSmooth').value;
+            const gBlend = document.getElementById('imgGradBlend').value;
+            const hash = `${w}x${h}_${gType}_${gAngle}_${gSteps}_${gPos}_${gSmooth}_${gBlend}_${currentImgGradColors.join('-')}`;
+            
+            if (cachedGradData && cachedGradHash === hash) {
+                return { d: cachedGradData, b: gBlend };
+            }
+            
+            sharedGradCanvas.width = w; sharedGradCanvas.height = h;
+            let grad;
+            if (gType === 'radial') { 
+                const cx = w/2; const cy = h/2; const rMax = Math.max(w, h) / 1.5; 
+                grad = sharedGradCtx.createRadialGradient(cx, cy, 0, cx, cy, rMax); 
+            } else { 
+                const cx = w/2; const cy = h/2; const R = Math.max(w, h) / 1.5; 
+                const ang = (parseInt(gAngle, 10) - 90) * Math.PI / 180; 
+                const dx = Math.cos(ang) * R; const dy = Math.sin(ang) * R; 
+                grad = sharedGradCtx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy); 
+            }
+            
+            const numColors = currentImgGradColors.length;
+            const stp = parseInt(gSteps, 10);
+            if (stp > 0) { 
+                for(let st = 0; st <= stp; st++) { 
+                    let pct = st / stp; let rawIdx = pct * (numColors - 1); let idx = Math.floor(rawIdx); 
+                    let localPct = rawIdx - idx; let c1 = currentImgGradColors[idx]; 
+                    let c2 = currentImgGradColors[Math.min(idx + 1, numColors - 1)]; 
+                    if (parseInt(gSmooth, 10) < 100) { localPct = Math.pow(localPct, 1 + (100 - parseInt(gSmooth, 10))/50); } 
+                    grad.addColorStop(pct, interpolateColorHex(c1, c2, localPct)); 
+                } 
+            } else { 
+                currentImgGradColors.forEach((col, idx) => { 
+                    let shifted = (idx / (numColors - 1)) + (parseInt(gPos, 10) - 50)/100; 
+                    grad.addColorStop(Math.max(0, Math.min(1, shifted)), col); 
+                }); 
+            }
+            
+            sharedGradCtx.fillStyle = grad; sharedGradCtx.fillRect(0,0,w,h); 
+            cachedGradData = sharedGradCtx.getImageData(0,0,w,h).data;
+            cachedGradHash = hash;
+            
+            return { d: cachedGradData, b: gBlend };
+        }
 
         // ==========================================
         // GERENCIADOR DE MEDIA E UPLOAD
@@ -916,19 +971,11 @@
             return buckets.map(b => { if(!b.length) return {r:0,g:0,b:0, count:0}; let r=0,g=0,bl=0; for(let p of b){ r+=p.r; g+=p.g; bl+=p.b; } return {r:Math.round(r/b.length), g:Math.round(g/b.length), b:Math.round(bl/b.length), count: b.length}; });
         }
 
-        function createGradientLayer(w, h) {
-            const gradCanvas = document.createElement('canvas'); gradCanvas.width = w; gradCanvas.height = h; const gCtx = gradCanvas.getContext('2d'); let grad;
-            const gType = document.getElementById('imgGradType').value; const gAngle = parseInt(document.getElementById('imgGradAngle').value, 10); const gSteps = parseInt(document.getElementById('imgGradSteps').value, 10); const gPos = parseInt(document.getElementById('imgGradPos').value, 10); const gSmooth = parseInt(document.getElementById('imgGradSmooth').value, 10); const gBlend = document.getElementById('imgGradBlend').value;
-            if (gType === 'radial') { const cx = w/2; const cy = h/2; const rMax = Math.max(w, h) / 1.5; grad = gCtx.createRadialGradient(cx, cy, 0, cx, cy, rMax); } else { const cx = w/2; const cy = h/2; const R = Math.max(w, h) / 1.5; const ang = (gAngle - 90) * Math.PI / 180; const dx = Math.cos(ang) * R; const dy = Math.sin(ang) * R; grad = gCtx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy); }
-            const numColors = currentImgGradColors.length;
-            if (gSteps > 0) { for(let st = 0; st <= gSteps; st++) { let pct = st / gSteps; let rawIdx = pct * (numColors - 1); let idx = Math.floor(rawIdx); let localPct = rawIdx - idx; let c1 = currentImgGradColors[idx]; let c2 = currentImgGradColors[Math.min(idx + 1, numColors - 1)]; if (gSmooth < 100) { localPct = Math.pow(localPct, 1 + (100 - gSmooth)/50); } grad.addColorStop(pct, interpolateColorHex(c1, c2, localPct)); } } else { currentImgGradColors.forEach((col, idx) => { let shifted = (idx / (numColors - 1)) + (gPos - 50)/100; grad.addColorStop(Math.max(0, Math.min(1, shifted)), col); }); }
-            gCtx.fillStyle = grad; gCtx.fillRect(0,0,w,h); return { canvas: gradCanvas, blend: gBlend };
-        }
-
         // ==========================================
         // ROTEAMENTO UNIVERSAL DE PROCESSAMENTO
         // ==========================================
         let currentProcessId = 0;
+        let uiUpdateTimeout = null;
         
         function scheduleAppProcess() {
             if(!hasMediaLoaded) return;
@@ -936,13 +983,23 @@
                 currentProcessId++; const myId = currentProcessId;
                 setTimeout(() => { if (myId === currentProcessId) { showLoading(); processImageCoreEffects(myId); } }, 50);
             } else if (currentMediaType === 'video') {
-                if(!isVideoPlaying && !isRecording) processVideoFrameSynchronously();
+                if(!isVideoPlaying && !isRecording) {
+                    clearTimeout(uiUpdateTimeout);
+                    uiUpdateTimeout = setTimeout(() => { processVideoFrameSynchronously(); }, 32);
+                }
             }
         }
 
-        function videoRenderLoop() {
+        let lastVideoFrameTime = 0;
+        const VIDEO_FPS_LIMIT = 30; 
+        const frameInterval = 1000 / VIDEO_FPS_LIMIT;
+
+        function videoRenderLoop(timestamp) {
             if (currentMediaType === 'video' && (isVideoPlaying || isRecording)) {
-                if (sourceVideo.readyState >= 2) processVideoFrameSynchronously();
+                if (timestamp - lastVideoFrameTime >= frameInterval) {
+                    if (sourceVideo.readyState >= 2) processVideoFrameSynchronously();
+                    lastVideoFrameTime = timestamp;
+                }
             }
             if (currentMediaType === 'video') requestAnimationFrame(videoRenderLoop);
         }
@@ -1043,7 +1100,8 @@
 
             let edgeMap = null;
             if (edgePixelSize > 0) {
-                edgeMap = new Uint8Array(w * h);
+                if (sharedEdgeMap.length < w * h) sharedEdgeMap = new Uint8Array(w * h);
+                edgeMap = sharedEdgeMap; edgeMap.fill(0);
                 for (let y = 0; y < h - edgePixelSize; y++) {
                     for (let x = 0; x < w - edgePixelSize; x++) {
                         let idx = (y * w + x) * 4;
@@ -1055,8 +1113,10 @@
                 }
             }
 
-            let applyGlobalGrad = document.getElementById('imgGradient').checked;
-            let gradData = null; if (applyGlobalGrad) { let gl = createGradientLayer(w, h); gradData = { d: gl.canvas.getContext('2d').getImageData(0,0,w,h).data, b: gl.blend }; }
+            let gradData = null; 
+            if (document.getElementById('imgGradient').checked) { 
+                gradData = getGradientData(w, h); 
+            }
 
             let ditherMap = getDitherMap(w, h, ditherMode, dithScale, dithInt, texAngle, texOpa);
             if (usePal && referencePalette && referencePalette.length > 0) { updateColorLUT(referencePalette); }
@@ -1115,7 +1175,7 @@
         }
 
         // ==========================================
-        // ENGINE: VÍDEO (SÍNCRONO 60FPS)
+        // ENGINE: VÍDEO (SÍNCRONO LIMITADO)
         // ==========================================
         function processVideoFrameSynchronously() {
             if(!hasMediaLoaded || !sourceVideo.videoWidth) return;
@@ -1184,7 +1244,8 @@
 
             let edgeMap = null;
             if (edgePixelSize > 0) {
-                edgeMap = new Uint8Array(smallW * smallH);
+                if (sharedEdgeMap.length < smallW * smallH) sharedEdgeMap = new Uint8Array(smallW * smallH);
+                edgeMap = sharedEdgeMap; edgeMap.fill(0);
                 for (let y = 0; y < smallH - edgePixelSize; y++) {
                     for (let x = 0; x < smallW - edgePixelSize; x++) {
                         let idx = (y * smallW + x) * 4;
@@ -1197,7 +1258,9 @@
             }
 
             let gradData = null;
-            if (document.getElementById('imgGradient').checked) { let gl = createGradientLayer(smallW, smallH); gradData = { d: gl.canvas.getContext('2d').getImageData(0,0,smallW,smallH).data, b: gl.blend }; }
+            if (document.getElementById('imgGradient').checked) { 
+                gradData = getGradientData(smallW, smallH); 
+            }
 
             let usePalette = (currentPaletteMode !== 'original' && referencePalette && referencePalette.length > 0);
             if (usePalette) updateColorLUT(referencePalette);
