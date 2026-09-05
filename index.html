@@ -393,7 +393,8 @@
         </div>
 
         <div id="canvas-wrapper">
-            <video id="sourceVideo" style="display:none;" crossorigin="anonymous"></video>
+            <!-- ATENÇÃO: Atributos essenciais para liberar vídeo e áudio no iOS -->
+            <video id="sourceVideo" style="display:none;" playsinline webkit-playsinline></video>
             <canvas id="outputCanvas"></canvas>
             <canvas id="originalCanvas"></canvas>
             <div id="slider-line"></div>
@@ -547,6 +548,11 @@
         let originalSourceUrl = null;
         const sourceVideo = document.getElementById('sourceVideo');
         
+        // Globais da Web Audio API
+        let audioCtx = null;
+        let audioSourceNode = null;
+        let audioDestNode = null;
+
         let hasMediaLoaded = false;
         let isRestoringState = false; 
         const clone = (arr) => arr.map(c => ({...c}));
@@ -1410,8 +1416,31 @@
         // ==========================================
         // SISTEMA TWO-PASS DE RENDER DE VÍDEO
         // ==========================================
-        document.getElementById('btnChoiceMp4').addEventListener('click', () => { exportModal.style.display = 'none'; startTwoPassRender('mp4'); });
-        document.getElementById('btnChoiceWebm').addEventListener('click', () => { exportModal.style.display = 'none'; startTwoPassRender('webm'); });
+        document.getElementById('btnChoiceMp4').addEventListener('click', () => { 
+            exportModal.style.display = 'none'; 
+            unlockVideoAndRender('mp4'); 
+        });
+        document.getElementById('btnChoiceWebm').addEventListener('click', () => { 
+            exportModal.style.display = 'none'; 
+            unlockVideoAndRender('webm'); 
+        });
+
+        // Desbloqueia o áudio reproduzindo e pausando instantaneamente no evento de clique do usuário
+        function unlockVideoAndRender(format) {
+            sourceVideo.muted = false;
+            let playPromise = sourceVideo.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    sourceVideo.pause();
+                    startTwoPassRender(format);
+                }).catch(() => {
+                    sourceVideo.pause();
+                    startTwoPassRender(format);
+                });
+            } else {
+                startTwoPassRender(format);
+            }
+        }
 
         async function startTwoPassRender(fileExtension) {
             isVideoRendering = true;
@@ -1431,7 +1460,6 @@
             sourceVideo.onseeked = async () => {
                 try {
                     processVideoFrameSynchronously(true, exportRes);
-                    // Otimização iOS: Reduzido de 0.90 para 0.70. Corta o uso de RAM pela metade, evitando crashs.
                     let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.70));
                     if (blob) {
                         renderFrames.push(URL.createObjectURL(blob));
@@ -1495,18 +1523,35 @@
                 return;
             }
 
-            let combinedStream = canvasStream;
+            // Implementação robusta de extração de áudio forçando a Web Audio API (suporte universal)
             let audioTracks = [];
             try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                if (!audioSourceNode) {
+                    audioSourceNode = audioCtx.createMediaElementSource(sourceVideo);
+                    audioDestNode = audioCtx.createMediaStreamDestination();
+                    audioSourceNode.connect(audioDestNode);
+                    audioSourceNode.connect(audioCtx.destination);
+                }
+                audioTracks = audioDestNode.stream.getAudioTracks();
+            } catch(err) {
+                console.warn("Fallback Web Audio falhou, tentando captura nativa...", err);
                 let captureFn = sourceVideo.captureStream || sourceVideo.mozCaptureStream;
                 if (captureFn) {
-                    let videoStream = captureFn.call(sourceVideo);
-                    audioTracks = videoStream.getAudioTracks();
+                    try {
+                        let videoStream = captureFn.call(sourceVideo);
+                        audioTracks = videoStream.getAudioTracks();
+                    } catch(e) {}
                 }
-            } catch(e) {
-                // Áudio ignorado silenciosamente
             }
-            
+
+            let combinedStream = canvasStream;
             if (audioTracks.length > 0) {
                 combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
             }
@@ -1538,7 +1583,6 @@
                 a.click();
                 URL.revokeObjectURL(url);
                 
-                // Limpeza completa e final
                 renderFrames.forEach(u => { if(u) URL.revokeObjectURL(u) });
                 renderFrames = [];
                 isVideoRendering = false;
@@ -1564,7 +1608,7 @@
             try {
                 let playPromise = sourceVideo.play();
                 if (playPromise !== undefined) {
-                    playPromise.catch(e => console.log("Autoplay de som bloqueado. O vídeo será mudo."));
+                    playPromise.catch(e => console.log("Áudio bloqueado pelo sistema."));
                 }
             } catch (e) {}
 
@@ -1589,12 +1633,10 @@
                         if (frameSrc) {
                             playImg.src = frameSrc;
                         } else {
-                            // Se o frame for nulo (limpo ou corrompido), pula e avança
                             currentPlaybackFrame++;
                             loadNextFrame();
                         }
                     } else {
-                        // requestAnimationFrame não sofre asfixia do iOS como o setTimeout sofre
                         requestAnimationFrame(checkTime);
                     }
                 };
@@ -1606,7 +1648,6 @@
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(playImg, 0, 0);
                     
-                    // LIBERAÇÃO AGRESSIVA DE RAM - Previne crash do iOS na etapa 2
                     if (renderFrames[currentPlaybackFrame]) {
                         URL.revokeObjectURL(renderFrames[currentPlaybackFrame]);
                         renderFrames[currentPlaybackFrame] = null;
@@ -1619,13 +1660,11 @@
             };
 
             playImg.onerror = () => {
-                // Se a imagem falhar ao carregar no iOS, não congela, apenas descarta e pula.
                 console.warn("Quadro ignorado devido a falha de carregamento.");
                 currentPlaybackFrame++;
                 loadNextFrame();
             };
             
-            // Inicia o processo
             loadNextFrame();
         }
     </script>
