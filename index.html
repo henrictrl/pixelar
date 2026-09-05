@@ -256,7 +256,7 @@
                         <button class="m-sub-btn" data-target="set-corAju"><span class="badge" id="bdg-corAju"></span><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg><span>Ajuste</span></button>
                         <button class="m-sub-btn" data-target="set-corDeg"><span class="badge" id="bdg-corDeg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="12" x2="21" y2="12"></line></svg><span>Degradê</span></button>
                         <button class="m-sub-btn" data-target="set-corCon"><span class="badge" id="bdg-edg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="8" y="8" width="8" height="8"></rect></svg><span>Contorno</span></button>
-                        <button class="m-sub-btn" data-target="set-corSal"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Salvas</span></button>
+                        <button class="m-sub-btn" data-target="set-corSal"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Salvas</span></button>
                         <button class="m-sub-btn reset-btn" data-target="colors"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
@@ -298,7 +298,7 @@
                         </div>
                         <div class="set-item" id="set-corCon"><div class="panel-label">Contorno / Edge Extra</div>
                             <div class="slider-row">
-                                <input type="range" id="edgePixelSize" min="0" max="15" value="0"><button class="icon-btn lock-btn" data-target="edgePixelSize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                                <input type="range" id="edgePixelSize" min="0" max="10" value="0"><button class="icon-btn lock-btn" data-target="edgePixelSize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                                 <input type="color" id="edgeColor" class="icon-btn" value="#1A1A1A"><button class="icon-btn lock-btn" data-target="edgeColor"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                             </div>
                             <div class="slider-row">
@@ -603,7 +603,6 @@
         }
 
         let sharedBufferShift = new Uint8ClampedArray(0);
-        let sharedEdgeMap = new Uint8Array(0);
 
         let sharedGradCanvas = document.createElement('canvas');
         let sharedGradCtx = sharedGradCanvas.getContext('2d', { willReadFrequently: true });
@@ -709,6 +708,8 @@
                     currentMediaType = file.type.startsWith('video/') ? 'video' : 'image';
                     
                     btnPlayPause.classList.toggle('hidden-ui', currentMediaType !== 'video');
+                    document.getElementById('set-corDeg').style.display = currentMediaType === 'video' ? 'none' : 'flex';
+                    
                     btnDownloadConfig.textContent = currentMediaType === 'video' ? 'Gravar Vídeo' : 'Exportar Arte';
                     if (currentMediaType === 'video') {
                         btnDownloadConfig.style.background = 'var(--accent)';
@@ -749,7 +750,12 @@
                             
                             isVideoPlaying = true; sourceVideo.play();
                             btnPlayPause.innerHTML = `<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
-                            requestAnimationFrame(videoRenderLoop);
+                            
+                            if ('requestVideoFrameCallback' in sourceVideo) {
+                                sourceVideo.requestVideoFrameCallback(onVideoFrame);
+                            } else {
+                                requestAnimationFrame(onVideoFrame);
+                            }
                         };
                     }
                 });
@@ -990,18 +996,17 @@
             }
         }
 
-        let lastVideoFrameTime = 0;
-        const VIDEO_FPS_LIMIT = 30; 
-        const frameInterval = 1000 / VIDEO_FPS_LIMIT;
-
-        function videoRenderLoop(timestamp) {
+        function onVideoFrame(now, metadata) {
             if (currentMediaType === 'video' && (isVideoPlaying || isRecording)) {
-                if (timestamp - lastVideoFrameTime >= frameInterval) {
-                    if (sourceVideo.readyState >= 2) processVideoFrameSynchronously();
-                    lastVideoFrameTime = timestamp;
+                processVideoFrameSynchronously();
+            }
+            if (currentMediaType === 'video') {
+                if ('requestVideoFrameCallback' in sourceVideo) {
+                    sourceVideo.requestVideoFrameCallback(onVideoFrame);
+                } else {
+                    requestAnimationFrame(onVideoFrame);
                 }
             }
-            if (currentMediaType === 'video') requestAnimationFrame(videoRenderLoop);
         }
 
         // ==========================================
@@ -1096,22 +1101,7 @@
 
             setProgress(85); await yieldToMain(); if (myId !== currentProcessId) return;
 
-            const ditherMode = document.getElementById('ditherSelect').value; const dithScale = parseInt(document.getElementById('ditherScale').value, 10); const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = parseInt(document.getElementById('texAngle').value, 10) * Math.PI / 180; const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const edgePixelSize = parseInt(document.getElementById('edgePixelSize').value, 10); const edgeRgb = hexToRgb(document.getElementById('edgeColor').value); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100; const edgeOpa = parseInt(document.getElementById('edgeOpacity').value, 10) / 100;
-
-            let edgeMap = null;
-            if (edgePixelSize > 0) {
-                if (sharedEdgeMap.length < w * h) sharedEdgeMap = new Uint8Array(w * h);
-                edgeMap = sharedEdgeMap; edgeMap.fill(0);
-                for (let y = 0; y < h - edgePixelSize; y++) {
-                    for (let x = 0; x < w - edgePixelSize; x++) {
-                        let idx = (y * w + x) * 4;
-                        let luma = 0.3*d[idx] + 0.59*d[idx+1] + 0.11*d[idx+2];
-                        let rLuma = 0.3*d[idx + edgePixelSize*4] + 0.59*d[idx + edgePixelSize*4 + 1] + 0.11*d[idx + edgePixelSize*4 + 2];
-                        let bLuma = 0.3*d[idx + edgePixelSize*w*4] + 0.59*d[idx + edgePixelSize*w*4 + 1] + 0.11*d[idx + edgePixelSize*w*4 + 2];
-                        if (Math.abs(luma - rLuma) > 20 || Math.abs(luma - bLuma) > 20) { edgeMap[y * w + x] = 1; }
-                    }
-                }
-            }
+            const ditherMode = document.getElementById('ditherSelect').value; const dithScale = parseInt(document.getElementById('ditherScale').value, 10); const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = parseInt(document.getElementById('texAngle').value, 10) * Math.PI / 180; const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100; 
 
             let gradData = null; 
             if (document.getElementById('imgGradient').checked) { 
@@ -1127,8 +1117,6 @@
                     let i = (y*w + x) * 4; let outR = 0, outG = 0, outB = 0, outA = 0;
                     if (d[i+3] > 127) { outR = d[i]; outG = d[i+1]; outB = d[i+2]; outA = 255; }
                     if(outA === 0) { d[i]=0; d[i+1]=0; d[i+2]=0; d[i+3]=0; continue; }
-
-                    if (edgePixelSize > 0 && edgeMap[y * w + x] === 1) { d[i] = outR * (1 - edgeOpa) + edgeRgb.r * edgeOpa; d[i+1] = outG * (1 - edgeOpa) + edgeRgb.g * edgeOpa; d[i+2] = outB * (1 - edgeOpa) + edgeRgb.b * edgeOpa; d[i+3] = 255; continue; }
 
                     let r = outR, g = outG, b = outB; let pxLuma = 0.3*r + 0.59*g + 0.11*b;
                     if (isShadowsInverted) { let norm = (pxLuma - minL) / (maxL - minL || 1); if (norm < 0.45) { r = 255 - r; g = 255 - g; b = 255 - b; } }
@@ -1169,6 +1157,28 @@
 
             if (document.getElementById('fillBg').checked) { ctx.fillStyle = document.getElementById('btnBgColor').getAttribute('data-color'); ctx.fillRect(0,0,baseCanvasW,baseCanvasH); } else { ctx.clearRect(0,0,baseCanvasW,baseCanvasH); }
             ctx.drawImage(ditherCanvas, 0, 0, w, h, 0, 0, baseCanvasW, baseCanvasH);
+
+            // Desenha as bordas fisicamente finas no final
+            const edgePixelSize = parseInt(document.getElementById('edgePixelSize').value, 10);
+            if (edgePixelSize > 0) {
+                ctx.fillStyle = document.getElementById('edgeColor').value;
+                ctx.globalAlpha = document.getElementById('edgeOpacity').value / 100;
+                let pSize = px * displayScale * canvasPadding;
+                let halfT = edgePixelSize / 2;
+                ctx.beginPath();
+                for (let y = 0; y < h - 1; y++) {
+                    for (let x = 0; x < w - 1; x++) {
+                        let idx = (y * w + x) * 4;
+                        let rDiff = Math.abs(d[idx] - d[idx+4]) + Math.abs(d[idx+1] - d[idx+5]) + Math.abs(d[idx+2] - d[idx+6]);
+                        let bDiff = Math.abs(d[idx] - d[idx+w*4]) + Math.abs(d[idx+1] - d[idx+w*4+1]) + Math.abs(d[idx+2] - d[idx+w*4+2]);
+                        
+                        if (rDiff > 40) ctx.rect((x+1)*pSize - halfT, y*pSize, edgePixelSize, pSize);
+                        if (bDiff > 40) ctx.rect(x*pSize, (y+1)*pSize - halfT, pSize, edgePixelSize);
+                    }
+                }
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
 
             setProgress(100); await yieldToMain();
             isRestoringState = false; hideLoading(); saveHistoryState();
@@ -1238,29 +1248,7 @@
 
             const ditherMode = document.getElementById('ditherSelect').value; const dithScale = parseInt(document.getElementById('ditherScale').value, 10);
             const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = parseInt(document.getElementById('texAngle').value, 10) * Math.PI / 180;
-            const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const edgePixelSize = parseInt(document.getElementById('edgePixelSize').value, 10);
-            const edgeRgb = hexToRgb(document.getElementById('edgeColor').value); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100;
-            const edgeOpa = parseInt(document.getElementById('edgeOpacity').value, 10) / 100;
-
-            let edgeMap = null;
-            if (edgePixelSize > 0) {
-                if (sharedEdgeMap.length < smallW * smallH) sharedEdgeMap = new Uint8Array(smallW * smallH);
-                edgeMap = sharedEdgeMap; edgeMap.fill(0);
-                for (let y = 0; y < smallH - edgePixelSize; y++) {
-                    for (let x = 0; x < smallW - edgePixelSize; x++) {
-                        let idx = (y * smallW + x) * 4;
-                        let luma = 0.3*d[idx] + 0.59*d[idx+1] + 0.11*d[idx+2];
-                        let rLuma = 0.3*d[idx + edgePixelSize*4] + 0.59*d[idx + edgePixelSize*4 + 1] + 0.11*d[idx + edgePixelSize*4 + 2];
-                        let bLuma = 0.3*d[idx + edgePixelSize*smallW*4] + 0.59*d[idx + edgePixelSize*smallW*4 + 1] + 0.11*d[idx + edgePixelSize*smallW*4 + 2];
-                        if (Math.abs(luma - rLuma) > 20 || Math.abs(luma - bLuma) > 20) { edgeMap[y * smallW + x] = 1; }
-                    }
-                }
-            }
-
-            let gradData = null;
-            if (document.getElementById('imgGradient').checked) { 
-                gradData = getGradientData(smallW, smallH); 
-            }
+            const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100;
 
             let usePalette = (currentPaletteMode !== 'original' && referencePalette && referencePalette.length > 0);
             if (usePalette) updateColorLUT(referencePalette);
@@ -1273,19 +1261,12 @@
                     if (d[i+3] > 127) { outR = d[i]; outG = d[i+1]; outB = d[i+2]; outA = 255; }
                     if(outA === 0) { d[i]=0; d[i+1]=0; d[i+2]=0; d[i+3]=0; continue; }
 
-                    if (edgePixelSize > 0 && edgeMap[y * smallW + x] === 1) { d[i] = outR * (1 - edgeOpa) + edgeRgb.r * edgeOpa; d[i+1] = outG * (1 - edgeOpa) + edgeRgb.g * edgeOpa; d[i+2] = outB * (1 - edgeOpa) + edgeRgb.b * edgeOpa; d[i+3] = 255; continue; }
-
                     let r = outR, g = outG, b = outB; let pxLuma = 0.3*r + 0.59*g + 0.11*b;
                     if (isShadowsInverted) { let norm = (pxLuma - minL) / (maxL - minL || 1); if (norm < 0.45) { r = 255 - r; g = 255 - g; b = 255 - b; } }
 
                     let factor = ditherMap[y*smallW + x];
                     if (isMidDitherEnabled) { let norm = (pxLuma - minL) / (maxL - minL || 1); if (norm < 0.25 || norm > 0.75) factor = 0; }
                     if (factor !== 0) { let spread = 120; r = Math.max(0, Math.min(255, r + factor * spread)); g = Math.max(0, Math.min(255, g + factor * spread)); b = Math.max(0, Math.min(255, b + factor * spread)); }
-
-                    if (gradData) {
-                        let gr = gradData.d[i], gg = gradData.d[i+1], gb = gradData.d[i+2];
-                        if(gradData.b === 'multiply') { r = (r * gr) / 255; g = (g * gg) / 255; b = (b * gb) / 255; } else if(gradData.b === 'screen') { r = 255 - ((255 - r) * (255 - gr)) / 255; g = 255 - ((255 - g) * (255 - gg)) / 255; b = 255 - ((255 - b) * (255 - gb)) / 255; } else if(gradData.b === 'overlay') { r = r < 128 ? (2 * r * gr) / 255 : 255 - (2 * (255 - r) * (255 - gr)) / 255; g = g < 128 ? (2 * g * gg) / 255 : 255 - (2 * (255 - g) * (255 - gg)) / 255; b = b < 128 ? (2 * b * gb) / 255 : 255 - (2 * (255 - b) * (255 - gb)) / 255; } else if(gradData.b === 'color') { let hslOrig = rgbToHsl(r,g,b); let hslGrad = rgbToHsl(gr,gg,gb); let nc = hslToRgb(hslGrad.h, hslGrad.s, hslOrig.l); r=nc.r; g=nc.g; b=nc.b; } else { r = gr; g = gg; b = gb; }
-                    }
 
                     if (usePalette) {
                         let idx3D = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
@@ -1315,6 +1296,27 @@
 
             if (document.getElementById('fillBg').checked) { ctx.fillStyle = document.getElementById('btnBgColor').getAttribute('data-color'); ctx.fillRect(0,0,baseCanvasW,baseCanvasH); } else { ctx.clearRect(0,0,baseCanvasW,baseCanvasH); }
             ctx.drawImage(ditherCanvas, 0, 0, smallW, smallH, 0, 0, baseCanvasW, baseCanvasH);
+
+            const edgePixelSize = parseInt(document.getElementById('edgePixelSize').value, 10);
+            if (edgePixelSize > 0) {
+                ctx.fillStyle = document.getElementById('edgeColor').value;
+                ctx.globalAlpha = document.getElementById('edgeOpacity').value / 100;
+                let pSize = px * displayScale * canvasPadding;
+                let halfT = edgePixelSize / 2;
+                ctx.beginPath();
+                for (let y = 0; y < smallH - 1; y++) {
+                    for (let x = 0; x < smallW - 1; x++) {
+                        let idx = (y * smallW + x) * 4;
+                        let rDiff = Math.abs(d[idx] - d[idx+4]) + Math.abs(d[idx+1] - d[idx+5]) + Math.abs(d[idx+2] - d[idx+6]);
+                        let bDiff = Math.abs(d[idx] - d[idx+smallW*4]) + Math.abs(d[idx+1] - d[idx+smallW*4+1]) + Math.abs(d[idx+2] - d[idx+smallW*4+2]);
+                        
+                        if (rDiff > 40) ctx.rect((x+1)*pSize - halfT, y*pSize, edgePixelSize, pSize);
+                        if (bDiff > 40) ctx.rect(x*pSize, (y+1)*pSize - halfT, pSize, edgePixelSize);
+                    }
+                }
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
 
             isRestoringState = false;
         }
