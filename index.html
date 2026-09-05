@@ -78,7 +78,7 @@
         body.is-fullscreen #btn-exit-fullscreen { display: flex; }
 
         #controls {
-            width: var(--sidebar-width); min-width: var(--tabs-width); max-width: 100vw; height: 100%;
+            width: var(--sidebar-width); min-width: calc(var(--tabs-width) + 16px); max-width: 100vw; height: 100%;
             border-right: var(--border-width) solid var(--border); background: var(--bg); z-index: 10;
             display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 1px 0 0 var(--border-highlight) inset;
@@ -89,30 +89,38 @@
             display: flex; flex-direction: row; flex: 1 1 0%; overflow: hidden; width: 100%;
         }
 
-        /* Abas Desktop (Sidebar Vertical) */
+        /* Abas Desktop (Sidebar Vertical) como Painel Flutuante */
         #desktop-tabs {
-            display: flex; flex-direction: column; width: var(--tabs-width); flex: 0 0 var(--tabs-width); height: 100%;
-            border-right: var(--border-width) solid var(--border); background: var(--panel);
+            display: flex; flex-direction: column; gap: 6px;
+            width: var(--tabs-width); flex: 0 0 var(--tabs-width); height: calc(100% - 16px);
+            margin: 8px;
+            background: var(--bg); border: var(--border-width) solid var(--border); 
+            border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); 
+            padding: 6px; box-shadow: 2px 2px 0 var(--shadow);
             overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+            z-index: 50;
         }
         #desktop-tabs::-webkit-scrollbar { display: none; }
         
         .d-tab {
-            background: var(--panel); border: none; border-bottom: var(--border-width) solid var(--border);
-            color: var(--text); cursor: pointer; width: var(--tabs-width); height: 80px; flex: 0 0 80px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; gap: 6px;
+            background: var(--bg); border: var(--border-width) solid var(--border); 
+            border-top-color: var(--border-highlight); border-left-color: var(--border-highlight);
+            color: var(--text); cursor: pointer; width: 100%; height: 72px; flex: 0 0 72px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+            box-shadow: 1px 1px 0 var(--shadow);
+            margin: 0; transition: transform 0.1s;
         }
-        .d-tab span { display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: normal; }
-        .d-tab svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        .d-tab span { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: normal; }
+        .d-tab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
         .d-tab.active { 
-            background: var(--bg); border-right: 1px solid var(--bg); 
-            box-shadow: inset 1px 1px 0 var(--border-highlight);
-            margin-right: -1px; width: calc(var(--tabs-width) + 1px); z-index: 2; 
+            background: var(--panel); border-top-color: var(--border); border-left-color: var(--border); 
+            border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); 
+            box-shadow: none; transform: translate(1px, 1px);
         }
         
         /* Container Retrátil do Desktop */
         @media (min-width: 769px) {
-            #controls.collapsed { width: var(--tabs-width); }
+            #controls.collapsed { width: calc(var(--tabs-width) + 16px); }
             .panels-container { display: none; }
             .panels-container.active { display: flex; }
         }
@@ -256,9 +264,6 @@
         .float-btn { background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); cursor: pointer; padding: 6px; color: var(--text); border-radius: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-shadow: 1px 1px 0 var(--shadow); width: 40px; height: 40px; min-width: 40px; }
         .float-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
         
-        @keyframes attentionBlink { 0%, 100% { background: var(--bg); color: var(--text); } 50% { background: var(--text); color: var(--bg); } }
-        .attention-pulse { animation: attentionBlink 1s infinite; }
-
         #btn-exit-fullscreen { position: fixed; top: 16px; left: 16px; z-index: 100001; display: none; padding: 8px var(--pad); background: var(--bg); color: var(--text); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-weight: normal; text-transform: uppercase; cursor: pointer; box-shadow: 2px 2px 0 var(--shadow); min-height: 44px; font-size: var(--font-size-base);}
 
         .modal { display: none; position: fixed; z-index: 100000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; padding: var(--pad); }
@@ -284,7 +289,7 @@
             
             #controls {
                 width: 100% !important; max-width: 100vw; 
-                flex: 0 0 auto; height: auto; max-height: 55vh; /* Altura dinâmica com limite */
+                flex: 0 0 auto; height: auto; max-height: 55vh; 
                 border-right: none; border-top: var(--border-width) solid var(--border);
                 box-shadow: none; z-index: 60; display: flex; flex-direction: column;
             }
@@ -294,17 +299,14 @@
             }
 
             #desktop-tabs { 
-                flex-direction: row; height: 64px; flex: 0 0 64px; border-right: none; border-bottom: var(--border-width) solid var(--border);
-                overflow-x: auto; flex-wrap: nowrap; width: 100%;
+                flex-direction: row; height: auto; flex: 0 0 auto;
+                width: calc(100% - 16px); margin: 8px;
+                overflow-x: auto; flex-wrap: nowrap;
             }
             .d-tab { 
-                width: auto; height: 100%; flex: 1 0 auto; min-width: 72px; padding: 4px;
-                border: none; border-right: var(--border-width) solid var(--border); 
-                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+                width: 72px; height: 60px; flex: 0 0 72px; min-width: 72px; padding: 4px;
             }
-            .d-tab span { display: block; font-size: 0.75rem; margin-top: 0; }
-            .d-tab svg { width: 22px; height: 22px; }
-            .d-tab.active { margin: 0; width: auto; border-right: var(--border-width) solid var(--border); border-bottom: 2px solid var(--text); border-top: none;}
+            .d-tab.active { width: 72px; margin: 0; }
 
             .panels-container { 
                 padding: var(--pad-sm); overflow-y: auto; flex-direction: column; 
@@ -350,12 +352,13 @@
     <!-- MAIN APP - CONTROLES -->
     <div id="controls">
         <div class="controls-layout">
-            <!-- Abas Verticais (Desktop) ou Horizontais (Mobile) -->
+            <!-- Barra de Seções (Estilo Painel Flutuante) -->
             <div id="desktop-tabs">
                 <button class="d-tab active" data-target="group-ajustes" title="Ajustes"><svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg><span>Ajustes</span></button>
                 <button class="d-tab" data-target="group-pixel" title="Pixel e Textura"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Pixel</span></button>
                 <button class="d-tab" data-target="group-cores" title="Cores e Paletas"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"/></svg><span>Cores</span></button>
-                <button class="d-tab" data-target="group-sistema" title="Sistema e Exportação"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>Sistema</span></button>
+                <button class="d-tab" data-target="group-filtros" title="Filtros e Presets"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg><span>Filtros</span></button>
+                <button class="d-tab" data-target="group-config" title="Configuração e Exportação"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg><span>Config.</span></button>
             </div>
 
             <div class="panels-container active">
@@ -463,7 +466,8 @@
                                 </select>
                                 <button class="icon-btn lock-btn" data-target="colorSelect"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                                 <button class="icon-btn" id="btnInvert" title="Inverter Cores"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"></path></svg></button>
-                                <button class="icon-btn" id="btnShufflePalette" title="Sortear Harmonias"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                                <button class="icon-btn" id="btnShufflePalette" title="Sortear Novas Cores"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg></button>
+                                <button class="icon-btn" id="btnSwapColors" title="Misturar Ordem da Paleta Atual"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></button>
                             </div>
                             <div id="colorsGrid" class="colors-grid"></div>
                         </div>
@@ -508,22 +512,14 @@
                     </div>
                 </div>
 
-                <!-- GRUPO: SISTEMA -->
-                <div class="control-group" id="group-sistema">
+                <!-- GRUPO: FILTROS E PRESETS -->
+                <div class="control-group" id="group-filtros">
                     <div class="m-sub-nav">
-                        <button class="m-sub-btn active" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
-                        <button class="m-sub-btn" data-target="set-opTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
-                        <button class="m-sub-btn" data-target="set-opExp"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
+                        <button class="m-sub-btn active" data-target="set-filTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
+                        <button class="m-sub-btn" data-target="set-filPre"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Meus Presets</span></button>
                     </div>
                     <div class="sec-content">
-                        <div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
-                            <label class="custom-checkbox"><input type="checkbox" id="fillBg"><span class="checkmark"></span><span>Preencher Fundo</span></label>
-                            <div class="slider-row">
-                                <input type="color" id="btnBgColor" class="icon-btn" value="#F0F0F0" data-color="#F0F0F0">
-                                <input type="text" id="hexBgColor" value="#F0F0F0" maxlength="7" style="text-align:center;">
-                            </div>
-                        </div>
-                        <div class="set-item" id="set-opTem"><div class="panel-label">Temas Prontos</div>
+                        <div class="set-item active" id="set-filTem"><div class="panel-label">Temas Prontos</div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--pad-sm); width:100%;">
                                 <button class="std-btn" data-theme="Nintendo_DS">Nintendo DS</button>
                                 <button class="std-btn" data-theme="GameBoy">GameBoy</button>
@@ -534,13 +530,33 @@
                                 <button class="std-btn" data-theme="Termica">Câmera Térmica</button>
                             </div>
                         </div>
-                        <div class="set-item" id="set-opExp"><div class="panel-label">Exportar / Importar Config.</div>
-                            <label class="std-btn" style="text-align: center; display: flex; align-items: center; justify-content: center; width:100%;">
+                        <div class="set-item" id="set-filPre"><div class="panel-label">Meus Presets Salvos</div>
+                            <button class="std-btn" style="width:100%; margin-bottom: 8px;" id="btnSavePreset">Salvar Ajuste Atual</button>
+                            <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 8px; width:100%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUPO: CONFIG. -->
+                <div class="control-group" id="group-config">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
+                        <button class="m-sub-btn" data-target="set-opExp"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
+                    </div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
+                            <label class="custom-checkbox"><input type="checkbox" id="fillBg"><span class="checkmark"></span><span>Preencher Fundo</span></label>
+                            <div class="slider-row">
+                                <input type="color" id="btnBgColor" class="icon-btn" value="#F0F0F0" data-color="#F0F0F0">
+                                <input type="text" id="hexBgColor" value="#F0F0F0" maxlength="7" style="text-align:center;">
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-opExp"><div class="panel-label">Exportar / Importar / Limpar</div>
+                            <button class="std-btn" style="width:100%; margin-bottom: 8px;" id="btnDownloadConfig">Baixar Arte</button>
+                            <label class="std-btn" style="text-align: center; display: flex; align-items: center; justify-content: center; width:100%; margin-bottom: 8px;">
                                 Importar Configuração <input type="file" id="importImgConfig" accept="image/png">
                             </label>
-                            <button class="std-btn" style="width:100%;" id="btnSavePreset">Salvar Ajuste Atual</button>
                             <button class="std-btn" style="width:100%; margin-bottom: 8px;" id="btnResetImage">Limpar e Restaurar Foto</button>
-                            <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 8px; width:100%;"></div>
                         </div>
                     </div>
                 </div>
@@ -773,7 +789,7 @@
                 if (target === 'colors') {
                     isImageInverted = false; currentPaletteMode = 'original';
                     document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false;
-                    updateImgGradUI(); globalCurrentPalette = []; setBasePalette([]); scheduleProcess();
+                    updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); scheduleProcess();
                 }
                 if (target === 'pixelReset') {
                     document.getElementById('pxSize').value = 1; document.getElementById('groupStrength').value = 0;
@@ -786,7 +802,12 @@
         });
 
         let sourceImg = null; let originalSourceUrl = null; let isRestoringState = false; const clone = (arr) => arr.map(c => ({...c}));
-        let currentPaletteMode = 'manual'; let globalCurrentPalette = []; let basePalette = [];
+        
+        let currentPaletteMode = 'manual'; 
+        let globalCurrentPalette = []; // As cores desenhadas na tela
+        let referencePalette = []; // As cores usadas para mapear a posição dos pixels
+        let basePalette = [];
+        
         let isImageInverted = false; let isShadowsInverted = false; let isMidDitherEnabled = false; let groupMethod = 'mean';
         let savedPresets = {}; let savedPalettes = {}; let currentImgGradColors = ['#FF00FF', '#00FFFF'];
 
@@ -947,7 +968,9 @@
         const processInputs = ['pxSize', 'estrutura', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'groupStrength', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'imageScale'];
         const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
 
-        globalCurrentPalette = [hexToRgb('#2C2C2C'), hexToRgb('#D62828'), hexToRgb('#FFD166'), hexToRgb('#00C2A8')]; setBasePalette(globalCurrentPalette);
+        globalCurrentPalette = [hexToRgb('#2C2C2C'), hexToRgb('#D62828'), hexToRgb('#FFD166'), hexToRgb('#00C2A8')]; 
+        referencePalette = clone(globalCurrentPalette);
+        setBasePalette(globalCurrentPalette);
         const canvas = document.getElementById('outputCanvas'); const ctx = canvas.getContext('2d'); const origCanvas = document.getElementById('originalCanvas'); const oCtx = origCanvas.getContext('2d');
 
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleProcess(); });
@@ -971,13 +994,16 @@
             if (val === 'all') {
                 currentPaletteMode = 'original';
                 globalCurrentPalette = [];
+                referencePalette = [];
                 setBasePalette([]);
             } else {
                 const qty = parseInt(val, 10);
                 if (currentPaletteMode === 'original' || globalCurrentPalette.length === 0) {
                     globalCurrentPalette = [];
+                    referencePalette = [];
                 } else {
                     globalCurrentPalette = interpolatePalette(basePalette, qty);
+                    referencePalette = clone(globalCurrentPalette);
                     setBasePalette(globalCurrentPalette);
                 }
             }
@@ -989,7 +1015,14 @@
 
         document.getElementById('palHue').addEventListener('input', applyGlobalPaletteOffsets); document.getElementById('palSat').addEventListener('input', applyGlobalPaletteOffsets); document.getElementById('palLight').addEventListener('input', applyGlobalPaletteOffsets);
 
-        document.getElementById('btnInvert').addEventListener('click', (e) => { e.stopPropagation(); if (locks.colors) return; currentPaletteMode = 'manual'; isImageInverted = !isImageInverted; globalCurrentPalette = globalCurrentPalette.map(c => ({r: 255-c.r, g: 255-c.g, b: 255-c.b})); setBasePalette(globalCurrentPalette); scheduleProcess(); });
+        document.getElementById('btnInvert').addEventListener('click', (e) => { 
+            e.stopPropagation(); if (locks.colors) return; 
+            currentPaletteMode = 'manual'; isImageInverted = !isImageInverted; 
+            globalCurrentPalette = globalCurrentPalette.map(c => ({r: 255-c.r, g: 255-c.g, b: 255-c.b})); 
+            referencePalette = referencePalette.map(c => ({r: 255-c.r, g: 255-c.g, b: 255-c.b}));
+            setBasePalette(globalCurrentPalette); 
+            scheduleProcess(); 
+        });
 
         document.getElementById('btnShufflePalette').addEventListener('click', () => {
             if (locks.colors) return;
@@ -1000,6 +1033,21 @@
             }
             currentPaletteMode = 'random';
             globalCurrentPalette = generateHarmonyPalette(qty);
+            referencePalette = clone(globalCurrentPalette);
+            setBasePalette(globalCurrentPalette);
+            scheduleProcess();
+        });
+
+        document.getElementById('btnSwapColors').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (locks.colors || globalCurrentPalette.length === 0) return;
+            
+            currentPaletteMode = 'manual';
+            // Apenas embaralha a paleta de visualização. Mantemos a referencePalette intacta para o mapeamento!
+            for (let i = globalCurrentPalette.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [globalCurrentPalette[i], globalCurrentPalette[j]] = [globalCurrentPalette[j], globalCurrentPalette[i]];
+            }
             setBasePalette(globalCurrentPalette);
             scheduleProcess();
         });
@@ -1034,12 +1082,11 @@
                             sourceImg = img;
                             document.getElementById('btn-download').disabled = false; document.getElementById('btn-compare').disabled = false; historyArr = []; historyIndex = -1;
                             initPresetPool();
-                            document.getElementById('btn-random-global').classList.add('attention-pulse');
 
                             if (isComparing) btnCompare.click();
                             if (loadedState) { applyState(loadedState); } else {
                                 document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = "all"; document.getElementById('ditherSelect').value = "none"; document.getElementById('groupStrength').value = 0; groupMethod = "mean"; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0; document.getElementById('imageScale').value = 100;
-                                resetAdjustments(); currentPaletteMode = 'original'; globalCurrentPalette = []; setBasePalette([]); scheduleProcess();
+                                resetAdjustments(); currentPaletteMode = 'original'; globalCurrentPalette = []; referencePalette = []; setBasePalette([]); scheduleProcess();
                             }
                             fitImageToView(); e.target.value = ''; 
                         }; img.src = url;
@@ -1053,7 +1100,7 @@
             img.onload = () => {
                 sourceImg = img;
                 document.getElementById('pxSize').value = 1; document.getElementById('colorSelect').value = 'all'; document.getElementById('ditherSelect').value = 'none'; document.getElementById('groupStrength').value = 0; groupMethod = 'mean'; document.getElementById('btnGroupMean').classList.add('active-state'); document.getElementById('btnGroupMode').classList.remove('active-state'); isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('imgGradient').checked = false; updateImgGradUI(); document.getElementById('edgePixelSize').value = 0; document.getElementById('imageScale').value = 100;
-                resetAdjustments(); currentPaletteMode = 'original'; globalCurrentPalette = []; setBasePalette([]); isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
+                resetAdjustments(); currentPaletteMode = 'original'; globalCurrentPalette = []; referencePalette = []; setBasePalette([]); isImageInverted = false; isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
                 scheduleProcess(); fitImageToView();
             }; img.src = originalSourceUrl;
         });
@@ -1071,7 +1118,9 @@
                 else if (themeName === 'GameBoy') { if (!locks.colorSelect) document.getElementById('colorSelect').value = "4"; if (!locks.ditherSelect) { document.getElementById('ditherSelect').value = "nintendo_ds"; document.getElementById('ditherScale').value = 1; } }
                 updateBadges(); let targetColors = parseInt(document.getElementById('colorSelect').value, 10);
                 if (isNaN(targetColors)) { targetColors = THEMES[themeName].length; document.getElementById('colorSelect').value = targetColors; }
-                globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors); setBasePalette(globalCurrentPalette);
+                globalCurrentPalette = interpolatePalette(THEMES[themeName].map(hexToRgb), targetColors); 
+                referencePalette = clone(globalCurrentPalette);
+                setBasePalette(globalCurrentPalette);
             }
             scheduleProcess();
         }
@@ -1086,7 +1135,7 @@
             if (!locks.colors) {
                 isImageInverted = false; currentPaletteMode = 'original';
                 document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI();
-                globalCurrentPalette = []; setBasePalette([]);
+                globalCurrentPalette = []; referencePalette = []; setBasePalette([]);
             }
             scheduleProcess();
         });
@@ -1099,7 +1148,7 @@
                 const colorStrip = document.createElement('div'); colorStrip.style.display = "flex"; colorStrip.style.flex = "1 1 0%"; colorStrip.style.height = "16px"; colorStrip.style.marginRight = "6px";
                 let viewP = savedPalettes[key].slice(0, 8); viewP.forEach(c => { const cDiv = document.createElement('div'); cDiv.style.flex = "1"; cDiv.style.backgroundColor = rgbToHex(c.r, c.g, c.b); colorStrip.appendChild(cDiv); });
                 const label = document.createElement('span'); label.textContent = key; label.style.fontSize = "0.75rem"; label.style.paddingRight = "4px"; b.appendChild(colorStrip); b.appendChild(label);
-                b.onclick = () => { if(!locks.colors) { isImageInverted = false; currentPaletteMode = 'preset'; globalCurrentPalette = [...savedPalettes[key]]; setBasePalette(globalCurrentPalette); scheduleProcess(); } };
+                b.onclick = () => { if(!locks.colors) { isImageInverted = false; currentPaletteMode = 'preset'; globalCurrentPalette = [...savedPalettes[key]]; referencePalette = clone(globalCurrentPalette); setBasePalette(globalCurrentPalette); scheduleProcess(); } };
                 const db = document.createElement('button'); db.className = "std-btn icon-btn"; db.innerHTML = "<svg viewBox='0 0 24 24'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>"; db.style.marginLeft = "4px";
                 db.onclick = () => { delete savedPalettes[key]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); };
                 div.appendChild(b); div.appendChild(db); grid.appendChild(div);
@@ -1129,6 +1178,7 @@
                 if(isNaN(qty)) { qty = [4,6,8,12,16][Math.floor(Math.random() * 5)]; document.getElementById('colorSelect').value = qty.toString(); }
                 currentPaletteMode = 'random';
                 globalCurrentPalette = generateHarmonyPalette(qty);
+                referencePalette = clone(globalCurrentPalette);
                 setBasePalette(globalCurrentPalette);
             }
             if(!locks.ditherScale) document.getElementById('ditherScale').value = Math.floor(Math.random() * 3) + 1;
@@ -1140,8 +1190,6 @@
         }
 
         document.getElementById('btn-random-global').addEventListener('click', (e) => {
-            e.currentTarget.classList.remove('attention-pulse');
-
             if (isNextRandomAPreset && sessionPresetsPool.length > 0) {
                 const item = sessionPresetsPool.pop();
                 if (item.type === 'theme') {
@@ -1164,7 +1212,7 @@
                 dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, tAng: document.getElementById('texAngle').value,
                 shInv: isShadowsInverted, effMidDither: isMidDitherEnabled,
                 fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'),
-                cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted,
+                cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted,
                 rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value,
                 pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value,
                 tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value,
@@ -1219,7 +1267,15 @@
 
             if (!locks.colors) {
                 currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false;
-                if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); setBasePalette(globalCurrentPalette); }
+                if (p.cc && p.cc.length > 0) { 
+                    globalCurrentPalette = p.cc.map(hexToRgb); 
+                    if (p.rc && p.rc.length > 0) {
+                        referencePalette = p.rc.map(hexToRgb);
+                    } else {
+                        referencePalette = clone(globalCurrentPalette);
+                    }
+                    setBasePalette(globalCurrentPalette); 
+                }
             }
 
             isRestoringState = true; scheduleProcess(); updateHistoryButtons();
@@ -1230,6 +1286,7 @@
 
         const dlModal = document.getElementById('downloadModal');
         document.getElementById('btn-download').addEventListener('click', () => { if(sourceImg) dlModal.style.display = 'flex'; });
+        document.getElementById('btnDownloadConfig').addEventListener('click', () => { if(sourceImg) dlModal.style.display = 'flex'; else showToast('Carregue uma imagem primeiro.'); });
         document.getElementById('dl-close').addEventListener('click', () => { dlModal.style.display = 'none'; });
 
         function getDownloadCanvasInfo() {
@@ -1534,6 +1591,8 @@
                         globalCurrentPalette = getBalancedPalette(mapped, targetColors);
                     } else { globalCurrentPalette = basePal.map(c => ({r: c.r, g: c.g, b: c.b})); }
                     
+                    referencePalette = clone(globalCurrentPalette);
+                    
                     if (!isRestoringState) { setBasePalette(globalCurrentPalette); }
                 }
             }
@@ -1542,19 +1601,28 @@
             await yieldToMain();
             if (myId !== currentProcessId) return;
 
-            engineDataCache = { data: new Uint8ClampedArray(d), w: smallW, h: smallH, minL: minL, maxL: maxL, palette: [...globalCurrentPalette], usePal: usePalette };
+            engineDataCache = { 
+                data: new Uint8ClampedArray(d), w: smallW, h: smallH, minL: minL, maxL: maxL, 
+                displayPalette: [...globalCurrentPalette], 
+                referencePalette: [...referencePalette], 
+                usePal: usePalette 
+            };
             await renderCanvas(myId); 
         }
 
         const colorCache = new Map();
-        const findClosestColor = (r, g, b, palette) => {
-            const key = (r & 0xF8) << 10 | (g & 0xF8) << 5 | (b & 0xF8); let cached = colorCache.get(key); if (cached) return cached;
-            let minDist = Infinity, closest = palette[0];
+        const findClosestColorIndex = (r, g, b, palette) => {
+            const key = (r & 0xF8) << 10 | (g & 0xF8) << 5 | (b & 0xF8);
+            let cached = colorCache.get(key); 
+            if (cached !== undefined) return cached;
+            let minDist = Infinity, closestIdx = 0;
             for(let i = 0; i < palette.length; i++) {
-                let c = palette[i]; let dr = r - c.r, dg = g - c.g, db = b - c.b; let dist = dr*dr + dg*dg + db*db;
-                if(dist < minDist){ minDist = dist; closest = c; }
+                let c = palette[i];
+                let dr = r - c.r, dg = g - c.g, db = b - c.b; 
+                let dist = dr*dr + dg*dg + db*db;
+                if(dist < minDist){ minDist = dist; closestIdx = i; }
             }
-            colorCache.set(key, closest); return closest;
+            colorCache.set(key, closestIdx); return closestIdx;
         };
 
         function createGradientLayer(w, h, isGlobal) {
@@ -1602,7 +1670,7 @@
             if (myId !== currentProcessId) return;
 
             colorCache.clear();
-            const { w, h, minL, maxL, palette, usePal } = engineDataCache;
+            const { w, h, minL, maxL, displayPalette, referencePalette, usePal } = engineDataCache;
             let d = new Uint8ClampedArray(engineDataCache.data);
 
             const px = parseInt(document.getElementById('pxSize').value, 10);
@@ -1722,9 +1790,10 @@
                         else { r = gr; g = gg; b = gb; }
                     }
 
-                    if (usePal && palette && palette.length > 0) {
-                        let closest = findClosestColor(r, g, b, palette);
-                        d[i]=closest.r; d[i+1]=closest.g; d[i+2]=closest.b;
+                    if (usePal && referencePalette && referencePalette.length > 0) {
+                        let closestIdx = findClosestColorIndex(r, g, b, referencePalette);
+                        let displayColor = displayPalette[closestIdx] || referencePalette[closestIdx];
+                        d[i] = displayColor.r; d[i+1] = displayColor.g; d[i+2] = displayColor.b;
                     } else { d[i] = r; d[i+1] = g; d[i+2] = b; }
                     d[i+3] = 255;
                 }
