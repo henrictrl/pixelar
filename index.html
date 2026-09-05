@@ -472,7 +472,7 @@
             toast.className = 'toast'; toast.textContent = message;
             container.appendChild(toast); void toast.offsetWidth; 
             toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
         }
         function promptModal(msg, defaultText) { return window.prompt(msg, defaultText); }
 
@@ -1241,7 +1241,6 @@
             const maxDim = Math.max(origW, origH); 
             let displayScale = maxDim > 2000 ? 2000 / maxDim : 1; 
             
-            // Força a escala na hora de exportar para atingir a resolução escolhida no modal
             if (isExporting && targetRes) {
                 displayScale = targetRes / (smallH * px);
             }
@@ -1332,7 +1331,6 @@
 
             isRestoringState = false;
             
-            // Salva o estado no histórico se não for durante a gravação/exportação
             if (!isExporting) {
                 saveHistoryState();
             }
@@ -1431,9 +1429,16 @@
             let currentFrame = 0;
 
             sourceVideo.onseeked = async () => {
-                processVideoFrameSynchronously(true, exportRes);
-                let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.90));
-                renderFrames.push(URL.createObjectURL(blob));
+                try {
+                    processVideoFrameSynchronously(true, exportRes);
+                    // Otimização iOS: Reduzido de 0.90 para 0.70. Corta o uso de RAM pela metade, evitando crashs.
+                    let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.70));
+                    if (blob) {
+                        renderFrames.push(URL.createObjectURL(blob));
+                    }
+                } catch(e) {
+                    console.error("Erro no processamento do frame", e);
+                }
 
                 currentFrame++;
                 setProgress(Math.round((currentFrame / totalFrames) * 100));
@@ -1444,19 +1449,25 @@
                     sourceVideo.currentTime = nextTime;
                 } else {
                     sourceVideo.onseeked = null;
-                    startRenderPhase2(fileExtension, videoFPS);
+                    if (renderFrames.length > 0) {
+                        startRenderPhase2(fileExtension, videoFPS);
+                    } else {
+                        showToast("Erro fatal: Nenhum quadro foi salvo.");
+                        isVideoRendering = false;
+                        document.getElementById('loading-bar-container').style.display = 'none';
+                    }
                 }
             };
             sourceVideo.currentTime = 0;
         }
 
         function startRenderPhase2(fileExtension, videoFPS) {
-            showToast("Etapa 2 de 2: Gravando arquivo de vídeo final...");
+            showToast("Etapa 2 de 2: Gravando arquivo final. Mantenha esta aba aberta.");
             setProgress(0);
 
             let mimeType = fileExtension === 'mp4' ? 'video/mp4' : 'video/webm; codecs=vp9';
             if (typeof MediaRecorder === 'undefined') {
-                showToast("Exportação de vídeo não suportada neste navegador.");
+                showToast("O seu navegador não suporta a gravação de vídeo de forma nativa.");
                 isVideoRendering = false;
                 document.getElementById('loading-bar-container').style.display = 'none';
                 return;
@@ -1470,9 +1481,21 @@
                 }
             }
 
-            const canvasStream = canvas.captureStream(videoFPS);
+            let canvasStream;
+            try {
+                canvasStream = canvas.captureStream ? canvas.captureStream(videoFPS) : canvas.mozCaptureStream ? canvas.mozCaptureStream(videoFPS) : null;
+            } catch (e) {
+                console.warn(e);
+            }
+
+            if (!canvasStream) {
+                showToast("A captura de tela do navegador falhou ou não é suportada.");
+                isVideoRendering = false;
+                document.getElementById('loading-bar-container').style.display = 'none';
+                return;
+            }
+
             let combinedStream = canvasStream;
-            
             let audioTracks = [];
             try {
                 let captureFn = sourceVideo.captureStream || sourceVideo.mozCaptureStream;
@@ -1481,7 +1504,7 @@
                     audioTracks = videoStream.getAudioTracks();
                 }
             } catch(e) {
-                console.log("Captura de áudio não suportada pelo navegador. Exportando sem som.");
+                // Áudio ignorado silenciosamente
             }
             
             if (audioTracks.length > 0) {
@@ -1489,8 +1512,21 @@
             }
 
             let recorder;
-            try { recorder = new MediaRecorder(combinedStream, { mimeType: mimeType, videoBitsPerSecond: 16000000 }); } 
-            catch (e) { recorder = new MediaRecorder(combinedStream); }
+            let options = {};
+            if (mimeType) options.mimeType = mimeType;
+            
+            try { 
+                recorder = new MediaRecorder(combinedStream, options); 
+            } catch (e) { 
+                try {
+                    recorder = new MediaRecorder(combinedStream); 
+                } catch (err) {
+                    showToast("Erro fatal: MediaRecorder rejeitado pelo dispositivo.");
+                    isVideoRendering = false;
+                    document.getElementById('loading-bar-container').style.display = 'none';
+                    return;
+                }
+            }
 
             let chunks = [];
             recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
@@ -1502,7 +1538,8 @@
                 a.click();
                 URL.revokeObjectURL(url);
                 
-                renderFrames.forEach(u => URL.revokeObjectURL(u));
+                // Limpeza completa e final
+                renderFrames.forEach(u => { if(u) URL.revokeObjectURL(u) });
                 renderFrames = [];
                 isVideoRendering = false;
                 document.getElementById('loading-bar-container').style.display = 'none';
@@ -1517,38 +1554,79 @@
             let currentPlaybackFrame = 0;
             let playImg = new Image();
             
-            recorder.start();
+            try { recorder.start(); } catch(e) {
+                showToast("Falha ao iniciar o gravador do navegador: " + e.message);
+                isVideoRendering = false;
+                document.getElementById('loading-bar-container').style.display = 'none';
+                return;
+            }
+            
             try {
                 let playPromise = sourceVideo.play();
                 if (playPromise !== undefined) {
-                    playPromise.catch(e => console.log("Autoplay bloqueado pelo celular. O vídeo será gerado de forma silenciosa."));
+                    playPromise.catch(e => console.log("Autoplay de som bloqueado. O vídeo será mudo."));
                 }
             } catch (e) {}
 
             let startTime = performance.now();
+            let totalFramesCount = renderFrames.length;
+
+            const loadNextFrame = () => {
+                if (currentPlaybackFrame >= totalFramesCount) {
+                    setTimeout(() => { 
+                        try { recorder.stop(); } catch(e) {}
+                        try { sourceVideo.pause(); } catch(e) {}
+                    }, 200);
+                    return;
+                }
+
+                const checkTime = () => {
+                    let elapsed = performance.now() - startTime;
+                    let nextTimeMs = (currentPlaybackFrame / videoFPS) * 1000;
+                    
+                    if (elapsed >= nextTimeMs) {
+                        let frameSrc = renderFrames[currentPlaybackFrame];
+                        if (frameSrc) {
+                            playImg.src = frameSrc;
+                        } else {
+                            // Se o frame for nulo (limpo ou corrompido), pula e avança
+                            currentPlaybackFrame++;
+                            loadNextFrame();
+                        }
+                    } else {
+                        // requestAnimationFrame não sofre asfixia do iOS como o setTimeout sofre
+                        requestAnimationFrame(checkTime);
+                    }
+                };
+                requestAnimationFrame(checkTime);
+            };
 
             playImg.onload = () => {
-                ctx.drawImage(playImg, 0, 0);
-                currentPlaybackFrame++;
-                setProgress(Math.round((currentPlaybackFrame / renderFrames.length) * 100));
-                
-                if (currentPlaybackFrame < renderFrames.length) {
-                    let nextTimeMs = (currentPlaybackFrame / videoFPS) * 1000;
-                    let elapsed = performance.now() - startTime;
-                    let waitTime = nextTimeMs - elapsed;
+                try {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(playImg, 0, 0);
                     
-                    setTimeout(() => {
-                        playImg.src = renderFrames[currentPlaybackFrame];
-                    }, Math.max(0, waitTime));
-                } else {
-                    setTimeout(() => {
-                        recorder.stop();
-                        try { sourceVideo.pause(); } catch(e) {}
-                    }, 100);
-                }
+                    // LIBERAÇÃO AGRESSIVA DE RAM - Previne crash do iOS na etapa 2
+                    if (renderFrames[currentPlaybackFrame]) {
+                        URL.revokeObjectURL(renderFrames[currentPlaybackFrame]);
+                        renderFrames[currentPlaybackFrame] = null;
+                    }
+                } catch(e) {}
+                
+                currentPlaybackFrame++;
+                setProgress(Math.round((currentPlaybackFrame / totalFramesCount) * 100));
+                loadNextFrame();
+            };
+
+            playImg.onerror = () => {
+                // Se a imagem falhar ao carregar no iOS, não congela, apenas descarta e pula.
+                console.warn("Quadro ignorado devido a falha de carregamento.");
+                currentPlaybackFrame++;
+                loadNextFrame();
             };
             
-            playImg.src = renderFrames[0];
+            // Inicia o processo
+            loadNextFrame();
         }
     </script>
 </body>
