@@ -1413,118 +1413,72 @@
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt)); el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el); exportModal.style.display = 'none';
         });
 
+       // ==========================================
+        // SISTEMA DE RENDER DE VÍDEO (CORRIGIDO PARA iOS/SAFARI/BRAVE)
         // ==========================================
-        // SISTEMA TWO-PASS DE RENDER DE VÍDEO
-        // ==========================================
-        document.getElementById('btnChoiceMp4').addEventListener('click', () => { 
-            exportModal.style.display = 'none'; 
-            unlockVideoAndRender('mp4'); 
+
+        // --- Detecção de plataforma ---
+        function isIOSDevice() {
+            const ua = navigator.userAgent;
+            const isIOSUA = /iPad|iPhone|iPod/.test(ua);
+            // iPadOS 13+ finge ser Mac, então checamos touch points também
+            const isIPadOS13 = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+            return isIOSUA || isIPadOS13;
+        }
+        function isSafariEngine() {
+            // Safari real e qualquer navegador no iOS (todos usam WebKit no iOS, incluindo Brave)
+            const ua = navigator.userAgent;
+            const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+            return isSafari || isIOSDevice();
+        }
+        const IS_IOS = isIOSDevice();
+        const IS_SAFARI_ENGINE = isSafariEngine();
+
+        function pickBestMimeType() {
+            // No iOS/Safari, "video/mp4" no MediaRecorder é raro e pouco confiável mesmo
+            // quando isTypeSupported() retorna true. Priorizamos webm com fallback seguro,
+            // e avisamos o usuário quando o formato final não é o pedido.
+            const candidates = IS_SAFARI_ENGINE
+                ? ['video/mp4', 'video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm']
+                : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+            for (const type of candidates) {
+                if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type)) {
+                    return type;
+                }
+            }
+            return '';
+        }
+
+        document.getElementById('btnChoiceMp4').addEventListener('click', () => {
+            exportModal.style.display = 'none';
+            unlockVideoAndRender('mp4');
         });
-        document.getElementById('btnChoiceWebm').addEventListener('click', () => { 
-            exportModal.style.display = 'none'; 
-            unlockVideoAndRender('webm'); 
+        document.getElementById('btnChoiceWebm').addEventListener('click', () => {
+            exportModal.style.display = 'none';
+            unlockVideoAndRender('webm');
         });
 
-        // Desbloqueia o áudio reproduzindo e pausando instantaneamente no evento de clique do usuário
+        // Desbloqueia áudio/vídeo dentro do próprio gesto de clique do usuário.
+        // Crítico no iOS: qualquer play() fora de um gesto direto do usuário é bloqueado,
+        // e reaproveitar currentTime/muted depois pode invalidar esse desbloqueio.
         function unlockVideoAndRender(format) {
+            ensureAudioGraph(); // cria o grafo de áudio já dentro do gesto do usuário
+
             sourceVideo.muted = false;
-            let playPromise = sourceVideo.play();
+            const playPromise = sourceVideo.play();
+            const proceed = () => { sourceVideo.pause(); startTwoPassRender(format); };
             if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    sourceVideo.pause();
-                    startTwoPassRender(format);
-                }).catch(() => {
-                    sourceVideo.pause();
-                    startTwoPassRender(format);
-                });
+                playPromise.then(proceed).catch(proceed);
             } else {
-                startTwoPassRender(format);
+                proceed();
             }
         }
 
-        async function startTwoPassRender(fileExtension) {
-            isVideoRendering = true;
-            renderFrames = [];
-            showToast("Etapa 1 de 2: Processando quadros na resolução selecionada (Aguarde...)");
-            document.getElementById('loading-bar-container').style.display = 'block';
-            
-            sourceVideo.pause();
-            sourceVideo.muted = true;
-            
-            let duration = sourceVideo.duration;
-            let videoFPS = parseInt(document.getElementById('exportFps').value, 10);
-            let exportRes = parseInt(document.getElementById('exportRes').value, 10);
-            let totalFrames = Math.ceil(duration * videoFPS);
-            let currentFrame = 0;
-
-            sourceVideo.onseeked = async () => {
-                try {
-                    processVideoFrameSynchronously(true, exportRes);
-                    let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.70));
-                    if (blob) {
-                        renderFrames.push(URL.createObjectURL(blob));
-                    }
-                } catch(e) {
-                    console.error("Erro no processamento do frame", e);
-                }
-
-                currentFrame++;
-                setProgress(Math.round((currentFrame / totalFrames) * 100));
-
-                let nextTime = currentFrame / videoFPS;
-                
-                if (nextTime < duration && currentFrame < totalFrames) {
-                    sourceVideo.currentTime = nextTime;
-                } else {
-                    sourceVideo.onseeked = null;
-                    if (renderFrames.length > 0) {
-                        startRenderPhase2(fileExtension, videoFPS);
-                    } else {
-                        showToast("Erro fatal: Nenhum quadro foi salvo.");
-                        isVideoRendering = false;
-                        document.getElementById('loading-bar-container').style.display = 'none';
-                    }
-                }
-            };
-            sourceVideo.currentTime = 0;
-        }
-
-        function startRenderPhase2(fileExtension, videoFPS) {
-            showToast("Etapa 2 de 2: Gravando arquivo final. Mantenha esta aba aberta.");
-            setProgress(0);
-
-            let mimeType = fileExtension === 'mp4' ? 'video/mp4' : 'video/webm; codecs=vp9';
-            if (typeof MediaRecorder === 'undefined') {
-                showToast("O seu navegador não suporta a gravação de vídeo de forma nativa.");
-                isVideoRendering = false;
-                document.getElementById('loading-bar-container').style.display = 'none';
-                return;
-            }
-
-            if (!MediaRecorder.isTypeSupported(mimeType)) { 
-                mimeType = 'video/mp4'; 
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm';
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = ''; 
-                }
-            }
-
-            let canvasStream;
-            try {
-                canvasStream = canvas.captureStream ? canvas.captureStream(videoFPS) : canvas.mozCaptureStream ? canvas.mozCaptureStream(videoFPS) : null;
-            } catch (e) {
-                console.warn(e);
-            }
-
-            if (!canvasStream) {
-                showToast("A captura de tela do navegador falhou ou não é suportada.");
-                isVideoRendering = false;
-                document.getElementById('loading-bar-container').style.display = 'none';
-                return;
-            }
-
-            // Implementação robusta de extração de áudio forçando a Web Audio API (suporte universal)
-            let audioTracks = [];
+        // Cria o grafo de Web Audio UMA única vez, o quanto antes possível
+        // (idealmente no mesmo gesto de clique que desbloqueia o áudio).
+        // Isso evita o bug do Safari de "perder" o áudio quando o MediaElementSource
+        // é criado depois de já termos mexido bastante no <video>.
+        function ensureAudioGraph() {
             try {
                 if (!audioCtx) {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1532,139 +1486,330 @@
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
                 }
-                
                 if (!audioSourceNode) {
                     audioSourceNode = audioCtx.createMediaElementSource(sourceVideo);
                     audioDestNode = audioCtx.createMediaStreamDestination();
                     audioSourceNode.connect(audioDestNode);
                     audioSourceNode.connect(audioCtx.destination);
                 }
-                audioTracks = audioDestNode.stream.getAudioTracks();
-            } catch(err) {
-                console.warn("Fallback Web Audio falhou, tentando captura nativa...", err);
-                let captureFn = sourceVideo.captureStream || sourceVideo.mozCaptureStream;
+            } catch (err) {
+                console.warn('Não foi possível preparar o grafo de áudio antecipadamente.', err);
+            }
+        }
+
+        // Buffer circular de frames: evita acumular centenas de Blobs JPEG na memória
+        // de uma vez, que é o que mais derruba o Safari em iPhone (pressão de memória).
+        const MAX_FRAME_BUFFER = IS_IOS ? 24 : 90;
+
+        async function startTwoPassRender(fileExtension) {
+            if (!hasMediaLoaded || currentMediaType !== 'video') return;
+            isVideoRendering = true;
+            renderFrames = [];
+
+            const duration = sourceVideo.duration;
+            if (!duration || !isFinite(duration)) {
+                showToast('Não foi possível ler a duração do vídeo.');
+                isVideoRendering = false;
+                return;
+            }
+
+            let videoFPS = parseInt(document.getElementById('exportFps').value, 10);
+            let exportRes = parseInt(document.getElementById('exportRes').value, 10);
+
+            // Em iPhone, limitamos FPS e resolução automaticamente para reduzir
+            // a chance de a aba ser encerrada por falta de memória.
+            if (IS_IOS) {
+                videoFPS = Math.min(videoFPS, 30);
+                exportRes = Math.min(exportRes, 1080);
+                if (exportRes === 2160) exportRes = 1080;
+            }
+
+            const mimeType = pickBestMimeType();
+            if (!mimeType) {
+                showToast('Este navegador não suporta gravação de vídeo (MediaRecorder). Tente atualizar o Safari ou usar outro navegador.');
+                isVideoRendering = false;
+                return;
+            }
+            const actualExtension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+            if (actualExtension !== fileExtension) {
+                showToast(`Seu navegador não grava ${fileExtension.toUpperCase()} de forma confiável aqui — exportando como ${actualExtension.toUpperCase()}.`);
+            }
+
+            showToast('Etapa 1 de 2: Processando quadros...');
+            showLoading(); setProgress(0);
+
+            sourceVideo.muted = true;
+            sourceVideo.pause();
+
+            const totalFrames = Math.max(1, Math.ceil(duration * videoFPS));
+            let currentFrame = 0;
+            let aborted = false;
+
+            const cleanupFrames = () => {
+                renderFrames.forEach(u => { if (u) URL.revokeObjectURL(u); });
+                renderFrames = [];
+            };
+
+            try {
+                while (currentFrame < totalFrames && !aborted) {
+                    const targetTime = Math.min(currentFrame / videoFPS, duration);
+                    await seekVideoTo(targetTime);
+
+                    processVideoFrameSynchronously(true, exportRes);
+
+                    const quality = IS_IOS ? 0.6 : 0.7;
+                    const blob = await new Promise(resolve => {
+                        canvas.toBlob(b => resolve(b), 'image/jpeg', quality);
+                    });
+                    if (blob) {
+                        renderFrames.push(URL.createObjectURL(blob));
+                    }
+
+                    // Se o buffer estourou o limite antes de começarmos a fase 2,
+                    // isso só pode significar que o vídeo é longo demais para o
+                    // dispositivo atual — avisamos e cortamos ali para não travar.
+                    if (renderFrames.length > MAX_FRAME_BUFFER * 6) {
+                        showToast('Vídeo longo demais para processar neste dispositivo. Tente um trecho mais curto ou resolução menor.');
+                        aborted = true;
+                        break;
+                    }
+
+                    currentFrame++;
+                    setProgress(Math.round((currentFrame / totalFrames) * 100));
+                    await yieldToMain();
+                }
+            } catch (err) {
+                console.error('Erro na Etapa 1 (extração de quadros):', err);
+                showToast('Falha ao processar os quadros do vídeo neste dispositivo.');
+                aborted = true;
+            }
+
+            if (aborted || renderFrames.length === 0) {
+                cleanupFrames();
+                isVideoRendering = false;
+                hideLoading();
+                if (renderFrames.length === 0 && !aborted) showToast('Erro: nenhum quadro foi gerado.');
+                return;
+            }
+
+            startRenderPhase2(actualExtension, videoFPS, mimeType, cleanupFrames);
+        }
+
+        // Promise-wrapper para seek do vídeo, com timeout de segurança —
+        // no Safari, 'seeked' às vezes não dispara para o mesmo currentTime.
+        function seekVideoTo(time) {
+            return new Promise(resolve => {
+                let settled = false;
+                const finish = () => {
+                    if (settled) return;
+                    settled = true;
+                    sourceVideo.removeEventListener('seeked', onSeeked);
+                    resolve();
+                };
+                const onSeeked = () => finish();
+                sourceVideo.addEventListener('seeked', onSeeked);
+                // Timeout de segurança: alguns navegadores não disparam 'seeked'
+                // quando o tempo pedido é (quase) igual ao tempo atual.
+                setTimeout(finish, 400);
+                try {
+                    sourceVideo.currentTime = time;
+                } catch (e) {
+                    finish();
+                }
+            });
+        }
+
+        function startRenderPhase2(fileExtension, videoFPS, mimeType, cleanupFrames) {
+            showToast('Etapa 2 de 2: Gravando arquivo final. Mantenha esta aba aberta e em primeiro plano.');
+            setProgress(0);
+
+            if (typeof MediaRecorder === 'undefined') {
+                showToast('O seu navegador não suporta gravação de vídeo de forma nativa.');
+                cleanupFrames();
+                isVideoRendering = false;
+                hideLoading();
+                return;
+            }
+
+            let canvasStream;
+            try {
+                canvasStream = canvas.captureStream
+                    ? canvas.captureStream(videoFPS)
+                    : (canvas.mozCaptureStream ? canvas.mozCaptureStream(videoFPS) : null);
+            } catch (e) {
+                console.warn(e);
+            }
+
+            if (!canvasStream) {
+                showToast('A captura de tela do canvas falhou ou não é suportada neste navegador.');
+                cleanupFrames();
+                isVideoRendering = false;
+                hideLoading();
+                return;
+            }
+
+            // Áudio: reaproveita o grafo já criado no gesto do clique (unlockVideoAndRender).
+            let audioTracks = [];
+            try {
+                if (audioDestNode) {
+                    audioTracks = audioDestNode.stream.getAudioTracks();
+                }
+            } catch (err) {
+                console.warn('Falha ao obter faixa de áudio do grafo Web Audio.', err);
+            }
+            if (audioTracks.length === 0) {
+                // Fallback: tenta captura nativa do elemento, se existir.
+                const captureFn = sourceVideo.captureStream || sourceVideo.mozCaptureStream;
                 if (captureFn) {
                     try {
-                        let videoStream = captureFn.call(sourceVideo);
-                        audioTracks = videoStream.getAudioTracks();
-                    } catch(e) {}
+                        const nativeStream = captureFn.call(sourceVideo);
+                        audioTracks = nativeStream.getAudioTracks();
+                    } catch (e) {}
                 }
             }
-
-            let combinedStream = canvasStream;
-            if (audioTracks.length > 0) {
-                combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
+            if (audioTracks.length === 0) {
+                showToast('Aviso: não foi possível capturar o áudio original — o vídeo será exportado sem som.');
             }
 
+            const combinedStream = audioTracks.length > 0
+                ? new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks])
+                : canvasStream;
+
             let recorder;
-            let options = {};
-            if (mimeType) options.mimeType = mimeType;
-            
-            try { 
-                recorder = new MediaRecorder(combinedStream, options); 
-            } catch (e) { 
+            const options = mimeType ? { mimeType } : {};
+            try {
+                recorder = new MediaRecorder(combinedStream, options);
+            } catch (e) {
                 try {
-                    recorder = new MediaRecorder(combinedStream); 
+                    recorder = new MediaRecorder(combinedStream);
                 } catch (err) {
-                    showToast("Erro fatal: MediaRecorder rejeitado pelo dispositivo.");
+                    showToast('Erro fatal: MediaRecorder rejeitado pelo dispositivo.');
+                    cleanupFrames();
                     isVideoRendering = false;
-                    document.getElementById('loading-bar-container').style.display = 'none';
+                    hideLoading();
                     return;
                 }
             }
 
-            let chunks = [];
-            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-            recorder.onstop = () => {
-                const finalMime = recorder.mimeType || mimeType || 'video/mp4';
-                const finalBlob = new Blob(chunks, { type: finalMime });
-                const url = URL.createObjectURL(finalBlob);
-                const a = document.createElement('a'); a.href = url; a.download = `pixelar_video_${Date.now()}.${fileExtension}`;
-                a.click();
-                URL.revokeObjectURL(url);
-                
-                renderFrames.forEach(u => { if(u) URL.revokeObjectURL(u) });
-                renderFrames = [];
-                isVideoRendering = false;
-                document.getElementById('loading-bar-container').style.display = 'none';
-                
-                processVideoFrameSynchronously();
-                showToast("Gravação concluída!");
+            const chunks = [];
+            let stopWatchdog = null;
+
+            recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+            recorder.onerror = (e) => {
+                console.error('Erro no MediaRecorder:', e);
+                showToast('Erro durante a gravação. Tente novamente com resolução ou FPS menores.');
             };
 
-            sourceVideo.currentTime = 0;
-            sourceVideo.muted = false;
+            recorder.onstop = () => {
+                clearTimeout(stopWatchdog);
+                const finalMime = recorder.mimeType || mimeType || 'video/webm';
+                const finalExt = finalMime.includes('mp4') ? 'mp4' : 'webm';
+                const finalBlob = new Blob(chunks, { type: finalMime });
 
-            let currentPlaybackFrame = 0;
-            let playImg = new Image();
-            
-            try { recorder.start(); } catch(e) {
-                showToast("Falha ao iniciar o gravador do navegador: " + e.message);
-                isVideoRendering = false;
-                document.getElementById('loading-bar-container').style.display = 'none';
-                return;
-            }
-            
-            try {
-                let playPromise = sourceVideo.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => console.log("Áudio bloqueado pelo sistema."));
+                if (finalBlob.size === 0) {
+                    showToast('A gravação resultou em um arquivo vazio. Tente novamente com resolução menor.');
+                } else {
+                    const url = URL.createObjectURL(finalBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `pixelar_video_${Date.now()}.${finalExt}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 4000);
+                    showToast('Gravação concluída!');
                 }
-            } catch (e) {}
 
-            let startTime = performance.now();
-            let totalFramesCount = renderFrames.length;
+                cleanupFrames();
+                isVideoRendering = false;
+                hideLoading();
+                try { sourceVideo.pause(); } catch (e) {}
+                sourceVideo.muted = false;
+                processVideoFrameSynchronously();
+            };
+
+            // --- Reprodução dos frames capturados, desenhando no canvas em cadência ---
+            let currentPlaybackFrame = 0;
+            const totalFramesCount = renderFrames.length;
+            const frameIntervalMs = 1000 / videoFPS;
+            const playImg = new Image();
+            let heartbeatTimer = null;
+
+            const drawHeartbeat = () => {
+                // Safari corta o MediaStream de um canvas "parado". Redesenhar
+                // periodicamente (mesmo o mesmo frame) mantém o stream vivo.
+                try {
+                    ctx.drawImage(canvas, 0, 0);
+                } catch (e) {}
+            };
+
+            const finishRecording = () => {
+                if (heartbeatTimer) clearInterval(heartbeatTimer);
+                try { recorder.requestData && recorder.requestData(); } catch (e) {}
+                setTimeout(() => {
+                    try { recorder.stop(); } catch (e) {}
+                }, 250);
+            };
 
             const loadNextFrame = () => {
                 if (currentPlaybackFrame >= totalFramesCount) {
-                    setTimeout(() => { 
-                        try { recorder.stop(); } catch(e) {}
-                        try { sourceVideo.pause(); } catch(e) {}
-                    }, 200);
+                    finishRecording();
                     return;
                 }
-
-                const checkTime = () => {
-                    let elapsed = performance.now() - startTime;
-                    let nextTimeMs = (currentPlaybackFrame / videoFPS) * 1000;
-                    
-                    if (elapsed >= nextTimeMs) {
-                        let frameSrc = renderFrames[currentPlaybackFrame];
-                        if (frameSrc) {
-                            playImg.src = frameSrc;
-                        } else {
-                            currentPlaybackFrame++;
-                            loadNextFrame();
-                        }
-                    } else {
-                        requestAnimationFrame(checkTime);
-                    }
-                };
-                requestAnimationFrame(checkTime);
+                const frameSrc = renderFrames[currentPlaybackFrame];
+                if (!frameSrc) {
+                    currentPlaybackFrame++;
+                    loadNextFrame();
+                    return;
+                }
+                playImg.src = frameSrc;
             };
 
             playImg.onload = () => {
                 try {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(playImg, 0, 0);
-                    
-                    if (renderFrames[currentPlaybackFrame]) {
-                        URL.revokeObjectURL(renderFrames[currentPlaybackFrame]);
-                        renderFrames[currentPlaybackFrame] = null;
-                    }
-                } catch(e) {}
-                
+                } catch (e) {}
+
+                const consumedUrl = renderFrames[currentPlaybackFrame];
+                if (consumedUrl) {
+                    URL.revokeObjectURL(consumedUrl);
+                    renderFrames[currentPlaybackFrame] = null;
+                }
+
                 currentPlaybackFrame++;
                 setProgress(Math.round((currentPlaybackFrame / totalFramesCount) * 100));
-                loadNextFrame();
+                setTimeout(loadNextFrame, frameIntervalMs);
             };
 
             playImg.onerror = () => {
-                console.warn("Quadro ignorado devido a falha de carregamento.");
+                console.warn('Quadro ignorado por falha de carregamento.');
                 currentPlaybackFrame++;
-                loadNextFrame();
+                setTimeout(loadNextFrame, frameIntervalMs);
             };
-            
+
+            try {
+                // timeslice curto para o Safari entregar dados com mais regularidade
+                recorder.start(500);
+            } catch (e) {
+                showToast('Falha ao iniciar o gravador do navegador: ' + e.message);
+                cleanupFrames();
+                isVideoRendering = false;
+                hideLoading();
+                return;
+            }
+
+            // Watchdog: se por algum motivo o onstop nunca disparar (trava conhecida
+            // em iOS quando a aba perde foco), força a finalização depois de um tempo
+            // generoso baseado na duração esperada da gravação.
+            const expectedMs = totalFramesCount * frameIntervalMs;
+            stopWatchdog = setTimeout(() => {
+                console.warn('Watchdog: forçando parada do MediaRecorder.');
+                try { recorder.stop(); } catch (e) {}
+            }, expectedMs + 15000);
+
+            heartbeatTimer = setInterval(drawHeartbeat, 200);
             loadNextFrame();
         }
     </script>
