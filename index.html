@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixelar Studio (Imagem & Vídeo)</title>
+    <!-- [Todo o seu bloco de <style> permanece igual aqui] -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3Crect x='9' y='0' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='0' y='9' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='9' y='9' width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3C/svg%3E">
     <style>
         @font-face {
@@ -172,7 +173,7 @@
     </style>
 </head>
 <body>
-
+    <!-- [Todo o seu HTML (divs e painéis) permanece absolutamente intocado] -->
     <!-- MAIN APP - CONTROLES -->
     <div id="controls">
         <div class="controls-layout">
@@ -393,7 +394,6 @@
         </div>
 
         <div id="canvas-wrapper">
-            <!-- Correções essenciais para reproduzir no iOS: muted, playsinline, crossorigin -->
             <video id="sourceVideo" style="display:none;" playsinline webkit-playsinline crossOrigin="anonymous" preload="auto"></video>
             <canvas id="outputCanvas"></canvas>
             <canvas id="originalCanvas"></canvas>
@@ -524,14 +524,12 @@
         if (localStorage.getItem('pixelarTheme') === 'dark') { rootHtml.setAttribute('data-theme', 'dark'); } updateThemeIcon();
         themeBtn.addEventListener('click', () => { if (rootHtml.getAttribute('data-theme') === 'dark') { rootHtml.removeAttribute('data-theme'); localStorage.setItem('pixelarTheme', 'light'); } else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); } updateThemeIcon(); });
 
-        // Locks
         const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight' ];
         const locks = {}; lockTargets.forEach(t => locks[t] = false);
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const target = btn.getAttribute('data-target'); if (locks[target] !== undefined) { locks[target] = !locks[target]; btn.classList.toggle('active-state', locks[target]); } });
         });
 
-        // Loading Progress Bar
         const loadingContainer = document.getElementById('loading-bar-container');
         const loadingBar = document.getElementById('loading-bar');
         const loadingText = document.getElementById('loading-text');
@@ -547,6 +545,11 @@
         let sourceImg = null; 
         let originalSourceUrl = null;
         const sourceVideo = document.getElementById('sourceVideo');
+        
+        // VARIÁVEIS PARA A PONTE DE ÁUDIO (SOLUÇÃO IOS)
+        let audioCtx = null;
+        let audioDest = null;
+        let audioSource = null;
         
         let hasMediaLoaded = false;
         let isRestoringState = false; 
@@ -684,7 +687,7 @@
         // GERENCIADOR DE MEDIA E UPLOAD
         // ==========================================
         let isVideoRendering = false;
-        let renderFrames = []; // Agora guarda os Blobs puros (corrige memory leak Safary)
+        let renderFrames = []; 
 
         const videoTimeline = document.getElementById('videoTimeline');
         const videoTimeDisplay = document.getElementById('videoTimeDisplay');
@@ -777,7 +780,6 @@
                             fitMediaToView();
                             resetToDefaultState();
                             
-                            // iOS hack: Inicia brevemente para garantir que o frame foi decodificado
                             let p = sourceVideo.play();
                             if (p !== undefined) {
                                 p.then(() => {
@@ -1424,7 +1426,7 @@
         });
 
         // ==========================================
-        // SISTEMA DE RENDER DE VÍDEO (OTIMIZADO)
+        // SISTEMA DE RENDER DE VÍDEO (OTIMIZADO + ÁUDIO NO IOS)
         // ==========================================
         function isIOSDevice() {
             const ua = navigator.userAgent;
@@ -1465,8 +1467,27 @@
         });
 
         function unlockVideoAndRender(format) {
+            // Cria a ponte de áudio no momento da interação do usuário (exigência da Apple)
+            if (!audioCtx) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                    audioDest = audioCtx.createMediaStreamDestination();
+                    audioSource = audioCtx.createMediaElementSource(sourceVideo);
+                    
+                    audioSource.connect(audioDest);
+                    audioSource.connect(audioCtx.destination);
+                } catch (e) {
+                    console.warn('Erro ao inicializar Web Audio API:', e);
+                }
+            }
+
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
             sourceVideo.muted = false;
-            // Destranca o áudio e playback de vídeo em uma ação interativa de usuário no iOS
+            
             const playPromise = sourceVideo.play();
             const proceed = () => { 
                 sourceVideo.pause(); 
@@ -1483,7 +1504,7 @@
         async function startTwoPassRender(fileExtension) {
             if (!hasMediaLoaded || currentMediaType !== 'video') return;
             isVideoRendering = true;
-            renderFrames = []; // Agora armazena Blobs (menor consumo de RAM)
+            renderFrames = []; 
 
             const duration = sourceVideo.duration;
             if (!duration || !isFinite(duration)) {
@@ -1523,7 +1544,7 @@
             let aborted = false;
 
             const cleanupFrames = () => {
-                renderFrames = []; // Free RAM instantly 
+                renderFrames = []; 
             };
 
             try {
@@ -1539,7 +1560,6 @@
                     });
                     
                     if (blob) {
-                        // Salvar o blob diretamente impede que URLs geradas sujem a memória (Jetsam Safari fix)
                         renderFrames.push(blob);
                     }
 
@@ -1574,7 +1594,7 @@
                 };
                 const onSeeked = () => finish();
                 sourceVideo.addEventListener('seeked', onSeeked);
-                setTimeout(finish, 400); // Timeout fallback em caso de engasgo de play/seek
+                setTimeout(finish, 400); 
                 try {
                     sourceVideo.currentTime = time;
                 } catch (e) {
@@ -1600,14 +1620,22 @@
                 return;
             }
 
-            // Preparação para capturar o áudio tocando o source original escondido.
             let audioTracks = [];
-            const captureFn = sourceVideo.captureStream || sourceVideo.mozCaptureStream;
-            if (captureFn) {
-                try {
-                    const nativeStream = captureFn.call(sourceVideo);
-                    audioTracks = nativeStream.getAudioTracks();
-                } catch (e) {}
+            
+            // Primeira tentativa de extração de som: Web Audio API (Solução focada no iOS)
+            if (audioDest) {
+                audioTracks = audioDest.stream.getAudioTracks();
+            }
+
+            // Fallback nativo: captura padrão se o Web Audio falhar (Solução focada no Desktop/Android)
+            if (audioTracks.length === 0) {
+                const captureFn = sourceVideo.captureStream || sourceVideo.mozCaptureStream;
+                if (captureFn) {
+                    try {
+                        const nativeStream = captureFn.call(sourceVideo);
+                        audioTracks = nativeStream.getAudioTracks();
+                    } catch (e) {}
+                }
             }
 
             if (audioTracks.length === 0) {
@@ -1693,7 +1721,6 @@
                     return;
                 }
                 
-                // Converte Blob em URL local sob demanda (resolve os crashs do Safari)
                 const frameSrc = URL.createObjectURL(frameBlob);
                 playImg.src = frameSrc;
             };
@@ -1704,7 +1731,6 @@
                     ctx.drawImage(playImg, 0, 0);
                 } catch (e) {}
 
-                // Limpa instantaneamente a URL e remove do cache de array para preservar a RAM
                 URL.revokeObjectURL(playImg.src);
                 renderFrames[currentPlaybackFrame] = null; 
 
@@ -1718,7 +1744,10 @@
                 setTimeout(loadNextFrame, frameIntervalMs);
             };
 
-            // Inicia o vídeo por trás para extrair o som em sincronia
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
             sourceVideo.currentTime = 0;
             sourceVideo.muted = false;
             let bgPlay = sourceVideo.play();
