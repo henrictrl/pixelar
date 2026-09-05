@@ -882,7 +882,15 @@ if (isVid) {
         document.getElementById('btnSavePalette').addEventListener('click', () => { if(document.getElementById('colorSelect').value === 'all') { showToast("Mude para um número específico de cores para salvar."); return; } let name = promptModal("Dê um nome para esta paleta:", "Minha Paleta"); if(!name) return; savedPalettes[name] = [...globalCurrentPalette]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); });
 
         function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 4); } }
-        function randGrp() { if(!locks.groupStrength) { document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); } }
+       function randGrp() { 
+    if (currentMediaType === 'video') {
+        document.getElementById('groupStrength').value = 0;
+        return; 
+    }
+    if(!locks.groupStrength) { 
+        document.getElementById('groupStrength').value = Math.floor(Math.random() * 6); 
+    } 
+}
         function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "diamonds", "waves", "scanlines", "maze", "noise"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
         function randColQty() { if(!locks.colorSelect) { const c = ["2", "3", "4", "6", "8", "12", "16", "24", "32"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; } }
         document.querySelectorAll('.shuffle-btn').forEach(btn => { btn.addEventListener('click', () => { const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return; if(tgt === 'pxSize') randPx(); if(tgt === 'pxGroup') randGrp(); if(tgt === 'ditherSelect') randDith(); updateBadges(); scheduleAppProcess(); }); });
