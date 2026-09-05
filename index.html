@@ -1332,7 +1332,7 @@
 
             isRestoringState = false;
             
-            // Adicionado: Salva o estado no histórico se não for durante a gravação/exportação
+            // Salva o estado no histórico se não for durante a gravação/exportação
             if (!isExporting) {
                 saveHistoryState();
             }
@@ -1409,7 +1409,6 @@
             const el = document.createElement('a'); el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt)); el.setAttribute('download', 'pixelar_config.txt'); el.style.display = 'none'; document.body.appendChild(el); el.click(); document.body.removeChild(el); exportModal.style.display = 'none';
         });
 
-
         // ==========================================
         // SISTEMA TWO-PASS DE RENDER DE VÍDEO
         // ==========================================
@@ -1432,9 +1431,7 @@
             let currentFrame = 0;
 
             sourceVideo.onseeked = async () => {
-                // Passa os parâmetros de exportação para escalar a arte baseada na resolução final
                 processVideoFrameSynchronously(true, exportRes);
-
                 let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.90));
                 renderFrames.push(URL.createObjectURL(blob));
 
@@ -1450,7 +1447,7 @@
                     startRenderPhase2(fileExtension, videoFPS);
                 }
             };
-            sourceVideo.currentTime = 0; // Aciona o loop onseeked
+            sourceVideo.currentTime = 0;
         }
 
         function startRenderPhase2(fileExtension, videoFPS) {
@@ -1458,12 +1455,34 @@
             setProgress(0);
 
             let mimeType = fileExtension === 'mp4' ? 'video/mp4' : 'video/webm; codecs=vp9';
-            if (!MediaRecorder.isTypeSupported(mimeType)) { mimeType = 'video/webm'; fileExtension = 'webm'; }
+            if (typeof MediaRecorder === 'undefined') {
+                showToast("Exportação de vídeo não suportada neste navegador.");
+                isVideoRendering = false;
+                document.getElementById('loading-bar-container').style.display = 'none';
+                return;
+            }
+
+            if (!MediaRecorder.isTypeSupported(mimeType)) { 
+                mimeType = 'video/mp4'; 
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = ''; 
+                }
+            }
 
             const canvasStream = canvas.captureStream(videoFPS);
             let combinedStream = canvasStream;
-            let videoStream = (sourceVideo.captureStream || sourceVideo.mozCaptureStream).call(sourceVideo);
-            let audioTracks = videoStream.getAudioTracks();
+            
+            let audioTracks = [];
+            try {
+                let captureFn = sourceVideo.captureStream || sourceVideo.mozCaptureStream;
+                if (captureFn) {
+                    let videoStream = captureFn.call(sourceVideo);
+                    audioTracks = videoStream.getAudioTracks();
+                }
+            } catch(e) {
+                console.log("Captura de áudio não suportada pelo navegador. Exportando sem som.");
+            }
             
             if (audioTracks.length > 0) {
                 combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
@@ -1476,24 +1495,22 @@
             let chunks = [];
             recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
             recorder.onstop = () => {
-                const finalBlob = new Blob(chunks, { type: recorder.mimeType });
+                const finalMime = recorder.mimeType || mimeType || 'video/mp4';
+                const finalBlob = new Blob(chunks, { type: finalMime });
                 const url = URL.createObjectURL(finalBlob);
                 const a = document.createElement('a'); a.href = url; a.download = `pixelar_video_${Date.now()}.${fileExtension}`;
                 a.click();
                 URL.revokeObjectURL(url);
                 
-                // Limpeza de RAM
                 renderFrames.forEach(u => URL.revokeObjectURL(u));
                 renderFrames = [];
                 isVideoRendering = false;
                 document.getElementById('loading-bar-container').style.display = 'none';
                 
-                // Retorna o canvas para o tamanho padrão de visualização
                 processVideoFrameSynchronously();
-                showToast("Gravação concluída em alta qualidade!");
+                showToast("Gravação concluída!");
             };
 
-            // Loop de reprodução sincronizado com tempo real
             sourceVideo.currentTime = 0;
             sourceVideo.muted = false;
 
@@ -1501,7 +1518,14 @@
             let playImg = new Image();
             
             recorder.start();
-            sourceVideo.play();
+            try {
+                let playPromise = sourceVideo.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => console.log("Autoplay bloqueado pelo celular. O vídeo será gerado de forma silenciosa."));
+                }
+            } catch (e) {}
+
+            let startTime = performance.now();
 
             playImg.onload = () => {
                 ctx.drawImage(playImg, 0, 0);
@@ -1509,8 +1533,9 @@
                 setProgress(Math.round((currentPlaybackFrame / renderFrames.length) * 100));
                 
                 if (currentPlaybackFrame < renderFrames.length) {
-                    let nextTime = currentPlaybackFrame / videoFPS;
-                    let waitTime = (nextTime - sourceVideo.currentTime) * 1000;
+                    let nextTimeMs = (currentPlaybackFrame / videoFPS) * 1000;
+                    let elapsed = performance.now() - startTime;
+                    let waitTime = nextTimeMs - elapsed;
                     
                     setTimeout(() => {
                         playImg.src = renderFrames[currentPlaybackFrame];
@@ -1518,12 +1543,11 @@
                 } else {
                     setTimeout(() => {
                         recorder.stop();
-                        sourceVideo.pause();
+                        try { sourceVideo.pause(); } catch(e) {}
                     }, 100);
                 }
             };
             
-            // Inicia cadeia de reprodução
             playImg.src = renderFrames[0];
         }
     </script>
