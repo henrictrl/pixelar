@@ -188,6 +188,70 @@
                 min-width: 150px;
             }
         }
+        /* =========================================
+           BOTÕES QUADRADOS (TEMAS E PRESETS) 
+           ========================================= */
+        #themesGrid, #myPresetsGrid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+            gap: 8px !important;
+        }
+        
+        #themesGrid > *, #myPresetsGrid > div {
+            aspect-ratio: 1 / 1;
+            position: relative;
+            display: flex !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+        
+        /* Força a quebra de texto e centraliza */
+        #themesGrid .std-btn, 
+        #myPresetsGrid .std-btn {
+            width: 100% !important;
+            height: 100% !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            line-height: 1.2 !important;
+            padding: 8px !important;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Botão de excluir no canto superior direito */
+        #myPresetsGrid .icon-btn {
+            position: absolute !important;
+            top: 0;
+            right: 0;
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px !important;
+            min-height: 28px !important;
+            border-bottom: var(--border-width) solid var(--border) !important;
+            border-left: var(--border-width) solid var(--border) !important;
+            border-top: none !important;
+            border-right: none !important;
+            box-shadow: none !important;
+            background: var(--panel) !important;
+            padding: 4px !important;
+        }
+
+        /* Comportamento de linha horizontal apenas no mobile */
+        @media (max-width: 768px) {
+            #themesGrid, #myPresetsGrid {
+                display: flex !important;
+                flex-direction: row !important;
+                overflow-x: auto !important;
+                flex-wrap: nowrap !important;
+                padding-bottom: 12px !important;
+            }
+            #themesGrid > *, #myPresetsGrid > div {
+                flex: 0 0 auto !important;
+                width: 105px !important;
+                min-width: 105px !important;
+            }
+        }
     </style>
     </style>
 </head>
@@ -1913,7 +1977,39 @@ try {
         document.getElementById('btn-undo-view').addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; applyState(historyArr[historyIndex]); } });
         document.getElementById('btn-redo-view').addEventListener('click', () => { if (historyIndex < historyArr.length - 1) { historyIndex++; applyState(historyArr[historyIndex]); } });
 
-        function renderPresets() { const grid = document.getElementById('myPresetsGrid'); grid.innerHTML = ''; for(let key in savedPresets) { const div = document.createElement('div'); div.style.display = "flex"; div.style.gap = "4px"; const b = document.createElement('button'); b.className = "std-btn"; b.textContent = key; b.style.flex = "1 1 0%"; b.style.minWidth = "0"; b.onclick = () => { applyState(savedPresets[key]); }; const db = document.createElement('button'); db.className = "std-btn icon-btn"; db.innerHTML = "<svg viewBox='0 0 24 24'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>"; db.onclick = () => { delete savedPresets[key]; try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch(e) {} renderPresets(); }; div.appendChild(b); div.appendChild(db); grid.appendChild(div); } }
+function renderPresets() { 
+            const grid = document.getElementById('myPresetsGrid'); 
+            grid.innerHTML = ''; 
+            for(let key in savedPresets) { 
+                const div = document.createElement('div'); 
+                div.style.display = "flex"; 
+                div.style.gap = "4px"; 
+                
+                const b = document.createElement('button'); 
+                b.className = "std-btn"; 
+                b.textContent = key; 
+                b.style.flex = "1 1 0%"; 
+                b.style.minWidth = "0"; 
+                b.onclick = () => { applyState(savedPresets[key]); }; 
+                div.appendChild(b); 
+                
+                // Só cria o botão de excluir se NÃO for um preset original
+                if (!DEFAULT_PRESETS.hasOwnProperty(key)) {
+                    const db = document.createElement('button'); 
+                    db.className = "std-btn icon-btn"; 
+                    db.innerHTML = "<svg viewBox='0 0 24 24'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>"; 
+                    db.onclick = () => { 
+                        delete savedPresets[key]; 
+                        try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch(e) {} 
+                        renderPresets(); 
+                    }; 
+                    div.appendChild(db); 
+                }
+                
+                grid.appendChild(div); 
+            } 
+        }
+        
         document.getElementById('btnSavePreset').addEventListener('click', () => { let name = promptModal("Nome do Preset Atual:", "Meu Ajuste"); if(!name) return; savedPresets[name] = getStateObject(); try { localStorage.setItem('pixelarPresets', JSON.stringify(savedPresets)); } catch (e) { } renderPresets(); initPresetPool(); });
         renderPalettes(); renderPresets();
 
