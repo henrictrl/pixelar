@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixel</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3Crect x='9' y='0' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='0' y='9' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='9' y='9' width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3C/svg%3E">
     <style>
         @font-face {
             font-family: 'Departure Mono';
@@ -167,8 +166,29 @@
             .icon-btn, .float-btn { width: 36px; height: 36px; min-width: 36px; }
             .std-btn { min-height: 36px; padding: 6px 10px; }
             input[type="range"] { min-height: 32px; }
-            #video-timeline-bar { bottom: 64px; padding: 4px 8px; }
+            #video-timeline-bar { bottom: 120px; padding: 4px 8px; z-index: 50; }
+            #zoom-controls { bottom: 70px; right: 16px; z-index: 50; }
+            #floating-bar { bottom: 16px; z-index: 50; }
+            #toast-container { bottom: 180px; }
+            
+            .horizontal-scroll-mobile {
+                display: flex !important;
+                flex-direction: row !important;
+                overflow-x: auto;
+                flex-wrap: nowrap !important;
+                padding-bottom: 12px;
+                scrollbar-width: none;
+            }
+            .horizontal-scroll-mobile::-webkit-scrollbar {
+                display: none;
+            }
+            .horizontal-scroll-mobile > * {
+                flex: 0 0 auto !important;
+                width: 150px !important;
+                min-width: 150px;
+            }
         }
+    </style>
     </style>
 </head>
 <body>
@@ -320,20 +340,15 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="control-group" id="group-filtros">
-                    <div class="m-sub-nav">
-                        <button class="m-sub-btn active" data-target="set-filTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
-                        <button class="m-sub-btn" data-target="set-filPre"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Meus Presets</span></button>
-                    </div>
+<div class="control-group" id="group-filtros">
                     <div class="sec-content">
-                        <div class="set-item active" id="set-filTem"><div class="panel-label">Temas Prontos</div>
-                            <div id="themesGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--pad-sm); width:100%;">
-                            </div>
-                        </div>
-                        <div class="set-item" id="set-filPre"><div class="panel-label">Meus Presets Salvos</div>
-                            <button class="std-btn" style="width:100%; margin-bottom: 8px;" id="btnSavePreset">Salvar Ajuste Atual</button>
-                            <div id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 8px; width:100%;"></div>
+                        <div class="set-item active" id="set-filTodos" style="display: flex !important;">
+                            <div class="panel-label">Meus Presets Salvos</div>
+                            <button class="std-btn" style="width:100%; margin-bottom: 12px;" id="btnSavePreset">Salvar Ajuste Atual</button>
+                            <div id="myPresetsGrid" class="horizontal-scroll-mobile" style="display: flex; flex-direction: column; gap: 8px; width:100%; margin-bottom: 16px;"></div>
+
+                            <div class="panel-label" style="border: none; margin-top: 8px;">Temas Prontos</div>
+                            <div id="themesGrid" class="horizontal-scroll-mobile" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--pad-sm); width:100%;"></div>
                         </div>
                     </div>
                 </div>
@@ -470,6 +485,13 @@
         const allTabs = document.querySelectorAll('.d-tab');
         const panelsContainer = document.querySelector('.panels-container');
         const controlsPanel = document.getElementById('controls');
+
+        if (window.innerWidth <= 768) {
+            allTabs.forEach(t => t.classList.remove('active'));
+            panelsContainer.classList.remove('active');
+            document.querySelectorAll('.control-group.active').forEach(g => g.classList.remove('active'));
+            controlsPanel.classList.add('collapsed');
+        }
 
         allTabs.forEach(tab => {
             tab.addEventListener('click', () => {
