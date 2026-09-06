@@ -564,16 +564,10 @@
         let savedPresets = {}; let savedPalettes = {}; let currentImgGradColors = ['#FF00FF', '#00FFFF'];
         let sessionPresetsPool = []; let isNextRandomAPreset = true;
 
-        // Encontre esta parte no arquivo index-4.html (próximo à linha 290):
-// let activeTool = 'move'; let historyArr = []; let historyIndex = -1;
-// try { savedPresets = JSON.parse(localStorage.getItem('pixelarPresets')) || {}; savedPalettes = JSON.parse(localStorage.getItem('pixelarPalettes')) || {}; } catch(e) {}
-
-// Substitua tudo pelo código abaixo:
-
 let activeTool = 'move'; let historyArr = []; let historyIndex = -1;
 
 const DEFAULT_PRESETS = {
-    "GameBoy Classic": {
+    "GameBoy": {
         "px": "3",
         "col": "4",
         "dith": "nintendo_ds",
@@ -679,7 +673,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Macintosh 128k": {
+    "Macintosh": {
         "px": "2",
         "col": "2",
         "dith": "halftone",
@@ -728,84 +722,8 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Commodore 64": {
-        "px": "2",
-        "col": "16",
-        "dith": "noise",
-        "exp": "0",
-        "bri": "0",
-        "som": "0",
-        "sat": "0",
-        "cont": "0",
-        "temp": "0",
-        "post": "0",
-        "dScale": "1",
-        "dInt": "40",
-        "tAng": "45",
-        "shInv": false,
-        "effMidDither": false,
-        "fillBg": false,
-        "bgColor": "#F0F0F0",
-        "cc": [
-            "#000000",
-            "#ffffff",
-            "#880000",
-            "#aaffee",
-            "#cc44cc",
-            "#00cc55",
-            "#0000aa",
-            "#eeee77",
-            "#dd8855",
-            "#664400",
-            "#ff7777",
-            "#333333",
-            "#777777",
-            "#aaff66",
-            "#0088ff",
-            "#bbbbbb"
-        ],
-        "rc": [
-            "#000000",
-            "#ffffff",
-            "#880000",
-            "#aaffee",
-            "#cc44cc",
-            "#00cc55",
-            "#0000aa",
-            "#eeee77",
-            "#dd8855",
-            "#664400",
-            "#ff7777",
-            "#333333",
-            "#777777",
-            "#aaff66",
-            "#0088ff",
-            "#bbbbbb"
-        ],
-        "palMode": "preset",
-        "inv": false,
-        "rSht": "0",
-        "edgC": "#1A1A1A",
-        "edgSiz": "0",
-        "pHue": "0",
-        "pSat": "0",
-        "pLig": "0",
-        "tOpa": "100",
-        "eOpa": "100",
-        "iSca": "100",
-        "iGrad": false,
-        "iGradTyp": "linear",
-        "iGradAng": "90",
-        "iGradCol": [
-            "#FF00FF",
-            "#00FFFF"
-        ],
-        "iGradStp": "0",
-        "iGradPos": "50",
-        "iGradSmt": "100",
-        "iGradBld": "source-atop"
-    },
-    "Virtual Boy": {
+    
+    "KGB": {
         "px": "2",
         "col": "4",
         "dith": "linhas",
@@ -858,84 +776,68 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "EGA Classic": {
-        "px": "2",
-        "col": "16",
-        "dith": "checkerboard",
-        "exp": "0",
-        "bri": "0",
-        "som": "0",
-        "sat": "0",
-        "cont": "0",
-        "temp": "0",
-        "post": "0",
-        "dScale": "1",
-        "dInt": "100",
-        "tAng": "45",
-        "shInv": false,
-        "effMidDither": false,
-        "fillBg": false,
-        "bgColor": "#F0F0F0",
-        "cc": [
-            "#000000",
-            "#0000AA",
-            "#00AA00",
-            "#00AAAA",
-            "#AA0000",
-            "#AA00AA",
-            "#AA5500",
-            "#AAAAAA",
-            "#555555",
-            "#5555FF",
-            "#55FF55",
-            "#55FFFF",
-            "#FF5555",
-            "#FF55FF",
-            "#FFFF55",
-            "#FFFFFF"
-        ],
-        "rc": [
-            "#000000",
-            "#0000AA",
-            "#00AA00",
-            "#00AAAA",
-            "#AA0000",
-            "#AA00AA",
-            "#AA5500",
-            "#AAAAAA",
-            "#555555",
-            "#5555FF",
-            "#55FF55",
-            "#55FFFF",
-            "#FF5555",
-            "#FF55FF",
-            "#FFFF55",
-            "#FFFFFF"
-        ],
-        "palMode": "preset",
-        "inv": false,
-        "rSht": "0",
-        "edgC": "#1A1A1A",
-        "edgSiz": "0",
-        "pHue": "0",
-        "pSat": "0",
-        "pLig": "0",
-        "tOpa": "100",
-        "eOpa": "100",
-        "iSca": "100",
-        "iGrad": false,
-        "iGradTyp": "linear",
-        "iGradAng": "90",
-        "iGradCol": [
-            "#FF00FF",
-            "#00FFFF"
-        ],
-        "iGradStp": "0",
-        "iGradPos": "50",
-        "iGradSmt": "100",
-        "iGradBld": "source-atop"
-    },
-    "Manga Screentone": {
+"Classic": {
+    "px": "2",
+    "col": "8",
+    "dith": "checkerboard",
+    "exp": "0",
+    "bri": "0",
+    "som": "0",
+    "sat": "0",
+    "cont": "0",
+    "temp": "0",
+    "post": "0",
+    "dScale": "1",
+    "dInt": "100",
+    "tAng": "45",
+    "shInv": false,
+    "effMidDither": false,
+    "fillBg": false,
+    "bgColor": "#F0F0F0",
+    "cc": [
+        "#0329CC",
+        "#C91B05",
+        "#CF0386",
+        "#AC03EE",
+        "#831BF9",
+        "#B916C7",
+        "#E91D5C",
+        "#DC18FC"
+    ],
+    "rc": [
+        "#0329CC",
+        "#C91B05",
+        "#CF0386",
+        "#AC03EE",
+        "#831BF9",
+        "#B916C7",
+        "#E91D5C",
+        "#DC18FC"
+    ],
+    "palMode": "preset",
+    "inv": false,
+    "rSht": "0",
+    "edgC": "#1A1A1A",
+    "edgSiz": "0",
+    "pHue": "0",
+    "pSat": "0",
+    "pLig": "0",
+    "tOpa": "100",
+    "eOpa": "100",
+    "iSca": "100",
+    "iGrad": false,
+    "iGradTyp": "linear",
+    "iGradAng": "90",
+    "iGradCol": [
+        "#FF00FF",
+        "#00FFFF"
+    ],
+    "iGradStp": "0",
+    "iGradPos": "50",
+    "iGradSmt": "100",
+    "iGradBld": "source-atop"
+}
+    "Manga": {
         "px": "1",
         "col": "2",
         "dith": "halftone",
@@ -946,7 +848,7 @@ const DEFAULT_PRESETS = {
         "cont": "40",
         "temp": "0",
         "post": "0",
-        "dScale": "3",
+        "dScale": "35",
         "dInt": "150",
         "tAng": "45",
         "shInv": false,
@@ -984,7 +886,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "CRT Retro TV": {
+    "TV": {
         "px": "1",
         "col": "all",
         "dith": "scanlines",
@@ -995,7 +897,7 @@ const DEFAULT_PRESETS = {
         "cont": "15",
         "temp": "0",
         "post": "0",
-        "dScale": "1",
+        "dScale": "20",
         "dInt": "150",
         "tAng": "45",
         "shInv": false,
@@ -1027,7 +929,10 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Vaporwave Nostalgia": {
+
+    "DS Pontilhismo PB": { "px": "3", "col": "2", "dith": "nintendo_ds", "exp": "0", "bri": "0", "som": "0", "sat": "0", "cont": "20", "temp": "0", "post": "0", "dScale": "1", "dInt": "100", "tAng": "45", "shInv": false, "effMidDither": false, "fillBg": false, "bgColor": "#F0F0F0", "cc": [ "#000000", "#ffffff" ], "rc": [ "#000000", "#ffffff" ], "palMode": "preset", "inv": false, "rSht": "0", "edgC": "#1A1A1A", "edgSiz": "0", "pHue": "0", "pSat": "0", "pLig": "0", "tOpa": "100", "eOpa": "100", "iSca": "100", "iGrad": false, "iGradTyp": "linear", "iGradAng": "90", "iGradCol": [ "#FF00FF", "#00FFFF" ], "iGradStp": "0", "iGradPos": "50", "iGradSmt": "100", "iGradBld": "source-atop" },
+    
+    "Vaporwave": {
         "px": "2",
         "col": "16",
         "dith": "xerox",
@@ -1070,8 +975,8 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "overlay"
     },
-    "Pop Art Warhol": {
-        "px": "2",
+    "Pop Art": {
+        "px": "5",
         "col": "4",
         "dith": "nintendo_ds",
         "exp": "0",
@@ -1123,7 +1028,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Sepia Vintage": {
+    "Sepia": {
         "px": "1",
         "col": "8",
         "dith": "noise",
@@ -1184,7 +1089,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Glitch VHS": {
+    "Glitch": {
         "px": "1",
         "col": "16",
         "dith": "xerox",
@@ -1227,7 +1132,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Matrix Terminal": {
+    "Matrix": {
         "px": "2",
         "col": "4",
         "dith": "scanlines",
@@ -1280,7 +1185,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Cyberpunk Neon": {
+    "Degrade Linear": {
         "px": "1",
         "col": "all",
         "dith": "none",
@@ -1323,7 +1228,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "color"
     },
-    "Newspaper CMYK": {
+    "CMYK": {
         "px": "1",
         "col": "4",
         "dith": "halftone",
@@ -1376,50 +1281,8 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Oil Painting": {
-        "px": "2",
-        "col": "all",
-        "dith": "none",
-        "exp": "0",
-        "bri": "0",
-        "som": "0",
-        "sat": "25",
-        "cont": "10",
-        "temp": "0",
-        "post": "15",
-        "dScale": "1",
-        "dInt": "100",
-        "tAng": "45",
-        "shInv": false,
-        "effMidDither": false,
-        "fillBg": false,
-        "bgColor": "#F0F0F0",
-        "cc": [],
-        "rc": [],
-        "palMode": "original",
-        "inv": false,
-        "rSht": "0",
-        "edgC": "#222222",
-        "edgSiz": "1",
-        "pHue": "0",
-        "pSat": "0",
-        "pLig": "0",
-        "tOpa": "100",
-        "eOpa": "40",
-        "iSca": "100",
-        "iGrad": false,
-        "iGradTyp": "linear",
-        "iGradAng": "90",
-        "iGradCol": [
-            "#FF00FF",
-            "#00FFFF"
-        ],
-        "iGradStp": "0",
-        "iGradPos": "50",
-        "iGradSmt": "100",
-        "iGradBld": "source-atop"
-    },
-    "Dawn Dusk Gradient": {
+   
+    "Degrade Radial": {
         "px": "2",
         "col": "all",
         "dith": "maze",
@@ -1462,7 +1325,7 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "screen"
     },
-    "Dracula Theme": {
+    "Dracula": {
         "px": "2",
         "col": "8",
         "dith": "diamonds",
@@ -1523,50 +1386,8 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "Anime Cl\u00e1ssico (Cel Shading)": {
-        "px": "1",
-        "col": "all",
-        "dith": "none",
-        "exp": "0",
-        "bri": "0",
-        "som": "0",
-        "sat": "25",
-        "cont": "15",
-        "temp": "10",
-        "post": "25",
-        "dScale": "1",
-        "dInt": "100",
-        "tAng": "45",
-        "shInv": false,
-        "effMidDither": false,
-        "fillBg": false,
-        "bgColor": "#F0F0F0",
-        "cc": [],
-        "rc": [],
-        "palMode": "original",
-        "inv": false,
-        "rSht": "0",
-        "edgC": "#112233",
-        "edgSiz": "1",
-        "pHue": "0",
-        "pSat": "0",
-        "pLig": "0",
-        "tOpa": "100",
-        "eOpa": "70",
-        "iSca": "100",
-        "iGrad": false,
-        "iGradTyp": "linear",
-        "iGradAng": "90",
-        "iGradCol": [
-            "#FF00FF",
-            "#00FFFF"
-        ],
-        "iGradStp": "0",
-        "iGradPos": "50",
-        "iGradSmt": "100",
-        "iGradBld": "source-atop"
-    },
-    "Cybercam Lo-Fi": {
+    
+    "Cybercam": {
         "px": "2",
         "col": "128",
         "dith": "scanlines",
