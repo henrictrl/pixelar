@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pixelar Studio (Imagem & Vídeo)</title>
-    <!-- [Todo o seu bloco de <style> permanece igual aqui] -->
+    <title>Pixel</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3Crect x='9' y='0' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='0' y='9' width='7' height='7' rx='0' fill='%23f0f0f0' stroke='%231a1a1a' stroke-width='1'/%3E%3Crect x='9' y='9' width='7' height='7' rx='0' fill='%231a1a1a'/%3E%3C/svg%3E">
     <style>
         @font-face {
@@ -173,8 +172,7 @@
     </style>
 </head>
 <body>
-    <!-- [Todo o seu HTML (divs e painéis) permanece absolutamente intocado] -->
-    <!-- MAIN APP - CONTROLES -->
+   
     <div id="controls">
         <div class="controls-layout">
             <div id="desktop-tabs">
@@ -186,7 +184,7 @@
             </div>
 
             <div class="panels-container active">
-                <!-- Group Ajustes -->
+
                 <div class="control-group active" id="group-ajustes">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-exp"><span class="badge" id="bdg-exp"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg><span>Expo.</span></button>
@@ -216,7 +214,6 @@
                     </div>
                 </div>
 
-                <!-- Group Pixel -->
                 <div class="control-group" id="group-pixel">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-pxSize"><span class="badge" id="bdg-px"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Tamanho</span></button>
@@ -257,8 +254,7 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Group Cores -->
+                
                 <div class="control-group" id="group-cores">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-corPal"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Paleta</span></button>
@@ -325,7 +321,6 @@
                     </div>
                 </div>
 
-                <!-- Group Filtros -->
                 <div class="control-group" id="group-filtros">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-filTem"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg><span>Temas</span></button>
@@ -371,7 +366,6 @@
         </div>
     </div>
 
-    <!-- MAIN CANVAS VIEW -->
     <div id="view">
         <div id="loading-bar-container"><div id="loading-bar"></div><span id="loading-text">0%</span></div>
 
@@ -400,7 +394,6 @@
             <div id="slider-line"></div>
         </div>
         
-        <!-- Timeline Bar Exclusiva -->
         <div id="video-timeline-bar" class="hidden-ui">
             <span id="videoTimeDisplay">00:00</span>
             <input type="range" id="videoTimeline" min="0" max="100" value="0" style="flex: 1;">
@@ -424,7 +417,6 @@
         <button id="btn-exit-fullscreen" title="Sair da Tela Cheia"><svg viewBox="0 0 24 24" style="width:12px;height:12px;margin-right:4px;"><path d="M15 18l-6-6 6-6"/></svg> VOLTAR</button>
     </div>
 
-    <!-- MODALS E NOTIFICAÇÕES -->
     <div id="toast-container"></div>
 
     <div id="universalExportModal" class="modal">
@@ -464,9 +456,7 @@
     </div>
 
     <script>
-        // ==========================================
-        // UTILIDADES BÁSICAS E UI (COMPARTILHADO)
-        // ==========================================
+        
         function showToast(message) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -538,15 +528,12 @@
         function hideLoading() { setTimeout(() => { loadingContainer.style.display = 'none'; }, 150); }
         function yieldToMain() { return new Promise(r => setTimeout(r, 0)); }
 
-        // ==========================================
-        // VARIÁVEIS GLOBAIS DE ESTADO E PROCESSAMENTO
-        // ==========================================
+
         let currentMediaType = null; 
         let sourceImg = null; 
         let originalSourceUrl = null;
         const sourceVideo = document.getElementById('sourceVideo');
         
-        // VARIÁVEIS PARA A PONTE DE ÁUDIO (SOLUÇÃO IOS)
         let audioCtx = null;
         let audioDest = null;
         let audioSource = null;
@@ -886,51 +873,9 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
-    "TV": {
-        "px": "1",
-        "col": "all",
-        "dith": "scanlines",
-        "exp": "0",
-        "bri": "0",
-        "som": "0",
-        "sat": "20",
-        "cont": "15",
-        "temp": "0",
-        "post": "0",
-        "dScale": "20",
-        "dInt": "150",
-        "tAng": "45",
-        "shInv": false,
-        "effMidDither": false,
-        "fillBg": false,
-        "bgColor": "#F0F0F0",
-        "cc": [],
-        "rc": [],
-        "palMode": "original",
-        "inv": false,
-        "rSht": "5",
-        "edgC": "#1A1A1A",
-        "edgSiz": "0",
-        "pHue": "0",
-        "pSat": "0",
-        "pLig": "0",
-        "tOpa": "100",
-        "eOpa": "100",
-        "iSca": "100",
-        "iGrad": false,
-        "iGradTyp": "linear",
-        "iGradAng": "90",
-        "iGradCol": [
-            "#FF00FF",
-            "#00FFFF"
-        ],
-        "iGradStp": "0",
-        "iGradPos": "50",
-        "iGradSmt": "100",
-        "iGradBld": "source-atop"
-    },
+  
 
-    "DS Pontilhismo PB": { "px": "3", "col": "2", "dith": "nintendo_ds", "exp": "0", "bri": "0", "som": "0", "sat": "0", "cont": "20", "temp": "0", "post": "0", "dScale": "1", "dInt": "100", "tAng": "45", "shInv": false, "effMidDither": false, "fillBg": false, "bgColor": "#F0F0F0", "cc": [ "#000000", "#ffffff" ], "rc": [ "#000000", "#ffffff" ], "palMode": "preset", "inv": false, "rSht": "0", "edgC": "#1A1A1A", "edgSiz": "0", "pHue": "0", "pSat": "0", "pLig": "0", "tOpa": "100", "eOpa": "100", "iSca": "100", "iGrad": false, "iGradTyp": "linear", "iGradAng": "90", "iGradCol": [ "#FF00FF", "#00FFFF" ], "iGradStp": "0", "iGradPos": "50", "iGradSmt": "100", "iGradBld": "source-atop" },
+    "Nintendo DS": { "px": "7", "col": "2", "dith": "nintendo_ds", "exp": "0", "bri": "0", "som": "0", "sat": "0", "cont": "20", "temp": "0", "post": "0", "dScale": "1", "dInt": "100", "tAng": "45", "shInv": false, "effMidDither": false, "fillBg": false, "bgColor": "#F0F0F0", "cc": [ "#000000", "#ffffff" ], "rc": [ "#000000", "#ffffff" ], "palMode": "preset", "inv": false, "rSht": "0", "edgC": "#1A1A1A", "edgSiz": "0", "pHue": "0", "pSat": "0", "pLig": "0", "tOpa": "100", "eOpa": "100", "iSca": "100", "iGrad": false, "iGradTyp": "linear", "iGradAng": "90", "iGradCol": [ "#FF00FF", "#00FFFF" ], "iGradStp": "0", "iGradPos": "50", "iGradSmt": "100", "iGradBld": "source-atop" },
     
     "Vaporwave": {
         "px": "2",
@@ -1028,6 +973,84 @@ const DEFAULT_PRESETS = {
         "iGradSmt": "100",
         "iGradBld": "source-atop"
     },
+    
+    "Neon Invertido": {
+    "px": "2",
+    "col": "16",
+    "dith": "linhas",
+    "exp": "-28",
+    "bri": "0",
+    "som": "0",
+    "sat": "0",
+    "cont": "31",
+    "temp": "0",
+    "post": "31",
+    "dScale": "2",
+    "dInt": "63",
+    "tAng": "180",
+    "shInv": false,
+    "effMidDither": true,
+    "fillBg": false,
+    "bgColor": "#F0F0F0",
+    "cc": [
+        "#FAE6FE",
+        "#F9F5FE",
+        "#FFFFFF",
+        "#E0ECFD",
+        "#C7E4FB",
+        "#C6DEFB",
+        "#C6D7FA",
+        "#C7D0FA",
+        "#BDBFF5",
+        "#A9A1EA",
+        "#9279E3",
+        "#793CF2",
+        "#715EDE",
+        "#6384D8",
+        "#49B1DE",
+        "#35EBDD"
+    ],
+    "rc": [
+        "#FAE6FE",
+        "#F9F5FE",
+        "#FFFFFF",
+        "#E0ECFD",
+        "#C7E4FB",
+        "#C6DEFB",
+        "#C6D7FA",
+        "#C7D0FA",
+        "#BDBFF5",
+        "#A9A1EA",
+        "#9279E3",
+        "#793CF2",
+        "#715EDE",
+        "#6384D8",
+        "#49B1DE",
+        "#35EBDD"
+    ],
+    "palMode": "manual",
+    "inv": true,
+    "rSht": "2",
+    "edgC": "#be38f3",
+    "edgSiz": "0",
+    "pHue": "0",
+    "pSat": "0",
+    "pLig": "0",
+    "tOpa": "100",
+    "eOpa": "100",
+    "iSca": "100",
+    "iGrad": false,
+    "iGradTyp": "linear",
+    "iGradAng": "90",
+    "iGradCol": [
+        "#FF00FF",
+        "#00FFFF"
+    ],
+    "iGradStp": "0",
+    "iGradPos": "50",
+    "iGradSmt": "100",
+    "iGradBld": "source-atop"
+},
     "Sepia": {
         "px": "1",
         "col": "8",
