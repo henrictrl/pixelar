@@ -279,6 +279,11 @@
                         <button class="m-sub-btn" data-target="set-som"><span class="badge" id="bdg-som"></span><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg><span>Somb.</span></button>
                         <button class="m-sub-btn" data-target="set-pos"><span class="badge" id="bdg-pos"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><path d="M3 9h18M9 21V9"></path></svg><span>Post.</span></button>
                         <button class="m-sub-btn" data-target="set-abe"><span class="badge" id="bdg-abe"></span><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"></circle><circle cx="14" cy="12" r="6"></circle></svg><span>Aber.</span></button>
+                        <button class="m-sub-btn" data-target="set-grain"><span class="badge" id="bdg-grain"></span><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="9" r="1"></circle><circle cx="18" cy="6" r="1"></circle><circle cx="9" cy="14" r="1"></circle><circle cx="16" cy="16" r="1"></circle><circle cx="5" cy="18" r="1"></circle><circle cx="19" cy="19" r="1"></circle></svg><span>Grão</span></button>
+                        <button class="m-sub-btn" data-target="set-vig"><span class="badge" id="bdg-vig"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4" stroke-dasharray="2 2"></circle></svg><span>Vinheta</span></button>
+                        <button class="m-sub-btn" data-target="set-bloom"><span class="badge" id="bdg-bloom"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line></svg><span>Bloom</span></button>
+                        <button class="m-sub-btn" data-target="set-blur"><span class="badge" id="bdg-blur"></span><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke-dasharray="1 2"></path></svg><span>Desfoque</span></button>
+                        <button class="m-sub-btn" data-target="set-split"><span class="badge" id="bdg-split"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><path d="M12 3v18"></path></svg><span>Cor Split</span></button>
                         <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
@@ -295,6 +300,29 @@
                         </div>
                         <div class="set-item" id="set-pos"><div class="panel-label">Posterizar</div><div class="slider-row"><input type="range" id="posterize" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="posterize"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
                         <div class="set-item" id="set-abe"><div class="panel-label">Aberração Cromática</div><div class="slider-row"><input type="range" id="rgbShift" min="0" max="15" value="0"><button class="icon-btn lock-btn" data-target="rgbShift"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
+
+                        <div class="set-item" id="set-grain"><div class="panel-label">Grão de Filme / Ruído</div>
+                            <div class="slider-row"><input type="range" id="filmGrain" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="filmGrain"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                            <div class="slider-row"><select id="grainType"><option value="mono">Mono (Filme)</option><option value="color">Colorido (Ruído)</option><option value="scanline">Linhas / NTSC</option></select></div>
+                        </div>
+                        <div class="set-item" id="set-vig"><div class="panel-label">Vinheta</div>
+                            <div class="slider-row"><input type="range" id="vignette" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="vignette"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                                <input type="color" id="vignetteColor" class="icon-btn" value="#000000">
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-bloom"><div class="panel-label">Bloom / Brilho Difuso</div>
+                            <div class="slider-row"><input type="range" id="bloom" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="bloom"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                        </div>
+                        <div class="set-item" id="set-blur"><div class="panel-label">Desfoque</div>
+                            <div class="slider-row"><select id="blurType"><option value="none">Nenhum</option><option value="gaussian">Gaussiano</option><option value="radial">Radial (Zoom)</option><option value="tiltshift">Tilt-Shift</option></select></div>
+                            <div class="slider-row"><input type="range" id="blurAmount" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="blurAmount"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                        </div>
+                        <div class="set-item" id="set-split"><div class="panel-label">Divisão de Tons (Split Toning)</div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path></svg><input type="color" id="splitShadowColor" class="icon-btn" value="#2233AA"><span style="font-size:0.75rem; text-transform:uppercase;">Sombras</span></div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle></svg><input type="color" id="splitHighColor" class="icon-btn" value="#FFAA33"><span style="font-size:0.75rem; text-transform:uppercase;">Luzes</span></div>
+                            <div class="slider-row"><input type="range" id="splitAmount" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="splitAmount"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                            <div class="slider-row"><select id="filmLook"><option value="none">Nenhum Look</option><option value="aerochrome">AeroChrome (IR)</option><option value="bleach">Bleach Bypass</option><option value="anaglyph">Anáglifo 3D</option><option value="thermal">Câmera Térmica</option><option value="xray">Raio-X</option><option value="neon">Neon Glow</option></select></div>
+                        </div>
                     </div>
                 </div>
 
@@ -306,6 +334,7 @@
                         <button class="m-sub-btn" data-target="set-dithInt"><span class="badge" id="bdg-dInt"></span><svg viewBox="0 0 24 24"><path d="M4 21v-4m0-4V3m8 18v-6m0-4V3m8 18v-8m0-4V3"></path></svg><span>Intensid.</span></button>
                         <button class="m-sub-btn" data-target="set-dithAng"><span class="badge" id="bdg-dAng"></span><svg viewBox="0 0 24 24"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><span>Ângulo</span></button>
                         <button class="m-sub-btn" data-target="set-dithOpa"><span class="badge" id="bdg-opa"></span><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Opacidade</span></button>
+                        <button class="m-sub-btn" data-target="set-fxSpecial"><span class="badge" id="bdg-fx"></span><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Efeito FX</span></button>
                         <button class="m-sub-btn reset-btn" data-target="pixelReset"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
@@ -335,6 +364,101 @@
                             <div class="slider-row">
                                 <input type="range" id="textureOpacity" min="0" max="100" value="100"><button class="icon-btn lock-btn" data-target="textureOpacity"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                             </div>
+                        </div>
+                        <div class="set-item" id="set-fxSpecial"><div class="panel-label">Efeitos</div>
+                            <div class="slider-row">
+                                <select id="fxSpecial">
+                                    <option value="none">Nenhum</option>
+                                    <optgroup label="Halftone / Print">
+                                        <option value="halftoneDots">Halftone Pontos</option>
+                                        <option value="halftoneSparkle">Halftone Sparkle</option>
+                                        <option value="moire">Moiré</option>
+                                        <option value="comicBook">Comic Book</option>
+                                        <option value="popArt">Pop Art</option>
+                                    </optgroup>
+                                    <optgroup label="Texto">
+                                        <option value="asciiMono">ASCII Mono</option>
+                                        <option value="asciiColor">ASCII Colorido</option>
+                                        <option value="ditherText">Texto Dither</option>
+                                    </optgroup>
+                                    <optgroup label="Linha / Gravura">
+                                        <option value="asciiArt">ASCII Art (Blocos)</option>
+                                        <option value="crosshatch">Crosshatch</option>
+                                        <option value="contourLine">Contorno de Linha</option>
+                                        <option value="engraving">Gravura</option>
+                                        <option value="emboss">Emboss / Relevo</option>
+                                        <option value="sketch">Esboço a Lápis</option>
+                                        <option value="cartoon">Cartoon</option>
+                                        <option value="hologram">Holograma</option>
+                                        <option value="neonLines">Neon</option>
+                                    </optgroup>
+                                    <optgroup label="Pintura">
+                                        <option value="oilPainting">Pintura a Óleo</option>
+                                        <option value="watercolor">Aquarela</option>
+                                        <option value="gouache">Guache</option>
+                                        <option value="stipple">Stipple / Pontilhismo</option>
+                                        <option value="crossStitch">Ponto Cruz</option>
+                                        <option value="stainedGlass">Vitral</option>
+                                        <option value="knitted">Tricô</option>
+                                        <option value="lego">Lego</option>
+                                        <option value="particle">Partículas</option>
+                                        <option value="auraEffect">Aura</option>
+                                    </optgroup>
+                                    <optgroup label="Pixel / Mosaico">
+                                        <option value="crystallize">Cristalizar</option>
+                                        <option value="ledMatrix">Matriz LED</option>
+                                        <option value="lcdScreen">Tela LCD</option>
+                                        <option value="wordMosaic">Mosaico de Palavras</option>
+                                    </optgroup>
+                                    <optgroup label="Generativo">
+                                        <option value="topographic">Mapa Topográfico</option>
+                                        <option value="turingPattern">Padrão de Turing</option>
+                                    </optgroup>
+                                    <optgroup label="Glitch">
+                                        <option value="glitchBasic">Glitch</option>
+                                        <option value="bitcrush">Bitcrush</option>
+                                        <option value="datamosh">Datamosh</option>
+                                        <option value="echoEffect">Eco / Trails</option>
+                                        <option value="macroblock">Macroblock</option>
+                                        <option value="pixelSort">Pixel Sort</option>
+                                        <option value="signalLoss">Perda de Sinal</option>
+                                        <option value="vhsEffect">VHS</option>
+                                    </optgroup>
+                                    <optgroup label="Warp / Óptico">
+                                        <option value="fisheye">Olho de Peixe</option>
+                                        <option value="twirl">Redemoinho</option>
+                                        <option value="ripple">Ondulação</option>
+                                        <option value="radialBlurFx">Desfoque Radial</option>
+                                        <option value="kaleidoscope">Caleidoscópio</option>
+                                        <option value="mirrorFx">Espelho</option>
+                                        <option value="stretch">Esticar</option>
+                                        <option value="liquidFx">Líquido</option>
+                                        <option value="glassDispersion">Dispersão de Vidro</option>
+                                        <option value="frostedGlass">Vidro Fosco</option>
+                                        <option value="flutedGlass">Vidro Canelado</option>
+                                        <option value="dropsFx">Gotas</option>
+                                        <option value="prismFx">Prisma</option>
+                                        <option value="slitScan">Slit Scan</option>
+                                    </optgroup>
+                                    <optgroup label="CRT / Retrô">
+                                        <option value="crtEffect">CRT</option>
+                                        <option value="eInk">E-Ink</option>
+                                        <option value="nokia3310">Nokia 3310</option>
+                                        <option value="ntscEffect">NTSC</option>
+                                        <option value="synthwave">Synthwave</option>
+                                        <option value="teletext">Teletexto</option>
+                                    </optgroup>
+                                    <optgroup label="Temporal">
+                                        <option value="matrixRain">Chuva Matrix</option>
+                                        <option value="splitFlap">Split Flap</option>
+                                        <option value="atmosphereFx">Atmosfera</option>
+                                    </optgroup>
+                                </select>
+                                <button class="icon-btn lock-btn" data-target="fxSpecial"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                            </div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path></svg><input type="range" id="fxIntensity" min="0" max="100" value="100"><button class="icon-btn lock-btn" data-target="fxIntensity"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                            <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><input type="range" id="fxScale" min="1" max="40" value="8"><button class="icon-btn lock-btn" data-target="fxScale"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                            <div class="slider-row"><input type="color" id="fxColor" class="icon-btn" value="#00FF66"><span style="font-size:0.75rem; text-transform:uppercase;">Cor do efeito (quando aplicável)</span></div>
                         </div>
                     </div>
                 </div>
@@ -511,7 +635,7 @@
             
             <div id="export-video-options" style="display: none; flex-direction: column; gap: 8px;">
                 <div style="background: var(--panel); border: 1px dashed var(--text); padding: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 4px;">
-                    Selecione a qualidade desejada para o processamento em duas etapas.
+                    Selecione a qualidade
                 </div>
                 
                 <div class="slider-row" style="margin-bottom: 8px;">
@@ -526,8 +650,8 @@
                     </select>
                 </div>
 
-                <button class="std-btn" id="btnChoiceMp4" style="background:var(--accent); color:#fff; font-weight:bold;">Renderizar MP4 Sincronizado</button>
-                <button class="std-btn" id="btnChoiceWebm">Renderizar WebM Sincronizado</button>
+                <button class="std-btn" id="btnChoiceMp4" style="background:var(--accent); color:#fff; font-weight:bold;">MP4</button>
+                <button class="std-btn" id="btnChoiceWebm">WebM</button>
             </div>
 
             <button id="dl-close" class="std-btn" style="margin-top: 8px; border-color: transparent;">Cancelar</button>
@@ -600,7 +724,7 @@
         if (localStorage.getItem('pixelarTheme') === 'dark') { rootHtml.setAttribute('data-theme', 'dark'); } updateThemeIcon();
         themeBtn.addEventListener('click', () => { if (rootHtml.getAttribute('data-theme') === 'dark') { rootHtml.removeAttribute('data-theme'); localStorage.setItem('pixelarTheme', 'light'); } else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); } updateThemeIcon(); });
 
-        const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight' ];
+        const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight', 'filmGrain', 'vignette', 'bloom', 'blurAmount', 'splitAmount', 'fxSpecial', 'fxIntensity', 'fxScale' ];
         const locks = {}; lockTargets.forEach(t => locks[t] = false);
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const target = btn.getAttribute('data-target'); if (locks[target] !== undefined) { locks[target] = !locks[target]; btn.classList.toggle('active-state', locks[target]); } });
@@ -1816,7 +1940,8 @@ try {
         // ==========================================
         function resetAdjustments(e) {
             if(e) e.stopPropagation();
-            ['exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift'].forEach(id => document.getElementById(id).value = 0);
+            ['exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'filmGrain', 'vignette', 'bloom', 'blurAmount', 'splitAmount'].forEach(id => document.getElementById(id).value = 0);
+            document.getElementById('blurType').value = 'none'; document.getElementById('filmLook').value = 'none'; document.getElementById('grainType').value = 'mono';
             isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state'); updateBadges(); scheduleAppProcess();
         }
 
@@ -1825,7 +1950,7 @@ try {
                 const target = btn.getAttribute('data-target');
                 if (target === 'ajustes') resetAdjustments(e);
                 if (target === 'colors') { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); scheduleAppProcess(); }
-                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; document.getElementById('texAngle').value = 45; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; updateBadges(); scheduleAppProcess(); }
+                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; document.getElementById('texAngle').value = 45; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; document.getElementById('fxSpecial').value = 'none'; document.getElementById('fxIntensity').value = 100; document.getElementById('fxScale').value = 8; updateBadges(); scheduleAppProcess(); }
             });
         });
 
@@ -1867,10 +1992,12 @@ try {
             const tO = document.getElementById('textureOpacity').value; const bdgOpa = document.getElementById('bdg-opa'); if(bdgOpa) { if(tO != 100 && tO != 0) { bdgOpa.textContent = '*'; bdgOpa.style.display = 'block'; } else { bdgOpa.style.display = 'none'; } }
             const ph = document.getElementById('palHue').value; const ps = document.getElementById('palSat').value; const pl = document.getElementById('palLight').value; const bcAju = document.getElementById('bdg-corAju'); if(bcAju) { if(ph != 0 || ps != 0 || pl != 0) { bcAju.textContent = '*'; bcAju.style.display = 'block'; } else { bcAju.style.display = 'none'; } }
             const igStp = document.getElementById('imgGradSteps').value; const bcDeg = document.getElementById('bdg-corDeg'); if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'block'; } else { bcDeg.style.display = 'none'; } }
+            updateBadgeSingle('bdg-grain', document.getElementById('filmGrain').value, 0); updateBadgeSingle('bdg-vig', document.getElementById('vignette').value, 0); updateBadgeSingle('bdg-bloom', document.getElementById('bloom').value, 0); updateBadgeSingle('bdg-blur', document.getElementById('blurAmount').value, 0); updateBadgeSingle('bdg-split', document.getElementById('splitAmount').value, 0);
+            const fxSel = document.getElementById('fxSpecial').value; const bdgFx = document.getElementById('bdg-fx'); if(bdgFx) { if(fxSel !== 'none') { bdgFx.textContent = '*'; bdgFx.style.display = 'block'; } else { bdgFx.style.display = 'none'; } }
         }
 
         const processInputs = ['pxSize', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'imageScale'];
-        const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
+        const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth', 'filmGrain', 'grainType', 'vignette', 'vignetteColor', 'bloom', 'blurType', 'blurAmount', 'splitShadowColor', 'splitHighColor', 'splitAmount', 'filmLook', 'fxSpecial', 'fxIntensity', 'fxScale', 'fxColor'];
 
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleAppProcess(); });
         document.getElementById('btnEffMidDither').addEventListener('click', (e) => { isMidDitherEnabled = !isMidDitherEnabled; e.currentTarget.classList.toggle('active-state', isMidDitherEnabled); scheduleAppProcess(); });
@@ -1955,7 +2082,8 @@ try {
 
         function getStateObject() {
             return {
-                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, tAng: document.getElementById('texAngle').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value
+                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, tAng: document.getElementById('texAngle').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value,
+                fGrain: document.getElementById('filmGrain').value, fGrainTyp: document.getElementById('grainType').value, vig: document.getElementById('vignette').value, vigCol: document.getElementById('vignetteColor').value, bloom: document.getElementById('bloom').value, blurTyp: document.getElementById('blurType').value, blurAmt: document.getElementById('blurAmount').value, spShad: document.getElementById('splitShadowColor').value, spHigh: document.getElementById('splitHighColor').value, spAmt: document.getElementById('splitAmount').value, fLook: document.getElementById('filmLook').value, fx: document.getElementById('fxSpecial').value, fxInt: document.getElementById('fxIntensity').value, fxSca: document.getElementById('fxScale').value, fxCol: document.getElementById('fxColor').value
             };
         }
 
@@ -1972,6 +2100,8 @@ try {
             if(p.tOpa !== undefined) document.getElementById('textureOpacity').value = p.tOpa; if(p.eOpa !== undefined) document.getElementById('edgeOpacity').value = p.eOpa; if(p.iSca !== undefined) document.getElementById('imageScale').value = p.iSca;
             document.getElementById('imgGradient').checked = p.iGrad || false; if(p.iGradTyp) document.getElementById('imgGradType').value = p.iGradTyp; if(p.iGradAng !== undefined) document.getElementById('imgGradAngle').value = p.iGradAng; if(p.iGradStp !== undefined) document.getElementById('imgGradSteps').value = p.iGradStp; if(p.iGradPos !== undefined) document.getElementById('imgGradPos').value = p.iGradPos; if(p.iGradSmt !== undefined) document.getElementById('imgGradSmooth').value = p.iGradSmt; if(p.iGradBld) document.getElementById('imgGradBlend').value = p.iGradBld; if(p.iGradCol) { currentImgGradColors = p.iGradCol; renderImgGradColors(); }
             if (!locks.colors) { currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false; if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); if (p.rc && p.rc.length > 0) { referencePalette = p.rc.map(hexToRgb); } else { referencePalette = clone(globalCurrentPalette); } setBasePalette(globalCurrentPalette); } }
+            document.getElementById('filmGrain').value = p.fGrain !== undefined ? p.fGrain : 0; document.getElementById('grainType').value = p.fGrainTyp || 'mono'; document.getElementById('vignette').value = p.vig !== undefined ? p.vig : 0; document.getElementById('vignetteColor').value = p.vigCol || '#000000'; document.getElementById('bloom').value = p.bloom !== undefined ? p.bloom : 0; document.getElementById('blurType').value = p.blurTyp || 'none'; document.getElementById('blurAmount').value = p.blurAmt !== undefined ? p.blurAmt : 0; document.getElementById('splitShadowColor').value = p.spShad || '#2233AA'; document.getElementById('splitHighColor').value = p.spHigh || '#FFAA33'; document.getElementById('splitAmount').value = p.spAmt !== undefined ? p.spAmt : 0; document.getElementById('filmLook').value = p.fLook || 'none';
+            if (!locks.fxSpecial) document.getElementById('fxSpecial').value = p.fx || 'none'; if (!locks.fxIntensity) document.getElementById('fxIntensity').value = p.fxInt !== undefined ? p.fxInt : 100; if (!locks.fxScale) document.getElementById('fxScale').value = p.fxSca !== undefined ? p.fxSca : 8; document.getElementById('fxColor').value = p.fxCol || '#00FF66';
             isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();
         }
         document.getElementById('btn-undo-view').addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; applyState(historyArr[historyIndex]); } });
@@ -2116,6 +2246,798 @@ function renderPresets() {
             await renderImageCanvas(myId); 
         }
 
+        // ==========================================
+        // MOTOR DE EFEITOS EXTRA (kott) — camada de pós-processamento
+        // Opera diretamente sobre o canvas final já renderizado (pixels
+        // já passaram por dither/paleta/edge). Usado tanto pela imagem
+        // quanto pelo vídeo, sempre no fim do pipeline, para que as
+        // exportações (PNG/SVG/gravação) já saiam com os efeitos aplicados.
+        // ==========================================
+        let fxNoiseSeedCache = null; let fxNoiseSeedHash = "";
+        function getFxSeeded(w, h, hashKey) {
+            if (fxNoiseSeedHash === hashKey && fxNoiseSeedCache && fxNoiseSeedCache.length === w*h) return fxNoiseSeedCache;
+            let arr = new Float32Array(w*h);
+            let s = 12345;
+            const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return (s / 0x7fffffff); };
+            for (let i=0;i<arr.length;i++) arr[i] = rnd();
+            fxNoiseSeedCache = arr; fxNoiseSeedHash = hashKey; return arr;
+        }
+
+        function clamp255(v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }
+
+        function applyExtraEffectsLayer(targetCtx, cw, ch) {
+            const filmGrain = parseInt(document.getElementById('filmGrain').value, 10);
+            const grainType = document.getElementById('grainType').value;
+            const vignette = parseInt(document.getElementById('vignette').value, 10);
+            const vignetteColor = hexToRgb(document.getElementById('vignetteColor').value);
+            const bloom = parseInt(document.getElementById('bloom').value, 10);
+            const blurType = document.getElementById('blurType').value;
+            const blurAmount = parseInt(document.getElementById('blurAmount').value, 10);
+            const splitShadow = hexToRgb(document.getElementById('splitShadowColor').value);
+            const splitHigh = hexToRgb(document.getElementById('splitHighColor').value);
+            const splitAmount = parseInt(document.getElementById('splitAmount').value, 10);
+            const filmLook = document.getElementById('filmLook').value;
+            const fx = document.getElementById('fxSpecial').value;
+            const fxIntensity = parseInt(document.getElementById('fxIntensity').value, 10) / 100;
+            const fxScale = Math.max(1, parseInt(document.getElementById('fxScale').value, 10));
+            const fxColor = hexToRgb(document.getElementById('fxColor').value);
+
+            const nothingToDo = filmGrain===0 && vignette===0 && bloom===0 && blurType==='none' && splitAmount===0 && filmLook==='none' && fx==='none';
+            if (nothingToDo) return;
+
+            let imgData = targetCtx.getImageData(0, 0, cw, ch);
+            let d = imgData.data;
+            const w = cw, h = ch;
+
+            // ---------- BLUR (gaussiano simples / radial / tilt-shift) ----------
+            if (blurType !== 'none' && blurAmount > 0) {
+                const radius = Math.max(1, Math.round((blurAmount / 100) * 12));
+                if (blurType === 'gaussian') {
+                    d = boxBlur(d, w, h, radius, 2);
+                } else if (blurType === 'radial') {
+                    d = radialZoomBlur(d, w, h, blurAmount / 100);
+                } else if (blurType === 'tiltshift') {
+                    let blurred = boxBlur(new Uint8ClampedArray(d), w, h, radius, 2);
+                    const focusCenter = 0.5, focusWidth = 0.22;
+                    for (let y=0; y<h; y++) {
+                        let ny = y / h; let distFromFocus = Math.abs(ny - focusCenter);
+                        let mixT = Math.max(0, Math.min(1, (distFromFocus - focusWidth) / 0.3));
+                        if (mixT <= 0) continue;
+                        for (let x=0; x<w; x++) {
+                            let i = (y*w+x)*4;
+                            d[i] = d[i]*(1-mixT) + blurred[i]*mixT;
+                            d[i+1] = d[i+1]*(1-mixT) + blurred[i+1]*mixT;
+                            d[i+2] = d[i+2]*(1-mixT) + blurred[i+2]*mixT;
+                        }
+                    }
+                }
+            }
+
+            // ---------- BLOOM (brilho difuso nas áreas claras) ----------
+            if (bloom > 0) {
+                let bright = new Uint8ClampedArray(d.length);
+                for (let i=0; i<d.length; i+=4) {
+                    let luma = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+                    let t = Math.max(0, (luma - 160) / 95);
+                    bright[i] = d[i]*t; bright[i+1] = d[i+1]*t; bright[i+2] = d[i+2]*t; bright[i+3] = 255;
+                }
+                let glow = boxBlur(bright, w, h, Math.max(2, Math.round(w/60)), 3);
+                const amt = bloom / 100;
+                for (let i=0; i<d.length; i+=4) {
+                    d[i] = clamp255(d[i] + glow[i] * amt);
+                    d[i+1] = clamp255(d[i+1] + glow[i+1] * amt);
+                    d[i+2] = clamp255(d[i+2] + glow[i+2] * amt);
+                }
+            }
+
+            // ---------- SPLIT TONING (sombras/luzes) ----------
+            if (splitAmount > 0) {
+                const amt = splitAmount / 100;
+                for (let i=0; i<d.length; i+=4) {
+                    let luma = (0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2]) / 255;
+                    let shT = (1 - luma) * amt * 0.5; let hiT = luma * amt * 0.5;
+                    d[i] = clamp255(d[i] + (splitShadow.r-128)*shT + (splitHigh.r-128)*hiT);
+                    d[i+1] = clamp255(d[i+1] + (splitShadow.g-128)*shT + (splitHigh.g-128)*hiT);
+                    d[i+2] = clamp255(d[i+2] + (splitShadow.b-128)*shT + (splitHigh.b-128)*hiT);
+                }
+            }
+
+            // ---------- FILM LOOKS (color/film da categoria kott) ----------
+            if (filmLook !== 'none') {
+                for (let i=0; i<d.length; i+=4) {
+                    let r=d[i], g=d[i+1], b=d[i+2]; let luma = 0.3*r+0.59*g+0.11*b;
+                    if (filmLook === 'aerochrome') { d[i] = clamp255(g*1.1); d[i+1] = clamp255(r*0.5 + 40); d[i+2] = clamp255(b*0.6); }
+                    else if (filmLook === 'bleach') { let bw = luma; d[i] = clamp255(bw*0.5 + r*0.7); d[i+1] = clamp255(bw*0.5 + g*0.7); d[i+2] = clamp255(bw*0.5 + b*0.7); let cf=1.35; d[i]=clamp255((d[i]-128)*cf+128); d[i+1]=clamp255((d[i+1]-128)*cf+128); d[i+2]=clamp255((d[i+2]-128)*cf+128); }
+                    else if (filmLook === 'anaglyph') { let shift = 4; let si = i; let li = (Math.floor(i/4/w)*w + Math.max(0,(i/4)%w - shift))*4; let ri = (Math.floor(i/4/w)*w + Math.min(w-1,(i/4)%w + shift))*4; d[i] = d[li] || r; d[i+1] = g*0.2; d[i+2] = d[ri+2] || b; }
+                    else if (filmLook === 'thermal') { let t = luma/255; let tc = thermalColor(t); d[i]=tc.r; d[i+1]=tc.g; d[i+2]=tc.b; }
+                    else if (filmLook === 'xray') { let inv = 255-luma; d[i]=clamp255(inv*0.7); d[i+1]=clamp255(inv*0.85); d[i+2]=255; }
+                    else if (filmLook === 'neon') { let boost = 1.6; d[i]=clamp255(r*boost*0.4 + luma*0.2); d[i+1]=clamp255(g*boost*0.5); d[i+2]=clamp255(b*boost*1.1); }
+                }
+            }
+
+            // ---------- FX ESPECIAL (categorias kott) ----------
+            if (fx !== 'none') {
+                d = applySpecialFx(d, w, h, fx, fxIntensity, fxScale, fxColor);
+            }
+
+            // ---------- GRAIN / RUÍDO DE FILME ----------
+            if (filmGrain > 0) {
+                const amt = filmGrain / 2.6;
+                const seed = getFxSeeded(w, h, `${w}x${h}`);
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let idx = y*w+x; let i = idx*4;
+                        if (grainType === 'scanline') {
+                            let n = (y % 2 === 0) ? amt : -amt;
+                            d[i]=clamp255(d[i]+n); d[i+1]=clamp255(d[i+1]+n); d[i+2]=clamp255(d[i+2]+n);
+                        } else {
+                            let n1 = (Math.random()*2-1) * amt;
+                            if (grainType === 'mono') {
+                                d[i]=clamp255(d[i]+n1); d[i+1]=clamp255(d[i+1]+n1); d[i+2]=clamp255(d[i+2]+n1);
+                            } else {
+                                d[i]=clamp255(d[i]+(Math.random()*2-1)*amt); d[i+1]=clamp255(d[i+1]+(Math.random()*2-1)*amt); d[i+2]=clamp255(d[i+2]+(Math.random()*2-1)*amt);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ---------- VINHETA ----------
+            if (vignette > 0) {
+                const amt = vignette / 100; const cx = w/2, cy = h/2; const maxDist = Math.sqrt(cx*cx+cy*cy);
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let i = (y*w+x)*4; let dx=x-cx, dy=y-cy; let dist = Math.sqrt(dx*dx+dy*dy)/maxDist;
+                        let t = Math.max(0, Math.min(1, (dist - (1-amt*0.9)) / (0.6)));
+                        if (t <= 0) continue;
+                        d[i] = d[i]*(1-t) + vignetteColor.r*t; d[i+1] = d[i+1]*(1-t) + vignetteColor.g*t; d[i+2] = d[i+2]*(1-t) + vignetteColor.b*t;
+                    }
+                }
+            }
+
+            targetCtx.putImageData(new ImageData(d, w, h), 0, 0);
+        }
+
+        function thermalColor(t) {
+            const stops = [ {p:0,c:[10,10,60]}, {p:0.35,c:[130,0,150]}, {p:0.55,c:[230,30,20]}, {p:0.8,c:[255,170,0]}, {p:1,c:[255,255,180]} ];
+            for (let i=0;i<stops.length-1;i++) { if (t >= stops[i].p && t <= stops[i+1].p) { let lt = (t-stops[i].p)/(stops[i+1].p-stops[i].p); let c1=stops[i].c, c2=stops[i+1].c; return { r: c1[0]+(c2[0]-c1[0])*lt, g: c1[1]+(c2[1]-c1[1])*lt, b: c1[2]+(c2[2]-c1[2])*lt }; } }
+            return { r:255, g:255, b:255 };
+        }
+
+        function boxBlur(src, w, h, radius, passes) {
+            let d = new Uint8ClampedArray(src);
+            for (let p=0; p<passes; p++) {
+                let tmp = new Uint8ClampedArray(d.length);
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let rs=0,gs=0,bs=0,as=0,cnt=0;
+                        for (let k=-radius;k<=radius;k++) {
+                            let sx = x+k; if (sx<0||sx>=w) continue;
+                            let si=(y*w+sx)*4; rs+=d[si];gs+=d[si+1];bs+=d[si+2];as+=d[si+3];cnt++;
+                        }
+                        let ti=(y*w+x)*4; tmp[ti]=rs/cnt; tmp[ti+1]=gs/cnt; tmp[ti+2]=bs/cnt; tmp[ti+3]=as/cnt;
+                    }
+                }
+                let tmp2 = new Uint8ClampedArray(d.length);
+                for (let x=0; x<w; x++) {
+                    for (let y=0; y<h; y++) {
+                        let rs=0,gs=0,bs=0,as=0,cnt=0;
+                        for (let k=-radius;k<=radius;k++) {
+                            let sy = y+k; if (sy<0||sy>=h) continue;
+                            let si=(sy*w+x)*4; rs+=tmp[si];gs+=tmp[si+1];bs+=tmp[si+2];as+=tmp[si+3];cnt++;
+                        }
+                        let ti=(y*w+x)*4; tmp2[ti]=rs/cnt; tmp2[ti+1]=gs/cnt; tmp2[ti+2]=bs/cnt; tmp2[ti+3]=as/cnt;
+                    }
+                }
+                d = tmp2;
+            }
+            return d;
+        }
+
+        function radialZoomBlur(src, w, h, strength) {
+            let d = new Uint8ClampedArray(src.length);
+            const cx=w/2, cy=h/2; const samples = 8; const maxPull = strength * 0.08;
+            for (let y=0;y<h;y++) {
+                for (let x=0;x<w;x++) {
+                    let dx=x-cx, dy=y-cy; let r=0,g=0,b=0,a=0,cnt=0;
+                    for (let s=0;s<samples;s++) {
+                        let t = 1 - (s/samples)*maxPull;
+                        let sx = Math.round(cx + dx*t), sy = Math.round(cy + dy*t);
+                        if (sx<0||sx>=w||sy<0||sy>=h) continue;
+                        let si=(sy*w+sx)*4; r+=src[si];g+=src[si+1];b+=src[si+2];a+=src[si+3];cnt++;
+                    }
+                    let i=(y*w+x)*4; if (cnt===0) cnt=1;
+                    d[i]=r/cnt; d[i+1]=g/cnt; d[i+2]=b/cnt; d[i+3]=a/cnt;
+                }
+            }
+            return d;
+        }
+
+        function sampleBilinear(src, w, h, fx, fy) {
+            fx = Math.max(0, Math.min(w-1.001, fx)); fy = Math.max(0, Math.min(h-1.001, fy));
+            let x0=Math.floor(fx), y0=Math.floor(fy), x1=x0+1, y1=y0+1;
+            let tx=fx-x0, ty=fy-y0;
+            const idx=(x,y)=>(y*w+x)*4;
+            let i00=idx(x0,y0), i10=idx(x1,y0), i01=idx(x0,y1), i11=idx(x1,y1);
+            let out=[0,0,0,0];
+            for (let c=0;c<4;c++) {
+                let top = src[i00+c]*(1-tx) + src[i10+c]*tx;
+                let bot = src[i01+c]*(1-tx) + src[i11+c]*tx;
+                out[c] = top*(1-ty) + bot*ty;
+            }
+            return out;
+        }
+
+        function applySpecialFx(d, w, h, fx, intensity, scale, fxColor) {
+            const src = new Uint8ClampedArray(d);
+            const lumaAt = (i) => 0.3*src[i]+0.59*src[i+1]+0.11*src[i+2];
+
+            // --- HALFTONE / PRINT ---
+            if (fx === 'halftoneDots' || fx === 'halftoneSparkle' || fx === 'moire') {
+                const cell = Math.max(3, scale);
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let i=(y*w+x)*4; let luma = lumaAt(i)/255;
+                        let cx = (x % cell) - cell/2, cy = (y % cell) - cell/2;
+                        let dist = Math.sqrt(cx*cx+cy*cy);
+                        let radius = (1-luma) * (cell/1.6);
+                        if (fx === 'moire') { let r2 = ((x*0.4+y*0.4) % cell) - cell/2; radius = (1-luma)*(cell/1.6) + Math.sin(r2)*1.5; }
+                        let inDot = dist < radius;
+                        if (fx === 'halftoneSparkle' && inDot && Math.random() < 0.08) inDot = false;
+                        let mixT = inDot ? 1 : 0.08;
+                        let bg = 255;
+                        d[i] = src[i]*mixT + bg*(1-mixT)*intensity + src[i]*(1-intensity);
+                        d[i+1] = src[i+1]*mixT + bg*(1-mixT)*intensity + src[i+1]*(1-intensity);
+                        d[i+2] = src[i+2]*mixT + bg*(1-mixT)*intensity + src[i+2]*(1-intensity);
+                    }
+                }
+            }
+            else if (fx === 'comicBook' || fx === 'popArt') {
+                const cell = Math.max(4, scale);
+                const levels = fx === 'comicBook' ? 4 : 5;
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let i=(y*w+x)*4;
+                        let r = Math.round(src[i]/255*(levels-1))*(255/(levels-1));
+                        let g = Math.round(src[i+1]/255*(levels-1))*(255/(levels-1));
+                        let b = Math.round(src[i+2]/255*(levels-1))*(255/(levels-1));
+                        let luma = lumaAt(i)/255;
+                        let cx=(x%cell)-cell/2, cy=(y%cell)-cell/2; let dist=Math.sqrt(cx*cx+cy*cy);
+                        let dotOn = dist < (1-luma)*(cell/1.7);
+                        if (dotOn) { r*=0.75; g*=0.75; b*=0.75; }
+                        d[i]=r*intensity+src[i]*(1-intensity); d[i+1]=g*intensity+src[i+1]*(1-intensity); d[i+2]=b*intensity+src[i+2]*(1-intensity);
+                    }
+                }
+            }
+
+            // --- TEXTO / ASCII ---
+            else if (fx === 'asciiMono' || fx === 'asciiColor' || fx === 'ditherText' || fx === 'asciiArt') {
+                const cell = Math.max(4, scale);
+                const ramp = fx === 'ditherText' ? "@%#*+=-:. " : " .:-=+*#%@";
+                for (let by=0; by<h; by+=cell) {
+                    for (let bx=0; bx<w; bx+=cell) {
+                        let sum=0, cnt=0, rs=0,gs=0,bs=0;
+                        for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) { let i=(y*w+x)*4; sum+=lumaAt(i); rs+=src[i];gs+=src[i+1];bs+=src[i+2]; cnt++; }
+                        if (cnt===0) continue;
+                        let avg = sum/cnt/255; let avgR=rs/cnt, avgG=gs/cnt, avgB=bs/cnt;
+                        let chIdx = Math.min(ramp.length-1, Math.floor((1-avg)*ramp.length));
+                        let ch = ramp[chIdx];
+                        for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) { let i=(y*w+x)*4; d[i]=255*intensity+src[i]*(1-intensity); d[i+1]=255*intensity+src[i+1]*(1-intensity); d[i+2]=255*intensity+src[i+2]*(1-intensity); }
+                        drawGlyphBlock(d, w, h, bx, by, cell, ch, fx==='asciiColor' ? {r:avgR,g:avgG,b:avgB} : (fx==='asciiArt' ? {r:avgR,g:avgG,b:avgB} : {r:0,g:0,b:0}), intensity);
+                    }
+                }
+            }
+
+            // --- LINE / ENGRAVING ---
+            else if (fx === 'crosshatch' || fx === 'contourLine' || fx === 'engraving' || fx === 'sketch') {
+                const cell = Math.max(3, Math.round(scale*0.7));
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let i=(y*w+x)*4; let luma = lumaAt(i)/255;
+                        let line1 = ((x+y) % cell) < 1; let line2 = ((x-y+h) % cell) < 1;
+                        let line3 = (x % cell) < 1; let line4 = (y % cell) < 1;
+                        let dark = luma < 0.85 && line1; let darker = luma < 0.6 && line2;
+                        let darkest = luma < 0.35 && (line3 || line4);
+                        let isMark = (fx==='crosshatch') ? (dark||darker||darkest) : (fx==='contourLine') ? (line1 && luma<0.5) : (fx==='engraving') ? (dark||darker) : (dark);
+                        let v = isMark ? 20 : 245;
+                        d[i]=v*intensity+src[i]*(1-intensity); d[i+1]=v*intensity+src[i+1]*(1-intensity); d[i+2]=v*intensity+src[i+2]*(1-intensity);
+                    }
+                }
+            }
+            else if (fx === 'emboss') {
+                for (let y=1; y<h-1; y++) for (let x=1; x<w-1; x++) {
+                    let i=(y*w+x)*4; let i2=(y*w+x-1)*4;
+                    let diff = (lumaAt(i) - lumaAt(i2));
+                    let v = clamp255(128 + diff);
+                    d[i]=v*intensity+src[i]*(1-intensity); d[i+1]=v*intensity+src[i+1]*(1-intensity); d[i+2]=v*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'cartoon') {
+                const levels = 5;
+                for (let y=1; y<h-1; y++) for (let x=1; x<w-1; x++) {
+                    let i=(y*w+x)*4; let ir=(y*w+x+1)*4, ib=((y+1)*w+x)*4;
+                    let edge = Math.abs(lumaAt(i)-lumaAt(ir)) + Math.abs(lumaAt(i)-lumaAt(ib));
+                    let r=Math.round(src[i]/255*(levels-1))*(255/(levels-1)); let g=Math.round(src[i+1]/255*(levels-1))*(255/(levels-1)); let b=Math.round(src[i+2]/255*(levels-1))*(255/(levels-1));
+                    if (edge > 40) { r*=0.2;g*=0.2;b*=0.2; }
+                    d[i]=r*intensity+src[i]*(1-intensity); d[i+1]=g*intensity+src[i+1]*(1-intensity); d[i+2]=b*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'hologram') {
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4; let luma = lumaAt(i);
+                    let scan = (y % 3 === 0) ? 0.7 : 1;
+                    let g2 = clamp255(luma * 1.3 * scan);
+                    d[i]=0*intensity+src[i]*(1-intensity); d[i+1]=g2*intensity+src[i+1]*(1-intensity); d[i+2]=clamp255(luma*scan)*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'neonLines') {
+                for (let y=1; y<h-1; y++) for (let x=1; x<w-1; x++) {
+                    let i=(y*w+x)*4; let ir=(y*w+x+1)*4, ib=((y+1)*w+x)*4;
+                    let edge = Math.abs(lumaAt(i)-lumaAt(ir)) + Math.abs(lumaAt(i)-lumaAt(ib));
+                    let t = Math.min(1, edge/60);
+                    d[i]=clamp255(fxColor.r*t)*intensity+src[i]*(1-intensity); d[i+1]=clamp255(fxColor.g*t)*intensity+src[i+1]*(1-intensity); d[i+2]=clamp255(fxColor.b*t)*intensity+src[i+2]*(1-intensity);
+                }
+            }
+
+            // --- PAINTERLY ---
+            else if (fx === 'oilPainting' || fx === 'watercolor' || fx === 'gouache') {
+                const radius = Math.max(1, Math.round(scale/4));
+                const buckets = 12;
+                for (let y=0; y<h; y++) {
+                    for (let x=0; x<w; x++) {
+                        let hist = new Array(buckets).fill(0); let sumR=new Array(buckets).fill(0), sumG=new Array(buckets).fill(0), sumB=new Array(buckets).fill(0);
+                        for (let ky=-radius; ky<=radius; ky+=Math.max(1,Math.floor(radius/3))) {
+                            for (let kx=-radius; kx<=radius; kx+=Math.max(1,Math.floor(radius/3))) {
+                                let sx=x+kx, sy=y+ky; if (sx<0||sx>=w||sy<0||sy>=h) continue;
+                                let si=(sy*w+sx)*4; let bIdx = Math.min(buckets-1, Math.floor(lumaAt(si)/255*buckets));
+                                hist[bIdx]++; sumR[bIdx]+=src[si]; sumG[bIdx]+=src[si+1]; sumB[bIdx]+=src[si+2];
+                            }
+                        }
+                        let maxB=0; for (let b=1;b<buckets;b++) if (hist[b]>hist[maxB]) maxB=b;
+                        let i=(y*w+x)*4;
+                        if (hist[maxB] > 0) {
+                            let r=sumR[maxB]/hist[maxB], g=sumG[maxB]/hist[maxB], b=sumB[maxB]/hist[maxB];
+                            d[i]=r*intensity+src[i]*(1-intensity); d[i+1]=g*intensity+src[i+1]*(1-intensity); d[i+2]=b*intensity+src[i+2]*(1-intensity);
+                        }
+                    }
+                }
+                if (fx === 'watercolor' || fx === 'gouache') { let blurred = boxBlur(d, w, h, 1, 1); for (let i=0;i<d.length;i++) d[i] = blurred[i]; }
+            }
+            else if (fx === 'stipple' || fx === 'crossStitch') {
+                const cell = Math.max(2, Math.round(scale*0.5));
+                for (let y=0; y<h; y+=cell) for (let x=0; x<w; x+=cell) {
+                    let i=(y*w+x)*4; let luma=lumaAt(i)/255;
+                    for (let dy=0; dy<cell && y+dy<h; dy++) for (let dx2=0; dx2<cell && x+dx2<w; dx2++) {
+                        let ti=((y+dy)*w+(x+dx2))*4; d[ti]=255*intensity+src[ti]*(1-intensity); d[ti+1]=255*intensity+src[ti+1]*(1-intensity); d[ti+2]=255*intensity+src[ti+2]*(1-intensity);
+                    }
+                    let show = fx==='crossStitch' ? true : (Math.random() > luma*0.3);
+                    if (show) {
+                        let cx=x+Math.floor(cell/2), cy=y+Math.floor(cell/2); let rad=Math.max(1,cell/2 - 1);
+                        for (let dy=-rad; dy<=rad; dy++) for (let dx2=-rad; dx2<=rad; dx2++) {
+                            let px2=cx+dx2, py2=cy+dy; if (px2<0||px2>=w||py2<0||py2>=h) continue;
+                            if (dx2*dx2+dy*dy > rad*rad && fx==='stipple') continue;
+                            let ti=(py2*w+px2)*4; d[ti]=src[i]*intensity+d[ti]*(1-intensity); d[ti+1]=src[i+1]*intensity+d[ti+1]*(1-intensity); d[ti+2]=src[i+2]*intensity+d[ti+2]*(1-intensity);
+                        }
+                    }
+                }
+            }
+            else if (fx === 'stainedGlass' || fx === 'knitted' || fx === 'lego') {
+                const cell = Math.max(3, scale);
+                for (let by=0; by<h; by+=cell) {
+                    for (let bx=0; bx<w; bx+=cell) {
+                        let rs=0,gs=0,bs=0,cnt=0;
+                        for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) { let i=(y*w+x)*4; rs+=src[i];gs+=src[i+1];bs+=src[i+2]; cnt++; }
+                        if (cnt===0) continue;
+                        let r=rs/cnt, g=gs/cnt, b=bs/cnt;
+                        for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) {
+                            let i=(y*w+x)*4; let border = fx==='lego' ? false : (x===bx || y===by);
+                            let isCircle = fx==='lego' && Math.hypot((x-bx)-cell/2,(y-by)-cell/2) < cell*0.32;
+                            let vr=r,vg=g,vb=b;
+                            if (border) { vr*=0.4;vg*=0.4;vb*=0.4; }
+                            if (isCircle) { vr=clamp255(r*1.3);vg=clamp255(g*1.3);vb=clamp255(b*1.3); }
+                            d[i]=vr*intensity+src[i]*(1-intensity); d[i+1]=vg*intensity+src[i+1]*(1-intensity); d[i+2]=vb*intensity+src[i+2]*(1-intensity);
+                        }
+                    }
+                }
+            }
+            else if (fx === 'particle' || fx === 'auraEffect') {
+                const density = fx === 'particle' ? 0.35 : 0.15;
+                const seed = getFxSeeded(w, h, `${w}x${h}_p`);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4; let n = seed[y*w+x];
+                    let show = n < density;
+                    if (!show) { d[i]=0;d[i+1]=0;d[i+2]=0; if(fx==='particle') continue; }
+                    if (fx === 'particle') {
+                        d[i]=src[i]*intensity+d[i]*(1-intensity); d[i+1]=src[i+1]*intensity+d[i+1]*(1-intensity); d[i+2]=src[i+2]*intensity+d[i+2]*(1-intensity);
+                    } else {
+                        let glowT = Math.max(0, 1 - Math.hypot(x-w/2,y-h/2)/(w*0.6));
+                        d[i]=clamp255(src[i]+fxColor.r*glowT*intensity); d[i+1]=clamp255(src[i+1]+fxColor.g*glowT*intensity); d[i+2]=clamp255(src[i+2]+fxColor.b*glowT*intensity);
+                    }
+                }
+            }
+
+            // --- PIXEL / MOSAIC ---
+            else if (fx === 'crystallize') {
+                const cell = Math.max(4, scale);
+                const seeds = [];
+                for (let sy=0; sy<h; sy+=cell) for (let sx=0; sx<w; sx+=cell) seeds.push({x: sx+Math.random()*cell, y: sy+Math.random()*cell});
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let best=0, bd=1e9;
+                    for (let s=0;s<seeds.length;s++) { let dx=x-seeds[s].x, dy=y-seeds[s].y; let dd=dx*dx+dy*dy; if (dd<bd) { bd=dd; best=s; } }
+                    let sx=Math.min(w-1,Math.max(0,Math.round(seeds[best].x))), sy=Math.min(h-1,Math.max(0,Math.round(seeds[best].y)));
+                    let si=(sy*w+sx)*4; let i=(y*w+x)*4;
+                    d[i]=src[si]*intensity+src[i]*(1-intensity); d[i+1]=src[si+1]*intensity+src[i+1]*(1-intensity); d[i+2]=src[si+2]*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'ledMatrix' || fx === 'lcdScreen') {
+                const cell = Math.max(3, scale);
+                for (let by=0; by<h; by+=cell) for (let bx=0; bx<w; bx+=cell) {
+                    let i=(by*w+bx)*4;
+                    for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) {
+                        let ti=(y*w+x)*4; let ly=y-by, lx=x-bx;
+                        let isDot = fx==='ledMatrix' ? (Math.hypot(lx-cell/2, ly-cell/2) < cell*0.35) : (lx < cell*0.85 && ly < cell*0.85);
+                        let v = isDot ? 1 : 0.15;
+                        d[ti]=src[i]*v*intensity+src[ti]*(1-intensity); d[ti+1]=src[i+1]*v*intensity+src[ti+1]*(1-intensity); d[ti+2]=src[i+2]*v*intensity+src[ti+2]*(1-intensity);
+                    }
+                }
+            }
+            else if (fx === 'wordMosaic') {
+                const cell = Math.max(6, scale*1.5);
+                const words = ["PIXEL","KOTT","ARTE","FOTO","LUZ","COR"];
+                for (let by=0; by<h; by+=cell) for (let bx=0; bx<w; bx+=cell) {
+                    let i=(by*w+bx)*4;
+                    let word = words[Math.floor((bx*7+by*13)%words.length)];
+                    for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) {
+                        let ti=(y*w+x)*4; let charIdx = Math.floor(((x-bx)/cell)*word.length) % word.length;
+                        let onGlyph = simpleGlyphMask(word[charIdx] || ' ', (x-bx)/cell*word.length%1, (y-by)/cell);
+                        let v = onGlyph ? 1 : 0.2;
+                        d[ti]=src[i]*v*intensity+src[ti]*(1-intensity); d[ti+1]=src[i+1]*v*intensity+src[ti+1]*(1-intensity); d[ti+2]=src[i+2]*v*intensity+src[ti+2]*(1-intensity);
+                    }
+                }
+            }
+
+            // --- GENERATIVE ---
+            else if (fx === 'topographic') {
+                const levels = Math.max(3, Math.round(scale/2));
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4; let luma = lumaAt(i)/255;
+                    let band = (luma*levels) % 1;
+                    let onLine = band < 0.08;
+                    let v = onLine ? 20 : 240;
+                    d[i]=v*intensity+src[i]*(1-intensity); d[i+1]=v*intensity+src[i+1]*(1-intensity); d[i+2]=v*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'turingPattern') {
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4; let luma = lumaAt(i)/255;
+                    let n = Math.sin(x/scale)*Math.cos(y/scale) + Math.sin((x+y)/(scale*1.7));
+                    let v = (n > (luma-0.5)*2) ? 230 : 30;
+                    d[i]=v*intensity+src[i]*(1-intensity); d[i+1]=v*intensity+src[i+1]*(1-intensity); d[i+2]=v*intensity+src[i+2]*(1-intensity);
+                }
+            }
+
+            // --- GLITCH ---
+            else if (fx === 'glitchBasic' || fx === 'signalLoss' || fx === 'macroblock') {
+                for (let i=0;i<d.length;i++) d[i]=src[i];
+                const numGlitches = Math.max(2, Math.round(intensity*15));
+                for (let g=0; g<numGlitches; g++) {
+                    let gy = Math.floor(Math.random()*h); let gh = Math.max(1, Math.floor(Math.random()*h*0.05));
+                    let shift = Math.floor((Math.random()*2-1) * scale * 4 * intensity);
+                    for (let y=gy; y<Math.min(h, gy+gh); y++) {
+                        for (let x=0; x<w; x++) {
+                            let sx = x - shift; if (sx<0) sx=0; if (sx>=w) sx=w-1;
+                            let si=(y*w+sx)*4, ti=(y*w+x)*4;
+                            d[ti]=src[si]; d[ti+1]=src[si+1]; d[ti+2]=src[si+2];
+                        }
+                    }
+                }
+                if (fx === 'macroblock') {
+                    const cell = Math.max(4, scale);
+                    for (let by=0; by<h; by+=cell) for (let bx=0; bx<w; bx+=cell) {
+                        if (Math.random() < intensity*0.15) {
+                            let i0=(by*w+bx)*4;
+                            for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) { let ti=(y*w+x)*4; d[ti]=d[i0];d[ti+1]=d[i0+1];d[ti+2]=d[i0+2]; }
+                        }
+                    }
+                }
+                if (fx === 'signalLoss') {
+                    for (let y=0;y<h;y++) { if (Math.random() < intensity*0.06) { for (let x=0;x<w;x++) { let i=(y*w+x)*4; d[i]=0;d[i+1]=0;d[i+2]=0; } } }
+                }
+            }
+            else if (fx === 'bitcrush') {
+                const levels = Math.max(2, Math.round(16 - intensity*13));
+                for (let i=0;i<d.length;i+=4) {
+                    d[i]=Math.round(src[i]/255*(levels-1))*(255/(levels-1));
+                    d[i+1]=Math.round(src[i+1]/255*(levels-1))*(255/(levels-1));
+                    d[i+2]=Math.round(src[i+2]/255*(levels-1))*(255/(levels-1));
+                }
+                const cell = Math.max(1, Math.round(scale/3));
+                if (cell > 1) { for (let by=0; by<h; by+=cell) for (let bx=0; bx<w; bx+=cell) { let i0=((by)*w+bx)*4; for (let y=by;y<Math.min(h,by+cell);y++) for (let x=bx;x<Math.min(w,bx+cell);x++) { let ti=(y*w+x)*4; d[ti]=d[i0];d[ti+1]=d[i0+1];d[ti+2]=d[i0+2]; } } }
+            }
+            else if (fx === 'datamosh') {
+                for (let i=0;i<d.length;i++) d[i]=src[i];
+                const blockH = Math.max(2, scale);
+                for (let by=0; by<h; by+=blockH) {
+                    if (Math.random() < intensity*0.4) {
+                        let srcY = Math.max(0, by - Math.floor(Math.random()*h*0.3));
+                        for (let y=by; y<Math.min(h,by+blockH); y++) {
+                            let sy = Math.min(h-1, srcY + (y-by));
+                            for (let x=0; x<w; x++) { let si=(sy*w+x)*4, ti=(y*w+x)*4; d[ti]=src[si];d[ti+1]=src[si+1];d[ti+2]=src[si+2]; }
+                        }
+                    }
+                }
+            }
+            else if (fx === 'echoEffect') {
+                const offset = Math.round(scale * intensity);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4; let sx = Math.max(0, x-offset);
+                    let si=(y*w+sx)*4;
+                    d[i] = clamp255(src[i]*0.6 + src[si]*0.4);
+                    d[i+1] = clamp255(src[i+1]*0.6 + src[si+1]*0.4*0.7);
+                    d[i+2] = clamp255(src[i+2]*0.6 + src[si+2]*0.4*1.2);
+                }
+            }
+            else if (fx === 'pixelSort') {
+                for (let i=0;i<d.length;i++) d[i]=src[i];
+                const threshold = 128 - intensity*100;
+                for (let y=0; y<h; y++) {
+                    let x=0;
+                    while (x < w) {
+                        let i=(y*w+x)*4; let luma = 0.3*d[i]+0.59*d[i+1]+0.11*d[i+2];
+                        if (luma > threshold) {
+                            let runStart = x;
+                            while (x < w) { let ii=(y*w+x)*4; let l2=0.3*d[ii]+0.59*d[ii+1]+0.11*d[ii+2]; if (l2 <= threshold) break; x++; }
+                            let runEnd = x;
+                            let pixels = [];
+                            for (let xx=runStart; xx<runEnd; xx++) { let ii=(y*w+xx)*4; pixels.push([d[ii],d[ii+1],d[ii+2]]); }
+                            pixels.sort((a,b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
+                            for (let k=0; k<pixels.length; k++) { let ii=(y*w+runStart+k)*4; d[ii]=pixels[k][0]; d[ii+1]=pixels[k][1]; d[ii+2]=pixels[k][2]; }
+                        } else x++;
+                    }
+                }
+            }
+            else if (fx === 'vhsEffect') {
+                for (let i=0;i<d.length;i++) d[i]=src[i];
+                const shift = Math.max(1, Math.round(scale/4));
+                for (let y=0; y<h; y++) {
+                    let lineShift = Math.round(Math.sin(y*0.3)*shift*intensity);
+                    for (let x=0; x<w; x++) {
+                        let sx = Math.max(0, Math.min(w-1, x - lineShift)); let i=(y*w+x)*4; let si=(y*w+sx)*4;
+                        d[i] = src[si]; d[i+2] = src[Math.max(0,Math.min(w-1,x+lineShift))*4 + y*w*4 + 2] || src[si+2];
+                    }
+                    if (Math.random() < 0.02) { for (let x=0;x<w;x++) { let i=(y*w+x)*4; d[i]=255;d[i+1]=255;d[i+2]=255; } }
+                }
+            }
+
+            // --- WARP / OPTICAL ---
+            else if (fx === 'fisheye') {
+                const cx=w/2, cy=h/2; const maxR = Math.min(cx,cy);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let dx=(x-cx)/maxR, dy=(y-cy)/maxR; let r=Math.sqrt(dx*dx+dy*dy);
+                    if (r > 1) { let i=(y*w+x)*4; d[i]=src[i];d[i+1]=src[i+1];d[i+2]=src[i+2]; continue; }
+                    let rn = Math.pow(r, 1 - intensity*0.8);
+                    let theta = Math.atan2(dy,dx);
+                    let sx = cx + Math.cos(theta)*rn*maxR; let sy = cy + Math.sin(theta)*rn*maxR;
+                    let sample = sampleBilinear(src, w, h, sx, sy); let i=(y*w+x)*4;
+                    d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                }
+            }
+            else if (fx === 'twirl') {
+                const cx=w/2, cy=h/2; const maxR = Math.max(cx,cy);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let dx=x-cx, dy=y-cy; let r=Math.sqrt(dx*dx+dy*dy); let t = Math.max(0,1-r/maxR);
+                    let angle = t*t*intensity*6;
+                    let cosA=Math.cos(angle), sinA=Math.sin(angle);
+                    let sx = cx + dx*cosA - dy*sinA; let sy = cy + dx*sinA + dy*cosA;
+                    let sample = sampleBilinear(src, w, h, sx, sy); let i=(y*w+x)*4;
+                    d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                }
+            }
+            else if (fx === 'ripple') {
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let sx = x + Math.sin(y/scale)*scale*intensity*0.5;
+                    let sy = y + Math.cos(x/scale)*scale*intensity*0.5;
+                    let sample = sampleBilinear(src, w, h, sx, sy); let i=(y*w+x)*4;
+                    d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                }
+            }
+            else if (fx === 'radialBlurFx') { return radialZoomBlur(src, w, h, intensity); }
+            else if (fx === 'kaleidoscope') {
+                const cx=w/2, cy=h/2; const slices = Math.max(3, Math.round(scale/2));
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let dx=x-cx, dy=y-cy; let r=Math.sqrt(dx*dx+dy*dy); let theta=Math.atan2(dy,dx);
+                    let sliceAngle = Math.PI*2/slices;
+                    let a2 = theta % sliceAngle; if (a2<0) a2+=sliceAngle;
+                    if (a2 > sliceAngle/2) a2 = sliceAngle - a2;
+                    let sx = cx + Math.cos(a2)*r; let sy = cy + Math.sin(a2)*r;
+                    let sample = sampleBilinear(src, w, h, sx, sy); let i=(y*w+x)*4;
+                    d[i]=sample[0]*intensity+src[i]*(1-intensity);d[i+1]=sample[1]*intensity+src[i+1]*(1-intensity);d[i+2]=sample[2]*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'mirrorFx') {
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let sx = x < w/2 ? x : w-1-x; let i=(y*w+x)*4; let si=(y*w+sx)*4;
+                    d[i]=src[si]*intensity+src[i]*(1-intensity); d[i+1]=src[si+1]*intensity+src[i+1]*(1-intensity); d[i+2]=src[si+2]*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'stretch') {
+                const cx=w/2;
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let t = (x-cx)/cx; let sx = cx + t*Math.abs(t)*cx*intensity*0.5 + (x-cx)*(1-intensity*0.5);
+                    let sample = sampleBilinear(src, w, h, sx, y); let i=(y*w+x)*4;
+                    d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                }
+            }
+            else if (fx === 'liquidFx' || fx === 'glassDispersion') {
+                const seed = getFxSeeded(w,h,`${w}x${h}_liq`);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let n1 = Math.sin((x+y)/scale + seed[y*w+x]*6.28)*scale*intensity;
+                    let n2 = Math.cos((x-y)/scale + seed[(y*w+x+7)%(w*h)]*6.28)*scale*intensity;
+                    let sample = sampleBilinear(src, w, h, x+n1, y+n2); let i=(y*w+x)*4;
+                    d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                    if (fx==='glassDispersion') { let sampleR = sampleBilinear(src, w, h, x+n1*1.3, y+n2*1.3); d[i]=sampleR[0]; }
+                }
+            }
+            else if (fx === 'frostedGlass') {
+                const seed = getFxSeeded(w,h,`${w}x${h}_fg`);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let n = seed[y*w+x]; let jitter = (n-0.5)*scale*intensity;
+                    let sample = sampleBilinear(src, w, h, x+jitter, y+jitter*0.6); let i=(y*w+x)*4;
+                    d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                }
+            }
+            else if (fx === 'flutedGlass') {
+                const period = Math.max(2, scale);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let local = (x % period) / period; let bend = Math.sin(local*Math.PI) * period * 0.5 * intensity;
+                    let sample = sampleBilinear(src, w, h, x+bend, y); let i=(y*w+x)*4;
+                    d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                }
+            }
+            else if (fx === 'dropsFx') {
+                const seed = getFxSeeded(w,h,`${w}x${h}_drops`);
+                const numDrops = Math.max(3, Math.round(intensity*25));
+                for (let i=0;i<d.length;i++) d[i]=src[i];
+                for (let dr=0; dr<numDrops; dr++) {
+                    let dx0 = seed[dr*13 % (w*h)]*w, dy0 = seed[(dr*13+3) % (w*h)]*h;
+                    let rad = scale * (1+seed[(dr*13+5)%(w*h)]*2);
+                    for (let y=Math.max(0,dy0-rad); y<Math.min(h,dy0+rad); y++) {
+                        for (let x=Math.max(0,dx0-rad); x<Math.min(w,dx0+rad); x++) {
+                            let ddx=x-dx0, ddy=y-dy0; let r=Math.sqrt(ddx*ddx+ddy*ddy); if (r>rad) continue;
+                            let lensT = (1-r/rad); let sx = dx0 + ddx*(1-lensT*0.7); let sy = dy0 + ddy*(1-lensT*0.7);
+                            let sample = sampleBilinear(src, w, h, sx, sy); let i=(y*w+x)*4;
+                            d[i]=sample[0];d[i+1]=sample[1];d[i+2]=sample[2];
+                        }
+                    }
+                }
+            }
+            else if (fx === 'prismFx') {
+                const shift = Math.round(scale*intensity);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4;
+                    let ri = Math.min(w-1, x+shift); let bi = Math.max(0, x-shift);
+                    d[i] = src[(y*w+ri)*4]; d[i+2] = src[(y*w+bi)*4+2];
+                }
+            }
+            else if (fx === 'slitScan') {
+                for (let y=0; y<h; y++) {
+                    let shift = Math.round(Math.sin(y*0.05)*scale*intensity*2);
+                    for (let x=0; x<w; x++) { let sx = ((x+shift)%w+w)%w; let i=(y*w+x)*4, si=(y*w+sx)*4; d[i]=src[si];d[i+1]=src[si+1];d[i+2]=src[si+2]; }
+                }
+            }
+
+            // --- CRT / RETRO ---
+            else if (fx === 'crtEffect' || fx === 'ntscEffect') {
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4; let scan = (y%2===0) ? 1 : (1-intensity*0.4);
+                    let bulge = 1; let cx=w/2,cy=h/2; let dx=(x-cx)/cx, dy=(y-cy)/cy; let vig = 1 - (dx*dx+dy*dy)*0.15*intensity;
+                    d[i]=clamp255(src[i]*scan*vig); d[i+1]=clamp255(src[i+1]*scan*vig); d[i+2]=clamp255(src[i+2]*scan*vig);
+                    if (fx==='ntscEffect' && x<w-2) { let i2=(y*w+x+1)*4; d[i]=clamp255(d[i]*0.7+src[i2]*0.3); }
+                }
+            }
+            else if (fx === 'eInk') {
+                const levels = 4;
+                for (let i=0;i<d.length;i+=4) {
+                    let luma = lumaAt(i); let v = Math.round(luma/255*(levels-1))*(255/(levels-1));
+                    let g = clamp255(210 + (v-210)*0.6);
+                    d[i]=g*intensity+src[i]*(1-intensity);d[i+1]=g*intensity+src[i+1]*(1-intensity);d[i+2]=(g-15)*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'nokia3310') {
+                const levels = 4;
+                for (let i=0;i<d.length;i+=4) {
+                    let luma = lumaAt(i); let v = Math.round(luma/255*(levels-1))/(levels-1);
+                    let g = 60 + v*110;
+                    d[i]=clamp255(20+v*40)*intensity+src[i]*(1-intensity); d[i+1]=clamp255(g)*intensity+src[i+1]*(1-intensity); d[i+2]=clamp255(30+v*30)*intensity+src[i+2]*(1-intensity);
+                }
+            }
+            else if (fx === 'synthwave') {
+                for (let i=0;i<d.length;i+=4) {
+                    let luma = lumaAt(i)/255;
+                    let r = clamp255(luma*180 + 60); let g = clamp255(luma*60); let b = clamp255(luma*120+135);
+                    d[i]=r*intensity+src[i]*(1-intensity); d[i+1]=g*intensity+src[i+1]*(1-intensity); d[i+2]=b*intensity+src[i+2]*(1-intensity);
+                }
+                for (let y=Math.floor(h*0.6); y<h; y++) { if ((y%Math.max(2,Math.round(scale/2)))===0) { for (let x=0;x<w;x++) { let i=(y*w+x)*4; d[i]=clamp255(d[i]+40);d[i+2]=clamp255(d[i+2]+60); } } }
+            }
+            else if (fx === 'teletext') {
+                const cell = Math.max(4, scale);
+                const palette = [[0,0,0],[255,0,0],[0,255,0],[255,255,0],[0,0,255],[255,0,255],[0,255,255],[255,255,255]];
+                for (let by=0; by<h; by+=cell) for (let bx=0; bx<w; bx+=cell) {
+                    let i0=(by*w+bx)*4; let best=palette[0]; let bd=1e9;
+                    for (let p of palette) { let dd=(src[i0]-p[0])**2+(src[i0+1]-p[1])**2+(src[i0+2]-p[2])**2; if (dd<bd){bd=dd;best=p;} }
+                    for (let y=by; y<Math.min(h,by+cell); y++) for (let x=bx; x<Math.min(w,bx+cell); x++) {
+                        let ti=(y*w+x)*4; d[ti]=best[0]*intensity+src[ti]*(1-intensity); d[ti+1]=best[1]*intensity+src[ti+1]*(1-intensity); d[ti+2]=best[2]*intensity+src[ti+2]*(1-intensity);
+                    }
+                }
+            }
+
+            // --- TEMPORAL (aproximações estáticas) ---
+            else if (fx === 'matrixRain') {
+                const cell = Math.max(6, scale);
+                const seed = getFxSeeded(w,h,`${w}x${h}_mr`);
+                for (let i=0;i<d.length;i+=4) { d[i]=src[i]*0.15; d[i+1]=src[i+1]*0.15; d[i+2]=src[i+2]*0.15; }
+                for (let bx=0; bx<w; bx+=cell) {
+                    let colSeed = seed[Math.floor(bx/cell) % (w*h)];
+                    if (colSeed > 0.4) continue;
+                    for (let y=0; y<h; y+=cell) {
+                        let g = 60 + Math.random()*195;
+                        for (let dy=0; dy<cell && y+dy<h; dy++) for (let dx=0; dx<Math.min(cell,3); dx++) {
+                            let x2=bx+dx; if (x2>=w) continue; let ti=((y+dy)*w+x2)*4;
+                            d[ti]=0*intensity+d[ti]*(1-intensity); d[ti+1]=g*intensity+d[ti+1]*(1-intensity); d[ti+2]=0*intensity+d[ti+2]*(1-intensity);
+                        }
+                    }
+                }
+            }
+            else if (fx === 'splitFlap') {
+                const cell = Math.max(6, scale);
+                for (let by=0; by<h; by+=cell) {
+                    let flapY = by + Math.floor(cell/2);
+                    for (let x=0; x<w; x++) {
+                        for (let y=by; y<Math.min(h,by+cell); y++) {
+                            let i=(y*w+x)*4; let shade = (y===flapY || y===by || y===Math.min(h-1,by+cell-1)) ? 0.5 : 1;
+                            d[i]=src[i]*shade*intensity+src[i]*(1-intensity); d[i+1]=src[i+1]*shade*intensity+src[i+1]*(1-intensity); d[i+2]=src[i+2]*shade*intensity+src[i+2]*(1-intensity);
+                        }
+                    }
+                }
+            }
+            else if (fx === 'atmosphereFx') {
+                const seed = getFxSeeded(w,h,`${w}x${h}_atm`);
+                for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+                    let i=(y*w+x)*4; let n = seed[y*w+x];
+                    let fog = n * intensity * 0.5 * (1 - y/h*0.5);
+                    d[i]=clamp255(src[i]+(230-src[i])*fog); d[i+1]=clamp255(src[i+1]+(230-src[i+1])*fog); d[i+2]=clamp255(src[i+2]+(235-src[i+2])*fog);
+                }
+            }
+
+            return d;
+        }
+
+        // Máscara simplificada de glifo 5x7 aproximada por regras geométricas (evita fontes externas)
+        function simpleGlyphMask(ch, u, v) {
+            if (ch === ' ') return false;
+            // aproxima o glifo como uma cruz/blob central — suficiente para o efeito de "mosaico de palavra"
+            let cx = 0.5, cy = 0.5;
+            let dx = u-cx, dy = v-cy;
+            return Math.abs(dx) < 0.35 || Math.abs(dy) < 0.15;
+        }
+
+        // Desenha um "glifo" de caractere de forma procedural (sem depender de fontes) dentro do bloco de célula
+        function drawGlyphBlock(d, w, h, bx, by, cell, ch, color, intensity) {
+            const density = ch === ' ' ? 0 : ch === '.' ? 0.15 : ch === ':' ? 0.3 : ch === '-' ? 0.4 : ch === '=' ? 0.55 : ch === '+' ? 0.65 : ch === '*' ? 0.75 : ch === '#' ? 0.88 : ch === '%' ? 0.94 : 1;
+            for (let y=by; y<Math.min(h,by+cell); y++) {
+                for (let x=bx; x<Math.min(w,bx+cell); x++) {
+                    let lx = (x-bx)/cell, ly = (y-by)/cell;
+                    let onStroke = ((Math.floor(lx*3)+Math.floor(ly*3)) % 2 === 0);
+                    let show = onStroke && Math.random() < density;
+                    if (!show) continue;
+                    let i=(y*w+x)*4;
+                    d[i] = color.r*intensity + d[i]*(1-intensity);
+                    d[i+1] = color.g*intensity + d[i+1]*(1-intensity);
+                    d[i+2] = color.b*intensity + d[i+2]*(1-intensity);
+                }
+            }
+        }
+
         async function renderImageCanvas(myId) {
             if(!engineDataCache || myId !== currentProcessId) { hideLoading(); return; }
             const { w, h, minL, maxL, displayPalette, referencePalette, usePal } = engineDataCache;
@@ -2215,6 +3137,8 @@ function renderPresets() {
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
             }
+
+            applyExtraEffectsLayer(ctx, baseCanvasW, baseCanvasH);
 
             setProgress(100); await yieldToMain();
             isRestoringState = false; hideLoading(); saveHistoryState();
@@ -2361,6 +3285,8 @@ function renderPresets() {
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
             }
+
+            applyExtraEffectsLayer(ctx, baseCanvasW, baseCanvasH);
 
             isRestoringState = false;
             
