@@ -264,6 +264,7 @@
                 <button class="d-tab" data-target="group-pixel" title="Pixel e Textura"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Pixel</span></button>
                 <button class="d-tab" data-target="group-cores" title="Cores e Paletas"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"/></svg><span>Cores</span></button>
                 <button class="d-tab" data-target="group-filtros" title="Filtros e Presets"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg><span>Filtros</span></button>
+                <button class="d-tab" data-target="group-efeitos" title="Efeitos de Textura"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Efeitos</span></button>
             </div>
 
             <div class="panels-container active">
@@ -320,9 +321,7 @@
                             <div class="slider-row">
                                 <select id="ditherSelect">
                                     <option value="none">Padrão Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
-                                    <option value="xerox">Xerox Distorcido</option><option value="linhas">Linhas de Scan</option><option value="checkerboard">Xadrez</option>
-                                    <option value="diamonds">Losangos</option><option value="waves">Ondas Circulares</option><option value="scanlines">TV Analógica</option>
-                                    <option value="maze">Malha Labirinto</option><option value="noise">Ruído Aleatório</option>
+                                    <option value="checkerboard">Xadrez</option><option value="scanlines">TV Analógica</option><option value="noise">Ruído Aleatório</option>
                                 </select>
                                 <button class="icon-btn lock-btn" data-target="ditherSelect"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                                 <button id="btnEffMidDither" class="icon-btn" title="Suavizar Tons Médios"><svg viewBox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" stroke="currentColor" fill="none" stroke-linecap="round"/></svg></button>
@@ -417,6 +416,41 @@
                     </div>
                 </div>
 
+                <!-- Group Efeitos (catálogo de shaders de textura) -->
+                <div class="control-group" id="group-efeitos">
+                    <div class="sec-content">
+                        <div class="set-item active" style="display: flex !important;">
+                            <div class="panel-label">Efeito de Textura</div>
+                            <div class="slider-row">
+                                <select id="fxEffectSelect">
+                                    <option value="none">Nenhum</option>
+                                    <optgroup label="Efeitos">
+                                        <option value="bokeh_blur">Desfoque</option>
+                                        <option value="channel_mixer">Misturador</option>
+                                        <option value="color_adjustment">Ajuste</option>
+                                        <option value="gooey_merge">Fusão</option>
+                                        <option value="hatching">Gravura</option>
+                                        <option value="lens_distortion">Distorção</option>
+                                        <option value="outlines">Contornos</option>
+                                        <option value="pattern_refraction">Refração</option>
+                                        <option value="pixelate_fx">Pixelização</option>
+                                        <option value="slice_shift">Fatias</option>
+                                        <option value="warp">Deformação</option>
+                                    </optgroup>
+                                    <optgroup label="Preenchimentos">
+                                        <option value="clouds">Nuvens</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="slider-row"><input type="range" id="fxEffectMix" min="0" max="100" value="100"><span style="font-size:0.7rem; opacity:0.7; min-width:70px; text-align:right;">Intensidade</span></div>
+                        </div>
+                        <div class="set-item active" id="fxParamsContainer" style="display: flex !important; flex-direction: column;">
+                            <div class="panel-label">Parâmetros</div>
+                            <div id="fxParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Group Configurações -->
                 <div class="control-group" id="group-config">
                     <div class="m-sub-nav">
@@ -464,6 +498,8 @@
             <button class="float-btn" id="btnThemeToggle" title="Alternar Tema"></button>
             <button class="float-btn" id="btn-compare" disabled title="Comparar Original"><svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20"/></svg></button>
             <button class="float-btn" id="btn-fs-view" title="Tela Cheia"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+            <div style="width: 1px; background: var(--border-light); margin: 0 2px; align-self: stretch;"></div>
+            <button class="float-btn d-tab" id="btn-config-float" data-target="group-config" title="Configuração e Exportação"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
         </div>
 
         <div id="canvas-wrapper">
@@ -484,8 +520,6 @@
             <div style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
             <button class="float-btn" id="btnRecordVideoFloat" title="Exportar Mídia"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
             <button class="float-btn" id="btn-random-global" title="Mix Completo"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
-            <div style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
-            <button class="float-btn d-tab" id="btn-config-float" data-target="group-config" title="Configuração e Exportação"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
         </div>
 
         <div id="zoom-controls">
@@ -873,6 +907,500 @@ const PixelarGL = (function () {
 
         // ==== fim PixelarGL engine ====
 
+        // ==== PixelarFX engine (catálogo de efeitos) ====
+// ==========================================
+// PixelarFX — banco de efeitos de pós-processamento (GLSL ES 3.0)
+// Cada efeito é um fragment shader independente que roda sobre o
+// resultado já processado pelo pipeline principal (PixelarGL).
+// Todos recebem uSource (textura de entrada) + uResolution, e um
+// conjunto de uniforms próprios (parâmetros do efeito, incluindo
+// cor configurável onde fizer sentido — nunca cor fixa/hardcoded).
+// ==========================================
+
+const PIXELAR_FX_COMMON = `#version 300 es
+precision highp float;
+in vec2 vUv;
+out vec4 outColor;
+uniform sampler2D uSource;
+uniform vec2 uResolution;
+uniform float uTime; // segundos, para efeitos animados (gradient map, ondas, nebula etc.)
+
+vec3 rgb2hsl(vec3 c) {
+    float maxc = max(max(c.r, c.g), c.b);
+    float minc = min(min(c.r, c.g), c.b);
+    float l = (maxc + minc) / 2.0;
+    float h = 0.0; float s = 0.0;
+    if (maxc != minc) {
+        float d = maxc - minc;
+        s = l > 0.5 ? d / (2.0 - maxc - minc) : d / (maxc + minc);
+        if (maxc == c.r) { h = (c.g - c.b) / d + (c.g < c.b ? 6.0 : 0.0); }
+        else if (maxc == c.g) { h = (c.b - c.r) / d + 2.0; }
+        else { h = (c.r - c.g) / d + 4.0; }
+        h /= 6.0;
+    }
+    return vec3(h, s, l);
+}
+float hue2rgb(float p, float q, float t) {
+    if (t < 0.0) t += 1.0;
+    if (t > 1.0) t -= 1.0;
+    if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
+    if (t < 1.0/2.0) return q;
+    if (t < 2.0/3.0) return p + (q - p) * (2.0/3.0 - t) * 6.0;
+    return p;
+}
+vec3 hsl2rgb(vec3 hsl) {
+    float h = hsl.x, s = hsl.y, l = hsl.z;
+    if (s == 0.0) return vec3(l);
+    float q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
+    float p = 2.0 * l - q;
+    return vec3(hue2rgb(p, q, h + 1.0/3.0), hue2rgb(p, q, h), hue2rgb(p, q, h - 1.0/3.0));
+}
+float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+
+// Ruído hash barato, usado por vários efeitos (grain, fractal noise, nebula, clouds)
+float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise2(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    float a = hash(i), b = hash(i + vec2(1.0,0.0)), c = hash(i + vec2(0.0,1.0)), d = hash(i + vec2(1.0,1.0));
+    vec2 u = f*f*(3.0-2.0*f);
+    return mix(a,b,u.x) + (c-a)*u.y*(1.0-u.x) + (d-b)*u.x*u.y;
+}
+float fbm(vec2 p) {
+    float v = 0.0, amp = 0.5;
+    for (int i = 0; i < 5; i++) { v += amp * noise2(p); p *= 2.02; amp *= 0.5; }
+    return v;
+}
+`;
+
+// Cada entrada: { id, nome (pt-br), uniforms (nome->default), src (corpo do main()) }
+const PIXELAR_FX_LIST = [
+
+  // ===================== EFFECTS =====================
+
+  
+  {
+    id: 'bokeh_blur', nome: 'Desfoque',
+    uniforms: { uRadius: 6.0, uThreshold: 0.6, uBoost: 2.0 },
+    src: `
+    uniform float uRadius, uThreshold, uBoost;
+    void main() {
+        vec2 texel = 1.0/uResolution;
+        vec3 sum = vec3(0.0);
+        float wsum = 0.0;
+        const int SAMPLES = 24;
+        for (int i = 0; i < SAMPLES; i++) {
+            float a = float(i) / float(SAMPLES) * 6.28318;
+            float r = sqrt(float(i) / float(SAMPLES));
+            vec2 off = vec2(cos(a), sin(a)) * r * uRadius * texel;
+            vec3 c = texture(uSource, vUv + off).rgb;
+            float br = luma(c);
+            float w = br > uThreshold ? 1.0 + (br - uThreshold) * uBoost : 1.0;
+            sum += c * w;
+            wsum += w;
+        }
+        outColor = vec4(sum / max(wsum, 0.001), 1.0);
+    }`
+  },
+
+  {
+    id: 'channel_mixer', nome: 'Misturador',
+    uniforms: {
+      uRR: 0.0, uRG: 1.0, uRB: 0.0,
+      uGR: 0.0, uGG: 0.0, uGB: 1.0,
+      uBR: 1.0, uBG: 0.0, uBB: 0.0
+    },
+    src: `
+    uniform float uRR, uRG, uRB, uGR, uGG, uGB, uBR, uBG, uBB;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        vec3 outc = vec3(
+            dot(c, vec3(uRR, uRG, uRB)),
+            dot(c, vec3(uGR, uGG, uGB)),
+            dot(c, vec3(uBR, uBG, uBB))
+        );
+        outColor = vec4(clamp(outc, 0.0, 1.0), 1.0);
+    }`
+  },
+
+  
+  {
+    id: 'color_adjustment', nome: 'Ajuste',
+    uniforms: { uContrast: 1.3, uShadowLift: 0.0, uSatMid: 0.7, uToneAmount: 0.35,
+      uShadowTone_r:0.05,uShadowTone_g:0.25,uShadowTone_b:0.15, uHighTone_r:1.0,uHighTone_g:0.75,uHighTone_b:0.45 },
+    src: `
+    uniform float uContrast, uShadowLift, uSatMid, uToneAmount;
+    uniform float uShadowTone_r,uShadowTone_g,uShadowTone_b, uHighTone_r,uHighTone_g,uHighTone_b;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        c = (c - 0.5) * uContrast + 0.5;
+        c = mix(vec3(0.0), c, smoothstep(0.0, 0.25, luma(c) + uShadowLift));
+        float l = luma(clamp(c,0.0,1.0));
+        vec3 shadowTone = vec3(uShadowTone_r,uShadowTone_g,uShadowTone_b);
+        vec3 highTone = vec3(uHighTone_r,uHighTone_g,uHighTone_b);
+        vec3 toned = mix(c * (shadowTone*2.0), c * (highTone*2.0), smoothstep(0.15, 0.85, l));
+        c = mix(c, toned, uToneAmount);
+        vec3 hsl = rgb2hsl(clamp(c,0.0,1.0));
+        hsl.y *= mix(1.0, uSatMid, smoothstep(0.15,0.6,hsl.z) * (1.0-smoothstep(0.6,0.9,hsl.z)));
+        outColor = vec4(clamp(hsl2rgb(hsl), 0.0, 1.0), 1.0);
+    }`
+  },
+
+  
+  
+  // filter_presets é tratado fora do FX (combinação de controles já existentes), sem shader próprio
+
+  {
+    id: 'gooey_merge', nome: 'Fusão',
+    uniforms: { uThreshold: 0.5, uSmooth: 0.08, uColorA_r: 1.0, uColorA_g: 0.3, uColorA_b: 0.85, uColorB_r: 0.1, uColorB_g: 0.1, uColorB_b: 0.1 },
+    src: `
+    uniform float uThreshold, uSmooth;
+    uniform float uColorA_r, uColorA_g, uColorA_b, uColorB_r, uColorB_g, uColorB_b;
+    void main() {
+        vec2 texel = 1.0/uResolution;
+        float acc = 0.0, wsum = 0.0;
+        for (float x=-3.0;x<=3.0;x+=1.0) for (float y=-3.0;y<=3.0;y+=1.0) {
+            float w = exp(-(x*x+y*y)/8.0);
+            acc += luma(texture(uSource, vUv + vec2(x,y)*texel*2.0).rgb) * w;
+            wsum += w;
+        }
+        float field = acc / max(wsum,0.001);
+        float mask = smoothstep(uThreshold-uSmooth, uThreshold+uSmooth, field);
+        vec3 colA = vec3(uColorA_r,uColorA_g,uColorA_b);
+        vec3 colB = vec3(uColorB_r,uColorB_g,uColorB_b);
+        outColor = vec4(mix(colB, colA, mask), 1.0);
+    }`
+  },
+
+  
+  
+  {
+    id: 'hatching', nome: 'Gravura',
+    uniforms: { uScale: 14.0, uThreshold: 0.5, uFg_r:0.0,uFg_g:0.6,uFg_b:1.0, uBg_r:1.0,uBg_g:1.0,uBg_b:1.0 },
+    src: `
+    uniform float uScale, uThreshold;
+    uniform float uFg_r,uFg_g,uFg_b, uBg_r,uBg_g,uBg_b;
+    void main() {
+        vec2 p = vUv * uResolution;
+        vec2 center = uResolution * 0.5;
+        float dist = length(p - center);
+        float ring = fract(dist / uScale);
+        float lineDensity = mix(0.5, 0.08, luma(texture(uSource, vUv).rgb));
+        float lineMask = 1.0 - smoothstep(lineDensity-0.03, lineDensity+0.03, ring);
+        float shapeMask = step(uThreshold, luma(texture(uSource, vUv).rgb));
+        vec3 fg = vec3(uFg_r,uFg_g,uFg_b), bg = vec3(uBg_r,uBg_g,uBg_b);
+        vec3 result = mix(mix(bg, fg, lineMask), fg, shapeMask);
+        outColor = vec4(result, 1.0);
+    }`
+  },
+
+  {
+    id: 'lens_distortion', nome: 'Distorção',
+    uniforms: { uAmount: 0.35, uChroma: 0.015, uZoom: 1.0 },
+    src: `
+    uniform float uAmount, uChroma, uZoom;
+    vec2 distort(vec2 uv, float k) {
+        vec2 cc = uv - 0.5;
+        float r2 = dot(cc, cc);
+        return 0.5 + cc * (1.0 + k * r2) * uZoom;
+    }
+    void main() {
+        vec2 uvR = distort(vUv, uAmount + uChroma);
+        vec2 uvG = distort(vUv, uAmount);
+        vec2 uvB = distort(vUv, uAmount - uChroma);
+        float r = texture(uSource, uvR).r;
+        float g = texture(uSource, uvG).g;
+        float b = texture(uSource, uvB).b;
+        float inBounds = (uvG.x>=0.0&&uvG.x<=1.0&&uvG.y>=0.0&&uvG.y<=1.0) ? 1.0 : 0.0;
+        outColor = vec4(vec3(r,g,b) * inBounds, 1.0);
+    }`
+  },
+
+  {
+    id: 'outlines', nome: 'Contornos',
+    uniforms: { uSpacing: 8.0, uThickness: 2.0, uColor_r: 0.75, uColor_g: 0.85, uColor_b: 1.0, uBg_r:0.0,uBg_g:0.0,uBg_b:0.0 },
+    src: `
+    uniform float uSpacing, uThickness;
+    uniform float uColor_r,uColor_g,uColor_b, uBg_r,uBg_g,uBg_b;
+    void main() {
+        vec2 texel = 1.0/uResolution;
+        float lc = luma(texture(uSource, vUv).rgb);
+        // distancia aproximada até a borda de forma via diferença local repetida em aneis
+        float minEdge = 1.0;
+        for (float ring = 0.0; ring < 12.0; ring += 1.0) {
+            float rr = ring * uSpacing;
+            float found = 0.0;
+            for (float a = 0.0; a < 6.28318; a += 0.39269908) {
+                vec2 off = vec2(cos(a), sin(a)) * rr * texel;
+                float lsample = luma(texture(uSource, vUv + off).rgb);
+                if (abs(lsample - lc) > 0.15) found = 1.0;
+            }
+            if (found > 0.5) { minEdge = ring / 12.0; break; }
+        }
+        float lineMask = 1.0 - smoothstep(uThickness*0.5*0.02, uThickness*0.02, fract(minEdge*12.0/2.0));
+        vec3 col = vec3(uColor_r,uColor_g,uColor_b), bg = vec3(uBg_r,uBg_g,uBg_b);
+        outColor = vec4(mix(bg, col, step(0.5, mod(minEdge*12.0, 2.0)) ), 1.0);
+    }`
+  },
+
+  {
+    id: 'pattern_refraction', nome: 'Refração',
+    uniforms: { uBands: 14.0, uShift: 0.06, uAngle: 0.0 },
+    src: `
+    uniform float uBands, uShift, uAngle;
+    void main() {
+        float ca = cos(uAngle), sa = sin(uAngle);
+        vec2 rp = vec2(vUv.x*ca - vUv.y*sa, vUv.x*sa + vUv.y*ca);
+        float band = floor(rp.y * uBands);
+        float dir = mod(band, 2.0) < 1.0 ? 1.0 : -1.0;
+        float off = dir * uShift * (0.5 + 0.5*sin(band*12.9898));
+        vec2 uv2 = vUv + vec2(off * ca, off * sa);
+        outColor = texture(uSource, clamp(uv2, 0.0, 1.0));
+    }`
+  },
+
+  
+  {
+    id: 'pixelate_fx', nome: 'Pixelização',
+    uniforms: { uSizeX: 14.0, uSizeY: 6.0 },
+    src: `
+    uniform float uSizeX, uSizeY;
+    void main() {
+        vec2 cell = vec2(uSizeX, uSizeY);
+        vec2 uv = (floor(vUv * uResolution / cell) + 0.5) * cell / uResolution;
+        outColor = texture(uSource, uv);
+    }`
+  },
+
+  {
+    id: 'slice_shift', nome: 'Fatias',
+    uniforms: { uSlices: 8.0, uShift: 0.04, uSeed: 1.0 },
+    src: `
+    uniform float uSlices, uShift, uSeed;
+    void main() {
+        float sliceId = floor(vUv.x * uSlices);
+        float r = hash(vec2(sliceId, uSeed));
+        float off = (r - 0.5) * uShift;
+        vec2 uv2 = vec2(vUv.x, vUv.y + off);
+        outColor = texture(uSource, clamp(uv2, 0.0, 1.0));
+    }`
+  },
+
+  {
+    id: 'warp', nome: 'Deformação',
+    uniforms: { uAmount: 0.05, uFreq: 6.0, uPhase: 0.0, uDuo: 1.0, uColorA_r:1.0,uColorA_g:0.85,uColorA_b:0.55, uColorB_r:0.35,uColorB_g:0.75,uColorB_b:1.0 },
+    src: `
+    uniform float uAmount, uFreq, uPhase, uDuo;
+    uniform float uColorA_r,uColorA_g,uColorA_b, uColorB_r,uColorB_g,uColorB_b;
+    void main() {
+        vec2 uv = vUv;
+        float wobble = sin(uv.y * uFreq + uPhase) * uAmount;
+        vec2 uv2 = vec2(uv.x + wobble, uv.y);
+        vec3 c = texture(uSource, clamp(uv2, 0.0, 1.0)).rgb;
+        if (uDuo > 0.5) {
+            vec3 colA = vec3(uColorA_r,uColorA_g,uColorA_b), colB = vec3(uColorB_r,uColorB_g,uColorB_b);
+            c = mix(colB, colA, luma(c));
+        }
+        outColor = vec4(c, 1.0);
+    }`
+  },
+
+  // ===================== FILLS (padrões/preenchimentos que também podem se misturar sobre a imagem) =====================
+
+  {
+    id: 'clouds', nome: 'Nuvens',
+    uniforms: { uScale: 3.0, uPhase: 0.0, uBlend: 0.5, uSky_r:0.45,uSky_g:0.7,uSky_b:0.95, uCloud_r:0.95,uCloud_g:0.97,uCloud_b:1.0 },
+    src: `
+    uniform float uScale, uPhase, uBlend;
+    uniform float uSky_r,uSky_g,uSky_b, uCloud_r,uCloud_g,uCloud_b;
+    void main() {
+        vec2 p = vUv * uScale + vec2(uPhase, 0.0);
+        float n = fbm(p);
+        vec3 sky = vec3(uSky_r,uSky_g,uSky_b), cloud = vec3(uCloud_r,uCloud_g,uCloud_b);
+        vec3 fill = mix(sky, cloud, smoothstep(0.35,0.75,n));
+        vec3 base = texture(uSource, vUv).rgb;
+        outColor = vec4(mix(base, fill, uBlend), 1.0);
+    }`
+  },
+
+  
+  
+  
+  
+  
+  
+  
+  
+];
+
+// ==========================================
+// PixelarFX — motor de pós-processamento (WebGL2) para o catálogo de
+// efeitos de referência (Bloom, Bokeh, Halftone, Warp, Nebula etc.).
+// Roda como uma segunda passada sobre o resultado já processado pelo
+// PixelarGL (pipeline principal de cor/dither/paleta). Contexto WebGL
+// próprio e independente do PixelarGL — não reaproveita o mesmo `gl`
+// para manter os dois motores desacoplados.
+// ==========================================
+const PixelarFX = (function () {
+    let gl = null;
+    let glCanvas = null;
+    let vao = null;
+    let sourceTex = null;
+    let isWebGL2 = false;
+    let initialized = false;
+    let contextLost = false;
+    const programCache = {}; // id do efeito -> { program, uniformLocs }
+    const startTime = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+
+    const VS_SRC = `#version 300 es
+    in vec2 aPos;
+    out vec2 vUv;
+    void main() {
+        vUv = aPos * 0.5 + 0.5;
+        gl_Position = vec4(aPos, 0.0, 1.0);
+    }`;
+
+    function compileShader(type, src) {
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+            const log = gl.getShaderInfoLog(sh);
+            gl.deleteShader(sh);
+            throw new Error('PixelarFX shader compile error: ' + log);
+        }
+        return sh;
+    }
+
+    function init() {
+        if (initialized) return isWebGL2;
+        glCanvas = document.createElement('canvas');
+        gl = glCanvas.getContext('webgl2', { premultipliedAlpha: false, alpha: true, antialias: false });
+        if (!gl) { initialized = true; return false; }
+        isWebGL2 = true;
+
+        glCanvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; }, false);
+        glCanvas.addEventListener('webglcontextrestored', () => { contextLost = false; programCache_clear(); }, false);
+
+        const quad = new Float32Array([-1,-1, 1,-1, -1,1, 1,1]);
+        vao = gl.createVertexArray();
+        gl.bindVertexArray(vao);
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+
+        sourceTex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        initialized = true;
+        return true;
+    }
+
+    function programCache_clear() {
+        for (const k in programCache) delete programCache[k];
+    }
+
+    function isAvailable() {
+        if (!initialized) init();
+        return isWebGL2 && !contextLost;
+    }
+
+    function getEffectDef(id) {
+        return PIXELAR_FX_LIST.find(fx => fx.id === id) || null;
+    }
+
+    function listEffects() {
+        return PIXELAR_FX_LIST.map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms }));
+    }
+
+    function getOrCompile(id) {
+        if (programCache[id]) return programCache[id];
+        const def = getEffectDef(id);
+        if (!def) throw new Error('Efeito desconhecido: ' + id);
+
+        const fsSrc = PIXELAR_FX_COMMON + def.src;
+        const vs = compileShader(gl.VERTEX_SHADER, VS_SRC);
+        const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+        const program = gl.createProgram();
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            const log = gl.getProgramInfoLog(program);
+            gl.deleteProgram(program);
+            throw new Error('PixelarFX program link error (' + id + '): ' + log);
+        }
+        gl.deleteShader(vs); gl.deleteShader(fs);
+
+        const aPos = gl.getAttribLocation(program, 'aPos');
+        const uniformLocs = {
+            uSource: gl.getUniformLocation(program, 'uSource'),
+            uResolution: gl.getUniformLocation(program, 'uResolution'),
+            uTime: gl.getUniformLocation(program, 'uTime'),
+            aPos
+        };
+        for (const key in def.uniforms) {
+            uniformLocs[key] = gl.getUniformLocation(program, key);
+        }
+
+        programCache[id] = { program, uniformLocs, def };
+        return programCache[id];
+    }
+
+    // Renderiza um efeito sobre colorData (Uint8ClampedArray RGBA, w x h).
+    // params: objeto parcial de overrides dos uniforms do efeito (o resto usa o default).
+    // timeSeconds: tempo para efeitos animados (default: relógio interno desde o load).
+    function render(effectId, opts) {
+        const { w, h, colorData, params, timeSeconds } = opts;
+        if (!isAvailable()) return null;
+        if (contextLost) return null;
+
+        let entry;
+        try { entry = getOrCompile(effectId); }
+        catch (e) { console.warn('PixelarFX: falha ao compilar/usar efeito', effectId, e); return null; }
+
+        const { program, uniformLocs, def } = entry;
+
+        glCanvas.width = w; glCanvas.height = h;
+        gl.viewport(0, 0, w, h);
+        gl.useProgram(program);
+        gl.bindVertexArray(vao);
+        gl.enableVertexAttribArray(uniformLocs.aPos);
+        gl.vertexAttribPointer(uniformLocs.aPos, 2, gl.FLOAT, false, 0, 0);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, colorData);
+
+        gl.uniform1i(uniformLocs.uSource, 0);
+        gl.uniform2f(uniformLocs.uResolution, w, h);
+        const t = (timeSeconds !== undefined) ? timeSeconds : (((typeof performance !== 'undefined') ? performance.now() : Date.now()) - startTime) / 1000;
+        gl.uniform1f(uniformLocs.uTime, t);
+
+        const merged = Object.assign({}, def.uniforms, params || {});
+        for (const key in merged) {
+            const loc = uniformLocs[key];
+            if (loc) gl.uniform1f(loc, merged[key]);
+        }
+
+        gl.disable(gl.BLEND);
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        const out = new Uint8Array(w * h * 4);
+        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, out);
+        return new Uint8ClampedArray(out.buffer);
+    }
+
+    return { init, isAvailable, render, listEffects, getEffectDef };
+})();
+
+        // ==== fim PixelarFX engine ====
+
         function showToast(message) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -1136,7 +1664,7 @@ const DEFAULT_PRESETS = {
     "KGB": {
         "px": "2",
         "col": "4",
-        "dith": "linhas",
+        "dith": "scanlines",
         "exp": "0",
         "bri": "0",
         "som": "0",
@@ -1303,7 +1831,7 @@ const DEFAULT_PRESETS = {
     "Vaporwave": {
         "px": "2",
         "col": "16",
-        "dith": "xerox",
+        "dith": "noise",
         "exp": "0",
         "bri": "0",
         "som": "0",
@@ -1400,7 +1928,7 @@ const DEFAULT_PRESETS = {
     "Neon Invertido": {
     "px": "2",
     "col": "16",
-    "dith": "linhas",
+    "dith": "scanlines",
     "exp": "-28",
     "bri": "0",
     "som": "0",
@@ -1538,7 +2066,7 @@ const DEFAULT_PRESETS = {
     "Glitch": {
         "px": "1",
         "col": "16",
-        "dith": "xerox",
+        "dith": "noise",
         "exp": "0",
         "bri": "0",
         "som": "0",
@@ -1731,7 +2259,7 @@ const DEFAULT_PRESETS = {
     "Degrade Radial": {
         "px": "2",
         "col": "all",
-        "dith": "maze",
+        "dith": "checkerboard",
         "exp": "0",
         "bri": "0",
         "som": "0",
@@ -1774,7 +2302,7 @@ const DEFAULT_PRESETS = {
     "Dracula": {
         "px": "2",
         "col": "8",
-        "dith": "diamonds",
+        "dith": "halftone",
         "exp": "0",
         "bri": "0",
         "som": "0",
@@ -1936,13 +2464,8 @@ try {
                     let factor = 0;
                     if (mode === 'halftone') { let size = Math.max(2, scale * 3); let rx = x * cC - y * sC; let ry = x * sC + y * cC; let cx = (Math.abs(rx) % size) - size / 2; let cy = (Math.abs(ry) % size) - size / 2; let dist = Math.sqrt(cx * cx + cy * cy); let maxDist = size / 1.5; factor = ((dist / maxDist) - 0.5) * 1.5; } 
                     else if (mode === 'nintendo_ds') { let mx = sx % 4, my = sy % 4; let bayer = [ [0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5] ]; factor = (bayer[my][mx] / 15 - 0.5) * 0.5; } 
-                    else if (mode === 'xerox') { let rand = Math.random(); let noise = rand > 0.7 ? 0.7 : (rand < 0.3 ? -0.7 : (rand - 0.5) * 0.2); let streak = (y % Math.max(3, scale * 4) === 0) && (Math.random() > 0.3) ? 0.6 : 0; factor = (noise + streak) * 1.2; } 
-                    else if (mode === 'linhas') { let rx = x * cC - y * sC; let lineSize = Math.max(1, scale * 2); factor = Math.sin(rx * (Math.PI / lineSize)) > 0 ? 0.3 : -0.3; } 
                     else if (mode === 'checkerboard') factor = ((sx + sy) % 2 === 0) ? -0.3 : 0.3; 
-                    else if (mode === 'diamonds') { let cx = sx % 6; let cy = sy % 6; factor = (Math.abs(cx - 3) + Math.abs(cy - 3) < 3) ? -0.4 : 0.2; } 
-                    else if (mode === 'waves') factor = (Math.sin(sx * 0.5) + Math.cos(sy * 0.5)) * 0.25; 
                     else if (mode === 'scanlines') factor = (sy % 3 === 0) ? -0.4 : 0.1; 
-                    else if (mode === 'maze') factor = ((sx * sy) % 3 === 0) ? -0.3 : 0.3; 
                     else if (mode === 'noise') factor = (Math.random() - 0.5) * 0.4;
                     ditherMapCache[y*w + x] = factor * intensity * texOpa;
                 }
@@ -2194,6 +2717,178 @@ try {
             });
         }
 
+        // ==========================================
+        // UI: catálogo de efeitos PixelarFX (controles dinâmicos por efeito)
+        // ==========================================
+        let fxUserParams = {}; // { effectId: { uniformName: value } }
+
+        function fxParamLabel(key) {
+            // Agrupa uNome_r/_g/_b como um único color picker; outros uniforms viram slider
+            const labels = {
+                uThreshold:'Limiar', uIntensity:'Intensidade', uRadius:'Raio', uBoost:'Realce',
+                uSpeed:'Velocidade', uScale:'Escala', uGrain:'Granulado', uSaturation:'Saturação',
+                uContrast:'Contraste', uShadowLift:'Levantar Sombras', uTemp:'Temperatura', uSatMid:'Saturação Média',
+                uGray:'Cinza Base', uAngle:'Ângulo', uSmooth:'Suavização', uFreq:'Frequência', uThickness:'Espessura',
+                uAmount:'Quantidade', uChroma:'Aberração Cromática', uZoom:'Zoom', uSpacing:'Espaçamento',
+                uBands:'Faixas', uShift:'Deslocamento', uStretch:'Estiramento', uSizeX:'Tamanho X', uSizeY:'Tamanho Y',
+                uSlices:'Fatias', uSeed:'Semente', uDuo:'Duotone', uBlend:'Mistura', uMirror:'Espelhar',
+                uDither:'Granulado Dither', uRings:'Anéis', uDotSize:'Tamanho do Ponto', uStarDensity:'Densidade de Estrelas',
+                uOffset:'Deslocamento', uPhase:'Fase', uToneAmount:'Intensidade da Cor',
+                uColor:'Cor', uColorA:'Cor A', uColorB:'Cor B', uFg:'Cor Principal', uBg:'Cor de Fundo',
+                uSky:'Cor do Céu', uCloud:'Cor da Nuvem', uAccent:'Cor de Destaque',
+                uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes',
+                uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4'
+            };
+            return labels[key] || key.replace(/^u/, '');
+        }
+
+        function fxColorGroupLabel(prefix) {
+            // prefix já vem com o "u" inicial (ex: "uColor", "uColorA", "uFg", "uC1")
+            const labels = {
+                uColor:'Cor', uColorA:'Cor A', uColorB:'Cor B', uFg:'Cor Principal', uBg:'Cor de Fundo',
+                uSky:'Cor do Céu', uCloud:'Cor da Nuvem', uAccent:'Cor de Destaque',
+                uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes',
+                uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4'
+            };
+            return labels[prefix] || prefix.replace(/^u/, '');
+        }
+
+        function buildFxControls(effectId) {
+            const container = document.getElementById('fxParamsInner');
+            container.innerHTML = '';
+            if (!effectId || effectId === 'none' || typeof PixelarFX === 'undefined') { return; }
+            const def = PixelarFX.getEffectDef(effectId);
+            if (!def) return;
+
+            const saved = fxUserParams[effectId] || {};
+            const keys = Object.keys(def.uniforms);
+            const colorGroups = {}; // prefixo -> [r,g,b key]
+            const plainKeys = [];
+
+            keys.forEach(k => {
+                const m = k.match(/^(.*)_(r|g|b)$/);
+                if (m) { colorGroups[m[1]] = colorGroups[m[1]] || {}; colorGroups[m[1]][m[2]] = k; }
+                else plainKeys.push(k);
+            });
+
+            const FX_RANGES = {
+                uThreshold: [0, 1], uIntensity: [0, 2], uRadius: [0, 20], uBoost: [0, 6],
+                uSpeed: [-1, 1], uScale: [0.5, 40], uGrain: [0, 0.5], uSaturation: [0, 1],
+                uContrast: [0.2, 3], uShadowLift: [-0.3, 0.3], uTemp: [-0.3, 0.3], uSatMid: [0, 2],
+                uGray: [0, 1], uAngle: [0, 6.283], uSmooth: [0.01, 0.3], uFreq: [0.5, 20], uThickness: [0.5, 10],
+                uAmount: [0, 1], uChroma: [0, 0.05], uZoom: [0.5, 1.5], uSpacing: [2, 40],
+                uBands: [2, 40], uShift: [0, 0.3], uStretch: [0, 1], uSizeX: [2, 40], uSizeY: [2, 40],
+                uSlices: [2, 40], uSeed: [0, 20], uDuo: [0, 1], uBlend: [0, 1], uMirror: [0, 1],
+                uDither: [0, 1], uRings: [2, 40], uDotSize: [0.05, 0.5], uStarDensity: [10, 150],
+                uOffset: [0, 1], uPhase: [0, 12.566], uToneAmount: [0, 1]
+            };
+            const CHANNEL_MIX_LABELS = {
+                uRR:'Vermelho ← Vermelho', uRG:'Vermelho ← Verde', uRB:'Vermelho ← Azul',
+                uGR:'Verde ← Vermelho', uGG:'Verde ← Verde', uGB:'Verde ← Azul',
+                uBR:'Azul ← Vermelho', uBG:'Azul ← Verde', uBB:'Azul ← Azul'
+            };
+            const isChannelMixer = effectId === 'channel_mixer';
+            let lastGroupLetter = null;
+            const CHANNEL_GROUP_NAMES = { R: 'Saída Vermelho', G: 'Saída Verde', B: 'Saída Azul' };
+
+            plainKeys.forEach(key => {
+                const def_v = def.uniforms[key];
+                const cur = (saved[key] !== undefined) ? saved[key] : def_v;
+                const range = FX_RANGES[key] || (def_v < 0 ? [-Math.abs(def_v*3+1), Math.abs(def_v*3+1)] : [0, Math.max(def_v * 3, def_v + 1, 1)]);
+                const min = range[0], max = range[1];
+
+                if (isChannelMixer) {
+                    const groupLetter = key.replace('u','')[0]; // R, G ou B (canal de saída)
+                    if (groupLetter !== lastGroupLetter) {
+                        lastGroupLetter = groupLetter;
+                        const header = document.createElement('div');
+                        header.style.cssText = 'font-size:0.7rem; opacity:0.85; margin-top:8px; text-transform:uppercase; letter-spacing:0.05em;';
+                        header.textContent = CHANNEL_GROUP_NAMES[groupLetter];
+                        container.appendChild(header);
+                    }
+                }
+
+                const label = isChannelMixer ? (CHANNEL_MIX_LABELS[key] || fxParamLabel(key)) : fxParamLabel(key);
+                const row = document.createElement('div'); row.className = 'slider-row';
+                const valSpan = document.createElement('span');
+                valSpan.style.cssText = 'font-size:0.7rem; opacity:0.9; min-width:34px; text-align:right; font-variant-numeric:tabular-nums;';
+                valSpan.textContent = Number(cur).toFixed(2);
+                const labelSpan = document.createElement('span');
+                labelSpan.style.cssText = 'font-size:0.7rem; opacity:0.7; min-width:90px; text-align:right;';
+                labelSpan.textContent = label;
+                const input = document.createElement('input');
+                input.type = 'range'; input.min = min; input.max = max; input.step = (max-min)/200; input.value = cur;
+                input.setAttribute('data-fxkey', key);
+                row.appendChild(input); row.appendChild(valSpan); row.appendChild(labelSpan);
+                container.appendChild(row);
+            });
+
+            const isMobileFx = window.matchMedia('(max-width: 768px)').matches;
+            Object.keys(colorGroups).forEach(prefix => {
+                const g = colorGroups[prefix];
+                if (!g.r || !g.g || !g.b) return;
+                const rDef = (saved[g.r] !== undefined) ? saved[g.r] : def.uniforms[g.r];
+                const gDef = (saved[g.g] !== undefined) ? saved[g.g] : def.uniforms[g.g];
+                const bDef = (saved[g.b] !== undefined) ? saved[g.b] : def.uniforms[g.b];
+                const hex = rgbToHex(Math.round(rDef*255), Math.round(gDef*255), Math.round(bDef*255));
+                const row = document.createElement('div'); row.className = 'slider-row';
+                if (isMobileFx) {
+                    // No mobile, evita ter todos os color pickers sempre visíveis/abertos ao mesmo tempo:
+                    // mostra um botão com a cor atual, e só abre o seletor real ao tocar nele.
+                    const swatchBtn = document.createElement('button');
+                    swatchBtn.className = 'icon-btn';
+                    swatchBtn.style.cssText = `background:${hex}; width:28px; height:28px; border-radius:4px; padding:0; flex-shrink:0;`;
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'color'; hiddenInput.value = hex; hiddenInput.setAttribute('data-fxcolor', prefix);
+                    hiddenInput.style.cssText = 'position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;';
+                    swatchBtn.addEventListener('click', () => hiddenInput.click());
+                    hiddenInput.addEventListener('input', () => { swatchBtn.style.background = hiddenInput.value; });
+                    const lbl = document.createElement('span');
+                    lbl.style.cssText = 'font-size:0.7rem; opacity:0.7;';
+                    lbl.textContent = fxColorGroupLabel(prefix);
+                    row.appendChild(swatchBtn); row.appendChild(hiddenInput); row.appendChild(lbl);
+                } else {
+                    row.innerHTML = `<input type="color" class="icon-btn" value="${hex}" data-fxcolor="${prefix}"><span style="font-size:0.7rem; opacity:0.7;">${fxColorGroupLabel(prefix)}</span>`;
+                }
+                container.appendChild(row);
+            });
+
+            container.querySelectorAll('input[type=range][data-fxkey]').forEach(inp => {
+                inp.addEventListener('input', () => {
+                    const key = inp.getAttribute('data-fxkey');
+                    fxUserParams[effectId] = fxUserParams[effectId] || {};
+                    fxUserParams[effectId][key] = parseFloat(inp.value);
+                    const valSpan = inp.parentElement.querySelector('span');
+                    if (valSpan) valSpan.textContent = parseFloat(inp.value).toFixed(2);
+                    scheduleAppProcess();
+                });
+            });
+            container.querySelectorAll('input[type=color][data-fxcolor]').forEach(inp => {
+                inp.addEventListener('input', () => {
+                    const prefix = inp.getAttribute('data-fxcolor');
+                    const c = hexToRgb(inp.value);
+                    fxUserParams[effectId] = fxUserParams[effectId] || {};
+                    fxUserParams[effectId][prefix+'_r'] = c.r/255;
+                    fxUserParams[effectId][prefix+'_g'] = c.g/255;
+                    fxUserParams[effectId][prefix+'_b'] = c.b/255;
+                    scheduleAppProcess();
+                });
+            });
+        }
+
+        function getFxParamsFromUI(effectId) {
+            return fxUserParams[effectId] || {};
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const fxSelect = document.getElementById('fxEffectSelect');
+            if (fxSelect) {
+                fxSelect.addEventListener('change', () => { buildFxControls(fxSelect.value); scheduleAppProcess(); });
+            }
+            const fxMix = document.getElementById('fxEffectMix');
+            if (fxMix) { fxMix.addEventListener('input', () => scheduleAppProcess()); }
+        });
+
         function updateBadgeSingle(id, val, def, f='') { const el = document.getElementById(id); if(el) { const v = parseFloat(val); if(v !== def && v !== 0 && !isNaN(v)) { el.textContent = v + f; el.style.display = 'block'; } else { el.style.display = 'none'; } } }
         function updateBadges() {
             updateBadgeSingle('bdg-exp', document.getElementById('exposicao').value, 0); updateBadgeSingle('bdg-bri', document.getElementById('brilho').value, 0); updateBadgeSingle('bdg-con', document.getElementById('contraste').value, 0); updateBadgeSingle('bdg-tem', document.getElementById('temperatura').value, 0); updateBadgeSingle('bdg-sat', document.getElementById('saturacao').value, 0); updateBadgeSingle('bdg-som', document.getElementById('sombras').value, 0); updateBadgeSingle('bdg-pos', document.getElementById('posterize').value, 0); updateBadgeSingle('bdg-abe', document.getElementById('rgbShift').value, 0);
@@ -2274,7 +2969,7 @@ try {
         document.getElementById('btnSavePalette').addEventListener('click', () => { if(document.getElementById('colorSelect').value === 'all') { showToast("Mude para um número específico de cores para salvar."); return; } let name = promptModal("Dê um nome para esta paleta:", "Minha Paleta"); if(!name) return; savedPalettes[name] = [...globalCurrentPalette]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); });
 
         function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 4); } }
-        function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "xerox", "halftone", "linhas", "checkerboard", "diamonds", "waves", "scanlines", "maze", "noise"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
+        function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "halftone", "checkerboard", "scanlines", "noise"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
         function randColQty() { if(!locks.colorSelect) { const c = ["2", "3", "4", "6", "8", "12", "16", "24", "32"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; } }
         document.querySelectorAll('.shuffle-btn').forEach(btn => { btn.addEventListener('click', () => { const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return; if(tgt === 'pxSize') randPx(); if(tgt === 'ditherSelect') randDith(); updateBadges(); scheduleAppProcess(); }); });
         
@@ -2555,6 +3250,26 @@ function renderPresets() {
                 }
             }
 
+            const fxEffect = document.getElementById('fxEffectSelect') ? document.getElementById('fxEffectSelect').value : 'none';
+            if (fxEffect && fxEffect !== 'none' && typeof PixelarFX !== 'undefined' && PixelarFX.isAvailable()) {
+                try {
+                    const fxMix = parseInt(document.getElementById('fxEffectMix').value, 10) / 100;
+                    const fxParams = getFxParamsFromUI(fxEffect);
+                    const fxResult = PixelarFX.render(fxEffect, { w, h, colorData: d, params: fxParams, timeSeconds: 0 });
+                    if (fxResult) {
+                        if (fxMix >= 1) { d = fxResult; }
+                        else {
+                            const blended = new Uint8ClampedArray(d.length);
+                            for (let i = 0; i < d.length; i += 4) {
+                                blended[i] = d[i] + (fxResult[i]-d[i])*fxMix; blended[i+1] = d[i+1] + (fxResult[i+1]-d[i+1])*fxMix;
+                                blended[i+2] = d[i+2] + (fxResult[i+2]-d[i+2])*fxMix; blended[i+3] = 255;
+                            }
+                            d = blended;
+                        }
+                    }
+                } catch (e) { console.warn('PixelarFX falhou:', e); }
+            }
+
             ditherCanvas.width = w; ditherCanvas.height = h;
             dCtx.putImageData(new ImageData(new Uint8ClampedArray(d), w, h), 0, 0);
 
@@ -2725,6 +3440,26 @@ function renderPresets() {
                         if (bx >= 0 && bx < smallW) { d[i+2] = sharedBufferShift[(y*smallW + bx)*4 + 2]; }
                     }
                 }
+            }
+
+            const fxEffectVid = document.getElementById('fxEffectSelect') ? document.getElementById('fxEffectSelect').value : 'none';
+            if (fxEffectVid && fxEffectVid !== 'none' && typeof PixelarFX !== 'undefined' && PixelarFX.isAvailable()) {
+                try {
+                    const fxMixVid = parseInt(document.getElementById('fxEffectMix').value, 10) / 100;
+                    const fxParamsVid = getFxParamsFromUI(fxEffectVid);
+                    const fxResultVid = PixelarFX.render(fxEffectVid, { w: smallW, h: smallH, colorData: d, params: fxParamsVid, timeSeconds: 0 });
+                    if (fxResultVid) {
+                        if (fxMixVid >= 1) { d = fxResultVid; }
+                        else {
+                            const blendedVid = new Uint8ClampedArray(d.length);
+                            for (let i = 0; i < d.length; i += 4) {
+                                blendedVid[i] = d[i] + (fxResultVid[i]-d[i])*fxMixVid; blendedVid[i+1] = d[i+1] + (fxResultVid[i+1]-d[i+1])*fxMixVid;
+                                blendedVid[i+2] = d[i+2] + (fxResultVid[i+2]-d[i+2])*fxMixVid; blendedVid[i+3] = 255;
+                            }
+                            d = blendedVid;
+                        }
+                    }
+                } catch (e) { console.warn('PixelarFX (vídeo) falhou:', e); }
             }
 
             ditherCanvas.width = smallW; ditherCanvas.height = smallH;
