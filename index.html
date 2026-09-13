@@ -123,6 +123,12 @@
         #video-timeline-bar { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; align-items: center; }
 
         .float-btn { background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); cursor: pointer; padding: 6px; color: var(--text); border-radius: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-shadow: 1px 1px 0 var(--shadow); width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+        .float-btn.random-hint { animation: randomPulse 2.2s ease-in-out infinite; }
+        .float-btn.random-hint:hover, .float-btn.random-hint:active { animation: none; }
+        @keyframes randomPulse {
+            0%, 100% { box-shadow: 1px 1px 0 var(--shadow), 0 0 0 0 rgba(90,130,165,0.55); }
+            50% { box-shadow: 1px 1px 0 var(--shadow), 0 0 0 6px rgba(90,130,165,0); }
+        }
         .float-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
         
         #btn-exit-fullscreen { position: fixed; top: 16px; left: 16px; z-index: 100001; display: none; padding: 8px var(--pad); background: var(--bg); color: var(--text); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-weight: normal; text-transform: uppercase; cursor: pointer; box-shadow: 2px 2px 0 var(--shadow); min-height: 44px; font-size: var(--font-size-base);}
@@ -264,7 +270,6 @@
                 <button class="d-tab" data-target="group-pixel" title="Pixel e Textura"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Pixel</span></button>
                 <button class="d-tab" data-target="group-cores" title="Cores e Paletas"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"/></svg><span>Cores</span></button>
                 <button class="d-tab" data-target="group-filtros" title="Filtros e Presets"><svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg><span>Filtros</span></button>
-                <button class="d-tab" data-target="group-efeitos" title="Efeitos de Textura"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Efeitos</span></button>
             </div>
 
             <div class="panels-container active">
@@ -305,8 +310,8 @@
                         <button class="m-sub-btn" data-target="set-dithPat"><span class="badge" id="bdg-dPat"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg><span>Padrão</span></button>
                         <button class="m-sub-btn" data-target="set-dithSca"><span class="badge" id="bdg-dSca"></span><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg><span>Escala</span></button>
                         <button class="m-sub-btn" data-target="set-dithInt"><span class="badge" id="bdg-dInt"></span><svg viewBox="0 0 24 24"><path d="M4 21v-4m0-4V3m8 18v-6m0-4V3m8 18v-8m0-4V3"></path></svg><span>Intensid.</span></button>
-                        <button class="m-sub-btn" data-target="set-dithAng"><span class="badge" id="bdg-dAng"></span><svg viewBox="0 0 24 24"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 1 0-20 0z"></path><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg><span>Ângulo</span></button>
                         <button class="m-sub-btn" data-target="set-dithOpa"><span class="badge" id="bdg-opa"></span><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Opacidade</span></button>
+                        <button class="m-sub-btn" data-target="set-pxEfeitos"><span class="badge" id="bdg-fxEff"></span><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Efeitos</span></button>
                         <button class="m-sub-btn reset-btn" data-target="pixelReset"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
@@ -329,11 +334,36 @@
                         </div>
                         <div class="set-item" id="set-dithSca"><div class="panel-label">Escala Textura</div><div class="slider-row"><input type="range" id="ditherScale" min="1" max="10" value="1"><button class="icon-btn lock-btn" data-target="ditherScale"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
                         <div class="set-item" id="set-dithInt"><div class="panel-label">Intensidade Dither</div><div class="slider-row"><input type="range" id="ditherIntensity" min="0" max="200" value="100"><button class="icon-btn lock-btn" data-target="ditherIntensity"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
-                        <div class="set-item" id="set-dithAng"><div class="panel-label">Ângulo Textura</div><div class="slider-row"><input type="range" id="texAngle" min="0" max="180" value="45"><button class="icon-btn lock-btn" data-target="texAngle"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div></div>
                         <div class="set-item" id="set-dithOpa"><div class="panel-label">Opacidade Dither</div>
                             <div class="slider-row">
                                 <input type="range" id="textureOpacity" min="0" max="100" value="100"><button class="icon-btn lock-btn" data-target="textureOpacity"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                             </div>
+                        </div>
+                        <div class="set-item" id="set-pxEfeitos">
+                            <div class="panel-label">Efeito de Textura</div>
+                            <div class="slider-row">
+                                <select id="fxEffectSelect">
+                                    <option value="none">Nenhum</option>
+                                    <optgroup label="Efeitos">
+                                        <option value="bokeh_blur">Desfoque</option>
+                                        <option value="channel_mixer">Misturador</option>
+                                        <option value="color_adjustment">Ajuste</option>
+                                        <option value="gooey_merge">Fusão</option>
+                                        <option value="hatching">Gravura</option>
+                                        <option value="lens_distortion">Distorção</option>
+                                        <option value="outlines">Contornos</option>
+                                        <option value="pattern_refraction">Refração</option>
+                                        <option value="pixelate_fx">Pixelização</option>
+                                        <option value="slice_shift">Fatias</option>
+                                        <option value="warp">Deformação</option>
+                                        <option value="photocopy">Fotocópia</option>
+                                        <option value="vhs">Fita</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="slider-row"><input type="range" id="fxEffectMix" min="0" max="100" value="100"><span style="font-size:0.7rem; opacity:0.7; min-width:70px; text-align:right;">Intensidade</span></div>
+                            <div class="panel-label" style="border: none; margin-top: 8px;">Parâmetros</div>
+                            <div id="fxParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
                         </div>
                     </div>
                 </div>
@@ -416,46 +446,12 @@
                     </div>
                 </div>
 
-                <!-- Group Efeitos (catálogo de shaders de textura) -->
-                <div class="control-group" id="group-efeitos">
-                    <div class="sec-content">
-                        <div class="set-item active" style="display: flex !important;">
-                            <div class="panel-label">Efeito de Textura</div>
-                            <div class="slider-row">
-                                <select id="fxEffectSelect">
-                                    <option value="none">Nenhum</option>
-                                    <optgroup label="Efeitos">
-                                        <option value="bokeh_blur">Desfoque</option>
-                                        <option value="channel_mixer">Misturador</option>
-                                        <option value="color_adjustment">Ajuste</option>
-                                        <option value="gooey_merge">Fusão</option>
-                                        <option value="hatching">Gravura</option>
-                                        <option value="lens_distortion">Distorção</option>
-                                        <option value="outlines">Contornos</option>
-                                        <option value="pattern_refraction">Refração</option>
-                                        <option value="pixelate_fx">Pixelização</option>
-                                        <option value="slice_shift">Fatias</option>
-                                        <option value="warp">Deformação</option>
-                                    </optgroup>
-                                    <optgroup label="Preenchimentos">
-                                        <option value="clouds">Nuvens</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <div class="slider-row"><input type="range" id="fxEffectMix" min="0" max="100" value="100"><span style="font-size:0.7rem; opacity:0.7; min-width:70px; text-align:right;">Intensidade</span></div>
-                        </div>
-                        <div class="set-item active" id="fxParamsContainer" style="display: flex !important; flex-direction: column;">
-                            <div class="panel-label">Parâmetros</div>
-                            <div id="fxParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Group Configurações -->
                 <div class="control-group" id="group-config">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-opFun"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
                         <button class="m-sub-btn" data-target="set-opExp"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
+                        <button class="m-sub-btn" data-target="set-opRand"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg><span>Aleatório</span></button>
                     </div>
                     <div class="sec-content">
                         <div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
@@ -471,6 +467,15 @@
                                 Importar Configuração <input type="file" id="importImgConfig" accept="image/png, text/plain">
                             </label>
                             <button class="std-btn" style="width:100%; margin-bottom: 8px;" id="btnResetImage">Limpar e Restaurar Mídia</button>
+                        </div>
+                        <div class="set-item" id="set-opRand">
+                            <div class="panel-label">O que incluir no Mix Aleatório</div>
+                            <label class="custom-checkbox"><input type="checkbox" id="randToggle-pixel" checked><span class="checkmark"></span><span>Tamanho do Pixel</span></label>
+                            <label class="custom-checkbox"><input type="checkbox" id="randToggle-dither" checked><span class="checkmark"></span><span>Padrão de Dither</span></label>
+                            <label class="custom-checkbox"><input type="checkbox" id="randToggle-ditherParams" checked><span class="checkmark"></span><span>Escala e Intensidade do Dither</span></label>
+                            <label class="custom-checkbox"><input type="checkbox" id="randToggle-palette" checked><span class="checkmark"></span><span>Paleta de Cores</span></label>
+                            <label class="custom-checkbox"><input type="checkbox" id="randToggle-contorno" checked><span class="checkmark"></span><span>Contorno / Edge</span></label>
+                            <label class="custom-checkbox"><input type="checkbox" id="randToggle-fx" checked><span class="checkmark"></span><span>Efeito de Textura</span></label>
                         </div>
                     </div>
                 </div>
@@ -519,7 +524,7 @@
             <button class="float-btn" id="btn-redo-view" disabled title="Refazer Ação"><svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2"/></svg></button>
             <div style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
             <button class="float-btn" id="btnRecordVideoFloat" title="Exportar Mídia"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
-            <button class="float-btn" id="btn-random-global" title="Mix Completo"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+            <button class="float-btn random-hint" id="btn-random-global" title="Mix Completo"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
         </div>
 
         <div id="zoom-controls">
@@ -586,7 +591,8 @@ const PixelarGL = (function () {
     let sourceTex = null;      // textura com os dados de cor (RGBA8) na resolução w x h
     let ditherTex = null;      // textura R32F (ou luminance float) com o mapa de dither já calculado em JS
     let gradTex = null;        // textura RGBA8 com o gradiente (dados do canvas 2D já existente)
-    let paletteTex = null;     // textura 1D (na prática, linha única) com a paleta, para snap de cor
+    let paletteTex = null;     // textura 1D (na prática, linha única) com a paleta ATUAL (exibida), para colorir
+    let refPaletteTex = null;  // textura 1D com a paleta de REFERÊNCIA (original), usada só para decidir o índice
     let initialized = false;
     let contextLost = false;
 
@@ -606,7 +612,8 @@ const PixelarGL = (function () {
     uniform sampler2D uSource;     // cor pós-ajustes (RGBA8), já na resolução w x h
     uniform sampler2D uDither;     // fator de dither por pixel, empacotado em R (0..1 representando -1..1)
     uniform sampler2D uGrad;       // gradiente RGBA8 (mesma resolução)
-    uniform sampler2D uPalette;    // paleta de cores, 1 texel por cor, numa linha
+    uniform sampler2D uPalette;    // paleta de cores ATUAL (exibida), 1 texel por cor, numa linha
+    uniform sampler2D uRefPalette; // paleta de REFERÊNCIA (original, usada só para decidir o índice/cor mais próxima)
     uniform vec2 uResolution;      // w, h da textura fonte
     uniform float uMinL;
     uniform float uMaxL;
@@ -719,13 +726,17 @@ const PixelarGL = (function () {
             for (int i = 0; i < 64; i++) {
                 if (i >= count) break;
                 float px = (float(i) + 0.5) / max(uPaletteCount, 1.0);
-                vec3 palColor = texture(uPalette, vec2(px, 0.5)).rgb * 255.0;
-                vec3 diff = quant255 - palColor;
+                vec3 refColor = texture(uRefPalette, vec2(px, 0.5)).rgb * 255.0;
+                vec3 diff = quant255 - refColor;
                 float dist = dot(diff, diff);
                 // Desempate explícito por menor índice: usa uma tolerância pequena para
                 // tratar diferenças de precisão de ponto flutuante como empate real,
                 // igual ao comportamento de "primeira ocorrência vence" do loop em CPU (JS).
-                if (dist < bestDist - 0.01) { bestDist = dist; bestColor = palColor / 255.0; bestIdx = float(i); }
+                if (dist < bestDist - 0.01) { bestDist = dist; bestIdx = float(i); }
+            }
+            if (bestIdx >= 0.0) {
+                float px = (bestIdx + 0.5) / max(uPaletteCount, 1.0);
+                bestColor = texture(uPalette, vec2(px, 0.5)).rgb;
             }
             rgb = bestColor;
         }
@@ -793,6 +804,7 @@ const PixelarGL = (function () {
         ditherTex = createTexture();
         gradTex = createTexture();
         paletteTex = createTexture();
+        refPaletteTex = createTexture();
     }
 
     function createTexture() {
@@ -828,27 +840,30 @@ const PixelarGL = (function () {
         return isWebGL2 && !contextLost;
     }
 
-    // Envia a paleta de cores {r,g,b} diretamente como textura (1 texel por cor).
+    // Envia uma paleta de cores {r,g,b} diretamente como textura (1 texel por cor).
     // A busca pela cor mais próxima é feita por distância exata dentro do fragment
     // shader (loop sobre a paleta), o que é exato e barato pois paletas são pequenas (<=32 cores).
-    function uploadPalette(palette, hash) {
-        if (paletteCache.hash === hash) return paletteCache.count;
+    // Usado tanto para a paleta de exibição (uPalette) quanto para a de referência (uRefPalette) —
+    // cada uma com sua própria textura e cache de hash, para não colidir.
+    function uploadPaletteTo(tex, cacheObj, palette, hash) {
+        if (cacheObj.hash === hash) return cacheObj.count;
         const n = palette.length;
         const paletteData = new Uint8Array(Math.max(n, 1) * 4);
         for (let i = 0; i < n; i++) {
             paletteData[i*4] = palette[i].r; paletteData[i*4+1] = palette[i].g; paletteData[i*4+2] = palette[i].b; paletteData[i*4+3] = 255;
         }
-        uploadRGBA(paletteTex, 4, paletteData, Math.max(n,1), 1);
-        paletteCache = { hash, count: n };
+        uploadRGBA(tex, cacheObj.unit, paletteData, Math.max(n,1), 1);
+        cacheObj.hash = hash; cacheObj.count = n;
         return n;
     }
-    let paletteCache = { hash: '', count: 0 };
+    let paletteCache = { hash: '', count: 0, unit: 4 };
+    let refPaletteCache = { hash: '', count: 0, unit: 5 };
 
     // Renderiza o pipeline principal. Todos os arrays de entrada já vêm na resolução w x h.
     // Retorna um Uint8ClampedArray RGBA (w*h*4) com o resultado, para manter compatível
     // com o restante do pipeline 2D existente (edge detection, drawImage, export).
     function render(opts) {
-        const { w, h, colorData, ditherMap, gradData, useGrad, gradBlend, usePalette, palette, paletteHash, minL, maxL, shadowsInverted, midDitherEnabled, rgbShift } = opts;
+        const { w, h, colorData, ditherMap, gradData, useGrad, gradBlend, usePalette, palette, paletteHash, refPalette, refPaletteHash, minL, maxL, shadowsInverted, midDitherEnabled, rgbShift } = opts;
 
         if (!isAvailable()) return null;
         if (contextLost) return null;
@@ -872,13 +887,21 @@ const PixelarGL = (function () {
 
         let paletteCount = 0;
         if (usePalette && palette && palette.length > 0) {
-            paletteCount = uploadPalette(palette, paletteHash);
+            paletteCount = uploadPaletteTo(paletteTex, paletteCache, palette, paletteHash);
+            // A paleta de referência (a que decide qual pixel vira qual índice) deve ter
+            // sempre a mesma paleta usada por padrão, caindo de volta para `palette` se
+            // nenhuma referência específica foi passada (compatibilidade / mesmo comportamento
+            // de antes quando as duas coincidem).
+            const refPal = (refPalette && refPalette.length > 0) ? refPalette : palette;
+            const refHash = refPaletteHash || paletteHash;
+            uploadPaletteTo(refPaletteTex, refPaletteCache, refPal, refHash);
         }
 
         gl.uniform1i(gl.getUniformLocation(program, 'uSource'), 0);
         gl.uniform1i(gl.getUniformLocation(program, 'uDither'), 1);
         gl.uniform1i(gl.getUniformLocation(program, 'uGrad'), 2);
         gl.uniform1i(gl.getUniformLocation(program, 'uPalette'), 4);
+        gl.uniform1i(gl.getUniformLocation(program, 'uRefPalette'), 5);
         gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), w, h);
         gl.uniform1f(gl.getUniformLocation(program, 'uMinL'), minL);
         gl.uniform1f(gl.getUniformLocation(program, 'uMaxL'), maxL);
@@ -1204,21 +1227,46 @@ const PIXELAR_FX_LIST = [
     }`
   },
 
-  // ===================== FILLS (padrões/preenchimentos que também podem se misturar sobre a imagem) =====================
+  {
+    // Inspirado em fotocópias/scans desbotados: contraste duro, tom monocromático
+    // amarelado, ruído de scanner em faixas e vinheta suja nas bordas.
+    id: 'photocopy', nome: 'Fotocópia',
+    uniforms: { uContrast: 2.2, uGrain: 0.18, uStreaks: 0.25, uInk_r:0.16,uInk_g:0.16,uInk_b:0.32, uPaper_r:0.96,uPaper_g:0.94,uPaper_b:0.82 },
+    src: `
+    uniform float uContrast, uGrain, uStreaks;
+    uniform float uInk_r,uInk_g,uInk_b, uPaper_r,uPaper_g,uPaper_b;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        float l = luma(c);
+        l = clamp((l - 0.5) * uContrast + 0.5, 0.0, 1.0);
+        vec3 ink = vec3(uInk_r,uInk_g,uInk_b), paper = vec3(uPaper_r,uPaper_g,uPaper_b);
+        vec3 result = mix(ink, paper, l);
+        float streak = step(1.0 - uStreaks*0.3, hash(vec2(floor(vUv.y*uResolution.y*0.5), 7.0)));
+        result *= (1.0 - streak*0.25);
+        float g = (hash(vUv*uResolution) - 0.5) * uGrain;
+        outColor = vec4(clamp(result + g, 0.0, 1.0), 1.0);
+    }`
+  },
 
   {
-    id: 'clouds', nome: 'Nuvens',
-    uniforms: { uScale: 3.0, uPhase: 0.0, uBlend: 0.5, uSky_r:0.45,uSky_g:0.7,uSky_b:0.95, uCloud_r:0.95,uCloud_g:0.97,uCloud_b:1.0 },
+    // Inspirado em fita VHS/vídeo analógico: leve deslocamento horizontal por
+    // linha (jitter), sangramento de cor (chroma bleed) e scanlines escuras.
+    id: 'vhs', nome: 'Fita',
+    uniforms: { uJitter: 0.008, uBleed: 0.006, uScanline: 0.25, uNoise: 0.06 },
     src: `
-    uniform float uScale, uPhase, uBlend;
-    uniform float uSky_r,uSky_g,uSky_b, uCloud_r,uCloud_g,uCloud_b;
+    uniform float uJitter, uBleed, uScanline, uNoise;
     void main() {
-        vec2 p = vUv * uScale + vec2(uPhase, 0.0);
-        float n = fbm(p);
-        vec3 sky = vec3(uSky_r,uSky_g,uSky_b), cloud = vec3(uCloud_r,uCloud_g,uCloud_b);
-        vec3 fill = mix(sky, cloud, smoothstep(0.35,0.75,n));
-        vec3 base = texture(uSource, vUv).rgb;
-        outColor = vec4(mix(base, fill, uBlend), 1.0);
+        float lineNoise = (hash(vec2(floor(vUv.y * uResolution.y), 3.0)) - 0.5) * 2.0;
+        float jitterAmt = lineNoise * uJitter * step(0.92, hash(vec2(floor(vUv.y*uResolution.y*0.2), 9.0)));
+        vec2 uv = vec2(vUv.x + jitterAmt, vUv.y);
+        float r = texture(uSource, clamp(uv + vec2(uBleed,0.0), 0.0, 1.0)).r;
+        float g = texture(uSource, clamp(uv, 0.0, 1.0)).g;
+        float b = texture(uSource, clamp(uv - vec2(uBleed,0.0), 0.0, 1.0)).b;
+        vec3 c = vec3(r,g,b);
+        float scan = 1.0 - uScanline * (0.5 + 0.5*sin(vUv.y * uResolution.y * 3.14159));
+        c *= scan;
+        float n = (hash(vUv*uResolution*1.7) - 0.5) * uNoise;
+        outColor = vec4(clamp(c + n, 0.0, 1.0), 1.0);
     }`
   },
 
@@ -1465,7 +1513,7 @@ const PixelarFX = (function () {
         if (localStorage.getItem('pixelarTheme') === 'dark') { rootHtml.setAttribute('data-theme', 'dark'); } updateThemeIcon();
         themeBtn.addEventListener('click', () => { if (rootHtml.getAttribute('data-theme') === 'dark') { rootHtml.removeAttribute('data-theme'); localStorage.setItem('pixelarTheme', 'light'); } else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); } updateThemeIcon(); });
 
-        const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight' ];
+        const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight' ];
         const locks = {}; lockTargets.forEach(t => locks[t] = false);
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const target = btn.getAttribute('data-target'); if (locks[target] !== undefined) { locks[target] = !locks[target]; btn.classList.toggle('active-state', locks[target]); } });
@@ -2403,6 +2451,1515 @@ const DEFAULT_PRESETS = {
         "iGradPos": "50",
         "iGradSmt": "100",
         "iGradBld": "source-atop"
+    },
+
+    "Analógica": {
+        "px": "1",
+        "col": "all",
+        "dith": "noise",
+        "exp": "-5",
+        "bri": "0",
+        "som": "10",
+        "sat": "-20",
+        "cont": "20",
+        "temp": "-15",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "30",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "color_adjustment",
+        "fxMix": "80",
+        "fxParams": { "uContrast": 1.5, "uShadowLift": -0.05, "uSatMid": 0.55, "uToneAmount": 0.45,
+            "uShadowTone_r": 0.08, "uShadowTone_g": 0.14, "uShadowTone_b": 0.32,
+            "uHighTone_r": 0.55, "uHighTone_g": 0.65, "uHighTone_b": 0.95 }
+    },
+
+    "Polaroid": {
+        "px": "1",
+        "col": "all",
+        "dith": "none",
+        "exp": "5",
+        "bri": "5",
+        "som": "-10",
+        "sat": "-10",
+        "cont": "-10",
+        "temp": "10",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "color_adjustment",
+        "fxMix": "70",
+        "fxParams": { "uContrast": 1.1, "uShadowLift": 0.05, "uSatMid": 0.9, "uToneAmount": 0.3,
+            "uShadowTone_r": 0.25, "uShadowTone_g": 0.18, "uShadowTone_b": 0.1,
+            "uHighTone_r": 1.0, "uHighTone_g": 0.92, "uHighTone_b": 0.72 }
+    },
+
+    "Cianotipo": {
+        "px": "1",
+        "col": "2",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "10",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#08204A", "#EAF2FA"],
+        "rc": ["#08204A", "#EAF2FA"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {}
+    },
+
+    "Kodachrome": {
+        "px": "1",
+        "col": "all",
+        "dith": "none",
+        "exp": "5",
+        "bri": "0",
+        "som": "-5",
+        "sat": "25",
+        "cont": "15",
+        "temp": "12",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "color_adjustment",
+        "fxMix": "65",
+        "fxParams": { "uContrast": 1.25, "uShadowLift": 0.0, "uSatMid": 1.15, "uToneAmount": 0.3, "uShadowTone_r": 0.15, "uShadowTone_g": 0.08, "uShadowTone_b": 0.05, "uHighTone_r": 1.0, "uHighTone_g": 0.55, "uHighTone_b": 0.2 }
+    },
+
+    "Portra 400": {
+        "px": "1",
+        "col": "all",
+        "dith": "none",
+        "exp": "3",
+        "bri": "0",
+        "som": "5",
+        "sat": "-8",
+        "cont": "-5",
+        "temp": "8",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "color_adjustment",
+        "fxMix": "55",
+        "fxParams": { "uContrast": 0.9, "uShadowLift": 0.05, "uSatMid": 0.85, "uToneAmount": 0.35, "uShadowTone_r": 0.3, "uShadowTone_g": 0.22, "uShadowTone_b": 0.18, "uHighTone_r": 1.0, "uHighTone_g": 0.85, "uHighTone_b": 0.68 }
+    },
+
+    "Velvia": {
+        "px": "1",
+        "col": "all",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "45",
+        "cont": "30",
+        "temp": "-3",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "color_adjustment",
+        "fxMix": "60",
+        "fxParams": { "uContrast": 1.5, "uShadowLift": -0.05, "uSatMid": 1.4, "uToneAmount": 0.15, "uShadowTone_r": 0.1, "uShadowTone_g": 0.1, "uShadowTone_b": 0.2, "uHighTone_r": 1.0, "uHighTone_g": 0.95, "uHighTone_b": 0.85 }
+    },
+
+    "Ektachrome": {
+        "px": "1",
+        "col": "all",
+        "dith": "none",
+        "exp": "2",
+        "bri": "0",
+        "som": "-3",
+        "sat": "10",
+        "cont": "10",
+        "temp": "-10",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "color_adjustment",
+        "fxMix": "55",
+        "fxParams": { "uContrast": 1.15, "uShadowLift": 0.0, "uSatMid": 1.05, "uToneAmount": 0.3, "uShadowTone_r": 0.1, "uShadowTone_g": 0.14, "uShadowTone_b": 0.25, "uHighTone_r": 0.85, "uHighTone_g": 0.92, "uHighTone_b": 1.0 }
+    },
+
+    "HP5 P&B": {
+        "px": "1",
+        "col": "2",
+        "dith": "noise",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "-100",
+        "cont": "20",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "20",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#0A0A0A", "#F2F2ED"],
+        "rc": ["#0A0A0A", "#F2F2ED"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "0",
+        "fxParams": {  }
+    },
+
+    "Tri-X 400": {
+        "px": "1",
+        "col": "3",
+        "dith": "noise",
+        "exp": "0",
+        "bri": "0",
+        "som": "10",
+        "sat": "-100",
+        "cont": "25",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "35",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#050505", "#7A7A72", "#F5F2E8"],
+        "rc": ["#050505", "#7A7A72", "#F5F2E8"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Lomography": {
+        "px": "1",
+        "col": "all",
+        "dith": "none",
+        "exp": "-8",
+        "bri": "0",
+        "som": "0",
+        "sat": "30",
+        "cont": "20",
+        "temp": "15",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "lens_distortion",
+        "fxMix": "55",
+        "fxParams": { "uAmount": 0.4, "uChroma": 0.02, "uZoom": 1.05 }
+    },
+
+    "Instax": {
+        "px": "1",
+        "col": "all",
+        "dith": "none",
+        "exp": "8",
+        "bri": "5",
+        "som": "0",
+        "sat": "-15",
+        "cont": "-8",
+        "temp": "6",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "color_adjustment",
+        "fxMix": "50",
+        "fxParams": { "uContrast": 0.85, "uShadowLift": 0.08, "uSatMid": 0.75, "uToneAmount": 0.25, "uShadowTone_r": 0.28, "uShadowTone_g": 0.24, "uShadowTone_b": 0.2, "uHighTone_r": 1.0, "uHighTone_g": 0.98, "uHighTone_b": 0.9 }
+    },
+
+    "Technicolor": {
+        "px": "1",
+        "col": "6",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "50",
+        "cont": "35",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "random",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "channel_mixer",
+        "fxMix": "35",
+        "fxParams": { "uRR": 1.1, "uRG": -0.1, "uRB": 0.0, "uGR": 0.0, "uGG": 1.1, "uGB": -0.1, "uBR": -0.1, "uBG": 0.0, "uBB": 1.1 }
+    },
+
+    "Daguerreótipo": {
+        "px": "1",
+        "col": "2",
+        "dith": "noise",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "15",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "25",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#1A1712", "#D9C9A8"],
+        "rc": ["#1A1712", "#D9C9A8"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "lens_distortion",
+        "fxMix": "30",
+        "fxParams": { "uAmount": 0.15, "uChroma": 0.0, "uZoom": 0.98 }
+    },
+
+    "Autochrome": {
+        "px": "1",
+        "col": "8",
+        "dith": "halftone",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "-20",
+        "cont": "5",
+        "temp": "8",
+        "post": "0",
+        "dScale": "2",
+        "dInt": "40",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "random",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Infravermelho": {
+        "px": "1",
+        "col": "4",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "15",
+        "cont": "20",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#1A0033", "#FF0099", "#FFCCEE", "#FFFFFF"],
+        "rc": ["#1A0033", "#FF0099", "#FFCCEE", "#FFFFFF"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Bauhaus": {
+        "px": "1",
+        "col": "4",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "15",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#E5231B", "#F6C500", "#1859A9", "#111111"],
+        "rc": ["#E5231B", "#F6C500", "#1859A9", "#111111"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Pop Art": {
+        "px": "1",
+        "col": "4",
+        "dith": "halftone",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "20",
+        "cont": "25",
+        "temp": "0",
+        "post": "0",
+        "dScale": "3",
+        "dInt": "70",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#FF2D75", "#00C2D1", "#FFD400", "#111111"],
+        "rc": ["#FF2D75", "#00C2D1", "#FFD400", "#111111"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Memphis": {
+        "px": "1",
+        "col": "5",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "20",
+        "cont": "10",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#FF6FA5", "#00D9C0", "#FFD23F", "#7B61FF", "#111111"],
+        "rc": ["#FF6FA5", "#00D9C0", "#FFD23F", "#7B61FF", "#111111"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Construtivismo": {
+        "px": "1",
+        "col": "3",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "-10",
+        "cont": "30",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#C1121F", "#111111", "#F2EFE9"],
+        "rc": ["#C1121F", "#111111", "#F2EFE9"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Art Déco": {
+        "px": "1",
+        "col": "3",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "-5",
+        "cont": "15",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#0B3D2E", "#C9A227", "#F5F0E1"],
+        "rc": ["#0B3D2E", "#C9A227", "#F5F0E1"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Risografia": {
+        "px": "1",
+        "col": "2",
+        "dith": "noise",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "10",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "30",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#FF48B0", "#0032FF"],
+        "rc": ["#FF48B0", "#0032FF"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": true,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF48B0", "#0032FF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "multiply",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Jornal Impresso": {
+        "px": "1",
+        "col": "2",
+        "dith": "halftone",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "30",
+        "temp": "0",
+        "post": "0",
+        "dScale": "2",
+        "dInt": "90",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#111111", "#EDE8DC"],
+        "rc": ["#111111", "#EDE8DC"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Propaganda": {
+        "px": "1",
+        "col": "3",
+        "dith": "halftone",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "-15",
+        "cont": "35",
+        "temp": "0",
+        "post": "0",
+        "dScale": "3",
+        "dInt": "40",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#B0281A", "#EDE0C8", "#1A1A1A"],
+        "rc": ["#B0281A", "#EDE0C8", "#1A1A1A"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Fanzine Punk": {
+        "px": "1",
+        "col": "2",
+        "dith": "noise",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "50",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "60",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#0A0A0A", "#F5F5F5"],
+        "rc": ["#0A0A0A", "#F5F5F5"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "slice_shift",
+        "fxMix": "35",
+        "fxParams": { "uSlices": 10, "uShift": 0.03 }
+    },
+
+    "Y2K": {
+        "px": "1",
+        "col": "5",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "20",
+        "cont": "-5",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#C6F1FF", "#FF9CEE", "#B6FFB0", "#FFFACC", "#DCC6FF"],
+        "rc": ["#C6F1FF", "#FF9CEE", "#B6FFB0", "#FFFACC", "#DCC6FF"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "0",
+        "fxParams": {  }
+    },
+
+    "Blueprint": {
+        "px": "1",
+        "col": "2",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "20",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#0A2F5C", "#DCE9F7"],
+        "rc": ["#0A2F5C", "#DCE9F7"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "outlines",
+        "fxMix": "60",
+        "fxParams": { "uSpacing": 10, "uThickness": 2 }
+    },
+
+    "Vitral": {
+        "px": "1",
+        "col": "6",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "30",
+        "cont": "20",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "random",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#0A0A0A",
+        "edgSiz": "1",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Câmera de Segurança": {
+        "px": "1",
+        "col": "3",
+        "dith": "noise",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "-90",
+        "cont": "15",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "25",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#0A0A0A", "#5C6B5C", "#D4E0D4"],
+        "rc": ["#0A0A0A", "#5C6B5C", "#D4E0D4"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "vhs",
+        "fxMix": "40",
+        "fxParams": { "uJitter": 0.004, "uBleed": 0.002, "uScanline": 0.3, "uNoise": 0.05 }
+    },
+
+    "Termovisão": {
+        "px": "1",
+        "col": "5",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "25",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#000033", "#7A00CC", "#FF3300", "#FFCC00", "#FFFFFF"],
+        "rc": ["#000033", "#7A00CC", "#FF3300", "#FFCC00", "#FFFFFF"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Raio-X": {
+        "px": "1",
+        "col": "2",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "30",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#000814", "#B9E5FF"],
+        "rc": ["#000814", "#B9E5FF"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {  }
+    },
+
+    "Holograma": {
+        "px": "1",
+        "col": "4",
+        "dith": "scanlines",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "0",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "30",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#00FFF0", "#B300FF", "#00FF85", "#FFFFFF"],
+        "rc": ["#00FFF0", "#B300FF", "#00FF85", "#FFFFFF"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "0",
+        "fxParams": {  }
+    },
+
+    "Néon Noturno": {
+        "px": "1",
+        "col": "4",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "30",
+        "cont": "20",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#FF00A8", "#00E5FF", "#7B2FFF", "#0A0A1A"],
+        "rc": ["#FF00A8", "#00E5FF", "#7B2FFF", "#0A0A1A"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "bokeh_blur",
+        "fxMix": "20",
+        "fxParams": { "uRadius": 4, "uThreshold": 0.7, "uBoost": 1.5 }
+    },
+
+    "Datamosh": {
+        "px": "1",
+        "col": "6",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "0",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#FF2D75","#00E5FF","#FFD400","#7B2FFF","#00FF85","#111111"],
+        "rc": ["#FF2D75","#00E5FF","#FFD400","#7B2FFF","#00FF85","#111111"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "2",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "slice_shift",
+        "fxMix": "80",
+        "fxParams": { "uSlices": 20, "uShift": 0.12, "uSeed": 4 }
+    },
+
+    "Tela CRT": {
+        "px": "1",
+        "col": "all",
+        "dith": "scanlines",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "10",
+        "cont": "15",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "60",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": [],
+        "rc": [],
+        "palMode": "original",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "lens_distortion",
+        "fxMix": "40",
+        "fxParams": { "uAmount": 0.3, "uChroma": 0.012, "uZoom": 1.0 }
+    },
+
+    "Impressora Térmica": {
+        "px": "1",
+        "col": "2",
+        "dith": "noise",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "35",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "45",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#1A1A1A", "#F0EDE4"],
+        "rc": ["#1A1A1A", "#F0EDE4"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "photocopy",
+        "fxMix": "30",
+        "fxParams": { "uContrast": 2.0, "uStreaks": 0.4, "uInk_r": 0.1, "uInk_g": 0.1, "uInk_b": 0.1, "uPaper_r": 0.94, "uPaper_g": 0.93, "uPaper_b": 0.88 }
     }
 };
 
@@ -2685,7 +4242,7 @@ try {
                 const target = btn.getAttribute('data-target');
                 if (target === 'ajustes') resetAdjustments(e);
                 if (target === 'colors') { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); scheduleAppProcess(); }
-                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; document.getElementById('texAngle').value = 45; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; updateBadges(); scheduleAppProcess(); }
+                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; document.getElementById('fxEffectSelect').value = 'none'; document.getElementById('fxEffectMix').value = 100; buildFxControls('none'); updateBadges(); scheduleAppProcess(); }
             });
         });
 
@@ -2734,9 +4291,10 @@ try {
                 uSlices:'Fatias', uSeed:'Semente', uDuo:'Duotone', uBlend:'Mistura', uMirror:'Espelhar',
                 uDither:'Granulado Dither', uRings:'Anéis', uDotSize:'Tamanho do Ponto', uStarDensity:'Densidade de Estrelas',
                 uOffset:'Deslocamento', uPhase:'Fase', uToneAmount:'Intensidade da Cor',
+                uStreaks:'Riscos de Scanner', uJitter:'Trepidação', uBleed:'Sangramento de Cor', uScanline:'Linhas de Varredura', uNoise:'Ruído',
                 uColor:'Cor', uColorA:'Cor A', uColorB:'Cor B', uFg:'Cor Principal', uBg:'Cor de Fundo',
                 uSky:'Cor do Céu', uCloud:'Cor da Nuvem', uAccent:'Cor de Destaque',
-                uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes',
+                uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes', uInk:'Cor da Tinta', uPaper:'Cor do Papel',
                 uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4'
             };
             return labels[key] || key.replace(/^u/, '');
@@ -2747,11 +4305,24 @@ try {
             const labels = {
                 uColor:'Cor', uColorA:'Cor A', uColorB:'Cor B', uFg:'Cor Principal', uBg:'Cor de Fundo',
                 uSky:'Cor do Céu', uCloud:'Cor da Nuvem', uAccent:'Cor de Destaque',
-                uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes',
+                uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes', uInk:'Cor da Tinta', uPaper:'Cor do Papel',
                 uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4'
             };
             return labels[prefix] || prefix.replace(/^u/, '');
         }
+
+        const FX_RANGES = {
+            uThreshold: [0, 1], uIntensity: [0, 2], uRadius: [0, 20], uBoost: [0, 6],
+            uSpeed: [-1, 1], uScale: [0.5, 40], uGrain: [0, 0.5], uSaturation: [0, 1],
+            uContrast: [0.2, 3], uShadowLift: [-0.3, 0.3], uTemp: [-0.3, 0.3], uSatMid: [0, 2],
+            uGray: [0, 1], uAngle: [0, 6.283], uSmooth: [0.01, 0.3], uFreq: [0.5, 20], uThickness: [0.5, 10],
+            uAmount: [0, 1], uChroma: [0, 0.05], uZoom: [0.5, 1.5], uSpacing: [2, 40],
+            uBands: [2, 40], uShift: [0, 0.3], uStretch: [0, 1], uSizeX: [2, 40], uSizeY: [2, 40],
+            uSlices: [2, 40], uSeed: [0, 20], uDuo: [0, 1], uBlend: [0, 1], uMirror: [0, 1],
+            uDither: [0, 1], uRings: [2, 40], uDotSize: [0.05, 0.5], uStarDensity: [10, 150],
+            uOffset: [0, 1], uPhase: [0, 12.566], uToneAmount: [0, 1],
+            uStreaks: [0, 1], uJitter: [0, 0.03], uBleed: [0, 0.02], uScanline: [0, 1], uNoise: [0, 0.3]
+        };
 
         function buildFxControls(effectId) {
             const container = document.getElementById('fxParamsInner');
@@ -2771,17 +4342,6 @@ try {
                 else plainKeys.push(k);
             });
 
-            const FX_RANGES = {
-                uThreshold: [0, 1], uIntensity: [0, 2], uRadius: [0, 20], uBoost: [0, 6],
-                uSpeed: [-1, 1], uScale: [0.5, 40], uGrain: [0, 0.5], uSaturation: [0, 1],
-                uContrast: [0.2, 3], uShadowLift: [-0.3, 0.3], uTemp: [-0.3, 0.3], uSatMid: [0, 2],
-                uGray: [0, 1], uAngle: [0, 6.283], uSmooth: [0.01, 0.3], uFreq: [0.5, 20], uThickness: [0.5, 10],
-                uAmount: [0, 1], uChroma: [0, 0.05], uZoom: [0.5, 1.5], uSpacing: [2, 40],
-                uBands: [2, 40], uShift: [0, 0.3], uStretch: [0, 1], uSizeX: [2, 40], uSizeY: [2, 40],
-                uSlices: [2, 40], uSeed: [0, 20], uDuo: [0, 1], uBlend: [0, 1], uMirror: [0, 1],
-                uDither: [0, 1], uRings: [2, 40], uDotSize: [0.05, 0.5], uStarDensity: [10, 150],
-                uOffset: [0, 1], uPhase: [0, 12.566], uToneAmount: [0, 1]
-            };
             const CHANNEL_MIX_LABELS = {
                 uRR:'Vermelho ← Vermelho', uRG:'Vermelho ← Verde', uRB:'Vermelho ← Azul',
                 uGR:'Verde ← Vermelho', uGG:'Verde ← Verde', uGB:'Verde ← Azul',
@@ -2894,15 +4454,15 @@ try {
             updateBadgeSingle('bdg-exp', document.getElementById('exposicao').value, 0); updateBadgeSingle('bdg-bri', document.getElementById('brilho').value, 0); updateBadgeSingle('bdg-con', document.getElementById('contraste').value, 0); updateBadgeSingle('bdg-tem', document.getElementById('temperatura').value, 0); updateBadgeSingle('bdg-sat', document.getElementById('saturacao').value, 0); updateBadgeSingle('bdg-som', document.getElementById('sombras').value, 0); updateBadgeSingle('bdg-pos', document.getElementById('posterize').value, 0); updateBadgeSingle('bdg-abe', document.getElementById('rgbShift').value, 0);
             updateBadgeSingle('bdg-px', document.getElementById('pxSize').value, 1);
             updateBadgeSingle('bdg-dPat', document.getElementById('ditherSelect').value === 'none' ? 0 : 1, 0, '*');
-            updateBadgeSingle('bdg-dSca', document.getElementById('ditherScale').value, 1); updateBadgeSingle('bdg-dInt', document.getElementById('ditherIntensity').value, 100, '%'); updateBadgeSingle('bdg-dAng', document.getElementById('texAngle').value, 45, '°'); 
-            updateBadgeSingle('bdg-edg', document.getElementById('edgePixelSize').value, 0);
+            updateBadgeSingle('bdg-dSca', document.getElementById('ditherScale').value, 1); updateBadgeSingle('bdg-dInt', document.getElementById('ditherIntensity').value, 100, '%');             updateBadgeSingle('bdg-edg', document.getElementById('edgePixelSize').value, 0);
             const tO = document.getElementById('textureOpacity').value; const bdgOpa = document.getElementById('bdg-opa'); if(bdgOpa) { if(tO != 100 && tO != 0) { bdgOpa.textContent = '*'; bdgOpa.style.display = 'block'; } else { bdgOpa.style.display = 'none'; } }
             const ph = document.getElementById('palHue').value; const ps = document.getElementById('palSat').value; const pl = document.getElementById('palLight').value; const bcAju = document.getElementById('bdg-corAju'); if(bcAju) { if(ph != 0 || ps != 0 || pl != 0) { bcAju.textContent = '*'; bcAju.style.display = 'block'; } else { bcAju.style.display = 'none'; } }
             const igStp = document.getElementById('imgGradSteps').value; const bcDeg = document.getElementById('bdg-corDeg'); if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'block'; } else { bcDeg.style.display = 'none'; } }
+            const fxSel = document.getElementById('fxEffectSelect'); const bdgFxEff = document.getElementById('bdg-fxEff'); if(fxSel && bdgFxEff) { if(fxSel.value !== 'none') { bdgFxEff.textContent = '*'; bdgFxEff.style.display = 'block'; } else { bdgFxEff.style.display = 'none'; } }
 
         }
 
-        const processInputs = ['pxSize', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'texAngle', 'edgeColor', 'edgePixelSize', 'imageScale'];
+        const processInputs = ['pxSize', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgeColor', 'edgePixelSize', 'imageScale'];
         const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
 
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleAppProcess(); });
@@ -2971,24 +4531,91 @@ try {
         function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 4); } }
         function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "halftone", "checkerboard", "scanlines", "noise"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
         function randColQty() { if(!locks.colorSelect) { const c = ["2", "3", "4", "6", "8", "12", "16", "24", "32"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; } }
+
+        // Sorteia um efeito de textura do catálogo PixelarFX + valores aleatórios para
+        // cada um dos seus parâmetros (dentro do range útil definido em FX_RANGES),
+        // incluindo as cores (quando o efeito tiver grupos de cor).
+        function randFxEffect() {
+            if (locks.fxEffectSelect) return;
+            if (typeof PixelarFX === 'undefined') return;
+            const effects = PixelarFX.listEffects(); // não inclui 'none'
+            const choice = effects[Math.floor(Math.random() * effects.length)];
+            const sel = document.getElementById('fxEffectSelect');
+            sel.value = choice.id;
+
+            const params = {};
+            const keys = Object.keys(choice.uniforms);
+            const colorGroups = {};
+            const plainKeys = [];
+            keys.forEach(k => {
+                const m = k.match(/^(.*)_(r|g|b)$/);
+                if (m) { colorGroups[m[1]] = colorGroups[m[1]] || {}; colorGroups[m[1]][m[2]] = k; }
+                else plainKeys.push(k);
+            });
+            // Sorteia dentro de uma faixa CONTIDA ao redor do valor padrão de cada
+            // parâmetro (não do range completo), para nunca extrapolar a imagem com
+            // valores extremos — no máximo ~35% de variação para cada lado do padrão,
+            // sempre recortado dentro do range válido do parâmetro.
+            const VARIATION = 0.35;
+            plainKeys.forEach(key => {
+                const range = FX_RANGES[key];
+                const def_v = choice.uniforms[key];
+                if (range) {
+                    const span = (range[1] - range[0]) * VARIATION;
+                    let val = def_v + (Math.random() * 2 - 1) * span;
+                    val = Math.max(range[0], Math.min(range[1], val));
+                    params[key] = val;
+                } else { params[key] = def_v; }
+            });
+            // Cores: também variam de forma contida ao redor da cor padrão do efeito,
+            // em vez de sortear qualquer cor do espectro — mantém a variedade sem
+            // deixar o resultado irreconhecível.
+            const COLOR_VARIATION = 0.25;
+            Object.keys(colorGroups).forEach(prefix => {
+                const g = colorGroups[prefix];
+                ['r','g','b'].forEach(ch => {
+                    const key = g[ch];
+                    if (!key) return;
+                    const def_v = choice.uniforms[key];
+                    let val = def_v + (Math.random() * 2 - 1) * COLOR_VARIATION;
+                    params[key] = Math.max(0, Math.min(1, val));
+                });
+            });
+
+            fxUserParams[choice.id] = params;
+            document.getElementById('fxEffectMix').value = 50 + Math.floor(Math.random() * 31); // 50-80%, nunca no máximo
+            buildFxControls(choice.id);
+        }
+
         document.querySelectorAll('.shuffle-btn').forEach(btn => { btn.addEventListener('click', () => { const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return; if(tgt === 'pxSize') randPx(); if(tgt === 'ditherSelect') randDith(); updateBadges(); scheduleAppProcess(); }); });
         
+        function randToggle(id) { const el = document.getElementById(id); return !el || el.checked; }
+
         function applyTrueRandom() {
-            if(!locks.pxSize) randPx(); if(!locks.ditherSelect) randDith();
-            if(!locks.colors) { if(!locks.colorSelect) randColQty(); let qty = parseInt(document.getElementById('colorSelect').value, 10); if(isNaN(qty)) { qty = [4,6,8,12,16][Math.floor(Math.random() * 5)]; document.getElementById('colorSelect').value = qty.toString(); } currentPaletteMode = 'random'; globalCurrentPalette = generateHarmonyPalette(qty); referencePalette = clone(globalCurrentPalette); setBasePalette(globalCurrentPalette); }
-            if(!locks.ditherScale) document.getElementById('ditherScale').value = Math.floor(Math.random() * 3) + 1;
-            if(!locks.ditherIntensity) document.getElementById('ditherIntensity').value = Math.floor(Math.random() * 80) + 40;
-            if(!locks.texAngle) document.getElementById('texAngle').value = Math.floor(Math.random() * 180);
-            if(!locks.edgePixelSize) { document.getElementById('edgePixelSize').value = Math.random() > 0.5 ? 0 : Math.floor(Math.random() * 2) + 1; }
-            if(!locks.edgeColor) { document.getElementById('edgeColor').value = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'); }
+            if (randToggle('randToggle-pixel') && !locks.pxSize) randPx();
+            if (randToggle('randToggle-dither') && !locks.ditherSelect) randDith();
+            if (randToggle('randToggle-palette') && !locks.colors) { if(!locks.colorSelect) randColQty(); let qty = parseInt(document.getElementById('colorSelect').value, 10); if(isNaN(qty)) { qty = [4,6,8,12,16][Math.floor(Math.random() * 5)]; document.getElementById('colorSelect').value = qty.toString(); } currentPaletteMode = 'random'; globalCurrentPalette = generateHarmonyPalette(qty); referencePalette = clone(globalCurrentPalette); setBasePalette(globalCurrentPalette); }
+            if (randToggle('randToggle-ditherParams')) {
+                if(!locks.ditherScale) document.getElementById('ditherScale').value = Math.floor(Math.random() * 3) + 1;
+                if(!locks.ditherIntensity) document.getElementById('ditherIntensity').value = Math.floor(Math.random() * 80) + 40;
+            }
+            if (randToggle('randToggle-contorno')) {
+                if(!locks.edgePixelSize) { document.getElementById('edgePixelSize').value = Math.random() > 0.5 ? 0 : Math.floor(Math.random() * 2) + 1; }
+                if(!locks.edgeColor) { document.getElementById('edgeColor').value = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'); }
+            }
+            if (randToggle('randToggle-fx')) {
+                if (Math.random() < 0.6) { randFxEffect(); }
+                else { document.getElementById('fxEffectSelect').value = 'none'; buildFxControls('none'); }
+            }
             updateBadges(); scheduleAppProcess();
         }
 
-        document.getElementById('btn-random-global').addEventListener('click', () => { if (isNextRandomAPreset && sessionPresetsPool.length > 0) { const item = sessionPresetsPool.pop(); if (item.type === 'theme') { applyTheme(item.name); } else if (item.type === 'preset') { applyState(savedPresets[item.name]); } isNextRandomAPreset = false; } else { applyTrueRandom(); if (sessionPresetsPool.length > 0) isNextRandomAPreset = true; } });
+        document.getElementById('btn-random-global').addEventListener('click', (e) => { e.currentTarget.classList.remove('random-hint'); try { localStorage.setItem('pixelarRandomHintSeen', '1'); } catch(err){} if (isNextRandomAPreset && sessionPresetsPool.length > 0) { const item = sessionPresetsPool.pop(); if (item.type === 'theme') { applyTheme(item.name); } else if (item.type === 'preset') { applyState(savedPresets[item.name]); } isNextRandomAPreset = false; } else { applyTrueRandom(); if (sessionPresetsPool.length > 0) isNextRandomAPreset = true; } });
+        try { if (localStorage.getItem('pixelarRandomHintSeen') === '1') { const rb = document.getElementById('btn-random-global'); if (rb) rb.classList.remove('random-hint'); } } catch(e){}
 
         function getStateObject() {
             return {
-                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, tAng: document.getElementById('texAngle').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value,
+                px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value, fx: document.getElementById('fxEffectSelect') ? document.getElementById('fxEffectSelect').value : 'none', fxMix: document.getElementById('fxEffectMix') ? document.getElementById('fxEffectMix').value : 100, fxParams: (document.getElementById('fxEffectSelect') && fxUserParams[document.getElementById('fxEffectSelect').value]) ? fxUserParams[document.getElementById('fxEffectSelect').value] : {},
             };
         }
 
@@ -2997,7 +4624,7 @@ try {
 
         function applyState(p) {
             if (!locks.pxSize && p.px !== undefined) document.getElementById('pxSize').value = p.px; if (!locks.colorSelect && p.col !== undefined) document.getElementById('colorSelect').value = p.col; if (!locks.ditherSelect && p.dith !== undefined) document.getElementById('ditherSelect').value = p.dith;
-            document.getElementById('exposicao').value = p.exp !== undefined ? p.exp : 0; document.getElementById('brilho').value = p.bri !== undefined ? p.bri : 0; document.getElementById('sombras').value = p.som !== undefined ? p.som : 0; document.getElementById('saturacao').value = p.sat !== undefined ? p.sat : 0; document.getElementById('contraste').value = p.cont !== undefined ? p.cont : 0; document.getElementById('temperatura').value = p.temp !== undefined ? p.temp : 0; document.getElementById('posterize').value = p.post !== undefined ? p.post : 0; document.getElementById('ditherScale').value = p.dScale !== undefined ? p.dScale : 1; document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100; document.getElementById('texAngle').value = p.tAng !== undefined ? p.tAng : 45;
+            document.getElementById('exposicao').value = p.exp !== undefined ? p.exp : 0; document.getElementById('brilho').value = p.bri !== undefined ? p.bri : 0; document.getElementById('sombras').value = p.som !== undefined ? p.som : 0; document.getElementById('saturacao').value = p.sat !== undefined ? p.sat : 0; document.getElementById('contraste').value = p.cont !== undefined ? p.cont : 0; document.getElementById('temperatura').value = p.temp !== undefined ? p.temp : 0; document.getElementById('posterize').value = p.post !== undefined ? p.post : 0; document.getElementById('ditherScale').value = p.dScale !== undefined ? p.dScale : 1; document.getElementById('ditherIntensity').value = p.dInt !== undefined ? p.dInt : 100;
             isMidDitherEnabled = p.effMidDither || false; document.getElementById('btnEffMidDither').classList.toggle('active-state', isMidDitherEnabled);
             isShadowsInverted = p.shInv || false; document.getElementById('btnInvertShadows').classList.toggle('active-state', isShadowsInverted);
             document.getElementById('fillBg').checked = p.fillBg || false; if(p.bgColor) { document.getElementById('btnBgColor').value = p.bgColor; document.getElementById('btnBgColor').setAttribute('data-color', p.bgColor); document.getElementById('hexBgColor').value = p.bgColor.toUpperCase(); }
@@ -3005,6 +4632,13 @@ try {
             if(p.tOpa !== undefined) document.getElementById('textureOpacity').value = p.tOpa; if(p.eOpa !== undefined) document.getElementById('edgeOpacity').value = p.eOpa; if(p.iSca !== undefined) document.getElementById('imageScale').value = p.iSca;
             document.getElementById('imgGradient').checked = p.iGrad || false; if(p.iGradTyp) document.getElementById('imgGradType').value = p.iGradTyp; if(p.iGradAng !== undefined) document.getElementById('imgGradAngle').value = p.iGradAng; if(p.iGradStp !== undefined) document.getElementById('imgGradSteps').value = p.iGradStp; if(p.iGradPos !== undefined) document.getElementById('imgGradPos').value = p.iGradPos; if(p.iGradSmt !== undefined) document.getElementById('imgGradSmooth').value = p.iGradSmt; if(p.iGradBld) document.getElementById('imgGradBlend').value = p.iGradBld; if(p.iGradCol) { currentImgGradColors = p.iGradCol; renderImgGradColors(); }
             if (!locks.colors) { currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false; if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); if (p.rc && p.rc.length > 0) { referencePalette = p.rc.map(hexToRgb); } else { referencePalette = clone(globalCurrentPalette); } setBasePalette(globalCurrentPalette); } }
+            if (document.getElementById('fxEffectSelect')) {
+                const fxId = p.fx || 'none';
+                document.getElementById('fxEffectSelect').value = fxId;
+                document.getElementById('fxEffectMix').value = p.fxMix !== undefined ? p.fxMix : 100;
+                if (fxId !== 'none' && p.fxParams) { fxUserParams[fxId] = Object.assign({}, p.fxParams); }
+                buildFxControls(fxId);
+            }
             isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();
         }
         document.getElementById('btn-undo-view').addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; applyState(historyArr[historyIndex]); } });
@@ -3171,7 +4805,7 @@ function renderPresets() {
 
             setProgress(85); await yieldToMain(); if (myId !== currentProcessId) return;
 
-            const ditherMode = document.getElementById('ditherSelect').value; const dithScale = parseInt(document.getElementById('ditherScale').value, 10); const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = parseInt(document.getElementById('texAngle').value, 10) * Math.PI / 180; const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100; 
+            const ditherMode = document.getElementById('ditherSelect').value; const dithScale = parseInt(document.getElementById('ditherScale').value, 10); const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = 45 * Math.PI / 180; const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100; 
 
             let gradData = null; 
             if (document.getElementById('imgGradient').checked) { 
@@ -3184,7 +4818,9 @@ function renderPresets() {
             let gpuOk = false;
             if (typeof PixelarGL !== 'undefined' && PixelarGL.isAvailable()) {
                 try {
-                    const paletteHash = usePal ? referencePalette.map(c => c.r+','+c.g+','+c.b).join('|') : '';
+                    const displayPal = usePal ? (globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette) : [];
+                    const paletteHash = usePal ? displayPal.map(c => c.r+','+c.g+','+c.b).join('|') : '';
+                    const refPaletteHash = usePal ? referencePalette.map(c => c.r+','+c.g+','+c.b).join('|') : '';
                     const gpuResult = PixelarGL.render({
                         w, h,
                         colorData: d,
@@ -3195,6 +4831,8 @@ function renderPresets() {
                         usePalette: usePal && referencePalette && referencePalette.length > 0,
                         palette: usePal ? (globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette) : null,
                         paletteHash,
+                        refPalette: usePal ? referencePalette : null,
+                        refPaletteHash,
                         minL, maxL,
                         shadowsInverted: isShadowsInverted,
                         midDitherEnabled: isMidDitherEnabled,
@@ -3372,7 +5010,7 @@ function renderPresets() {
             }
 
             const ditherMode = document.getElementById('ditherSelect').value; const dithScale = parseInt(document.getElementById('ditherScale').value, 10);
-            const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = parseInt(document.getElementById('texAngle').value, 10) * Math.PI / 180;
+            const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = 45 * Math.PI / 180;
             const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100;
 
             let usePalette = (currentPaletteMode !== 'original' && referencePalette && referencePalette.length > 0);
@@ -3384,6 +5022,7 @@ function renderPresets() {
             if (typeof PixelarGL !== 'undefined' && PixelarGL.isAvailable()) {
                 try {
                     const paletteHash = usePalette ? (globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette).map(c => c.r+','+c.g+','+c.b).join('|') : '';
+                    const refPaletteHash = usePalette ? referencePalette.map(c => c.r+','+c.g+','+c.b).join('|') : '';
                     const gpuResult = PixelarGL.render({
                         w: smallW, h: smallH,
                         colorData: d,
@@ -3392,6 +5031,8 @@ function renderPresets() {
                         usePalette: usePalette,
                         palette: usePalette ? (globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette) : null,
                         paletteHash,
+                        refPalette: usePalette ? referencePalette : null,
+                        refPaletteHash,
                         minL, maxL,
                         shadowsInverted: isShadowsInverted,
                         midDitherEnabled: isMidDitherEnabled,
