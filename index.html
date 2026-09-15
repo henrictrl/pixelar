@@ -1,3 +1,4 @@
+<!-- Versão: 1.1 -->
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
 <head>
@@ -312,6 +313,7 @@
                         <button class="m-sub-btn" data-target="set-dithInt"><span class="badge" id="bdg-dInt"></span><svg viewBox="0 0 24 24"><path d="M4 21v-4m0-4V3m8 18v-6m0-4V3m8 18v-8m0-4V3"></path></svg><span>Intensid.</span></button>
                         <button class="m-sub-btn" data-target="set-dithOpa"><span class="badge" id="bdg-opa"></span><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Opacidade</span></button>
                         <button class="m-sub-btn" data-target="set-pxEfeitos"><span class="badge" id="bdg-fxEff"></span><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Efeitos</span></button>
+                        <button class="m-sub-btn" data-target="set-pxGrain"><span class="badge" id="bdg-grain"></span><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="18" cy="7" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="13" r="1"></circle><circle cx="7" cy="18" r="1"></circle><circle cx="13" cy="19" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Grain</span></button>
                         <button class="m-sub-btn reset-btn" data-target="pixelReset"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
@@ -359,11 +361,45 @@
                                         <option value="photocopy">Fotocópia</option>
                                         <option value="vhs">Fita</option>
                                     </optgroup>
+                                    <optgroup label="Filmes">
+                                        <option value="kodak_verde">Kodak Verde</option>
+                                        <option value="kodak_pb">Kodak P&amp;B</option>
+                                        <option value="lumiere">Lumiere</option>
+                                        <option value="vencido">Vencido</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="slider-row"><input type="range" id="fxEffectMix" min="0" max="100" value="100"><span style="font-size:0.7rem; opacity:0.7; min-width:70px; text-align:right;">Intensidade</span></div>
+
+                            <div class="film-subpanel" id="set-lumiereHue" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
+                                <div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Matiz do Lumiere</div>
+                                <div class="slider-row">
+                                    <svg class="lbl-icon" viewBox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg>
+                                    <input type="range" id="lumiereHue" min="0" max="360" value="280">
+                                </div>
+                            </div>
+
+                            <div class="film-subpanel" id="set-vencidoVariant" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
+                                <div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Filme Vencido</div>
+                                <div id="vencidoVariantBar" style="display:flex; gap:4px; width:100%;">
+                                    <button class="std-btn vencido-variant-btn" data-variant="0" style="flex:1 1 0%; padding:6px 4px;">1</button>
+                                    <button class="std-btn vencido-variant-btn" data-variant="1" style="flex:1 1 0%; padding:6px 4px;">2</button>
+                                    <button class="std-btn vencido-variant-btn" data-variant="2" style="flex:1 1 0%; padding:6px 4px;">3</button>
+                                    <button class="std-btn vencido-variant-btn" data-variant="3" style="flex:1 1 0%; padding:6px 4px;">4</button>
+                                </div>
+                            </div>
+
                             <div class="panel-label" style="border: none; margin-top: 8px;">Parâmetros</div>
                             <div id="fxParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
+                        </div>
+                        <div class="set-item" id="set-pxGrain">
+                            <div class="panel-label">Grain (Granulado de Filme)</div>
+                            <div class="slider-row"><input type="range" id="grainAmount" min="0" max="100" value="0"><button class="icon-btn lock-btn" data-target="grainAmount"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Intensidade</span></div>
+                            <div class="slider-row"><input type="range" id="grainSize" min="10" max="400" value="100"><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Tamanho</span></div>
+                            <div class="slider-row"><input type="range" id="grainRoughness" min="0" max="100" value="45"><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Aspereza</span></div>
+                            <div class="slider-row"><input type="range" id="grainShadowBias" min="-100" max="100" value="20"><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Sombras/Luzes</span></div>
+                            <div class="slider-row"><input type="range" id="grainSpeckle" min="0" max="100" value="0"><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Manchas</span></div>
+                            <label class="custom-checkbox"><input type="checkbox" id="grainMono" checked><span class="checkmark"></span><span>Granulado Monocromático</span></label>
                         </div>
                     </div>
                 </div>
@@ -1270,6 +1306,153 @@ const PIXELAR_FX_LIST = [
     }`
   },
 
+  // ===================== FILMES =====================
+
+  {
+    // Kodak Verde: puxa a imagem para um tom oliva/esverdeado nos meios-tons
+    // e sombras (tipico de slides de filme antigo desbotado, referencia das
+    // fotos de praia), mantendo realces mais quentes/amarelados e contraste
+    // levemente suavizado.
+    id: 'kodak_verde', nome: 'Kodak Verde',
+    uniforms: {
+      uContrast: 0.92, uFade: 0.12, uSatShift: 0.85,
+      uShadowTone_r: 0.55, uShadowTone_g: 0.62, uShadowTone_b: 0.42,
+      uHighTone_r: 1.0, uHighTone_g: 0.93, uHighTone_b: 0.68
+    },
+    src: `
+    uniform float uContrast, uFade, uSatShift;
+    uniform float uShadowTone_r,uShadowTone_g,uShadowTone_b, uHighTone_r,uHighTone_g,uHighTone_b;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        c = mix(c, vec3(0.5), uFade * 0.3);
+        c = (c - 0.5) * uContrast + 0.5;
+        c = clamp(c, 0.0, 1.0);
+        float l = luma(c);
+        vec3 shadowTone = vec3(uShadowTone_r,uShadowTone_g,uShadowTone_b);
+        vec3 highTone = vec3(uHighTone_r,uHighTone_g,uHighTone_b);
+        vec3 toned = mix(c * (shadowTone * 1.5), c * (highTone * 1.15), smoothstep(0.2, 0.85, l));
+        c = mix(c, toned, 0.55);
+        vec3 hsl = rgb2hsl(clamp(c, 0.0, 1.0));
+        hsl.y *= uSatShift;
+        hsl.x = mix(hsl.x, mod(hsl.x + (0.34 - hsl.x) * 0.18 + 1.0, 1.0), 0.5);
+        outColor = vec4(clamp(hsl2rgb(hsl), 0.0, 1.0), 1.0);
+    }`
+  },
+
+  {
+    // Kodak P&B: conversao para preto-e-branco com curva de contraste forte
+    // (tipo Ilford HP5 / Tri-X), leve tonalidade quente nas sombras (preto
+    // nao 100% neutro, como no filme real) e grao sutil embutido para dar
+    // corpo -- independente do controle global de Grain da aba Pixel.
+    id: 'kodak_pb', nome: 'Kodak P&B',
+    uniforms: { uContrast: 1.55, uBlackPoint: 0.04, uWhitePoint: 0.97, uWarmth: 0.06, uMicroGrain: 0.05 },
+    src: `
+    uniform float uContrast, uBlackPoint, uWhitePoint, uWarmth, uMicroGrain;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        float l = luma(c);
+        float s = (l - 0.5) * uContrast + 0.5;
+        s = smoothstep(0.0, 1.0, clamp(s, 0.0, 1.0));
+        s = clamp((s - uBlackPoint) / max(0.0001, (uWhitePoint - uBlackPoint)), 0.0, 1.0);
+        float g = (hash(vUv*uResolution*2.2) - 0.5) * uMicroGrain;
+        s = clamp(s + g, 0.0, 1.0);
+        vec3 warmBlack = vec3(0.05, 0.035, 0.02) * uWarmth;
+        vec3 result = mix(warmBlack, vec3(1.0), s);
+        outColor = vec4(clamp(result, 0.0, 1.0), 1.0);
+    }`
+  },
+
+  {
+    // Lumiere: efeito de matiz customizavel (roxo por padrao, referencia do
+    // usuario). uHue (0-1, representando 0-360 graus) escolhe a cor de
+    // aplicacao. A aplicacao NAO e uma tinta uniforme: dosa por luminancia
+    // (mais forte nas sombras/meios-tons, mais fraca nas luzes) e gira o
+    // matiz em HSL proporcionalmente a uAmount, preservando estrutura
+    // tonal -- muda tons especificos em vez de pintar tudo de uma cor so.
+    id: 'lumiere', nome: 'Lumiere',
+    uniforms: { uHue: 0.78, uAmount: 0.5, uSpread: 0.6 },
+    src: `
+    uniform float uHue, uAmount, uSpread;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        vec3 hsl = rgb2hsl(c);
+        float l = hsl.z;
+        float mask = 1.0 - smoothstep(0.35, 0.35 + uSpread * 0.6, l);
+        mask = mix(mask, 1.0, 0.15);
+        float strength = uAmount * mask;
+        float dh = uHue - hsl.x;
+        dh -= floor(dh + 0.5);
+        hsl.x = fract(hsl.x + dh * strength * 0.9 + 1.0);
+        hsl.y = clamp(hsl.y + strength * 0.22, 0.0, 1.0);
+        hsl.z = clamp(l - strength * 0.05 * (1.0 - l), 0.0, 1.0);
+        outColor = vec4(clamp(hsl2rgb(hsl), 0.0, 1.0), 1.0);
+    }`
+  },
+
+  {
+    // Vencido: simula filme fotografico vencido/expirado. uVariant (0-3)
+    // escolhe entre 4 assinaturas de degradacao distintas:
+    //   0 = Deslocamento Quente  -- vazamento de luz alaranjado, contraste
+    //       reduzido, base amarelada
+    //   1 = Nevoa Magenta        -- veu magenta/rosa por fog quimico, pretos
+    //       levantados, saturacao reduzida
+    //   2 = Deslocamento Frio    -- dominante ciano/azulado nas sombras,
+    //       realces ainda quentes (degradacao de camada de cor desigual)
+    //   3 = Desbotado & Granulado -- baixissimo contraste, cores lavadas,
+    //       grao pesado e irregular
+    id: 'vencido', nome: 'Vencido',
+    uniforms: { uVariant: 0.0, uIntensity: 0.75, uLeak_r: 1.0, uLeak_g: 0.45, uLeak_b: 0.1 },
+    src: `
+    uniform float uVariant, uIntensity;
+    uniform float uLeak_r, uLeak_g, uLeak_b;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        vec2 uv = vUv;
+        int v = int(uVariant + 0.5);
+        vec3 result = c;
+
+        if (v == 0) {
+            float corner = hash(vec2(7.0, 3.0));
+            vec2 leakPos = vec2(mix(0.0,1.0,step(0.5,corner)), mix(0.0,1.0,step(0.5,fract(corner*9.0))));
+            float d = distance(uv, leakPos);
+            float leak = smoothstep(0.9, 0.05, d) * 0.55;
+            vec3 leakColor = vec3(uLeak_r, uLeak_g, uLeak_b);
+            result = c * vec3(1.08, 0.98, 0.82);
+            result = (result - 0.5) * 0.82 + 0.5;
+            result = mix(result, result + leakColor, leak);
+            result += (hash(uv*uResolution) - 0.5) * 0.05;
+        } else if (v == 1) {
+            vec3 hslv = rgb2hsl(c);
+            hslv.y *= 0.65;
+            hslv.z = mix(hslv.z, 0.5, 0.08);
+            vec3 base = hsl2rgb(hslv);
+            vec3 fog = vec3(0.85, 0.55, 0.7);
+            result = mix(base, base + fog * 0.25, 0.5);
+            result = mix(vec3(0.12,0.06,0.09), result, 0.94);
+        } else if (v == 2) {
+            float l = luma(c);
+            vec3 shadowTone = vec3(0.55, 0.85, 0.9);
+            vec3 highTone = vec3(1.0, 0.92, 0.78);
+            vec3 toned = mix(c * shadowTone, c * highTone, smoothstep(0.25, 0.85, l));
+            result = mix(c, toned, 0.6);
+            result = (result - 0.5) * 0.9 + 0.5;
+        } else {
+            vec3 hslv = rgb2hsl(c);
+            hslv.y *= 0.5;
+            vec3 base = hsl2rgb(hslv);
+            base = (base - 0.5) * 0.6 + 0.58;
+            float coarse = hash(floor(uv*uResolution/2.0));
+            float fine = hash(uv*uResolution*1.5);
+            float grain = (coarse*0.6 + fine*0.4 - 0.5) * 0.16;
+            result = base + grain;
+            result = mix(result, result * vec3(1.05,1.0,0.9), 0.4);
+        }
+
+        outColor = vec4(clamp(mix(c, result, uIntensity), 0.0, 1.0), 1.0);
+    }`
+  },
+
+  
   
   
   
@@ -1513,7 +1696,7 @@ const PixelarFX = (function () {
         if (localStorage.getItem('pixelarTheme') === 'dark') { rootHtml.setAttribute('data-theme', 'dark'); } updateThemeIcon();
         themeBtn.addEventListener('click', () => { if (rootHtml.getAttribute('data-theme') === 'dark') { rootHtml.removeAttribute('data-theme'); localStorage.setItem('pixelarTheme', 'light'); } else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); } updateThemeIcon(); });
 
-        const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight' ];
+        const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight', 'grainAmount' ];
         const locks = {}; lockTargets.forEach(t => locks[t] = false);
         document.querySelectorAll('.lock-btn').forEach(btn => {
             btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const target = btn.getAttribute('data-target'); if (locks[target] !== undefined) { locks[target] = !locks[target]; btn.classList.toggle('active-state', locks[target]); } });
@@ -2773,6 +2956,86 @@ try {
             return ditherMapCache;
         }
 
+        // ==========================================
+        // Grain (granulado de filme) — aplicado por cima de tudo, depois do
+        // efeito de textura, direto no buffer final de pixels (Uint8ClampedArray).
+        // Ruído por hash determinístico (não usa Math.random) para permitir
+        // reprodutibilidade e, em vídeo, um "seed" por frame para variar o grão
+        // quadro a quadro sem custo de PRNG com estado.
+        // ==========================================
+        function grainHash(x, y, seed) {
+            let n = x * 12.9898 + y * 78.233 + seed * 37.719;
+            n = Math.sin(n) * 43758.5453;
+            return n - Math.floor(n);
+        }
+        function applyFilmGrain(d, w, h, seed) {
+            const amount = parseInt(document.getElementById('grainAmount').value, 10);
+            if (!amount) return d;
+            const sizePct = parseInt(document.getElementById('grainSize').value, 10) / 100; // 0.1 .. 4
+            const roughness = parseInt(document.getElementById('grainRoughness').value, 10) / 100; // 0..1
+            const shadowBias = parseInt(document.getElementById('grainShadowBias').value, 10) / 100; // -1..1
+            const speckle = parseInt(document.getElementById('grainSpeckle').value, 10) / 100; // 0..1
+            const mono = document.getElementById('grainMono').checked;
+
+            const strength = (amount / 100) * 60; // amplitude máxima em níveis de 0-255
+            const cell = Math.max(1, sizePct); // tamanho do "grão" em pixels (>=1 evita sub-amostragem excessiva)
+            const cellInv = 1 / cell;
+            // Aspereza: mistura entre ruído suave (média de 2 amostras, mais uniforme/fino)
+            // e ruído puro (mais contrastado/duro) — sem custo de blur real, feito só
+            // combinando duas leituras de hash com pesos diferentes por pixel.
+            const seed0 = seed * 91.7 + 1.0;
+            const seed1 = seed * 91.7 + 37.0;
+
+            for (let y = 0; y < h; y++) {
+                const gy = Math.floor(y * cellInv);
+                for (let x = 0; x < w; x++) {
+                    const i = (y * w + x) * 4;
+                    if (d[i + 3] === 0) continue; // não gruna pixels transparentes
+                    const gx = Math.floor(x * cellInv);
+
+                    // ruído base (0..1) por célula de grão, com um segundo componente
+                    // fino por-pixel para dar aspereza/nitidez ao grão
+                    const coarse = grainHash(gx, gy, seed0);
+                    const fine = grainHash(x, y, seed1);
+                    let n = coarse * (1 - roughness) + fine * roughness;
+                    n = (n - 0.5) * 2; // -1..1
+
+                    // manchas: aglomerados esparsos e maiores, típicos de grão irregular/emulsão
+                    let clumpBoost = 1;
+                    if (speckle > 0) {
+                        const clumpCell = cell * 6;
+                        const cgx = Math.floor(x / clumpCell), cgy = Math.floor(y / clumpCell);
+                        const clumpN = grainHash(cgx, cgy, seed0 + 5.0);
+                        if (clumpN > (1 - speckle * 0.5)) clumpBoost = 1 + speckle * 2.5;
+                    }
+
+                    // luminância local determina o viés sombras/luzes: shadowBias > 0
+                    // concentra o grão nas sombras (comportamento clássico de filme),
+                    // shadowBias < 0 concentra nas luzes, 0 mantém uniforme
+                    const luma = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255;
+                    let lumaWeight = 1;
+                    if (shadowBias > 0) lumaWeight = 1 - luma * shadowBias * 0.9;
+                    else if (shadowBias < 0) lumaWeight = 1 + (luma - 1) * shadowBias * 0.9;
+
+                    const amt = n * strength * clumpBoost * Math.max(0.15, lumaWeight);
+
+                    if (mono) {
+                        d[i] = Math.max(0, Math.min(255, d[i] + amt));
+                        d[i + 1] = Math.max(0, Math.min(255, d[i + 1] + amt));
+                        d[i + 2] = Math.max(0, Math.min(255, d[i + 2] + amt));
+                    } else {
+                        const nr = grainHash(x, y, seed1 + 11.0) * 2 - 1;
+                        const ng = grainHash(x, y, seed1 + 23.0) * 2 - 1;
+                        const nb = grainHash(x, y, seed1 + 41.0) * 2 - 1;
+                        d[i] = Math.max(0, Math.min(255, d[i] + nr * strength * clumpBoost * lumaWeight));
+                        d[i + 1] = Math.max(0, Math.min(255, d[i + 1] + ng * strength * clumpBoost * lumaWeight));
+                        d[i + 2] = Math.max(0, Math.min(255, d[i + 2] + nb * strength * clumpBoost * lumaWeight));
+                    }
+                }
+            }
+            return d;
+        }
+
         let sharedBufferShift = new Uint8ClampedArray(0);
         let sharedGradCanvas = document.createElement('canvas');
         let sharedGradCtx = sharedGradCanvas.getContext('2d', { willReadFrequently: true });
@@ -2984,7 +3247,7 @@ try {
                 const target = btn.getAttribute('data-target');
                 if (target === 'ajustes') resetAdjustments(e);
                 if (target === 'colors') { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); scheduleAppProcess(); }
-                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; document.getElementById('fxEffectSelect').value = 'none'; document.getElementById('fxEffectMix').value = 100; buildFxControls('none'); updateBadges(); scheduleAppProcess(); }
+                if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; document.getElementById('fxEffectSelect').value = 'none'; document.getElementById('fxEffectMix').value = 100; buildFxControls('none'); updateFilmSubControls('none'); currentVencidoVariant = 0; document.getElementById('lumiereHue').value = 280; document.getElementById('grainAmount').value = 0; document.getElementById('grainSize').value = 100; document.getElementById('grainRoughness').value = 45; document.getElementById('grainShadowBias').value = 20; document.getElementById('grainSpeckle').value = 0; document.getElementById('grainMono').checked = true; updateBadges(); scheduleAppProcess(); }
             });
         });
 
@@ -3020,6 +3283,7 @@ try {
         // UI: catálogo de efeitos PixelarFX (controles dinâmicos por efeito)
         // ==========================================
         let fxUserParams = {}; // { effectId: { uniformName: value } }
+        let currentVencidoVariant = 0; // 0-3, qual dos 4 sub-estilos do filme "Vencido" está ativo
 
         function fxParamLabel(key) {
             // Agrupa uNome_r/_g/_b como um único color picker; outros uniforms viram slider
@@ -3037,7 +3301,9 @@ try {
                 uColor:'Cor', uColorA:'Cor A', uColorB:'Cor B', uFg:'Cor Principal', uBg:'Cor de Fundo',
                 uSky:'Cor do Céu', uCloud:'Cor da Nuvem', uAccent:'Cor de Destaque',
                 uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes', uInk:'Cor da Tinta', uPaper:'Cor do Papel',
-                uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4'
+                uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4',
+                uFade:'Desbotado', uSatShift:'Saturação', uBlackPoint:'Ponto de Preto', uWhitePoint:'Ponto de Branco',
+                uWarmth:'Calor do Preto', uMicroGrain:'Micro-grão', uSpread:'Alcance Tonal', uLeak:'Cor do Vazamento'
             };
             return labels[key] || key.replace(/^u/, '');
         }
@@ -3048,7 +3314,7 @@ try {
                 uColor:'Cor', uColorA:'Cor A', uColorB:'Cor B', uFg:'Cor Principal', uBg:'Cor de Fundo',
                 uSky:'Cor do Céu', uCloud:'Cor da Nuvem', uAccent:'Cor de Destaque',
                 uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes', uInk:'Cor da Tinta', uPaper:'Cor do Papel',
-                uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4'
+                uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4', uLeak:'Cor do Vazamento'
             };
             return labels[prefix] || prefix.replace(/^u/, '');
         }
@@ -3063,7 +3329,9 @@ try {
             uSlices: [2, 40], uSeed: [0, 20], uDuo: [0, 1], uBlend: [0, 1], uMirror: [0, 1],
             uDither: [0, 1], uRings: [2, 40], uDotSize: [0.05, 0.5], uStarDensity: [10, 150],
             uOffset: [0, 1], uPhase: [0, 12.566], uToneAmount: [0, 1],
-            uStreaks: [0, 1], uJitter: [0, 0.03], uBleed: [0, 0.02], uScanline: [0, 1], uNoise: [0, 0.3]
+            uStreaks: [0, 1], uJitter: [0, 0.03], uBleed: [0, 0.02], uScanline: [0, 1], uNoise: [0, 0.3],
+            uFade: [0, 1], uSatShift: [0, 1.5], uBlackPoint: [0, 0.3], uWhitePoint: [0.7, 1],
+            uWarmth: [0, 1], uMicroGrain: [0, 0.3], uSpread: [0.1, 1.5]
         };
 
         function buildFxControls(effectId) {
@@ -3074,7 +3342,12 @@ try {
             if (!def) return;
 
             const saved = fxUserParams[effectId] || {};
-            const keys = Object.keys(def.uniforms);
+            // uVariant (Vencido) e uHue (Lumiere) já têm painéis dedicados
+            // (barra de variante e slider de Matiz) fora deste container —
+            // não devem ganhar um slider genérico duplicado aqui.
+            const HIDDEN_KEYS = { vencido: ['uVariant'], lumiere: ['uHue'] };
+            const hiddenForEffect = HIDDEN_KEYS[effectId] || [];
+            const keys = Object.keys(def.uniforms).filter(k => !hiddenForEffect.includes(k));
             const colorGroups = {}; // prefixo -> [r,g,b key]
             const plainKeys = [];
 
@@ -3179,16 +3452,57 @@ try {
         }
 
         function getFxParamsFromUI(effectId) {
-            return fxUserParams[effectId] || {};
+            const params = fxUserParams[effectId] || {};
+            // "Vencido" e "Lumiere" têm controles próprios (barra de variante e
+            // matiz) que não passam pelo buildFxControls genérico — precisam ser
+            // injetados manualmente nos params antes de renderizar/exportar.
+            if (effectId === 'vencido') {
+                return Object.assign({}, params, { uVariant: currentVencidoVariant });
+            }
+            if (effectId === 'lumiere') {
+                const hueEl = document.getElementById('lumiereHue');
+                const hueDeg = hueEl ? parseFloat(hueEl.value) : 280;
+                return Object.assign({}, params, { uHue: (hueDeg % 360) / 360 });
+            }
+            return params;
+        }
+
+        // Mostra/esconde os painéis extras (Matiz do Lumiere, barra do Vencido)
+        // de acordo com o efeito de textura selecionado no momento.
+        function updateFilmSubControls(effectId) {
+            const lumierePanel = document.getElementById('set-lumiereHue');
+            const vencidoPanel = document.getElementById('set-vencidoVariant');
+            if (lumierePanel) lumierePanel.style.display = (effectId === 'lumiere') ? 'flex' : 'none';
+            if (vencidoPanel) vencidoPanel.style.display = (effectId === 'vencido') ? 'flex' : 'none';
+            if (effectId === 'vencido') updateVencidoVariantUI();
+        }
+
+        function updateVencidoVariantUI() {
+            document.querySelectorAll('.vencido-variant-btn').forEach(btn => {
+                const v = parseInt(btn.getAttribute('data-variant'), 10);
+                btn.classList.toggle('active-state', v === currentVencidoVariant);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             const fxSelect = document.getElementById('fxEffectSelect');
             if (fxSelect) {
-                fxSelect.addEventListener('change', () => { buildFxControls(fxSelect.value); scheduleAppProcess(); });
+                fxSelect.addEventListener('change', () => { buildFxControls(fxSelect.value); updateFilmSubControls(fxSelect.value); scheduleAppProcess(); });
+                updateFilmSubControls(fxSelect.value);
             }
             const fxMix = document.getElementById('fxEffectMix');
             if (fxMix) { fxMix.addEventListener('input', () => scheduleAppProcess()); }
+
+            const lumHue = document.getElementById('lumiereHue');
+            if (lumHue) { lumHue.addEventListener('input', () => scheduleAppProcess()); }
+
+            document.querySelectorAll('.vencido-variant-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentVencidoVariant = parseInt(btn.getAttribute('data-variant'), 10);
+                    updateVencidoVariantUI();
+                    scheduleAppProcess();
+                });
+            });
         });
 
         function updateBadgeSingle(id, val, def, f='') { const el = document.getElementById(id); if(el) { const v = parseFloat(val); if(v !== def && v !== 0 && !isNaN(v)) { el.textContent = v + f; el.style.display = 'block'; } else { el.style.display = 'none'; } } }
@@ -3201,10 +3515,11 @@ try {
             const ph = document.getElementById('palHue').value; const ps = document.getElementById('palSat').value; const pl = document.getElementById('palLight').value; const bcAju = document.getElementById('bdg-corAju'); if(bcAju) { if(ph != 0 || ps != 0 || pl != 0) { bcAju.textContent = '*'; bcAju.style.display = 'block'; } else { bcAju.style.display = 'none'; } }
             const igStp = document.getElementById('imgGradSteps').value; const bcDeg = document.getElementById('bdg-corDeg'); if(bcDeg) { if(igStp != 0 || document.getElementById('imgGradient').checked) { bcDeg.textContent = '*'; bcDeg.style.display = 'block'; } else { bcDeg.style.display = 'none'; } }
             const fxSel = document.getElementById('fxEffectSelect'); const bdgFxEff = document.getElementById('bdg-fxEff'); if(fxSel && bdgFxEff) { if(fxSel.value !== 'none') { bdgFxEff.textContent = '*'; bdgFxEff.style.display = 'block'; } else { bdgFxEff.style.display = 'none'; } }
+            updateBadgeSingle('bdg-grain', document.getElementById('grainAmount').value, 0);
 
         }
 
-        const processInputs = ['pxSize', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgeColor', 'edgePixelSize', 'imageScale'];
+        const processInputs = ['pxSize', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgeColor', 'edgePixelSize', 'imageScale', 'grainAmount', 'grainSize', 'grainRoughness', 'grainShadowBias', 'grainSpeckle', 'grainMono'];
         const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
 
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleAppProcess(); });
@@ -3324,9 +3639,24 @@ try {
                 });
             });
 
+            // uVariant (Vencido) e uHue (Lumiere) não seguem o sorteio genérico
+            // acima (não têm FX_RANGES definido e têm UI própria) — tratados à
+            // parte para manter o estado da barra de variante e do slider de
+            // Matiz sincronizados com o que será de fato renderizado.
+            if (choice.id === 'vencido') {
+                currentVencidoVariant = Math.floor(Math.random() * 4);
+                delete params.uVariant;
+            }
+            if (choice.id === 'lumiere') {
+                const hueEl = document.getElementById('lumiereHue');
+                if (hueEl) hueEl.value = Math.floor(Math.random() * 360);
+                delete params.uHue;
+            }
+
             fxUserParams[choice.id] = params;
             document.getElementById('fxEffectMix').value = 50 + Math.floor(Math.random() * 31); // 50-80%, nunca no máximo
             buildFxControls(choice.id);
+            updateFilmSubControls(choice.id);
         }
 
         document.querySelectorAll('.shuffle-btn').forEach(btn => { btn.addEventListener('click', () => { const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return; if(tgt === 'pxSize') randPx(); if(tgt === 'ditherSelect') randDith(); updateBadges(); scheduleAppProcess(); }); });
@@ -3347,7 +3677,7 @@ try {
             }
             if (randToggle('randToggle-fx')) {
                 if (Math.random() < 0.6) { randFxEffect(); }
-                else { document.getElementById('fxEffectSelect').value = 'none'; buildFxControls('none'); }
+                else { document.getElementById('fxEffectSelect').value = 'none'; buildFxControls('none'); updateFilmSubControls('none'); }
             }
             updateBadges(); scheduleAppProcess();
         }
@@ -3358,6 +3688,8 @@ try {
         function getStateObject() {
             return {
                 px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value, fx: document.getElementById('fxEffectSelect') ? document.getElementById('fxEffectSelect').value : 'none', fxMix: document.getElementById('fxEffectMix') ? document.getElementById('fxEffectMix').value : 100, fxParams: (document.getElementById('fxEffectSelect') && fxUserParams[document.getElementById('fxEffectSelect').value]) ? fxUserParams[document.getElementById('fxEffectSelect').value] : {},
+                grainAmt: document.getElementById('grainAmount').value, grainSz: document.getElementById('grainSize').value, grainRough: document.getElementById('grainRoughness').value, grainSB: document.getElementById('grainShadowBias').value, grainSpk: document.getElementById('grainSpeckle').value, grainMono: document.getElementById('grainMono').checked,
+                filmVencidoVariant: currentVencidoVariant, filmLumiereHue: document.getElementById('lumiereHue') ? document.getElementById('lumiereHue').value : 0,
             };
         }
 
@@ -3374,12 +3706,21 @@ try {
             if(p.tOpa !== undefined) document.getElementById('textureOpacity').value = p.tOpa; if(p.eOpa !== undefined) document.getElementById('edgeOpacity').value = p.eOpa; if(p.iSca !== undefined) document.getElementById('imageScale').value = p.iSca;
             document.getElementById('imgGradient').checked = p.iGrad || false; if(p.iGradTyp) document.getElementById('imgGradType').value = p.iGradTyp; if(p.iGradAng !== undefined) document.getElementById('imgGradAngle').value = p.iGradAng; if(p.iGradStp !== undefined) document.getElementById('imgGradSteps').value = p.iGradStp; if(p.iGradPos !== undefined) document.getElementById('imgGradPos').value = p.iGradPos; if(p.iGradSmt !== undefined) document.getElementById('imgGradSmooth').value = p.iGradSmt; if(p.iGradBld) document.getElementById('imgGradBlend').value = p.iGradBld; if(p.iGradCol) { currentImgGradColors = p.iGradCol; renderImgGradColors(); }
             if (!locks.colors) { currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false; if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); if (p.rc && p.rc.length > 0) { referencePalette = p.rc.map(hexToRgb); } else { referencePalette = clone(globalCurrentPalette); } setBasePalette(globalCurrentPalette); } }
+            document.getElementById('grainAmount').value = p.grainAmt !== undefined ? p.grainAmt : 0;
+            document.getElementById('grainSize').value = p.grainSz !== undefined ? p.grainSz : 100;
+            document.getElementById('grainRoughness').value = p.grainRough !== undefined ? p.grainRough : 45;
+            document.getElementById('grainShadowBias').value = p.grainSB !== undefined ? p.grainSB : 20;
+            document.getElementById('grainSpeckle').value = p.grainSpk !== undefined ? p.grainSpk : 0;
+            document.getElementById('grainMono').checked = p.grainMono !== undefined ? p.grainMono : true;
+            currentVencidoVariant = p.filmVencidoVariant !== undefined ? p.filmVencidoVariant : 0;
             if (document.getElementById('fxEffectSelect')) {
                 const fxId = p.fx || 'none';
                 document.getElementById('fxEffectSelect').value = fxId;
                 document.getElementById('fxEffectMix').value = p.fxMix !== undefined ? p.fxMix : 100;
                 if (fxId !== 'none' && p.fxParams) { fxUserParams[fxId] = Object.assign({}, p.fxParams); }
+                if (document.getElementById('lumiereHue')) { document.getElementById('lumiereHue').value = p.filmLumiereHue !== undefined ? p.filmLumiereHue : 280; }
                 buildFxControls(fxId);
+                updateFilmSubControls(fxId);
             }
             isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();
         }
@@ -3650,6 +3991,8 @@ function renderPresets() {
                 } catch (e) { console.warn('PixelarFX falhou:', e); }
             }
 
+            d = applyFilmGrain(d, w, h, 0);
+
             ditherCanvas.width = w; ditherCanvas.height = h;
             dCtx.putImageData(new ImageData(new Uint8ClampedArray(d), w, h), 0, 0);
 
@@ -3844,6 +4187,8 @@ function renderPresets() {
                     }
                 } catch (e) { console.warn('PixelarFX (vídeo) falhou:', e); }
             }
+
+            d = applyFilmGrain(d, smallW, smallH, sourceVideo.currentTime || 0);
 
             ditherCanvas.width = smallW; ditherCanvas.height = smallH;
             dCtx.putImageData(new ImageData(new Uint8ClampedArray(d), smallW, smallH), 0, 0);
