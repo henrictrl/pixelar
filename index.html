@@ -329,6 +329,7 @@
                                 <select id="ditherSelect">
                                     <option value="none">Padrão Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
                                     <option value="checkerboard">Xadrez</option><option value="scanlines">TV Analógica</option><option value="noise">Ruído Aleatório</option>
+                                    <option value="bayer8">Bayer 8x8</option><option value="floyd_approx">Floyd-Steinberg</option>
                                 </select>
                                 <button class="icon-btn lock-btn" data-target="ditherSelect"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                                 <button id="btnEffMidDither" class="icon-btn" title="Suavizar Tons Médios"><svg viewBox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" stroke="currentColor" fill="none" stroke-linecap="round"/></svg></button>
@@ -360,6 +361,9 @@
                                         <option value="warp">Deformação</option>
                                         <option value="photocopy">Fotocópia</option>
                                         <option value="vhs">Fita</option>
+                                        <option value="vignette">Vinheta</option>
+                                        <option value="bloom">Bloom</option>
+                                        <option value="solarize">Solarização</option>
                                     </optgroup>
                                     <optgroup label="Filmes">
                                         <option value="kodak_verde">Kodak Verde</option>
@@ -421,6 +425,7 @@
                                     <option value="8">8 Cores</option><option value="12">12 Cores</option><option value="16">16 Cores</option><option value="24">24 Cores</option>
                                     <option value="32">32 Cores</option><option value="48">48 Cores</option><option value="64">64 Cores</option><option value="128">128 Cores</option>
                                     <option value="256">256 Cores</option><option value="all" selected>Todas as Cores</option>
+                                    <option value="duotone">Duotone</option><option value="tritone">Tritone</option>
                                 </select>
                                 <button class="icon-btn lock-btn" data-target="colorSelect"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
                                 <button class="icon-btn" id="btnInvert" title="Inverter Cores"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"></path></svg></button>
@@ -428,6 +433,14 @@
                                 <button class="icon-btn" id="btnSwapColors" title="Misturar Ordem da Paleta Atual"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></button>
                             </div>
                             <div id="colorsGrid" class="colors-grid"></div>
+                            <div id="duotoneControls" style="display:none; flex-direction:column; gap:8px; margin-top:8px; border-top:1px dashed var(--border-light); padding-top:12px;">
+                                <div class="panel-label" style="border:none;">Cores do Tom</div>
+                                <div class="slider-row">
+                                    <input type="color" id="duotoneColor1" class="icon-btn" value="#0A1A2F">
+                                    <input type="color" id="duotoneColor2" class="icon-btn" value="#5A82A5">
+                                    <input type="color" id="duotoneColor3" class="icon-btn" value="#F2EFE9">
+                                </div>
+                            </div>
                         </div>
                         <div class="set-item" id="set-corAju"><div class="panel-label">Ajuste Global de Cores</div>
                             <div class="slider-row"><svg class="lbl-icon" viewBox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input type="range" id="palHue" min="-180" max="180" value="0"><button class="icon-btn lock-btn" data-target="palHue"><svg class="icon-unlock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
@@ -805,8 +818,16 @@ const PixelarGL = (function () {
             return false;
         }
 
-        glCanvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; }, false);
-        glCanvas.addEventListener('webglcontextrestored', () => { contextLost = false; setupProgram(); }, false);
+        glCanvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            contextLost = true;
+            console.warn('[PixelarGL] webglcontextlost disparado em', new Date().toISOString(), '- efeito de textura ativo no momento:', (typeof document !== 'undefined' && document.getElementById('fxEffectSelect')) ? document.getElementById('fxEffectSelect').value : 'desconhecido');
+        }, false);
+        glCanvas.addEventListener('webglcontextrestored', () => {
+            console.warn('[PixelarGL] webglcontextrestored disparado em', new Date().toISOString(), '- reconstruindo programa/VAO/texturas');
+            try { setupProgram(); contextLost = false; }
+            catch (e) { console.warn('[PixelarGL] falha ao reconstruir recursos após restauração de contexto:', e); contextLost = true; }
+        }, false);
 
         setupProgram();
         initialized = true;
@@ -904,61 +925,71 @@ const PixelarGL = (function () {
         if (!isAvailable()) return null;
         if (contextLost) return null;
 
-        glCanvas.width = w; glCanvas.height = h;
-        gl.viewport(0, 0, w, h);
-        gl.useProgram(program);
-        gl.bindVertexArray(vao);
+        try {
+            glCanvas.width = w; glCanvas.height = h;
+            gl.viewport(0, 0, w, h);
+            gl.useProgram(program);
+            gl.bindVertexArray(vao);
 
-        uploadRGBA(sourceTex, 0, colorData, w, h);
+            uploadRGBA(sourceTex, 0, colorData, w, h);
 
-        // ditherMap já vem como Float32Array com o fator real (tipicamente -1..1, mas sem
-        // limite rígido) — enviado como R32F para preservar precisão total, sem quantização.
-        uploadR32F(ditherTex, 1, ditherMap, w, h);
+            // ditherMap já vem como Float32Array com o fator real (tipicamente -1..1, mas sem
+            // limite rígido) — enviado como R32F para preservar precisão total, sem quantização.
+            uploadR32F(ditherTex, 1, ditherMap, w, h);
 
-        if (useGrad && gradData) {
-            uploadRGBA(gradTex, 2, gradData, w, h);
-        } else {
-            uploadRGBA(gradTex, 2, new Uint8Array([0,0,0,255]), 1, 1);
+            if (useGrad && gradData) {
+                uploadRGBA(gradTex, 2, gradData, w, h);
+            } else {
+                uploadRGBA(gradTex, 2, new Uint8Array([0,0,0,255]), 1, 1);
+            }
+
+            let paletteCount = 0;
+            if (usePalette && palette && palette.length > 0) {
+                paletteCount = uploadPaletteTo(paletteTex, paletteCache, palette, paletteHash);
+                // A paleta de referência (a que decide qual pixel vira qual índice) deve ter
+                // sempre a mesma paleta usada por padrão, caindo de volta para `palette` se
+                // nenhuma referência específica foi passada (compatibilidade / mesmo comportamento
+                // de antes quando as duas coincidem).
+                const refPal = (refPalette && refPalette.length > 0) ? refPalette : palette;
+                const refHash = refPaletteHash || paletteHash;
+                uploadPaletteTo(refPaletteTex, refPaletteCache, refPal, refHash);
+            }
+
+            gl.uniform1i(gl.getUniformLocation(program, 'uSource'), 0);
+            gl.uniform1i(gl.getUniformLocation(program, 'uDither'), 1);
+            gl.uniform1i(gl.getUniformLocation(program, 'uGrad'), 2);
+            gl.uniform1i(gl.getUniformLocation(program, 'uPalette'), 4);
+            gl.uniform1i(gl.getUniformLocation(program, 'uRefPalette'), 5);
+            gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), w, h);
+            gl.uniform1f(gl.getUniformLocation(program, 'uMinL'), minL);
+            gl.uniform1f(gl.getUniformLocation(program, 'uMaxL'), maxL);
+            gl.uniform1i(gl.getUniformLocation(program, 'uShadowsInverted'), shadowsInverted ? 1 : 0);
+            gl.uniform1i(gl.getUniformLocation(program, 'uMidDitherEnabled'), midDitherEnabled ? 1 : 0);
+            gl.uniform1i(gl.getUniformLocation(program, 'uUseGrad'), (useGrad && gradData) ? 1 : 0);
+            const blendMap = { normal: 0, multiply: 1, screen: 2, overlay: 3, color: 4 };
+            gl.uniform1i(gl.getUniformLocation(program, 'uGradBlend'), blendMap[gradBlend] !== undefined ? blendMap[gradBlend] : 0);
+            gl.uniform1i(gl.getUniformLocation(program, 'uUsePalette'), (usePalette && palette && palette.length>0) ? 1 : 0);
+            gl.uniform1f(gl.getUniformLocation(program, 'uPaletteCount'), paletteCount > 0 ? paletteCount : 1);
+            gl.uniform1f(gl.getUniformLocation(program, 'uRgbShift'), rgbShift || 0);
+
+            gl.disable(gl.BLEND);
+            gl.clearColor(0,0,0,0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            const out = new Uint8Array(w * h * 4);
+            gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, out);
+
+            return new Uint8ClampedArray(out.buffer);
+        } catch (e) {
+            // Mesmo contrato de PixelarFX.render(): nunca deixar uma exceção
+            // GL (contexto perdido a meio da execução, handle órfão) subir
+            // para o chamador. Sempre retorna null em falha; quem chama já
+            // trata null como "usar fallback CPU".
+            console.warn('[PixelarGL] render() falhou:', e);
+            contextLost = true;
+            return null;
         }
-
-        let paletteCount = 0;
-        if (usePalette && palette && palette.length > 0) {
-            paletteCount = uploadPaletteTo(paletteTex, paletteCache, palette, paletteHash);
-            // A paleta de referência (a que decide qual pixel vira qual índice) deve ter
-            // sempre a mesma paleta usada por padrão, caindo de volta para `palette` se
-            // nenhuma referência específica foi passada (compatibilidade / mesmo comportamento
-            // de antes quando as duas coincidem).
-            const refPal = (refPalette && refPalette.length > 0) ? refPalette : palette;
-            const refHash = refPaletteHash || paletteHash;
-            uploadPaletteTo(refPaletteTex, refPaletteCache, refPal, refHash);
-        }
-
-        gl.uniform1i(gl.getUniformLocation(program, 'uSource'), 0);
-        gl.uniform1i(gl.getUniformLocation(program, 'uDither'), 1);
-        gl.uniform1i(gl.getUniformLocation(program, 'uGrad'), 2);
-        gl.uniform1i(gl.getUniformLocation(program, 'uPalette'), 4);
-        gl.uniform1i(gl.getUniformLocation(program, 'uRefPalette'), 5);
-        gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), w, h);
-        gl.uniform1f(gl.getUniformLocation(program, 'uMinL'), minL);
-        gl.uniform1f(gl.getUniformLocation(program, 'uMaxL'), maxL);
-        gl.uniform1i(gl.getUniformLocation(program, 'uShadowsInverted'), shadowsInverted ? 1 : 0);
-        gl.uniform1i(gl.getUniformLocation(program, 'uMidDitherEnabled'), midDitherEnabled ? 1 : 0);
-        gl.uniform1i(gl.getUniformLocation(program, 'uUseGrad'), (useGrad && gradData) ? 1 : 0);
-        const blendMap = { normal: 0, multiply: 1, screen: 2, overlay: 3, color: 4 };
-        gl.uniform1i(gl.getUniformLocation(program, 'uGradBlend'), blendMap[gradBlend] !== undefined ? blendMap[gradBlend] : 0);
-        gl.uniform1i(gl.getUniformLocation(program, 'uUsePalette'), (usePalette && palette && palette.length>0) ? 1 : 0);
-        gl.uniform1f(gl.getUniformLocation(program, 'uPaletteCount'), paletteCount > 0 ? paletteCount : 1);
-        gl.uniform1f(gl.getUniformLocation(program, 'uRgbShift'), rgbShift || 0);
-
-        gl.disable(gl.BLEND);
-        gl.clearColor(0,0,0,0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-        const out = new Uint8Array(w * h * 4);
-        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, out);
-
-        return new Uint8ClampedArray(out.buffer);
     }
 
     return { init, isAvailable, render };
@@ -1452,9 +1483,72 @@ const PIXELAR_FX_LIST = [
     }`
   },
 
-  
-  
-  
+  {
+    id: 'vignette', nome: 'Vinheta',
+    uniforms: { uRadius: 0.75, uSoftness: 0.45, uIntensity: 0.6, uColor_r: 0.0, uColor_g: 0.0, uColor_b: 0.0 },
+    src: `
+    uniform float uRadius, uSoftness, uIntensity;
+    uniform float uColor_r, uColor_g, uColor_b;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        vec2 aspect = uResolution.x > uResolution.y ? vec2(uResolution.x/uResolution.y, 1.0) : vec2(1.0, uResolution.y/uResolution.x);
+        vec2 offset = (vUv - 0.5) * aspect;
+        float dist = length(offset);
+        float mask = smoothstep(uRadius - uSoftness, uRadius, dist) * uIntensity;
+        vec3 vigColor = vec3(uColor_r, uColor_g, uColor_b);
+        vec3 result = mix(c, vigColor, mask);
+        outColor = vec4(clamp(result, 0.0, 1.0), 1.0);
+    }`
+  },
+
+  {
+    // Bloom: parente direto do "bokeh_blur" acima -- reaproveita o mesmo
+    // padrão de 24 amostras radiais para o blur, mas em vez de PESAR e
+    // MISTURAR os pixels (como o bokeh_blur faz), extrai antes uma máscara
+    // de brilho (só pixels acima de uThreshold entram no blur) e depois
+    // SOMA aditivamente esse glow borrado sobre a imagem nítida original,
+    // multiplicado por uIntensity -- é literalmente um bokeh_blur restrito
+    // às altas-luzes e aplicado como halo aditivo, não como substituição.
+    id: 'bloom', nome: 'Bloom',
+    uniforms: { uThreshold: 0.7, uRadius: 8.0, uIntensity: 1.2 },
+    src: `
+    uniform float uThreshold, uRadius, uIntensity;
+    void main() {
+        vec3 original = texture(uSource, vUv).rgb;
+        vec2 texel = 1.0/uResolution;
+        vec3 glowSum = vec3(0.0);
+        float wsum = 0.0;
+        const int SAMPLES = 24;
+        for (int i = 0; i < SAMPLES; i++) {
+            float a = float(i) / float(SAMPLES) * 6.28318;
+            float r = sqrt(float(i) / float(SAMPLES));
+            vec2 off = vec2(cos(a), sin(a)) * r * uRadius * texel;
+            vec3 s = texture(uSource, vUv + off).rgb;
+            float br = luma(s);
+            float bright = max(0.0, br - uThreshold);
+            glowSum += s * bright;
+            wsum += 1.0;
+        }
+        vec3 bloomGlow = glowSum / max(wsum, 0.001);
+        outColor = vec4(clamp(original + bloomGlow * uIntensity, 0.0, 1.0), 1.0);
+    }`
+  },
+
+  {
+    id: 'solarize', nome: 'Solarização',
+    uniforms: { uThreshold: 0.5, uSoftness: 0.05 },
+    src: `
+    uniform float uThreshold, uSoftness;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb;
+        float l = luma(c);
+        float mask = smoothstep(uThreshold - uSoftness, uThreshold + uSoftness, l);
+        vec3 inverted = 1.0 - c;
+        vec3 result = mix(c, inverted, mask);
+        outColor = vec4(clamp(result, 0.0, 1.0), 1.0);
+    }`
+  },
+
   
   
   
@@ -1509,9 +1603,29 @@ const PixelarFX = (function () {
         if (!gl) { initialized = true; return false; }
         isWebGL2 = true;
 
-        glCanvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; }, false);
-        glCanvas.addEventListener('webglcontextrestored', () => { contextLost = false; programCache_clear(); }, false);
+        glCanvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            contextLost = true;
+            console.warn('[PixelarFX] webglcontextlost disparado em', new Date().toISOString(), '- efeito ativo no momento:', (typeof document !== 'undefined' && document.getElementById('fxEffectSelect')) ? document.getElementById('fxEffectSelect').value : 'desconhecido');
+        }, false);
+        glCanvas.addEventListener('webglcontextrestored', () => {
+            console.warn('[PixelarFX] webglcontextrestored disparado em', new Date().toISOString(), '- reconstruindo VAO/texturas/programas');
+            programCache_clear();
+            // O contexto perdido destrói TODOS os recursos GPU associados (VAO,
+            // buffers, texturas, programas) — não basta limpar o cache de
+            // programas em JS, é preciso recriar o VAO/textura base aqui, senão
+            // a próxima chamada de render() usa handles órfãos de um contexto
+            // morto e falha silenciosamente (ou em loop) até o reload da página.
+            try { setupBaseResources(); contextLost = false; }
+            catch (e) { console.warn('[PixelarFX] falha ao reconstruir recursos após restauração de contexto:', e); contextLost = true; }
+        }, false);
 
+        setupBaseResources();
+        initialized = true;
+        return true;
+    }
+
+    function setupBaseResources() {
         const quad = new Float32Array([-1,-1, 1,-1, -1,1, 1,1]);
         vao = gl.createVertexArray();
         gl.bindVertexArray(vao);
@@ -1525,13 +1639,20 @@ const PixelarFX = (function () {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-        initialized = true;
-        return true;
     }
 
     function programCache_clear() {
-        for (const k in programCache) delete programCache[k];
+        // Quando chamado por perda de contexto, o driver já invalidou os
+        // WebGLProgram/WebGLShader internamente — chamar gl.deleteProgram()
+        // aqui seria um no-op inofensivo (spec: chamadas em objetos de um
+        // contexto perdido são ignoradas), então é seguro tentar sempre,
+        // sem precisar diferenciar o motivo da limpeza. Isso evita segurar
+        // referências a programas mortos por mais tempo que o necessário
+        // em sessões longas de troca de efeito.
+        for (const k in programCache) {
+            try { if (gl && programCache[k] && programCache[k].program) gl.deleteProgram(programCache[k].program); } catch (e) {}
+            delete programCache[k];
+        }
     }
 
     function isAvailable() {
@@ -1589,42 +1710,50 @@ const PixelarFX = (function () {
         if (!isAvailable()) return null;
         if (contextLost) return null;
 
-        let entry;
-        try { entry = getOrCompile(effectId); }
-        catch (e) { console.warn('PixelarFX: falha ao compilar/usar efeito', effectId, e); return null; }
+        try {
+            const entry = getOrCompile(effectId);
+            const { program, uniformLocs, def } = entry;
 
-        const { program, uniformLocs, def } = entry;
+            glCanvas.width = w; glCanvas.height = h;
+            gl.viewport(0, 0, w, h);
+            gl.useProgram(program);
+            gl.bindVertexArray(vao);
+            gl.enableVertexAttribArray(uniformLocs.aPos);
+            gl.vertexAttribPointer(uniformLocs.aPos, 2, gl.FLOAT, false, 0, 0);
 
-        glCanvas.width = w; glCanvas.height = h;
-        gl.viewport(0, 0, w, h);
-        gl.useProgram(program);
-        gl.bindVertexArray(vao);
-        gl.enableVertexAttribArray(uniformLocs.aPos);
-        gl.vertexAttribPointer(uniformLocs.aPos, 2, gl.FLOAT, false, 0, 0);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, colorData);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, colorData);
+            gl.uniform1i(uniformLocs.uSource, 0);
+            gl.uniform2f(uniformLocs.uResolution, w, h);
+            const t = (timeSeconds !== undefined) ? timeSeconds : (((typeof performance !== 'undefined') ? performance.now() : Date.now()) - startTime) / 1000;
+            gl.uniform1f(uniformLocs.uTime, t);
 
-        gl.uniform1i(uniformLocs.uSource, 0);
-        gl.uniform2f(uniformLocs.uResolution, w, h);
-        const t = (timeSeconds !== undefined) ? timeSeconds : (((typeof performance !== 'undefined') ? performance.now() : Date.now()) - startTime) / 1000;
-        gl.uniform1f(uniformLocs.uTime, t);
+            const merged = Object.assign({}, def.uniforms, params || {});
+            for (const key in merged) {
+                const loc = uniformLocs[key];
+                if (loc) gl.uniform1f(loc, merged[key]);
+            }
 
-        const merged = Object.assign({}, def.uniforms, params || {});
-        for (const key in merged) {
-            const loc = uniformLocs[key];
-            if (loc) gl.uniform1f(loc, merged[key]);
+            gl.disable(gl.BLEND);
+            gl.clearColor(0,0,0,0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            const out = new Uint8Array(w * h * 4);
+            gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, out);
+            return new Uint8ClampedArray(out.buffer);
+        } catch (e) {
+            // Qualquer falha GL a meio da execução (contexto perdido entre o
+            // isAvailable() acima e agora, VAO/textura órfãos, shader
+            // inválido) cai aqui em vez de lançar para o chamador — o
+            // contrato de render() é sempre retornar null em falha, nunca
+            // deixar uma exceção não tratada subir e quebrar o pipeline.
+            console.warn('[PixelarFX] render() falhou para efeito', effectId, ':', e);
+            contextLost = true;
+            return null;
         }
-
-        gl.disable(gl.BLEND);
-        gl.clearColor(0,0,0,0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-        const out = new Uint8Array(w * h * 4);
-        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, out);
-        return new Uint8ClampedArray(out.buffer);
     }
 
     return { init, isAvailable, render, listEffects, getEffectDef };
@@ -2885,6 +3014,319 @@ const DEFAULT_PRESETS = {
         "fx": "photocopy",
         "fxMix": "30",
         "fxParams": { "uContrast": 2.0, "uStreaks": 0.4, "uInk_r": 0.1, "uInk_g": 0.1, "uInk_b": 0.1, "uPaper_r": 0.94, "uPaper_g": 0.93, "uPaper_b": 0.88 }
+    },
+
+    "Vinheta Noir": {
+        "px": "1",
+        "col": "2",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "25",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#080604", "#F4F1EA"],
+        "rc": ["#080604", "#F4F1EA"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "vignette",
+        "fxMix": "70",
+        "fxParams": { "uRadius": 0.7, "uSoftness": 0.5, "uIntensity": 0.65, "uColor_r": 0.0, "uColor_g": 0.0, "uColor_b": 0.0 },
+        "grainAmt": "18",
+        "grainSz": "100",
+        "grainRough": "45",
+        "grainSB": "20",
+        "grainSpk": "0",
+        "grainMono": true
+    },
+
+    "Cianotipia Vinhetada": {
+        "px": "1",
+        "col": "2",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "10",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#08204A", "#EAF2FA"],
+        "rc": ["#08204A", "#EAF2FA"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "vignette",
+        "fxMix": "55",
+        "fxParams": { "uRadius": 0.75, "uSoftness": 0.45, "uIntensity": 0.5, "uColor_r": 0.03, "uColor_g": 0.08, "uColor_b": 0.18 }
+    },
+
+    "Bloom Neon": {
+        "px": "1",
+        "col": "6",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "30",
+        "cont": "15",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#FF00A8", "#00E5FF", "#7B2FFF", "#00FF85", "#FFD400", "#0A0A1A"],
+        "rc": ["#FF00A8", "#00E5FF", "#7B2FFF", "#00FF85", "#FFD400", "#0A0A1A"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "bloom",
+        "fxMix": "80",
+        "fxParams": { "uThreshold": 0.6, "uRadius": 9.0, "uIntensity": 1.4 }
+    },
+
+    "Solarizado 70s": {
+        "px": "1",
+        "col": "8",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "10",
+        "cont": "10",
+        "temp": "15",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#2B1600", "#8A4B00", "#C97B1E", "#E8A94A", "#F2CE8C", "#F7E4BF", "#4A2E12", "#D96A3C"],
+        "rc": ["#2B1600", "#8A4B00", "#C97B1E", "#E8A94A", "#F2CE8C", "#F7E4BF", "#4A2E12", "#D96A3C"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "solarize",
+        "fxMix": "65",
+        "fxParams": { "uThreshold": 0.5, "uSoftness": 0.08 },
+        "grainAmt": "22",
+        "grainSz": "120",
+        "grainRough": "50",
+        "grainSB": "15",
+        "grainSpk": "10",
+        "grainMono": true
+    },
+
+    "Duotone Frio": {
+        "px": "1",
+        "col": "duotone",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "5",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#0A1A2F", "#DCE9F5"],
+        "rc": ["#0A1A2F", "#DCE9F5"],
+        "palMode": "duotone",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {}
+    },
+
+    "Tritone Editorial": {
+        "px": "1",
+        "col": "tritone",
+        "dith": "none",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "5",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#2B1D14", "#A9713F", "#F0E4D0"],
+        "rc": ["#2B1D14", "#A9713F", "#F0E4D0"],
+        "palMode": "tritone",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {}
+    },
+
+    "Bayer Fino": {
+        "px": "2",
+        "col": "6",
+        "dith": "bayer8",
+        "exp": "0",
+        "bri": "0",
+        "som": "0",
+        "sat": "0",
+        "cont": "10",
+        "temp": "0",
+        "post": "0",
+        "dScale": "1",
+        "dInt": "100",
+        "shInv": false,
+        "effMidDither": false,
+        "fillBg": false,
+        "bgColor": "#F0F0F0",
+        "cc": ["#101010", "#404040", "#707070", "#A0A0A0", "#D0D0D0", "#FFFFFF"],
+        "rc": ["#101010", "#404040", "#707070", "#A0A0A0", "#D0D0D0", "#FFFFFF"],
+        "palMode": "preset",
+        "inv": false,
+        "rSht": "0",
+        "edgC": "#1A1A1A",
+        "edgSiz": "0",
+        "pHue": "0",
+        "pSat": "0",
+        "pLig": "0",
+        "tOpa": "100",
+        "eOpa": "100",
+        "iSca": "100",
+        "iGrad": false,
+        "iGradTyp": "linear",
+        "iGradAng": "90",
+        "iGradCol": ["#FF00FF", "#00FFFF"],
+        "iGradStp": "0",
+        "iGradPos": "50",
+        "iGradSmt": "100",
+        "iGradBld": "source-atop",
+        "fx": "none",
+        "fxMix": "100",
+        "fxParams": {}
     }
 };
 
@@ -2946,6 +3388,20 @@ try {
                     let factor = 0;
                     if (mode === 'halftone') { let size = Math.max(2, scale * 3); let rx = x * cC - y * sC; let ry = x * sC + y * cC; let cx = (Math.abs(rx) % size) - size / 2; let cy = (Math.abs(ry) % size) - size / 2; let dist = Math.sqrt(cx * cx + cy * cy); let maxDist = size / 1.5; factor = ((dist / maxDist) - 0.5) * 1.5; } 
                     else if (mode === 'nintendo_ds') { let mx = sx % 4, my = sy % 4; let bayer = [ [0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5] ]; factor = (bayer[my][mx] / 15 - 0.5) * 0.5; } 
+                    else if (mode === 'bayer8') { let mx = sx % 8, my = sy % 8; let bayer8 = [ [0,32,8,40,2,34,10,42],[48,16,56,24,50,18,58,26],[12,44,4,36,14,46,6,38],[60,28,52,20,62,30,54,22],[3,35,11,43,1,33,9,41],[51,19,59,27,49,17,57,25],[15,47,7,39,13,45,5,37],[63,31,55,23,61,29,53,21] ]; factor = (bayer8[my][mx] / 63 - 0.5) * 0.5; }
+                    else if (mode === 'floyd_approx') {
+                        // Aproximação visual do padrão Floyd-Steinberg (NÃO é o algoritmo real).
+                        // FS verdadeiro exige difusão de erro sequencial pixel-a-pixel (linha a
+                        // linha, com dependência do pixel anterior), o que é incompatível com o
+                        // pipeline atual, paralelo e vetorizável por pixel independente (necessário
+                        // para rodar no shader GLSL do PixelarGL). Em vez disso, simula a mesma
+                        // "textura" de ruído estruturado assimétrico do FS usando os 4 pesos
+                        // característicos da difusão (7/16, 3/16, 5/16, 1/16) como uma matriz fixa
+                        // 4x4 pré-computada, sem qualquer dependência de estado entre pixels.
+                        let mx = sx % 4, my = sy % 4;
+                        let fsWeights = [ [0,0,7,3],[5,1,0,0],[3,7,0,0],[0,0,1,5] ];
+                        factor = (fsWeights[my][mx] / 16 - 0.5) * 0.6;
+                    }
                     else if (mode === 'checkerboard') factor = ((sx + sy) % 2 === 0) ? -0.3 : 0.3; 
                     else if (mode === 'scanlines') factor = (sy % 3 === 0) ? -0.4 : 0.1; 
                     else if (mode === 'noise') factor = (Math.random() - 0.5) * 0.4;
@@ -3246,7 +3702,7 @@ try {
             btn.addEventListener('click', (e) => {
                 const target = btn.getAttribute('data-target');
                 if (target === 'ajustes') resetAdjustments(e);
-                if (target === 'colors') { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); scheduleAppProcess(); }
+                if (target === 'colors') { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); updateDuotoneUI(); scheduleAppProcess(); }
                 if (target === 'pixelReset') { document.getElementById('pxSize').value = 1; document.getElementById('ditherSelect').value = 'none'; document.getElementById('ditherScale').value = 1; document.getElementById('ditherIntensity').value = 100; isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state'); document.getElementById('textureOpacity').value = 100; document.getElementById('fxEffectSelect').value = 'none'; document.getElementById('fxEffectMix').value = 100; buildFxControls('none'); updateFilmSubControls('none'); currentVencidoVariant = 0; document.getElementById('lumiereHue').value = 280; document.getElementById('grainAmount').value = 0; document.getElementById('grainSize').value = 100; document.getElementById('grainRoughness').value = 45; document.getElementById('grainShadowBias').value = 20; document.getElementById('grainSpeckle').value = 0; document.getElementById('grainMono').checked = true; updateBadges(); scheduleAppProcess(); }
             });
         });
@@ -3303,7 +3759,8 @@ try {
                 uShadowTone:'Cor das Sombras', uHighTone:'Cor das Luzes', uInk:'Cor da Tinta', uPaper:'Cor do Papel',
                 uC1:'Cor 1', uC2:'Cor 2', uC3:'Cor 3', uC4:'Cor 4',
                 uFade:'Desbotado', uSatShift:'Saturação', uBlackPoint:'Ponto de Preto', uWhitePoint:'Ponto de Branco',
-                uWarmth:'Calor do Preto', uMicroGrain:'Micro-grão', uSpread:'Alcance Tonal', uLeak:'Cor do Vazamento'
+                uWarmth:'Calor do Preto', uMicroGrain:'Micro-grão', uSpread:'Alcance Tonal', uLeak:'Cor do Vazamento',
+                uSoftness:'Suavidade'
             };
             return labels[key] || key.replace(/^u/, '');
         }
@@ -3331,7 +3788,7 @@ try {
             uOffset: [0, 1], uPhase: [0, 12.566], uToneAmount: [0, 1],
             uStreaks: [0, 1], uJitter: [0, 0.03], uBleed: [0, 0.02], uScanline: [0, 1], uNoise: [0, 0.3],
             uFade: [0, 1], uSatShift: [0, 1.5], uBlackPoint: [0, 0.3], uWhitePoint: [0.7, 1],
-            uWarmth: [0, 1], uMicroGrain: [0, 0.3], uSpread: [0.1, 1.5]
+            uWarmth: [0, 1], uMicroGrain: [0, 0.3], uSpread: [0.1, 1.5], uSoftness: [0.01, 1]
         };
 
         function buildFxControls(effectId) {
@@ -3531,10 +3988,48 @@ try {
         function updateImgGradUI() { const useGrad = document.getElementById('imgGradient').checked; document.getElementById('imgGradientControls').style.display = useGrad ? 'flex' : 'none'; document.getElementById('imgGradAngleContainer').style.display = document.getElementById('imgGradType').value === 'linear' ? 'flex' : 'none'; updateBadges(); }
         document.getElementById('imgGradient').addEventListener('change', () => { updateImgGradUI(); scheduleAppProcess(); }); document.getElementById('imgGradType').addEventListener('change', () => { updateImgGradUI(); scheduleAppProcess(); });
 
+        function updateDuotoneUI() {
+            const val = document.getElementById('colorSelect').value;
+            const panel = document.getElementById('duotoneControls');
+            const color3 = document.getElementById('duotoneColor3');
+            if (!panel) return;
+            if (val === 'duotone' || val === 'tritone') {
+                panel.style.display = 'flex';
+                color3.style.display = (val === 'tritone') ? 'block' : 'none';
+                document.getElementById('colorsGrid').style.display = 'none';
+            } else {
+                panel.style.display = 'none';
+                document.getElementById('colorsGrid').style.display = 'grid';
+            }
+        }
+        function applyDuotoneColors() {
+            const val = document.getElementById('colorSelect').value;
+            const c1 = hexToRgb(document.getElementById('duotoneColor1').value);
+            const c2 = hexToRgb(document.getElementById('duotoneColor2').value);
+            if (val === 'tritone') {
+                const c3 = hexToRgb(document.getElementById('duotoneColor3').value);
+                globalCurrentPalette = [c1, c2, c3];
+            } else {
+                globalCurrentPalette = [c1, c2];
+            }
+            referencePalette = clone(globalCurrentPalette);
+            basePalette = clone(globalCurrentPalette);
+            scheduleAppProcess();
+        }
+        ['duotoneColor1','duotoneColor2','duotoneColor3'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', applyDuotoneColors);
+        });
+
         document.getElementById('colorSelect').addEventListener('change', (e) => {
             if(locks.colors || locks.colorSelect) return; const val = e.target.value;
-            if (val === 'all') { currentPaletteMode = 'original'; globalCurrentPalette = []; referencePalette = []; setBasePalette([]); } 
-            else { const qty = parseInt(val, 10); if (currentPaletteMode === 'original' || globalCurrentPalette.length === 0) { globalCurrentPalette = []; referencePalette = []; } else { globalCurrentPalette = interpolatePalette(basePalette, qty); referencePalette = clone(globalCurrentPalette); setBasePalette(globalCurrentPalette); } }
+            if (val === 'duotone' || val === 'tritone') {
+                currentPaletteMode = val;
+                updateDuotoneUI();
+                applyDuotoneColors();
+            }
+            else if (val === 'all') { currentPaletteMode = 'original'; globalCurrentPalette = []; referencePalette = []; setBasePalette([]); updateDuotoneUI(); } 
+            else { const qty = parseInt(val, 10); if (currentPaletteMode === 'original' || currentPaletteMode === 'duotone' || currentPaletteMode === 'tritone' || globalCurrentPalette.length === 0) { globalCurrentPalette = []; referencePalette = []; currentPaletteMode = 'original'; } else { globalCurrentPalette = interpolatePalette(basePalette, qty); referencePalette = clone(globalCurrentPalette); setBasePalette(globalCurrentPalette); } updateDuotoneUI(); }
             updateBadges(); scheduleAppProcess();
         });
 
@@ -3567,7 +4062,7 @@ try {
             scheduleAppProcess();
         }
         
-        document.getElementById('btnOriginal').addEventListener('click', () => { if (!locks.colors) { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); } scheduleAppProcess(); });
+        document.getElementById('btnOriginal').addEventListener('click', () => { if (!locks.colors) { isImageInverted = false; currentPaletteMode = 'original'; document.getElementById('colorSelect').value = 'all'; document.getElementById('imgGradient').checked = false; updateImgGradUI(); globalCurrentPalette = []; referencePalette = []; setBasePalette([]); updateDuotoneUI(); } scheduleAppProcess(); });
 
         function renderPalettes() {
             const grid = document.getElementById('savedPalettesGrid'); grid.innerHTML = '';
@@ -3586,7 +4081,7 @@ try {
         document.getElementById('btnSavePalette').addEventListener('click', () => { if(document.getElementById('colorSelect').value === 'all') { showToast("Mude para um número específico de cores para salvar."); return; } let name = promptModal("Dê um nome para esta paleta:", "Minha Paleta"); if(!name) return; savedPalettes[name] = [...globalCurrentPalette]; try { localStorage.setItem('pixelarPalettes', JSON.stringify(savedPalettes)); } catch(e){} renderPalettes(); });
 
         function randPx() { if(!locks.pxSize) { document.getElementById('pxSize').value = 1 + Math.floor(Math.random() * 4); } }
-        function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "halftone", "checkerboard", "scanlines", "noise"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
+        function randDith() { if(!locks.ditherSelect) { const d = ["none", "nintendo_ds", "halftone", "checkerboard", "scanlines", "noise", "bayer8", "floyd_approx"]; document.getElementById('ditherSelect').value = d[Math.floor(Math.random() * d.length)]; } }
         function randColQty() { if(!locks.colorSelect) { const c = ["2", "3", "4", "6", "8", "12", "16", "24", "32"]; document.getElementById('colorSelect').value = c[Math.floor(Math.random() * c.length)]; } }
 
         // Sorteia um efeito de textura do catálogo PixelarFX + valores aleatórios para
@@ -3705,7 +4200,7 @@ try {
             document.getElementById('rgbShift').value = p.rSht !== undefined ? p.rSht : 0; if(p.edgC) document.getElementById('edgeColor').value = p.edgC; if(p.edgSiz !== undefined) document.getElementById('edgePixelSize').value = p.edgSiz;
             if(p.tOpa !== undefined) document.getElementById('textureOpacity').value = p.tOpa; if(p.eOpa !== undefined) document.getElementById('edgeOpacity').value = p.eOpa; if(p.iSca !== undefined) document.getElementById('imageScale').value = p.iSca;
             document.getElementById('imgGradient').checked = p.iGrad || false; if(p.iGradTyp) document.getElementById('imgGradType').value = p.iGradTyp; if(p.iGradAng !== undefined) document.getElementById('imgGradAngle').value = p.iGradAng; if(p.iGradStp !== undefined) document.getElementById('imgGradSteps').value = p.iGradStp; if(p.iGradPos !== undefined) document.getElementById('imgGradPos').value = p.iGradPos; if(p.iGradSmt !== undefined) document.getElementById('imgGradSmooth').value = p.iGradSmt; if(p.iGradBld) document.getElementById('imgGradBlend').value = p.iGradBld; if(p.iGradCol) { currentImgGradColors = p.iGradCol; renderImgGradColors(); }
-            if (!locks.colors) { currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false; if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); if (p.rc && p.rc.length > 0) { referencePalette = p.rc.map(hexToRgb); } else { referencePalette = clone(globalCurrentPalette); } setBasePalette(globalCurrentPalette); } }
+            if (!locks.colors) { currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false; if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); if (p.rc && p.rc.length > 0) { referencePalette = p.rc.map(hexToRgb); } else { referencePalette = clone(globalCurrentPalette); } setBasePalette(globalCurrentPalette); if (currentPaletteMode === 'duotone' || currentPaletteMode === 'tritone') { document.getElementById('duotoneColor1').value = rgbToHex(globalCurrentPalette[0].r, globalCurrentPalette[0].g, globalCurrentPalette[0].b); document.getElementById('duotoneColor2').value = rgbToHex(globalCurrentPalette[1].r, globalCurrentPalette[1].g, globalCurrentPalette[1].b); if (globalCurrentPalette[2]) document.getElementById('duotoneColor3').value = rgbToHex(globalCurrentPalette[2].r, globalCurrentPalette[2].g, globalCurrentPalette[2].b); } } updateDuotoneUI(); }
             document.getElementById('grainAmount').value = p.grainAmt !== undefined ? p.grainAmt : 0;
             document.getElementById('grainSize').value = p.grainSz !== undefined ? p.grainSz : 100;
             document.getElementById('grainRoughness').value = p.grainRough !== undefined ? p.grainRough : 45;
@@ -3848,7 +4343,8 @@ function renderPresets() {
 
             setProgress(40); await yieldToMain(); if (myId !== currentProcessId) return;
 
-            let usePalette = (cLimitStr !== 'all'); let targetColors = usePalette ? parseInt(cLimitStr, 10) : 256;
+            let usePalette = (cLimitStr !== 'all' && cLimitStr !== 'duotone' && cLimitStr !== 'tritone'); let targetColors = usePalette ? parseInt(cLimitStr, 10) : 256;
+            const isDuotoneMode = (cLimitStr === 'duotone' || cLimitStr === 'tritone');
             const step = 4 * Math.max(1, Math.floor((smallW * smallH) / 4000));
             const getBalancedPalette = (mappedArr, targetSize) => { mappedArr.sort((a,b) => b.count - a.count); if (targetSize < 2 || mappedArr.length <= targetSize) return mappedArr.slice(0, targetSize).map(x => x.col); let pool = mappedArr.slice(0, Math.max(targetSize * 2, 4)); if (pool.length < 2) return mappedArr.slice(0, targetSize).map(x => x.col); pool.sort((a,b) => a.luma - b.luma); let darkest = pool[0]; let lightest = pool[pool.length - 1]; let finalPalette = [darkest, lightest]; mappedArr = mappedArr.filter(x => x !== darkest && x !== lightest); mappedArr.sort((a,b) => b.count - a.count); for (let i = 0; i < targetSize - 2; i++) { if (mappedArr[i]) finalPalette.push(mappedArr[i]); } return finalPalette.map(x => x.col); };
 
@@ -3862,13 +4358,13 @@ function renderPresets() {
             }
             setProgress(80); await yieldToMain(); if (myId !== currentProcessId) return;
 
-            engineDataCache = { data: new Uint8ClampedArray(d), w: smallW, h: smallH, minL: minL, maxL: maxL, displayPalette: [...globalCurrentPalette], referencePalette: [...referencePalette], usePal: usePalette };
+            engineDataCache = { data: new Uint8ClampedArray(d), w: smallW, h: smallH, minL: minL, maxL: maxL, displayPalette: [...globalCurrentPalette], referencePalette: [...referencePalette], usePal: usePalette, isDuotoneMode: isDuotoneMode };
             await renderImageCanvas(myId); 
         }
 
         async function renderImageCanvas(myId) {
             if(!engineDataCache || myId !== currentProcessId) { hideLoading(); return; }
-            const { w, h, minL, maxL, displayPalette, referencePalette, usePal } = engineDataCache;
+            const { w, h, minL, maxL, displayPalette, referencePalette, usePal, isDuotoneMode } = engineDataCache;
             let d = new Uint8ClampedArray(engineDataCache.data);
 
             const px = parseInt(document.getElementById('pxSize').value, 10);
@@ -3899,7 +4395,7 @@ function renderPresets() {
             if (usePal && referencePalette && referencePalette.length > 0) { updateColorLUT(referencePalette); }
 
             let gpuOk = false;
-            if (typeof PixelarGL !== 'undefined' && PixelarGL.isAvailable()) {
+            if (!isDuotoneMode && typeof PixelarGL !== 'undefined' && PixelarGL.isAvailable()) {
                 try {
                     const displayPal = usePal ? (globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette) : [];
                     const paletteHash = usePal ? displayPal.map(c => c.r+','+c.g+','+c.b).join('|') : '';
@@ -3945,7 +4441,20 @@ function renderPresets() {
 
                         if (gradData) { let gr = gradData.d[i], gg = gradData.d[i+1], gb = gradData.d[i+2]; if(gradData.b === 'multiply') { r = (r * gr) / 255; g = (g * gg) / 255; b = (b * gb) / 255; } else if(gradData.b === 'screen') { r = 255 - ((255 - r) * (255 - gr)) / 255; g = 255 - ((255 - g) * (255 - gg)) / 255; b = 255 - ((255 - b) * (255 - gb)) / 255; } else if(gradData.b === 'overlay') { r = r < 128 ? (2 * r * gr) / 255 : 255 - (2 * (255 - r) * (255 - gr)) / 255; g = g < 128 ? (2 * g * gg) / 255 : 255 - (2 * (255 - g) * (255 - gg)) / 255; b = b < 128 ? (2 * b * gb) / 255 : 255 - (2 * (255 - b) * (255 - gb)) / 255; } else if(gradData.b === 'color') { let hslOrig = rgbToHsl(r,g,b); let hslGrad = rgbToHsl(gr,gg,gb); let nc = hslToRgb(hslGrad.h, hslGrad.s, hslOrig.l); r=nc.r; g=nc.g; b=nc.b; } else { r = gr; g = gg; b = gb; } }
 
-                        if (usePal && referencePalette && referencePalette.length > 0) { 
+                        if (isDuotoneMode && globalCurrentPalette.length >= 2) {
+                            // Duotone/Tritone: ignora completamente a cor original (LUT de 32³) e
+                            // reconstrói o pixel apenas a partir da luminância, interpolando entre
+                            // as 2 ou 3 cores fixas escolhidas pelo usuário — O(1) por pixel.
+                            let t = Math.max(0, Math.min(1, pxLuma / 255));
+                            let dc;
+                            if (globalCurrentPalette.length >= 3) {
+                                if (t < 0.5) { let lt = t / 0.5; dc = { r: globalCurrentPalette[0].r + (globalCurrentPalette[1].r - globalCurrentPalette[0].r) * lt, g: globalCurrentPalette[0].g + (globalCurrentPalette[1].g - globalCurrentPalette[0].g) * lt, b: globalCurrentPalette[0].b + (globalCurrentPalette[1].b - globalCurrentPalette[0].b) * lt }; }
+                                else { let lt = (t - 0.5) / 0.5; dc = { r: globalCurrentPalette[1].r + (globalCurrentPalette[2].r - globalCurrentPalette[1].r) * lt, g: globalCurrentPalette[1].g + (globalCurrentPalette[2].g - globalCurrentPalette[1].g) * lt, b: globalCurrentPalette[1].b + (globalCurrentPalette[2].b - globalCurrentPalette[1].b) * lt }; }
+                            } else {
+                                dc = { r: globalCurrentPalette[0].r + (globalCurrentPalette[1].r - globalCurrentPalette[0].r) * t, g: globalCurrentPalette[0].g + (globalCurrentPalette[1].g - globalCurrentPalette[0].g) * t, b: globalCurrentPalette[0].b + (globalCurrentPalette[1].b - globalCurrentPalette[0].b) * t };
+                            }
+                            d[i] = dc.r; d[i+1] = dc.g; d[i+2] = dc.b;
+                        } else if (usePal && referencePalette && referencePalette.length > 0) { 
                             let idx3D = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
                             let bestIdx = colorLUTCache[idx3D];
                             let targetPal = globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette; 
@@ -4098,13 +4607,14 @@ function renderPresets() {
             const dithInt = parseInt(document.getElementById('ditherIntensity').value, 10) / 100; const texAngle = 45 * Math.PI / 180;
             const rgbShift = parseInt(document.getElementById('rgbShift').value, 10); const texOpa = parseInt(document.getElementById('textureOpacity').value, 10) / 100;
 
-            let usePalette = (currentPaletteMode !== 'original' && referencePalette && referencePalette.length > 0);
+            let usePalette = (currentPaletteMode !== 'original' && currentPaletteMode !== 'duotone' && currentPaletteMode !== 'tritone' && referencePalette && referencePalette.length > 0);
+            const isDuotoneModeVid = (currentPaletteMode === 'duotone' || currentPaletteMode === 'tritone');
             if (usePalette) updateColorLUT(referencePalette);
             
             let ditherMap = getDitherMap(smallW, smallH, ditherMode, dithScale, dithInt, texAngle, texOpa);
 
             let vidGpuOk = false;
-            if (typeof PixelarGL !== 'undefined' && PixelarGL.isAvailable()) {
+            if (!isDuotoneModeVid && typeof PixelarGL !== 'undefined' && PixelarGL.isAvailable()) {
                 try {
                     const paletteHash = usePalette ? (globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette).map(c => c.r+','+c.g+','+c.b).join('|') : '';
                     const refPaletteHash = usePalette ? referencePalette.map(c => c.r+','+c.g+','+c.b).join('|') : '';
@@ -4144,7 +4654,17 @@ function renderPresets() {
                         if (isMidDitherEnabled) { let norm = (pxLuma - minL) / (maxL - minL || 1); if (norm < 0.25 || norm > 0.75) factor = 0; }
                         if (factor !== 0) { let spread = 120; r = Math.max(0, Math.min(255, r + factor * spread)); g = Math.max(0, Math.min(255, g + factor * spread)); b = Math.max(0, Math.min(255, b + factor * spread)); }
 
-                        if (usePalette) {
+                        if (isDuotoneModeVid && globalCurrentPalette.length >= 2) {
+                            let t = Math.max(0, Math.min(1, pxLuma / 255));
+                            let dc;
+                            if (globalCurrentPalette.length >= 3) {
+                                if (t < 0.5) { let lt = t / 0.5; dc = { r: globalCurrentPalette[0].r + (globalCurrentPalette[1].r - globalCurrentPalette[0].r) * lt, g: globalCurrentPalette[0].g + (globalCurrentPalette[1].g - globalCurrentPalette[0].g) * lt, b: globalCurrentPalette[0].b + (globalCurrentPalette[1].b - globalCurrentPalette[0].b) * lt }; }
+                                else { let lt = (t - 0.5) / 0.5; dc = { r: globalCurrentPalette[1].r + (globalCurrentPalette[2].r - globalCurrentPalette[1].r) * lt, g: globalCurrentPalette[1].g + (globalCurrentPalette[2].g - globalCurrentPalette[1].g) * lt, b: globalCurrentPalette[1].b + (globalCurrentPalette[2].b - globalCurrentPalette[1].b) * lt }; }
+                            } else {
+                                dc = { r: globalCurrentPalette[0].r + (globalCurrentPalette[1].r - globalCurrentPalette[0].r) * t, g: globalCurrentPalette[0].g + (globalCurrentPalette[1].g - globalCurrentPalette[0].g) * t, b: globalCurrentPalette[0].b + (globalCurrentPalette[1].b - globalCurrentPalette[0].b) * t };
+                            }
+                            d[i] = dc.r; d[i+1] = dc.g; d[i+2] = dc.b;
+                        } else if (usePalette) {
                             let idx3D = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
                             let bestIdx = colorLUTCache[idx3D];
                             let targetPal = globalCurrentPalette.length > 0 ? globalCurrentPalette : referencePalette; 
