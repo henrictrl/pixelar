@@ -160,6 +160,13 @@
         #btn-play-anim.active-state { transform: translate(calc(-50% + 1px), 1px); }
         @media (max-width: 768px) { #btn-play-anim { bottom: 66px; width: 44px; height: 44px; min-width: 44px; } }
         #filmLook optgroup { font-style: normal; }
+        /* botão de zerar um controle só */
+        .ctrl-reset { width: 22px; height: 22px; min-width: 22px; min-height: 22px; padding: 2px; opacity: 0.5; flex: 0 0 auto; }
+        .ctrl-reset:hover { opacity: 1; }
+        .ctrl-reset svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .anim-grid label { position: relative; }
+        .anim-grid .ctrl-reset { position: absolute; top: -3px; right: 0; }
+        @media (max-width: 768px) { .icon-btn.ctrl-reset { width: 28px; height: 28px; min-width: 28px; min-height: 28px; } .ctrl-reset svg { width: 14px; height: 14px; } }
         .modal-content h3 { font-size: var(--font-size-title); text-transform: uppercase; border-bottom: var(--border-width) solid var(--border); padding-bottom: 6px; margin-bottom: 6px; font-weight: normal; background: var(--accent); color: #FFFFFF; padding-left: 8px;}
         .modal-desc { font-size: var(--font-size-base); color: var(--text); margin-bottom: 8px; line-height: 1.4; }
 
@@ -452,21 +459,62 @@
 <div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" x2="12" y1="1" y2="3"></line><line x1="12" x2="12" y1="21" y2="23"></line><line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line><line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line><line x1="1" x2="3" y1="12" y2="12"></line><line x1="21" x2="23" y1="12" y2="12"></line></svg><input id="palLight" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palLight"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
 </div>
                         <div class="set-item" id="set-corDeg"><div class="panel-label">Degradê sobre a imagem</div>
-<label class="custom-checkbox"><input id="imgGradient" type="checkbox"/><span class="checkmark"></span><span>Aplicar Degradê Global</span></label>
-<div id="imgGradientControls" style="display:none; flex-direction:column; gap:8px; margin-top: 4px; border-top: 1px dashed var(--border-light); padding-top: 12px;">
-<div class="slider-row">
-<div class="colors-grid" id="imgGradColorsContainer" style="display:flex;"></div>
-<button class="std-btn icon-btn" id="btnImgGradAddCol" style="flex: 0 0 auto;">+</button>
-<button class="std-btn icon-btn" id="btnImgGradRemCol" style="flex: 0 0 auto;">-</button>
-</div>
-<div class="slider-row"><select id="imgGradType"><option value="linear">Linear</option><option value="radial">Radial</option></select></div>
-<div class="slider-row" id="imgGradAngleContainer"><svg class="lbl-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v10l7.5-5"></path></svg><input id="imgGradAngle" max="360" min="0" type="range" value="90"/></div>
-<div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><line x1="4" x2="8" y1="20" y2="20"></line><line x1="8" x2="8" y1="20" y2="16"></line><line x1="8" x2="12" y1="16" y2="16"></line><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="16" y1="12" y2="12"></line><line x1="16" x2="16" y1="12" y2="8"></line><line x1="16" x2="20" y1="8" y2="8"></line></svg><input id="imgGradSteps" max="30" min="0" type="range" value="0"/></div>
-<div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="10"></circle></svg><input id="imgGradPos" max="100" min="0" type="range" value="50"/></div>
-<div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12"></path></svg><input id="imgGradSmooth" max="100" min="0" type="range" value="100"/></div>
-<div class="slider-row"><select id="imgGradBlend"><option value="source-atop">Substituição</option><option value="multiply">Multiplicação</option><option value="overlay">Sobreposição</option><option value="screen">Clarear</option><option value="color">Apenas Cores</option></select></div>
-</div>
-</div>
+                            <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar degradê</span></label>
+                            <div id="imgGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top:4px; border-top: 1px dashed var(--border-light); padding-top: 12px; width:100%;">
+                                <div class="row-lbl">Cores do degradê</div>
+                                <div class="slider-row">
+                                    <div class="colors-grid" id="imgGradColorsContainer" style="display:flex;"></div>
+                                    <button class="std-btn icon-btn" id="btnImgGradAddCol" style="flex: 0 0 auto;" title="Mais uma cor">+</button>
+                                    <button class="std-btn icon-btn" id="btnImgGradRemCol" style="flex: 0 0 auto;" title="Menos uma cor">-</button>
+                                </div>
+                                <div class="row-lbl">Sortear só o degradê</div>
+                                <div class="slider-row">
+                                    <button class="std-btn" id="btnGradRandColors" style="flex:1;" title="Sorteia uma combinação de cores harmônica">Cores</button>
+                                    <button class="std-btn" id="btnGradRandShape" style="flex:1;" title="Sorteia forma, ângulo, centro, escala e repetições">Forma</button>
+                                    <button class="std-btn" id="btnGradRandAll" style="flex:1;" title="Sorteia tudo do degradê">Tudo</button>
+                                </div>
+                                <div class="row-lbl">Forma</div>
+                                <div class="slider-row"><select id="imgGradType">
+                                    <option value="linear" selected>Linear</option><option value="mirror">Linear espelhado</option>
+                                    <option value="radial">Radial</option><option value="conic">Cônico (leque)</option>
+                                    <option value="diamond">Diamante</option><option value="box">Quadrado</option>
+                                    <option value="wave">Onda</option><option value="spiral">Espiral</option>
+                                </select></div>
+                                <div id="imgGradAngleContainer" style="display:flex; flex-direction:column; width:100%;">
+                                    <div class="row-lbl">Ângulo <span class="anim-val" id="imgGradAngleVal">90°</span></div>
+                                    <div class="slider-row"><input type="range" id="imgGradAngle" min="0" max="360" step="5" value="90"></div>
+                                </div>
+                                <div id="imgGradCenterRow" style="display:none; flex-direction:column; width:100%;">
+                            <div class="row-lbl">Centro ↔ <span class="anim-val" id="imgGradCXVal">50%</span></div>
+                            <div class="slider-row"><input type="range" id="imgGradCX" min="0" max="100" step="1" value="50"></div>
+                            <div class="row-lbl">Centro ↕ <span class="anim-val" id="imgGradCYVal">50%</span></div>
+                            <div class="slider-row"><input type="range" id="imgGradCY" min="0" max="100" step="1" value="50"></div>
+                                </div>
+                            <div class="row-lbl">Escala <span class="anim-val" id="imgGradScaleVal">100%</span></div>
+                            <div class="slider-row"><input type="range" id="imgGradScale" min="10" max="400" step="5" value="100"></div>
+                            <div class="row-lbl">Repetições <span class="anim-val" id="imgGradRepeatVal">1×</span></div>
+                                <div class="slider-row"><input type="range" id="imgGradRepeat" min="1" max="8" value="1"></div>
+                                <label class="custom-checkbox"><input type="checkbox" id="imgGradMirror"><span class="checkmark"></span><span>Espelhar a cada repetição</span></label>
+                                <div class="row-lbl">Faixas (0 = contínuo) <span class="anim-val" id="imgGradStepsVal">0</span></div>
+                                <div class="slider-row"><input type="range" id="imgGradSteps" min="0" max="30" value="0"></div>
+                            <div class="row-lbl">Posição das cores <span class="anim-val" id="imgGradPosVal">50%</span></div>
+                            <div class="slider-row"><input type="range" id="imgGradPos" min="0" max="100" step="1" value="50"></div>
+                            <div class="row-lbl">Suavidade <span class="anim-val" id="imgGradSmoothVal">100%</span></div>
+                            <div class="slider-row"><input type="range" id="imgGradSmooth" min="0" max="100" step="1" value="100"></div>
+                            <div class="row-lbl">Ruído (quebra as faixas) <span class="anim-val" id="imgGradNoiseVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="imgGradNoise" min="0" max="100" step="1" value="0"></div>
+                            <div class="row-lbl">Opacidade do degradê <span class="anim-val" id="imgGradOpacityVal">100%</span></div>
+                            <div class="slider-row"><input type="range" id="imgGradOpacity" min="0" max="100" step="1" value="100"></div>
+                                <div class="row-lbl">Mistura com a imagem</div>
+                                <div class="slider-row"><select id="imgGradBlend">
+                                    <option value="source-atop" selected>Substituir</option><option value="multiply">Multiplicar</option>
+                                    <option value="screen">Clarear</option><option value="overlay">Sobrepor</option>
+                                    <option value="color">Só as cores</option><option value="darken">Escurecer</option>
+                                    <option value="lighten">Iluminar</option><option value="difference">Diferença</option>
+                                    <option value="softlight">Luz suave</option>
+                                </select></div>
+                            </div>
+                        </div>
                         <div class="set-item" id="set-corSal"><div class="panel-label">Paletas salvas</div>
 <div class="slider-row"><button class="std-btn" id="btnOriginal" style="flex:1">Voltar Original</button><button class="std-btn" id="btnSavePalette" style="flex:1">Salvar Atual</button></div>
 <div id="savedPalettesGrid" style="display:flex; flex-direction:column; gap:8px; width:100%; margin-top:8px;"></div>
@@ -502,6 +550,9 @@
                                     <option value="estrelas">Estrelas</option>
                                     <option value="radar">Radar</option>
                                     <option value="projetor">Projetor de cinema</option>
+                                    <option value="neon">Neon</option>
+                                    <option value="polaroid">Polaroid ao sol</option>
+                                    <option value="aurora">Aurora</option>
                                 </select>
                             </div>
                             <div class="row-lbl">Intensidade geral <span class="anim-val" id="animAmountVal">100%</span></div>
@@ -607,13 +658,58 @@
                         </div>
 
                         <div class="set-item" id="set-anCol"><div class="panel-label">Cor animada</div>
+                            <div class="row-lbl">Efeito</div>
                             <div class="slider-row"><select id="animColStyle">
-                                <option value="none" selected>Nenhuma</option><option value="hue">Girar matiz</option><option value="rainbow">Arco-íris correndo</option>
-                                <option value="bright">Pulsar brilho</option><option value="sat">Pulsar saturação</option><option value="contrast">Pulsar contraste</option>
-                                <option value="daynight">Dia e noite</option><option value="flash">Piscar em negativo</option>
+                                <option value="none" selected>Nenhum</option>
+                                <optgroup label="Luz e contraste">
+                                    <option value="bright">Pulsar brilho</option><option value="contrast">Pulsar contraste</option>
+                                    <option value="gamma">Gama respirando</option><option value="daynight">Dia e noite</option>
+                                    <option value="flash">Piscar em negativo</option>
+                                </optgroup>
+                                <optgroup label="Matiz e saturação">
+                                    <option value="hue">Girar matiz</option><option value="rainbow">Arco-íris correndo</option>
+                                    <option value="sat">Pulsar saturação</option><option value="temp">Oscilar temperatura</option>
+                                    <option value="split">Sombras e luzes girando</option><option value="channels">Trocar canais (R→G→B)</option>
+                                    <option value="sepia">Sépia e volta</option>
+                                </optgroup>
+                                <optgroup label="Com a cor escolhida">
+                                    <option value="tint">Tingir</option><option value="duo">Duotone pulsando</option>
+                                    <option value="neon">Neon nas luzes</option><option value="wash">Desbotar e voltar</option>
+                                    <option value="vig">Vinheta colorida</option>
+                                </optgroup>
+                                <optgroup label="Efeitos">
+                                    <option value="poster">Posterizar pulsando</option><option value="solar">Solarização varrendo</option>
+                                    <option value="blocks">Blocos cintilando</option>
+                                </optgroup>
                             </select></div>
                             <div class="row-lbl">Força <span class="anim-val" id="animColAmtVal">100%</span></div>
                             <div class="slider-row"><input type="range" id="animColAmt" min="0" max="300" step="5" value="100"></div>
+                            <div class="slider-row" id="animColColorRow" style="display:none;"><span class="row-lbl" style="flex:1; margin:0;">Cor do efeito</span><input type="color" class="icon-btn" id="animColColor" value="#ff3399"></div>
+                            <div class="anim-grid">
+                                <label>Velocidade
+                                    <select id="animColSpeed" title="Multiplica a velocidade só desta camada">
+                                        <option value="1" selected>1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option>
+                                    </select></label>
+                                <label>Forma da onda
+                                    <select id="animColWave" title="Como o efeito vai e volta ao longo do ciclo">
+                                        <option value="sine" selected>Suave</option><option value="tri">Vai e volta reto</option>
+                                        <option value="saw">Rampa</option><option value="square">Liga e desliga</option><option value="beat">Batida</option>
+                                    </select></label>
+                                <label>Onde aplica
+                                    <select id="animColTarget" title="Limita o efeito a uma faixa de luz da imagem">
+                                        <option value="all" selected>Imagem toda</option><option value="shadows">Só sombras</option>
+                                        <option value="mids">Só meios-tons</option><option value="highs">Só luzes</option>
+                                    </select></label>
+                                <label>Varredura
+                                    <select id="animColSweep" title="Faz o efeito atravessar a imagem em vez de mudar tudo junto">
+                                        <option value="none" selected>Sem varredura</option><option value="vertical">De cima a baixo</option>
+                                        <option value="horizontal">De lado a lado</option><option value="radial">Do centro</option><option value="diagonal">Na diagonal</option>
+                                    </select></label>
+                            </div>
+                            <div id="animColSweepRow" style="display:none; flex-direction:column; width:100%;">
+                                <div class="row-lbl">Tamanho da varredura <span class="anim-val" id="animColSweepScaleVal">100%</span></div>
+                                <div class="slider-row"><input type="range" id="animColSweepScale" min="10" max="400" step="10" value="100"></div>
+                            </div>
                             <div class="row-lbl">Defasagem <span class="anim-val" id="animColOffsetVal">0°</span></div>
                             <div class="slider-row"><input type="range" id="animColOffset" min="0" max="360" step="15" value="0"></div>
                         </div>
@@ -727,6 +823,7 @@
 <label class="custom-checkbox"><input checked="" id="randToggle-palette" type="checkbox"/><span class="checkmark"></span><span>Paleta de Cores</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-contorno" type="checkbox"/><span class="checkmark"></span><span>Contorno / Edge</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-fx" type="checkbox"/><span class="checkmark"></span><span>Textura</span></label>
+<label class="custom-checkbox"><input checked="" id="randToggle-grad" type="checkbox"/><span class="checkmark"></span><span>Degradê</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-film" type="checkbox"/><span class="checkmark"></span><span>Filme e lente</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-grain" type="checkbox"/><span class="checkmark"></span><span>Granulado</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-anim" type="checkbox"/><span class="checkmark"></span><span>Animação</span></label>
@@ -1485,7 +1582,8 @@ const PixelarGPU = (function () {
     uniform vec2 uImgSize;
     uniform float uMinL, uMaxL;
     uniform bool uShadowsInverted, uMidDither, uUseGrad;
-    uniform int uGradBlend;          // 0 normal 1 multiply 2 screen 3 overlay 4 color
+    uniform int uGradBlend;          // 0 normal 1 multiply 2 screen 3 overlay 4 color 5 darken 6 lighten 7 difference 8 soft light
+    uniform float uGradAlpha;        // opacidade do degradê
     uniform int uColorMode;          // 0 livre 1 paleta 2 duotone/tritone
     uniform float uPaletteCount;
     uniform vec3 uDuo0, uDuo1, uDuo2;
@@ -1686,11 +1784,18 @@ const PixelarGPU = (function () {
 
         if (uUseGrad) {
             vec3 g = floor(texelFetch(uGrad, ip, 0).rgb * 255.0 + 0.5);
+            vec3 pre = rgb;
             if (uGradBlend == 1) rgb = rgb * g / 255.0;
             else if (uGradBlend == 2) rgb = 255.0 - (255.0 - rgb) * (255.0 - g) / 255.0;
             else if (uGradBlend == 3) rgb = mix(2.0 * rgb * g / 255.0, 255.0 - 2.0 * (255.0 - rgb) * (255.0 - g) / 255.0, step(128.0, rgb));
             else if (uGradBlend == 4) { vec3 ho = rgb2hsl(rgb / 255.0), hg = rgb2hsl(g / 255.0); rgb = floor(hsl2rgb(vec3(hg.x, hg.y, ho.z)) * 255.0 + 0.5); }
+            else if (uGradBlend == 5) rgb = min(rgb, g);
+            else if (uGradBlend == 6) rgb = max(rgb, g);
+            else if (uGradBlend == 7) rgb = abs(rgb - g);
+            else if (uGradBlend == 8) { vec3 a2 = rgb / 255.0, b2 = g / 255.0;
+                rgb = floor(255.0 * mix(2.0 * a2 * b2 + a2 * a2 * (1.0 - 2.0 * b2), sqrt(a2) * (2.0 * b2 - 1.0) + 2.0 * a2 * (1.0 - b2), step(0.5, b2)) + 0.5); }
             else rgb = g;
+            if (uGradAlpha < 1.0) rgb = floor(mix(pre, rgb, uGradAlpha) + 0.5);
         }
 
         if (uColorMode == 2) {
@@ -2053,11 +2158,25 @@ const PixelarGPU = (function () {
     precision highp float; precision highp int;
     out vec4 outColor;
     uniform sampler2D uTex;
-    uniform int uCamMode, uColMode;
-    uniform float uCamT, uCamAmt, uColT, uColAmt;
+    uniform int uCamMode, uColMode, uColWave, uColTarget, uColSweep;
+    uniform float uCamT, uCamAmt, uColT, uColAmt, uColSweepScale;
+    uniform vec3 uColColor;
     ${GLSL_HASH}
     const float TAU = 6.28318530718;
     mat2 rot2(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }
+    // forma da onda da cor animada (todas com período 1 → loop sem emenda)
+    float colWave(float t, int w) {
+        if (w == 1) return 4.0 * abs(fract(t - 0.25) - 0.5) - 1.0;   // triângulo
+        if (w == 2) return 2.0 * fract(t) - 1.0;                     // dente de serra
+        if (w == 3) return step(0.5, fract(t)) * 2.0 - 1.0;          // quadrada
+        if (w == 4) return pow(0.5 + 0.5 * cos(TAU * t), 8.0) * 2.0 - 1.0; // batida
+        return sin(TAU * t);                                         // senoide
+    }
+    vec3 hueRotYIQ(vec3 c, float a) {
+        const mat3 toY = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+        const mat3 fromY = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+        vec3 y = toY * c; y.yz = rot2(a) * y.yz; return fromY * y;
+    }
     void main() {
         ivec2 size = textureSize(uTex, 0);
         vec2 sz = vec2(size), c = sz * 0.5;
@@ -2090,31 +2209,80 @@ const PixelarGPU = (function () {
         }
         vec4 col = texelFetch(uTex, clamp(ivec2(floor(q)), ivec2(0), size - 1), 0);
         if (uColMode != 0 && col.a > 0.0) {
-            float ph = TAU * uColT, B = uColAmt;
-            vec3 rgb = col.rgb;
+            float B = uColAmt;
+            vec3 rgb = col.rgb, src = rgb;
             float l = dot(rgb, vec3(0.299, 0.587, 0.114));
-            if (uColMode == 1) {        // girar matiz (uma volta completa por ciclo)
-                mat3 toY = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
-                mat3 fromY = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
-                vec3 y = toY * rgb; y.yz = rot2(ph) * y.yz;
-                rgb = mix(rgb, fromY * y, min(B, 1.0));
+            // varredura: adianta a fase conforme a posição do pixel
+            float sp = 0.0;
+            if (uColSweep == 1) sp = q.y / sz.y;
+            else if (uColSweep == 2) sp = q.x / sz.x;
+            else if (uColSweep == 3) sp = length((q - c) / min(sz.x, sz.y)) * 2.0;
+            else if (uColSweep == 4) sp = (q.x / sz.x + q.y / sz.y) * 0.5;
+            float t = uColT + sp * uColSweepScale;
+            float sw = colWave(t, uColWave);          // -1..1
+            float u01 = 0.5 + 0.5 * sw;               // 0..1
+            float ph = (uColWave == 0 || uColWave == 2) ? TAU * t : TAU * u01; // giro contínuo x vai-e-volta
+            if (uColMode == 1) {        // girar matiz
+                rgb = mix(rgb, hueRotYIQ(rgb, ph), min(B, 1.0));
             } else if (uColMode == 2) { // pulsar brilho
-                rgb *= 1.0 + 0.35 * B * sin(ph);
+                rgb *= 1.0 + 0.35 * B * sw;
             } else if (uColMode == 3) { // pulsar saturação
-                rgb = mix(vec3(l), rgb, max(0.0, 1.0 + 0.9 * B * sin(ph)));
+                rgb = mix(vec3(l), rgb, max(0.0, 1.0 + 0.9 * B * sw));
             } else if (uColMode == 4) { // piscar (negativo)
-                rgb = mix(rgb, 1.0 - rgb, step(0.5, fract(uColT * 2.0)) * min(B, 1.0));
+                rgb = mix(rgb, 1.0 - rgb, step(0.55, u01) * min(B, 1.0));
             } else if (uColMode == 5) { // dia e noite
-                rgb *= mix(vec3(1.0), vec3(0.7, 0.85, 1.3), (0.5 - 0.5 * cos(ph)) * min(B, 1.5));
+                rgb *= mix(vec3(1.0), vec3(0.7, 0.85, 1.3), u01 * min(B, 1.5));
             } else if (uColMode == 6) { // contraste pulsando
-                rgb = (rgb - 0.5) * max(0.0, 1.0 + 0.6 * B * sin(ph)) + 0.5;
+                rgb = (rgb - 0.5) * max(0.0, 1.0 + 0.6 * B * sw) + 0.5;
             } else if (uColMode == 7) { // arco-íris por altura
-                mat3 toY = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
-                mat3 fromY = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
-                vec3 y = toY * rgb; y.yz = rot2(ph + TAU * q.y / sz.y) * y.yz;
-                rgb = mix(rgb, fromY * y, min(B, 1.0));
+                rgb = mix(rgb, hueRotYIQ(rgb, ph + TAU * q.y / sz.y), min(B, 1.0));
+            } else if (uColMode == 8) { // temperatura (quente ↔ frio)
+                rgb *= mix(vec3(1.0), vec3(1.0 + 0.3 * sw, 1.0 + 0.04 * sw, 1.0 - 0.3 * sw), min(B, 1.5));
+            } else if (uColMode == 9) { // tingir com a cor escolhida
+                rgb = mix(rgb, mix(rgb, uColColor * (0.35 + l), 0.9), u01 * min(B, 1.0));
+            } else if (uColMode == 10) { // duotone pulsante
+                rgb = mix(rgb, mix(vec3(0.03), uColColor, sqrt(l)), u01 * min(B, 1.0));
+            } else if (uColMode == 11) { // posterizar pulsando
+                float lv = max(2.0, mix(24.0, 2.0, u01 * min(B, 1.0)));
+                rgb = floor(rgb * lv + 0.5) / lv;
+            } else if (uColMode == 12) { // solarização correndo
+                float th = u01;
+                rgb = mix(rgb, 1.0 - rgb, smoothstep(th - 0.1, th + 0.1, l) * min(B, 1.0));
+            } else if (uColMode == 13) { // trocar canais (R→G→B)
+                float sN = 3.0 * fract(t), ki = floor(sN), f = sN - ki;
+                f = f * f * (3.0 - 2.0 * f);
+                vec3 a1 = ki < 1.0 ? rgb.rgb : (ki < 2.0 ? rgb.gbr : rgb.brg);
+                vec3 b1 = ki < 1.0 ? rgb.gbr : (ki < 2.0 ? rgb.brg : rgb.rgb);
+                rgb = mix(rgb, mix(a1, b1, f), min(B, 1.0));
+            } else if (uColMode == 14) { // neon nas luzes
+                rgb = mix(vec3(l), rgb, 1.0 + 0.9 * B * u01);
+                rgb += uColColor * smoothstep(0.6, 1.0, l) * 0.7 * B * u01;
+            } else if (uColMode == 15) { // desbotar e voltar
+                rgb = mix(rgb, mix(rgb, uColColor, 0.45) * 0.8 + 0.14, u01 * min(B, 1.0));
+            } else if (uColMode == 16) { // vinheta de cor pulsando
+                float vg = smoothstep(0.35, 1.1, length((q - c) / min(sz.x, sz.y) * 2.2));
+                rgb = mix(rgb, uColColor * (0.2 + l), vg * u01 * min(B, 1.0));
+            } else if (uColMode == 17) { // sombras e luzes girando (split tone)
+                vec3 sh = 0.5 + 0.5 * vec3(cos(ph), cos(ph + 2.0944), cos(ph + 4.1888));
+                rgb += (sh - 0.5) * 0.6 * B * (1.0 - smoothstep(0.0, 0.6, l));
+                rgb += (0.5 - sh) * 0.6 * B * smoothstep(0.4, 1.0, l);
+            } else if (uColMode == 18) { // cintilar em blocos (glitch de cor)
+                float bs = max(4.0, sz.y / 14.0);
+                vec2 bi = floor(q / bs);
+                float st = floor(fract(t) * 8.0);
+                float hsel = phash(ivec2(int(bi.x) + int(st) * 37, int(bi.y) + int(st) * 11), 7.0);
+                if (hsel > 1.0 - 0.6 * min(B, 1.0)) rgb = hueRotYIQ(rgb, hsel * TAU);
+            } else if (uColMode == 19) { // sépia e volta
+                rgb = mix(rgb, vec3(l) * vec3(1.15, 0.95, 0.72), u01 * min(B, 1.0));
+            } else if (uColMode == 20) { // gama respirando
+                rgb = pow(max(rgb, 0.0), vec3(clamp(1.0 + 0.55 * B * sw, 0.2, 3.0)));
             }
-            col.rgb = clamp(rgb, 0.0, 1.0);
+            // onde aplica: imagem toda, sombras, meios-tons ou luzes
+            float mk = 1.0;
+            if (uColTarget == 1) mk = 1.0 - smoothstep(0.05, 0.55, l);
+            else if (uColTarget == 2) mk = 1.0 - abs(l - 0.5) * 2.0;
+            else if (uColTarget == 3) mk = smoothstep(0.45, 0.95, l);
+            col.rgb = clamp(mix(src, rgb, clamp(mk, 0.0, 1.0)), 0.0, 1.0);
         }
         outColor = col;
     }`;
@@ -2236,6 +2404,7 @@ const PixelarGPU = (function () {
         return fxProgs[id];
     }
 
+    const GRAD_BLEND_IDS = { normal: 0, multiply: 1, screen: 2, overlay: 3, color: 4, darken: 5, lighten: 6, difference: 7, softlight: 8 };
     const DITHER_IDS = { none: 0, halftone: 1, nintendo_ds: 2, bayer8: 3, floyd_approx: 4, checkerboard: 5, scanlines: 6, noise: 7 };
 
     // o: ver renderFrame() — retorna true se renderizou (resultado em glCanvas, tamanho w x h)
@@ -2282,7 +2451,8 @@ const PixelarGPU = (function () {
                 gl.uniform1f(L.uMinL, o.minL); gl.uniform1f(L.uMaxL, o.maxL);
                 gl.uniform1i(L.uShadowsInverted, o.shadowsInverted ? 1 : 0); gl.uniform1i(L.uMidDither, o.midDither ? 1 : 0);
                 gl.uniform1i(L.uUseGrad, o.grad ? 1 : 0);
-                gl.uniform1i(L.uGradBlend, ({ normal: 0, multiply: 1, screen: 2, overlay: 3, color: 4 })[o.grad ? o.grad.b : 'normal'] || 0);
+                gl.uniform1i(L.uGradBlend, GRAD_BLEND_IDS[o.grad ? o.grad.b : 'normal'] || 0);
+                gl.uniform1f(L.uGradAlpha, o.grad && o.grad.a !== undefined ? o.grad.a : 1);
                 gl.uniform1i(L.uColorMode, cm.mode);
                 gl.uniform1f(L.uPaletteCount, Math.max(1, palCount));
                 const duo = cm.duo || [];
@@ -2357,6 +2527,9 @@ const PixelarGPU = (function () {
                 const cam = an.cam || { mode: 0 }, col = an.col || { mode: 0 };
                 gl.uniform1i(L.uCamMode, cam.mode || 0); gl.uniform1f(L.uCamT, cam.T || 0); gl.uniform1f(L.uCamAmt, cam.amt || 0);
                 gl.uniform1i(L.uColMode, col.mode || 0); gl.uniform1f(L.uColT, col.T || 0); gl.uniform1f(L.uColAmt, col.amt || 0);
+                gl.uniform1i(L.uColWave, col.wave || 0); gl.uniform1i(L.uColTarget, col.target || 0);
+                gl.uniform1i(L.uColSweep, col.sweep || 0); gl.uniform1f(L.uColSweepScale, col.sweepScale !== undefined ? col.sweepScale : 1);
+                gl.uniform3fv(L.uColColor, col.color || [1, 0.3, 0.6]);
             });
             if (gl.isContextLost()) { contextLost = true; return false; }
             return true;
@@ -3942,50 +4115,179 @@ try {
         let cachedGradHash = "";
         let cachedGradData = null;
 
+        // ==========================================
+        // DEGRADÊ — motor próprio (formas, repetição, ruído e opacidade).
+        // Cada pixel vira uma posição t (0..1) na régua de cores, conforme a
+        // forma escolhida; a régua sai de uma LUT de 256 cores (paradas,
+        // passos, posição e suavidade).
+        // ==========================================
+        const GRAD_IDS = ['imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradPos', 'imgGradSmooth', 'imgGradBlend',
+            'imgGradCX', 'imgGradCY', 'imgGradScale', 'imgGradRepeat', 'imgGradMirror', 'imgGradNoise', 'imgGradOpacity'];
+        const GRAD_SHAPES = ['linear', 'mirror', 'radial', 'conic', 'diamond', 'box', 'wave', 'spiral'];
+        const GRAD_BLENDS = ['source-atop', 'multiply', 'screen', 'overlay', 'color', 'darken', 'lighten', 'difference', 'softlight'];
+        const GRAD_ANGLE_SHAPES = new Set(['linear', 'mirror', 'conic', 'wave', 'spiral']);
+        const GRAD_CENTER_SHAPES = new Set(['radial', 'conic', 'diamond', 'box', 'spiral']);
+
+        // régua de 256 cores a partir das paradas do usuário
+        function buildGradLUT(steps, pos, smooth) {
+            const cols = currentImgGradColors.map(hexToRgb);
+            const n = cols.length;
+            const lut = new Uint8Array(256 * 3);
+            const shift = (pos - 50) / 100;
+            const ease = smooth >= 100 ? 1 : 1 + (100 - smooth) / 50;
+            for (let i = 0; i < 256; i++) {
+                let p = i / 255;
+                if (steps > 0) p = Math.round(p * steps) / steps;   // faixas
+                p = Math.max(0, Math.min(1, p - shift));
+                const raw = p * (n - 1);
+                const idx = Math.min(n - 2, Math.max(0, Math.floor(raw)));
+                let lp = Math.max(0, Math.min(1, raw - idx));
+                if (ease !== 1) lp = Math.pow(lp, ease);
+                const a = cols[idx], b = cols[Math.min(idx + 1, n - 1)];
+                lut[i * 3] = a.r + (b.r - a.r) * lp;
+                lut[i * 3 + 1] = a.g + (b.g - a.g) * lp;
+                lut[i * 3 + 2] = a.b + (b.b - a.b) * lp;
+            }
+            return lut;
+        }
+
+        const gradHash2 = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+
         function getGradientData(w, h) {
-            const gType = document.getElementById('imgGradType').value;
-            const gAngle = document.getElementById('imgGradAngle').value;
-            const gSteps = document.getElementById('imgGradSteps').value;
-            const gPos = document.getElementById('imgGradPos').value;
-            const gSmooth = document.getElementById('imgGradSmooth').value;
-            const gBlend = document.getElementById('imgGradBlend').value;
-            const hash = `${w}x${h}_${gType}_${gAngle}_${gSteps}_${gPos}_${gSmooth}_${gBlend}_${currentImgGradColors.join('-')}`;
-            
-            if (cachedGradData && cachedGradHash === hash) return { d: cachedGradData, b: gBlend, key: hash };
-            
-            sharedGradCanvas.width = w; sharedGradCanvas.height = h;
-            let grad;
-            if (gType === 'radial') { 
-                const cx = w/2; const cy = h/2; const rMax = Math.max(w, h) / 1.5; 
-                grad = sharedGradCtx.createRadialGradient(cx, cy, 0, cx, cy, rMax); 
-            } else { 
-                const cx = w/2; const cy = h/2; const R = Math.max(w, h) / 1.5; 
-                const ang = (parseInt(gAngle, 10) - 90) * Math.PI / 180; 
-                const dx = Math.cos(ang) * R; const dy = Math.sin(ang) * R; 
-                grad = sharedGradCtx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy); 
+            const $ = (id) => document.getElementById(id);
+            const n = (id) => parseFloat($(id).value);
+            const shape = $('imgGradType').value, ang = n('imgGradAngle'), steps = n('imgGradSteps');
+            const pos = n('imgGradPos'), smooth = n('imgGradSmooth'), blend = $('imgGradBlend').value;
+            const cx = n('imgGradCX') / 100, cy = n('imgGradCY') / 100, scale = Math.max(0.05, n('imgGradScale') / 100);
+            const rep = Math.max(1, Math.round(n('imgGradRepeat'))), mirror = $('imgGradMirror').checked;
+            const noise = n('imgGradNoise') / 100, alpha = n('imgGradOpacity') / 100;
+            const hash = `${w}x${h}_${shape}_${ang}_${steps}_${pos}_${smooth}_${cx}_${cy}_${scale}_${rep}_${mirror}_${noise}_${currentImgGradColors.join('-')}`;
+            if (cachedGradData && cachedGradHash === hash) return { d: cachedGradData, b: blend, key: hash, a: alpha };
+
+            const lut = buildGradLUT(steps, pos, smooth);
+            const d = new Uint8ClampedArray(w * h * 4);
+            const M = Math.max(w, h);
+            const a0 = (ang - 90) * Math.PI / 180, ca = Math.cos(a0), sa = Math.sin(a0);
+            const span = 1.3333 * scale, half = 0.6667 * scale;
+            const TAU2 = Math.PI * 2;
+            const px = cx * w, py = cy * h;
+            for (let y = 0; y < h; y++) {
+                const Y = (y - py) / M;
+                for (let x = 0; x < w; x++) {
+                    const X = (x - px) / M;
+                    const proj = X * ca + Y * sa;
+                    let t;
+                    if (shape === 'radial') t = Math.sqrt(X * X + Y * Y) / half;
+                    else if (shape === 'mirror') t = Math.abs(proj) / half;
+                    else if (shape === 'diamond') t = (Math.abs(X) + Math.abs(Y)) / half;
+                    else if (shape === 'box') t = Math.max(Math.abs(X), Math.abs(Y)) / half;
+                    else if (shape === 'conic') t = ((Math.atan2(Y, X) - a0) / TAU2 % 1 + 1) % 1;
+                    else if (shape === 'spiral') t = ((Math.atan2(Y, X) - a0) / TAU2 + Math.sqrt(X * X + Y * Y) / half % 1 + 1) % 1;
+                    else if (shape === 'wave') t = 0.5 + (proj + 0.09 * Math.sin(TAU2 * 3 * (-X * sa + Y * ca) / Math.max(0.15, scale))) / span;
+                    else t = 0.5 + proj / span;                       // linear
+                    t *= rep;
+                    if (rep > 1 || mirror || shape === 'conic' || shape === 'spiral') {
+                        if (mirror) { t = Math.abs(t) % 2; if (t > 1) t = 2 - t; }
+                        else { t = t % 1; if (t < 0) t += 1; }
+                    }
+                    let idx = t * 255;
+                    if (noise > 0) idx += (gradHash2(x, y) - 0.5) * noise * 40;
+                    idx = Math.max(0, Math.min(255, Math.round(idx))) * 3;
+                    const i = (y * w + x) * 4;
+                    d[i] = lut[idx]; d[i + 1] = lut[idx + 1]; d[i + 2] = lut[idx + 2]; d[i + 3] = 255;
+                }
             }
-            
-            const numColors = currentImgGradColors.length;
-            const stp = parseInt(gSteps, 10);
-            if (stp > 0) { 
-                for(let st = 0; st <= stp; st++) { 
-                    let pct = st / stp; let rawIdx = pct * (numColors - 1); let idx = Math.floor(rawIdx); 
-                    let localPct = rawIdx - idx; let c1 = currentImgGradColors[idx]; 
-                    let c2 = currentImgGradColors[Math.min(idx + 1, numColors - 1)]; 
-                    if (parseInt(gSmooth, 10) < 100) { localPct = Math.pow(localPct, 1 + (100 - parseInt(gSmooth, 10))/50); } 
-                    grad.addColorStop(pct, interpolateColorHex(c1, c2, localPct)); 
-                } 
-            } else { 
-                currentImgGradColors.forEach((col, idx) => { 
-                    let shifted = (idx / (numColors - 1)) + (parseInt(gPos, 10) - 50)/100; 
-                    grad.addColorStop(Math.max(0, Math.min(1, shifted)), col); 
-                }); 
+            cachedGradData = d; cachedGradHash = hash;
+            return { d, b: blend, key: hash, a: alpha };
+        }
+
+        // ---------- sorteios só do degradê ----------
+        const gHex = (h, s, l) => { const c = hslToRgb(((h % 1) + 1) % 1, s, l); return rgbToHex(c.r, c.g, c.b); };
+        const gPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+        function randGradColors() {
+            const base = Math.random();
+            const scheme = gPick(['analogas', 'complementar', 'triade', 'mono', 'quente', 'fria', 'pastel', 'neon']);
+            const qty = 2 + Math.floor(Math.random() * 3); // 2 a 4 paradas
+            const out = [];
+            for (let i = 0; i < qty; i++) {
+                const k = qty > 1 ? i / (qty - 1) : 0;
+                let h = base, s = 0.7, l = 0.5;
+                if (scheme === 'analogas') { h = base + k * 0.16; s = 0.65 + 0.2 * Math.random(); l = 0.35 + k * 0.3; }
+                else if (scheme === 'complementar') { h = base + k * 0.5; s = 0.7; l = 0.3 + k * 0.4; }
+                else if (scheme === 'triade') { h = base + k * 0.333; s = 0.72; l = 0.45; }
+                else if (scheme === 'mono') { h = base; s = 0.55; l = 0.15 + k * 0.7; }
+                else if (scheme === 'quente') { h = 0.02 + k * 0.13; s = 0.85; l = 0.3 + k * 0.4; }
+                else if (scheme === 'fria') { h = 0.45 + k * 0.18; s = 0.7; l = 0.3 + k * 0.4; }
+                else if (scheme === 'pastel') { h = base + k * 0.25; s = 0.45; l = 0.72 + k * 0.1; }
+                else { h = base + k * 0.4; s = 1; l = 0.5 + k * 0.08; }  // neon
+                out.push(gHex(h, s, l));
             }
-            
-            sharedGradCtx.fillStyle = grad; sharedGradCtx.fillRect(0,0,w,h); 
-            cachedGradData = sharedGradCtx.getImageData(0,0,w,h).data;
-            cachedGradHash = hash;
-            return { d: cachedGradData, b: gBlend, key: hash };
+            currentImgGradColors = out;
+            renderImgGradColors();
+        }
+
+        function randGradShape() {
+            const set = (id, v) => { const el = document.getElementById(id); if (el.type === 'checkbox') el.checked = v; else el.value = v; };
+            set('imgGradType', gPick(GRAD_SHAPES));
+            set('imgGradAngle', Math.floor(Math.random() * 24) * 15);
+            set('imgGradCX', 30 + Math.floor(Math.random() * 41));
+            set('imgGradCY', 30 + Math.floor(Math.random() * 41));
+            set('imgGradScale', 60 + Math.floor(Math.random() * 15) * 10);
+            set('imgGradRepeat', gPick([1, 1, 1, 2, 2, 3, 4]));
+            set('imgGradMirror', Math.random() < 0.4);
+            set('imgGradSteps', Math.random() < 0.55 ? 0 : 2 + Math.floor(Math.random() * 10));
+            set('imgGradPos', 35 + Math.floor(Math.random() * 31));
+            set('imgGradSmooth', 40 + Math.floor(Math.random() * 61));
+            updateImgGradUI();
+        }
+
+        function randGradAll(enable = true) {
+            const set = (id, v) => { const el = document.getElementById(id); if (el.type === 'checkbox') el.checked = v; else el.value = v; };
+            if (enable) set('imgGradient', true);
+            randGradColors(); randGradShape();
+            set('imgGradBlend', gPick(GRAD_BLENDS));
+            set('imgGradOpacity', 40 + Math.floor(Math.random() * 13) * 5);
+            set('imgGradNoise', Math.random() < 0.5 ? 0 : Math.floor(Math.random() * 40));
+            updateImgGradUI();
+        }
+
+        // estado (presets, desfazer/refazer, PNG com configurações)
+        function getGradState() {
+            const o = {};
+            GRAD_IDS.forEach(id => { const el = document.getElementById(id); o[id] = el.type === 'checkbox' ? el.checked : el.value; });
+            return o;
+        }
+        function setGradState(st) {
+            GRAD_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                const v = st && st[id] !== undefined ? st[id] : GRAD_DEFAULTS[id];
+                if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+            });
+        }
+        const GRAD_DEFAULTS = { imgGradType: 'linear', imgGradAngle: 90, imgGradSteps: 0, imgGradPos: 50, imgGradSmooth: 100,
+            imgGradBlend: 'source-atop', imgGradCX: 50, imgGradCY: 50, imgGradScale: 100, imgGradRepeat: 1,
+            imgGradMirror: false, imgGradNoise: 0, imgGradOpacity: 100 };
+
+        // presets antigos não têm os controles novos: só eles voltam ao padrão
+        const GRAD_NEW_IDS = ['imgGradCX', 'imgGradCY', 'imgGradScale', 'imgGradRepeat', 'imgGradMirror', 'imgGradNoise', 'imgGradOpacity'];
+        function applyGradState(p) {
+            if (p && p.grad) { setGradState(p.grad); return; }
+            GRAD_NEW_IDS.forEach(id => { const el = document.getElementById(id); const v = GRAD_DEFAULTS[id]; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; });
+        }
+
+        document.getElementById('btnGradRandColors').addEventListener('click', () => { randGradColors(); scheduleAppProcess(); saveHistoryState(); });
+        document.getElementById('btnGradRandShape').addEventListener('click', () => { randGradShape(); scheduleAppProcess(); saveHistoryState(); });
+        document.getElementById('btnGradRandAll').addEventListener('click', () => { randGradAll(); scheduleAppProcess(); saveHistoryState(); });
+        ['imgGradCX', 'imgGradCY', 'imgGradScale', 'imgGradRepeat', 'imgGradMirror', 'imgGradNoise', 'imgGradOpacity'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', () => { updateGradVals(); scheduleAppProcess(); });
+            el.addEventListener('change', () => { updateGradVals(); scheduleAppProcess(); saveHistoryState(); });
+        });
+        function updateGradVals() {
+            const v = (id, sfx) => { const e = document.getElementById(id + 'Val'); if (e) e.textContent = document.getElementById(id).value + sfx; };
+            v('imgGradAngle', '°'); v('imgGradScale', '%'); v('imgGradOpacity', '%'); v('imgGradNoise', '%');
+            v('imgGradCX', '%'); v('imgGradCY', '%'); v('imgGradRepeat', '×'); v('imgGradSteps', ''); v('imgGradPos', '%'); v('imgGradSmooth', '%');
         }
 
         // ==========================================
@@ -4172,6 +4474,7 @@ try {
                 if (target === 'colors') {
                     isImageInverted = false; currentPaletteMode = 'original'; set('colorSelect', 'all'); set('imgGradient', false); updateImgGradUI();
                     globalCurrentPalette = []; referencePalette = []; setBasePalette([]); updateDuotoneUI();
+                    setGradState(null); currentImgGradColors = ['#FF00FF', '#00FFFF']; renderImgGradColors(); updateImgGradUI();
                 }
                 if (target === 'anim') setAnimState(null);
                 updateBadges(); scheduleAppProcess(); saveHistoryState();
@@ -4335,6 +4638,7 @@ try {
                 input.type = 'range'; input.min = min; input.max = max; input.step = (max-min)/200; input.value = cur;
                 input.setAttribute('data-fxkey', key);
                 row.appendChild(input); row.appendChild(valSpan); row.appendChild(labelSpan);
+                row.appendChild(makeCtrlResetBtn('Zerar este parâmetro', () => { input.value = def_v; input.dispatchEvent(new Event('input')); }));
                 container.appendChild(row);
             });
 
@@ -4364,6 +4668,8 @@ try {
                     row.appendChild(swatchBtn); row.appendChild(hiddenInput); row.appendChild(lbl);
                 } else {
                     row.innerHTML = `<input type="color" class="icon-btn" value="${hex}" data-fxcolor="${prefix}"><span style="font-size:0.7rem; opacity:0.7;">${fxColorGroupLabel(prefix)}</span>`;
+                    const ci = row.querySelector('input[type=color]');
+                    row.appendChild(makeCtrlResetBtn('Zerar esta cor', () => { ci.value = hex; ci.dispatchEvent(new Event('input')); }));
                 }
                 container.appendChild(row);
             });
@@ -4462,7 +4768,7 @@ try {
         }
 
         const processInputs = ['pxSize', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgeColor', 'edgePixelSize', 'imageScale', 'grainAmount', 'grainSize', 'grainRoughness', 'grainShadowBias', 'grainSpeckle', 'grainMono'];
-        const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth'];
+        const renderInputs = ['fillBg', 'textureOpacity', 'edgeOpacity', 'imgGradient', 'imgGradType', 'imgGradAngle', 'imgGradSteps', 'imgGradBlend', 'imgGradPos', 'imgGradSmooth', 'imgGradCX', 'imgGradCY', 'imgGradScale', 'imgGradRepeat', 'imgGradMirror', 'imgGradNoise', 'imgGradOpacity'];
 
         document.getElementById('btnInvertShadows').addEventListener('click', (e) => { isShadowsInverted = !isShadowsInverted; e.currentTarget.classList.toggle('active-state', isShadowsInverted); scheduleAppProcess(); });
         document.getElementById('btnEffMidDither').addEventListener('click', (e) => { isMidDitherEnabled = !isMidDitherEnabled; e.currentTarget.classList.toggle('active-state', isMidDitherEnabled); scheduleAppProcess(); });
@@ -4470,7 +4776,14 @@ try {
         function renderImgGradColors() { const container = document.getElementById('imgGradColorsContainer'); container.innerHTML = ''; currentImgGradColors.forEach((col, i) => { const inp = document.createElement('input'); inp.type = 'color'; inp.className = 'icon-btn'; inp.value = col; inp.addEventListener('input', (e) => { currentImgGradColors[i] = e.target.value; scheduleAppProcess(); }); container.appendChild(inp); }); }
         document.getElementById('btnImgGradAddCol').addEventListener('click', () => { currentImgGradColors.push('#ffffff'); renderImgGradColors(); scheduleAppProcess(); });
         document.getElementById('btnImgGradRemCol').addEventListener('click', () => { if(currentImgGradColors.length > 2) { currentImgGradColors.pop(); renderImgGradColors(); scheduleAppProcess(); } }); renderImgGradColors();
-        function updateImgGradUI() { const useGrad = document.getElementById('imgGradient').checked; document.getElementById('imgGradientControls').style.display = useGrad ? 'flex' : 'none'; document.getElementById('imgGradAngleContainer').style.display = document.getElementById('imgGradType').value === 'linear' ? 'flex' : 'none'; updateBadges(); }
+        function updateImgGradUI() {
+            const useGrad = document.getElementById('imgGradient').checked;
+            const shape = document.getElementById('imgGradType').value;
+            document.getElementById('imgGradientControls').style.display = useGrad ? 'flex' : 'none';
+            document.getElementById('imgGradAngleContainer').style.display = GRAD_ANGLE_SHAPES.has(shape) ? 'flex' : 'none';
+            document.getElementById('imgGradCenterRow').style.display = GRAD_CENTER_SHAPES.has(shape) ? 'flex' : 'none';
+            updateGradVals(); updateBadges();
+        }
         document.getElementById('imgGradient').addEventListener('change', () => { updateImgGradUI(); scheduleAppProcess(); }); document.getElementById('imgGradType').addEventListener('change', () => { updateImgGradUI(); scheduleAppProcess(); });
 
         function updateDuotoneUI() {
@@ -4668,7 +4981,13 @@ try {
             set('animGrainStyle', pick(['live', 'live', 'boil', 'pulse', 'breathe']));
             set('animFilmStyle', pick(['auto', 'auto', 'weave', 'flicker', 'live', 'leak']));
             set('animCamStyle', pick(['none', 'none', 'none', 'shake', 'zoom', 'orbit', 'sway', 'tape', 'bumps', 'beat', 'pan']));
-            set('animColStyle', pick(['none', 'none', 'none', 'hue', 'bright', 'sat', 'daynight', 'contrast', 'rainbow']));
+            set('animColStyle', pick(['none', 'none', 'hue', 'bright', 'sat', 'daynight', 'contrast', 'rainbow', 'temp', 'tint', 'duo', 'poster', 'solar', 'channels', 'neon', 'wash', 'vig', 'split', 'blocks', 'sepia', 'gamma']));
+            set('animColSpeed', pick([1, 1, 1, 2, 3]));
+            set('animColWave', pick(['sine', 'sine', 'sine', 'tri', 'saw', 'square', 'beat']));
+            set('animColTarget', pick(['all', 'all', 'all', 'shadows', 'mids', 'highs']));
+            set('animColSweep', pick(['none', 'none', 'none', 'vertical', 'horizontal', 'radial', 'diagonal']));
+            set('animColSweepScale', pick([50, 100, 100, 150, 250]));
+            set('animColColor', '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'));
             ['animDAmt', 'animFxAmt', 'animGrainAmt', 'animCamAmt', 'animColAmt', 'animFilmAmt'].forEach(id => set(id, 60 + Math.floor(Math.random() * 9) * 10));
             ['animDither', 'animFx', 'animGrain', 'animFilm'].forEach(id => { document.getElementById(id).checked = true; });
             updateAnimInfo();
@@ -5003,6 +5322,10 @@ try {
             }
             if (randToggle('randToggle-grain') && !locks.grainAmount) randGrain();
             if (randToggle('randToggle-film')) randFilm();
+            if (randToggle('randToggle-grad') && !locks.colors) {
+                if (Math.random() < 0.35) randGradAll();
+                else { document.getElementById('imgGradient').checked = false; updateImgGradUI(); }
+            }
             if (randToggle('randToggle-anim')) randAnim();
             updateBadges(); scheduleAppProcess();
         }
@@ -5014,7 +5337,7 @@ try {
             return {
                 px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value, fx: document.getElementById('fxEffectSelect') ? document.getElementById('fxEffectSelect').value : 'none', fxMix: document.getElementById('fxEffectMix') ? document.getElementById('fxEffectMix').value : 100, fxParams: (document.getElementById('fxEffectSelect') && fxUserParams[document.getElementById('fxEffectSelect').value]) ? fxUserParams[document.getElementById('fxEffectSelect').value] : {},
                 grainAmt: document.getElementById('grainAmount').value, grainSz: document.getElementById('grainSize').value, grainRough: document.getElementById('grainRoughness').value, grainSB: document.getElementById('grainShadowBias').value, grainSpk: document.getElementById('grainSpeckle').value, grainMono: document.getElementById('grainMono').checked,
-                anim: getAnimState(), film: getFilmState(),
+                anim: getAnimState(), film: getFilmState(), grad: getGradState(),
                 filmVencidoVariant: currentVencidoVariant, filmLumiereHue: document.getElementById('lumiereHue') ? document.getElementById('lumiereHue').value : 0,
             };
         }
@@ -5030,7 +5353,7 @@ try {
             document.getElementById('fillBg').checked = p.fillBg || false; if(p.bgColor) { document.getElementById('btnBgColor').value = p.bgColor; document.getElementById('btnBgColor').setAttribute('data-color', p.bgColor); document.getElementById('hexBgColor').value = p.bgColor.toUpperCase(); }
             document.getElementById('rgbShift').value = p.rSht !== undefined ? p.rSht : 0; if(p.edgC) document.getElementById('edgeColor').value = p.edgC; if(p.edgSiz !== undefined) document.getElementById('edgePixelSize').value = p.edgSiz;
             if(p.tOpa !== undefined) document.getElementById('textureOpacity').value = p.tOpa; if(p.eOpa !== undefined) document.getElementById('edgeOpacity').value = p.eOpa; if(p.iSca !== undefined) document.getElementById('imageScale').value = p.iSca;
-            document.getElementById('imgGradient').checked = p.iGrad || false; if(p.iGradTyp) document.getElementById('imgGradType').value = p.iGradTyp; if(p.iGradAng !== undefined) document.getElementById('imgGradAngle').value = p.iGradAng; if(p.iGradStp !== undefined) document.getElementById('imgGradSteps').value = p.iGradStp; if(p.iGradPos !== undefined) document.getElementById('imgGradPos').value = p.iGradPos; if(p.iGradSmt !== undefined) document.getElementById('imgGradSmooth').value = p.iGradSmt; if(p.iGradBld) document.getElementById('imgGradBlend').value = p.iGradBld; if(p.iGradCol) { currentImgGradColors = p.iGradCol; renderImgGradColors(); }
+            document.getElementById('imgGradient').checked = p.iGrad || false; if(p.iGradTyp) document.getElementById('imgGradType').value = p.iGradTyp; if(p.iGradAng !== undefined) document.getElementById('imgGradAngle').value = p.iGradAng; if(p.iGradStp !== undefined) document.getElementById('imgGradSteps').value = p.iGradStp; if(p.iGradPos !== undefined) document.getElementById('imgGradPos').value = p.iGradPos; if(p.iGradSmt !== undefined) document.getElementById('imgGradSmooth').value = p.iGradSmt; if(p.iGradBld) document.getElementById('imgGradBlend').value = p.iGradBld; if(p.iGradCol) { currentImgGradColors = p.iGradCol; renderImgGradColors(); } applyGradState(p);
             if (!locks.colors) { currentPaletteMode = p.palMode || 'manual'; isImageInverted = p.inv || false; if (p.cc && p.cc.length > 0) { globalCurrentPalette = p.cc.map(hexToRgb); if (p.rc && p.rc.length > 0) { referencePalette = p.rc.map(hexToRgb); } else { referencePalette = clone(globalCurrentPalette); } setBasePalette(globalCurrentPalette); if (currentPaletteMode === 'duotone' || currentPaletteMode === 'tritone') { document.getElementById('duotoneColor1').value = rgbToHex(globalCurrentPalette[0].r, globalCurrentPalette[0].g, globalCurrentPalette[0].b); document.getElementById('duotoneColor2').value = rgbToHex(globalCurrentPalette[1].r, globalCurrentPalette[1].g, globalCurrentPalette[1].b); if (globalCurrentPalette[2]) document.getElementById('duotoneColor3').value = rgbToHex(globalCurrentPalette[2].r, globalCurrentPalette[2].g, globalCurrentPalette[2].b); } } updateDuotoneUI(); }
             document.getElementById('grainAmount').value = p.grainAmt !== undefined ? p.grainAmt : 0;
             document.getElementById('grainSize').value = p.grainSz !== undefined ? p.grainSz : 100;
@@ -5252,7 +5575,22 @@ function renderPresets() {
                     }
                     if (isMidDitherEnabled && (norm < 0.25 || norm > 0.75)) factor = 0;
                     if (factor !== 0) { const k = factor * 120; r = Math.max(0, Math.min(255, r + k)); g = Math.max(0, Math.min(255, g + k)); b = Math.max(0, Math.min(255, b + k)); }
-                    if (grad) { const gr = grad.d[i], gg = grad.d[i+1], gb = grad.d[i+2]; if(grad.b === 'multiply') { r = (r * gr) / 255; g = (g * gg) / 255; b = (b * gb) / 255; } else if(grad.b === 'screen') { r = 255 - ((255 - r) * (255 - gr)) / 255; g = 255 - ((255 - g) * (255 - gg)) / 255; b = 255 - ((255 - b) * (255 - gb)) / 255; } else if(grad.b === 'overlay') { r = r < 128 ? (2 * r * gr) / 255 : 255 - (2 * (255 - r) * (255 - gr)) / 255; g = g < 128 ? (2 * g * gg) / 255 : 255 - (2 * (255 - g) * (255 - gg)) / 255; b = b < 128 ? (2 * b * gb) / 255 : 255 - (2 * (255 - b) * (255 - gb)) / 255; } else if(grad.b === 'color') { const ho = rgbToHsl(r,g,b), hg = rgbToHsl(gr,gg,gb); const nc = hslToRgb(hg.h, hg.s, ho.l); r=nc.r; g=nc.g; b=nc.b; } else { r = gr; g = gg; b = gb; } }
+                    if (grad) {
+                        const gr = grad.d[i], gg = grad.d[i+1], gb = grad.d[i+2];
+                        const pr = r, pg = g, pb = b;
+                        const bl = grad.b;
+                        if (bl === 'multiply') { r = (r * gr) / 255; g = (g * gg) / 255; b = (b * gb) / 255; }
+                        else if (bl === 'screen') { r = 255 - ((255 - r) * (255 - gr)) / 255; g = 255 - ((255 - g) * (255 - gg)) / 255; b = 255 - ((255 - b) * (255 - gb)) / 255; }
+                        else if (bl === 'overlay') { r = r < 128 ? (2 * r * gr) / 255 : 255 - (2 * (255 - r) * (255 - gr)) / 255; g = g < 128 ? (2 * g * gg) / 255 : 255 - (2 * (255 - g) * (255 - gg)) / 255; b = b < 128 ? (2 * b * gb) / 255 : 255 - (2 * (255 - b) * (255 - gb)) / 255; }
+                        else if (bl === 'color') { const ho = rgbToHsl(r,g,b), hg = rgbToHsl(gr,gg,gb); const nc = hslToRgb(hg.h, hg.s, ho.l); r = nc.r; g = nc.g; b = nc.b; }
+                        else if (bl === 'darken') { r = Math.min(r, gr); g = Math.min(g, gg); b = Math.min(b, gb); }
+                        else if (bl === 'lighten') { r = Math.max(r, gr); g = Math.max(g, gg); b = Math.max(b, gb); }
+                        else if (bl === 'difference') { r = Math.abs(r - gr); g = Math.abs(g - gg); b = Math.abs(b - gb); }
+                        else if (bl === 'softlight') { const sl = (x, y) => { const a2 = x/255, b2 = y/255; return 255 * (b2 < 0.5 ? 2*a2*b2 + a2*a2*(1-2*b2) : Math.sqrt(a2)*(2*b2-1) + 2*a2*(1-b2)); }; r = sl(r, gr); g = sl(g, gg); b = sl(b, gb); }
+                        else { r = gr; g = gg; b = gb; }
+                        const ga = grad.a !== undefined ? grad.a : 1;
+                        if (ga < 1) { r = pr + (r - pr) * ga; g = pg + (g - pg) * ga; b = pb + (b - pb) * ga; }
+                    }
                     if (color.mode === 2) {
                         const t = Math.max(0, Math.min(1, luma / 255));
                         let c0, c1, lt;
@@ -6153,8 +6491,20 @@ function renderPresets() {
         const DITHER_AUTO = { halftone: 'auto', nintendo_ds: 'auto', bayer8: 'auto', floyd_approx: 'auto', checkerboard: 'auto', scanlines: 'auto', noise: 'auto' };
         const CAM_STYLES = { none: 0, shake: 1, zoom: 2, orbit: 3, sway: 4, tape: 5, bumps: 6, beat: 7, pan: 8 };
         const CAM_NAMES = { shake: 'câmera tremendo', zoom: 'zoom respirando', orbit: 'câmera em órbita', sway: 'balanço', tape: 'ondulação de fita', bumps: 'solavancos', beat: 'zoom na batida', pan: 'deriva lateral' };
-        const COL_STYLES = { none: 0, hue: 1, bright: 2, sat: 3, flash: 4, daynight: 5, contrast: 6, rainbow: 7 };
-        const COL_NAMES = { hue: 'matiz girando', bright: 'brilho pulsando', sat: 'saturação pulsando', flash: 'piscando em negativo', daynight: 'dia e noite', contrast: 'contraste pulsando', rainbow: 'arco-íris correndo' };
+        const COL_STYLES = { none: 0, hue: 1, bright: 2, sat: 3, flash: 4, daynight: 5, contrast: 6, rainbow: 7,
+            temp: 8, tint: 9, duo: 10, poster: 11, solar: 12, channels: 13, neon: 14, wash: 15, vig: 16, split: 17, blocks: 18, sepia: 19, gamma: 20 };
+        const COL_NAMES = { hue: 'matiz girando', bright: 'brilho pulsando', sat: 'saturação pulsando', flash: 'piscando em negativo',
+            daynight: 'dia e noite', contrast: 'contraste pulsando', rainbow: 'arco-íris correndo', temp: 'temperatura oscilando',
+            tint: 'tingindo com a cor', duo: 'duotone pulsando', poster: 'posterização pulsando', solar: 'solarização varrendo',
+            channels: 'canais trocando', neon: 'neon nas luzes', wash: 'desbotando e voltando', vig: 'vinheta colorida pulsando',
+            split: 'sombras e luzes girando', blocks: 'blocos cintilando', sepia: 'sépia e volta', gamma: 'gama respirando' };
+        const COL_COLOR_STYLES = new Set(['tint', 'duo', 'neon', 'wash', 'vig']); // usam a cor escolhida
+        const COL_WAVES = { sine: 0, tri: 1, saw: 2, square: 3, beat: 4 };
+        const COL_WAVE_NAMES = { sine: 'onda suave', tri: 'vai e volta reto', saw: 'rampa', square: 'liga e desliga', beat: 'batida' };
+        const COL_TARGETS = { all: 0, shadows: 1, mids: 2, highs: 3 };
+        const COL_TARGET_NAMES = { shadows: 'nas sombras', mids: 'nos meios-tons', highs: 'nas luzes' };
+        const COL_SWEEPS = { none: 0, vertical: 1, horizontal: 2, radial: 3, diagonal: 4 };
+        const COL_SWEEP_NAMES = { vertical: 'varrendo de cima a baixo', horizontal: 'varrendo de lado', radial: 'varrendo do centro', diagonal: 'varrendo na diagonal' };
         const FX_STYLE_NAMES = { breathe: 'parâmetros respirando', pulse: 'parâmetros em batida', drift: 'parâmetros à deriva', glitch: 'parâmetros em glitch', fade: 'aparecendo e sumindo', colors: 'cores girando', combo: 'assinatura + respiração' };
         const FILM_ANIM_NAMES = { auto: 'projetor antigo', weave: 'quadro tremendo', flicker: 'luz cintilando', leak: 'luz vazando', burn: 'película queimando', live: 'grão e poeira vivos' };
         const GRAIN_NAMES = { live: 'granulado vivo', boil: 'granulado fervendo', pulse: 'granulado pulsando', breathe: 'granulado respirando', frozen: null };
@@ -6163,12 +6513,14 @@ function renderPresets() {
             'animDither', 'animDStyle', 'animDAngle', 'animDWave', 'animDAmt',
             'animFx', 'animFxStyle', 'animFxAmt', 'animGrain', 'animGrainStyle', 'animGrainAmt',
             'animCamStyle', 'animCamAmt', 'animColStyle', 'animColAmt', 'animCamOffset', 'animColOffset',
-            'animFilm', 'animFilmStyle', 'animFilmAmt'];
+            'animFilm', 'animFilmStyle', 'animFilmAmt',
+            'animColSpeed', 'animColWave', 'animColTarget', 'animColSweep', 'animColSweepScale', 'animColColor'];
         const ANIM_DEFAULTS = { animAmount: 100, animCycles: 2, animDuration: 2, animFps: 30, animDirection: 'forward', animEase: 'linear',
             animDither: true, animDStyle: 'auto', animDAngle: 0, animDWave: 64, animDAmt: 100,
             animFx: true, animFxStyle: 'auto', animFxAmt: 100, animGrain: true, animGrainStyle: 'live', animGrainAmt: 100,
             animCamStyle: 'none', animCamAmt: 100, animColStyle: 'none', animColAmt: 100, animCamOffset: 0, animColOffset: 0,
-            animFilm: true, animFilmStyle: 'auto', animFilmAmt: 100 };
+            animFilm: true, animFilmStyle: 'auto', animFilmAmt: 100,
+            animColSpeed: 1, animColWave: 'sine', animColTarget: 'all', animColSweep: 'none', animColSweepScale: 100, animColColor: '#ff3399' };
         function getAnimState() {
             const o = {};
             ANIM_IDS.forEach(id => { const el = document.getElementById(id); o[id] = el.type === 'checkbox' ? el.checked : el.value; });
@@ -6203,7 +6555,9 @@ function renderPresets() {
                 grain: { on: $('animGrain').checked, style: $('animGrainStyle').value, amt: amount * n('animGrainAmt') / 100 },
                 film: { on: $('animFilm').checked, style: $('animFilmStyle').value, amt: amount * n('animFilmAmt') / 100 },
                 cam: { style: $('animCamStyle').value, amt: amount * n('animCamAmt') / 100, offset: n('animCamOffset') },
-                col: { style: $('animColStyle').value, amt: amount * n('animColAmt') / 100, offset: n('animColOffset') },
+                col: { style: $('animColStyle').value, amt: amount * n('animColAmt') / 100, offset: n('animColOffset'),
+                    speed: Math.max(1, Math.round(n('animColSpeed'))), wave: $('animColWave').value, target: $('animColTarget').value,
+                    sweep: $('animColSweep').value, sweepScale: n('animColSweepScale') / 100, color: $('animColColor').value },
                 repeat: format === 'gif' ? 1 : parseInt($('animRepeat').value, 10),
                 res: getSelectedImgExportRes(),
             };
@@ -6242,7 +6596,14 @@ function renderPresets() {
                 }
             }
             if (cfg.cam.style !== 'none' && cfg.cam.amt > 0) parts.push(CAM_NAMES[cfg.cam.style]);
-            if (cfg.col.style !== 'none' && cfg.col.amt > 0) parts.push(COL_NAMES[cfg.col.style]);
+            if (cfg.col.style !== 'none' && cfg.col.amt > 0) {
+                let txt = COL_NAMES[cfg.col.style];
+                const extra = [COL_TARGET_NAMES[cfg.col.target], COL_SWEEP_NAMES[cfg.col.sweep]].filter(Boolean);
+                if (cfg.col.wave !== 'sine') extra.unshift(COL_WAVE_NAMES[cfg.col.wave]);
+                if (cfg.col.speed > 1) extra.unshift(cfg.col.speed + '× mais rápido');
+                if (extra.length) txt += ' (' + extra.join(', ') + ')';
+                parts.push(txt);
+            }
             return parts;
         }
         const NOTHING_TO_ANIMATE = 'Nada para animar: escolha um dither, textura, granulado, filme, câmera ou cor no painel de animação (botão play).';
@@ -6297,7 +6658,12 @@ function renderPresets() {
                 dStyle: dOn ? DITHER_STYLES[dStyle].id : 0, dAngle: D.angle, dWave: D.wave, dAmp: D.amt,
                 fxT: 0, fxFrame: 0, fxParams: null, fxMix: null,
                 cam: { mode: CAM_STYLES[cfg.cam.style] || 0, T: T + cfg.cam.offset / 360, amt: cfg.cam.amt },
-                col: { mode: COL_STYLES[cfg.col.style] || 0, T: T + cfg.col.offset / 360, amt: cfg.col.amt },
+                col: {
+                    mode: COL_STYLES[cfg.col.style] || 0, T: T * cfg.col.speed + cfg.col.offset / 360, amt: cfg.col.amt,
+                    wave: COL_WAVES[cfg.col.wave] || 0, target: COL_TARGETS[cfg.col.target] || 0,
+                    sweep: COL_SWEEPS[cfg.col.sweep] || 0, sweepScale: cfg.col.sweepScale,
+                    color: (() => { const c = hexToRgb(cfg.col.color); return [c.r / 255, c.g / 255, c.b / 255]; })(),
+                },
             };
             const def = F.on && F.amt > 0 && s.fx && FX_ANIM[s.fx.id];
             if (def) {
@@ -6386,12 +6752,15 @@ function renderPresets() {
 
         function updateAnimInfo() {
             const valEl = (id, suffix) => { const v = document.getElementById(id + 'Val'); if (v) v.textContent = document.getElementById(id).value + suffix; };
-            ['animAmount', 'animDAmt', 'animFxAmt', 'animGrainAmt', 'animCamAmt', 'animColAmt', 'animFilmAmt'].forEach(id => valEl(id, '%'));
+            ['animAmount', 'animDAmt', 'animFxAmt', 'animGrainAmt', 'animCamAmt', 'animColAmt', 'animFilmAmt', 'animColSweepScale'].forEach(id => valEl(id, '%'));
             valEl('animDAngle', '°'); valEl('animDWave', ' px'); valEl('animCamOffset', '°'); valEl('animColOffset', '°');
             // mostra só os controles que fazem sentido para o estilo escolhido
             const ds = document.getElementById('animDStyle').value;
             document.getElementById('animDAngleRow').style.display = ['drift', 'wave', 'sweep'].includes(ds) ? 'flex' : 'none';
             document.getElementById('animDWaveRow').style.display = ['wave', 'ripple', 'sweep', 'spiral'].includes(ds) ? 'flex' : 'none';
+            const cs = document.getElementById('animColStyle').value;
+            document.getElementById('animColColorRow').style.display = COL_COLOR_STYLES.has(cs) ? 'flex' : 'none';
+            document.getElementById('animColSweepRow').style.display = document.getElementById('animColSweep').value !== 'none' ? 'flex' : 'none';
             document.getElementById('animRepeatRow').style.display = document.getElementById('animFormat').value === 'gif' ? 'none' : 'flex';
             if (currentMediaType !== 'image') return;
             const parts = describeAnimation(readSettings());
@@ -6412,6 +6781,9 @@ function renderPresets() {
             vhs:      { animAmount: 130, animCycles: 2, animEase: 'linear', animDStyle: 'rain', animFxStyle: 'auto', animGrainStyle: 'live', animCamStyle: 'tape', animCamAmt: 120, animColStyle: 'contrast', animColAmt: 50 },
             oceano:   { animAmount: 120, animCycles: 1, animEase: 'linear', animDStyle: 'wave', animDAngle: 90, animDWave: 90, animFxStyle: 'drift', animGrainStyle: 'boil', animCamStyle: 'sway', animCamAmt: 80, animColStyle: 'daynight', animColAmt: 60 },
             estrelas: { animAmount: 140, animCycles: 2, animEase: 'linear', animDStyle: 'sparkle', animFxStyle: 'breathe', animGrainStyle: 'live', animCamStyle: 'orbit', animCamAmt: 60, animColStyle: 'bright', animColAmt: 40 },
+            neon:     { animAmount: 140, animCycles: 2, animEase: 'linear', animDStyle: 'sparkle', animFxStyle: 'breathe', animGrainStyle: 'live', animColStyle: 'neon', animColAmt: 120, animColTarget: 'highs', animColColor: '#00e5ff', animCamStyle: 'none' },
+            polaroid: { animAmount: 90, animCycles: 1, animEase: 'smooth', animDStyle: 'breathe', animFxStyle: 'breathe', animGrainStyle: 'boil', animFilmStyle: 'auto', animColStyle: 'wash', animColAmt: 80, animColColor: '#ffb27a', animCamStyle: 'zoom', animCamAmt: 50 },
+            aurora:   { animAmount: 120, animCycles: 1, animEase: 'linear', animDStyle: 'wave', animFxStyle: 'drift', animColStyle: 'split', animColAmt: 110, animColSweep: 'vertical', animColSweepScale: 150, animCamStyle: 'sway', animCamAmt: 60 },
             projetor: { animAmount: 130, animCycles: 2, animEase: 'linear', animDStyle: 'jitter', animFxStyle: 'auto', animGrainStyle: 'live', animFilmStyle: 'auto', animFilmAmt: 150, animCamStyle: 'shake', animCamAmt: 40, animColStyle: 'bright', animColAmt: 30 },
             radar:    { animAmount: 150, animCycles: 2, animEase: 'linear', animDStyle: 'sweep', animDAngle: 45, animDWave: 160, animFxStyle: 'fade', animGrainStyle: 'frozen', animCamStyle: 'none', animColStyle: 'none' },
         };
@@ -6711,6 +7083,48 @@ function renderPresets() {
             downloadBlob(assembleGif(W, H, P, results, delays), `pixelar_loop_${Date.now()}.gif`);
             showToast('GIF exportado!');
         }
+        // ==========================================
+        // ZERAR UM CONTROLE — cada slider/seletor ganha um botãozinho ↺ que
+        // devolve o valor padrão daquele controle (sem mexer no resto).
+        // Os padrões são lidos do próprio HTML na carga da página.
+        // ==========================================
+        const CTRL_RESET_ICON = '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg>';
+        const CTRL_DEFAULTS = {};
+        const CTRL_NO_RESET = new Set(['videoTimeline', 'exportImgRes', 'animFormat', 'animRepeat', 'animPreset', 'imgGradColorPicker']);
+        const ctrlVal = (el) => (el.type === 'checkbox' ? el.checked : el.value);
+
+        function makeCtrlResetBtn(title, onClick) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'icon-btn ctrl-reset'; b.title = title || 'Zerar este controle';
+            b.innerHTML = CTRL_RESET_ICON;
+            b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); onClick(); });
+            return b;
+        }
+
+        // volta um controle ao padrão e atualiza tudo que depende dele
+        function resetControl(id) {
+            const el = document.getElementById(id);
+            if (!el || CTRL_DEFAULTS[id] === undefined) return;
+            const def = CTRL_DEFAULTS[id];
+            if (el.type === 'checkbox') el.checked = def; else el.value = def;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            if (id.indexOf('anim') === 0) updateAnimInfo();
+            if (id.indexOf('film') === 0 || id.indexOf('lens') === 0) syncFilmLookUI(id === 'filmLook');
+            updateBadges(); scheduleAppProcess(); saveHistoryState();
+        }
+
+        (function setupCtrlResets() {
+            const sel = '.control-group input[type=range], .control-group select, .control-group input[type=color]';
+            document.querySelectorAll(sel).forEach(el => {
+                if (!el.id || CTRL_NO_RESET.has(el.id)) return;
+                if (el.closest('#fxParamsInner') || el.closest('#filmParamsInner')) return; // têm reset próprio
+                CTRL_DEFAULTS[el.id] = ctrlVal(el);
+                const row = el.closest('.slider-row') || el.parentElement;
+                if (!row || row.querySelector(':scope > .ctrl-reset')) return;
+                row.appendChild(makeCtrlResetBtn('Zerar este controle', () => resetControl(el.id)));
+            });
+        })();
     </script>
 </body>
 </html>
