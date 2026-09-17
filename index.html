@@ -154,6 +154,12 @@
         .anim-grid label { display: flex; flex-direction: column; gap: 3px; font-size: 0.7rem; text-transform: uppercase; }
         .anim-grid select { min-height: 34px; padding: 4px 28px 4px 8px; font-size: 0.85rem; }
         @media (max-width: 768px) { .anim-grid { grid-template-columns: 1fr 1fr 1fr; } }
+        /* play flutuante: acima da barra inferior, ao centro */
+        #btn-play-anim { position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%); z-index: 51; width: 48px; height: 48px; box-shadow: 2px 2px 0 var(--shadow); }
+        #btn-play-anim svg { width: 22px; height: 22px; }
+        #btn-play-anim.active-state { transform: translate(calc(-50% + 1px), 1px); }
+        @media (max-width: 768px) { #btn-play-anim { bottom: 66px; width: 44px; height: 44px; min-width: 44px; } }
+        #filmLook optgroup { font-style: normal; }
         .modal-content h3 { font-size: var(--font-size-title); text-transform: uppercase; border-bottom: var(--border-width) solid var(--border); padding-bottom: 6px; margin-bottom: 6px; font-weight: normal; background: var(--accent); color: #FFFFFF; padding-left: 8px;}
         .modal-desc { font-size: var(--font-size-base); color: var(--text); margin-bottom: 8px; line-height: 1.4; }
 
@@ -286,22 +292,22 @@
     <div id="controls">
         <div class="controls-layout">
             <div id="desktop-tabs">
-                <button class="d-tab active" data-target="group-ajustes" title="Luz e cor da imagem"><svg viewbox="0 0 24 24"><line x1="4" x2="4" y1="21" y2="14"></line><line x1="4" x2="4" y1="10" y2="3"></line><line x1="12" x2="12" y1="21" y2="12"></line><line x1="12" x2="12" y1="8" y2="3"></line><line x1="20" x2="20" y1="21" y2="16"></line><line x1="20" x2="20" y1="12" y2="3"></line><line x1="1" x2="7" y1="14" y2="14"></line><line x1="9" x2="15" y1="8" y2="8"></line><line x1="17" x2="23" y1="16" y2="16"></line></svg><span>Ajustes</span></button>
-                <button class="d-tab" data-target="group-pixel" title="Grade de pixels e dither"><svg viewbox="0 0 24 24"><rect height="7" width="7" x="3" y="3"></rect><rect height="7" width="7" x="14" y="3"></rect><rect height="7" width="7" x="14" y="14"></rect><rect height="7" width="7" x="3" y="14"></rect></svg><span>Pixel</span></button>
-                <button class="d-tab" data-target="group-efeitos" title="Efeitos de textura, granulado e contorno"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Efeitos</span></button>
+                <button class="d-tab active" data-target="group-ajustes" title="Luz, cor, tons, grão e ótica"><svg viewbox="0 0 24 24"><line x1="4" x2="4" y1="21" y2="14"></line><line x1="4" x2="4" y1="10" y2="3"></line><line x1="12" x2="12" y1="21" y2="12"></line><line x1="12" x2="12" y1="8" y2="3"></line><line x1="20" x2="20" y1="21" y2="16"></line><line x1="20" x2="20" y1="12" y2="3"></line><line x1="1" x2="7" y1="14" y2="14"></line><line x1="9" x2="15" y1="8" y2="8"></line><line x1="17" x2="23" y1="16" y2="16"></line></svg><span>Ajustes</span></button>
+                <button class="d-tab" data-target="group-pixel" title="Grade, dither, textura e contorno"><svg viewbox="0 0 24 24"><rect height="7" width="7" x="3" y="3"></rect><rect height="7" width="7" x="14" y="3"></rect><rect height="7" width="7" x="14" y="14"></rect><rect height="7" width="7" x="3" y="14"></rect></svg><span>Pixel</span></button>
                 <button class="d-tab" data-target="group-cores" title="Paletas e degradê"><svg viewbox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.992 6.012 17.5 2 12 2z"></path></svg><span>Cores</span></button>
-                <button class="d-tab" data-target="group-anim" title="Animação em loop"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16"></rect><path d="M2 8h20M2 16h20M6 4v4M10 4v4M14 4v4M18 4v4M6 16v4M10 16v4M14 16v4M18 16v4"></path><polygon points="10 10 15 12 10 14 10 10"></polygon></svg><span>Animar</span></button>
-                <button class="d-tab" data-target="group-filtros" title="Presets e temas"><svg viewbox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg><span>Filtros</span></button>
+                <button class="d-tab" data-target="group-filtros" title="Filmes, câmeras, lente e presets"><svg viewbox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg><span>Filtros</span></button>
             </div>
 
             <div class="panels-container active">
 
-                <!-- ===== AJUSTES: luz, cor e tons da foto original ===== -->
+                <!-- ===== AJUSTES: luz, cor, tons, grão e ótica ===== -->
                 <div class="control-group active" id="group-ajustes">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-luz"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></svg><span>Luz</span></button>
                         <button class="m-sub-btn" data-target="set-cor"><svg viewBox="0 0 24 24"><path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.3 0z"></path></svg><span>Cor</span></button>
                         <button class="m-sub-btn" data-target="set-tons"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><path d="M3 9h18M9 21V9"></path></svg><span>Tons</span></button>
+                        <button class="m-sub-btn" data-target="set-pxGrain"><span class="badge" id="bdg-grain"></span><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="18" cy="7" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="13" r="1"></circle><circle cx="7" cy="18" r="1"></circle><circle cx="13" cy="19" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Grão</span></button>
+                        <button class="m-sub-btn" data-target="set-otica"><span class="badge" id="bdg-abe"></span><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"></circle><circle cx="14" cy="12" r="6"></circle></svg><span>Ótica</span></button>
                         <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
@@ -321,14 +327,28 @@
                         <div class="set-item" id="set-tons"><div class="panel-label">Tons</div>
                             <div class="row-lbl">Posterizar (menos níveis de tom)<span class="badge" id="bdg-pos"></span></div><div class="slider-row"><input id="posterize" max="100" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="posterize"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
                         </div>
+                        <div class="set-item" id="set-pxGrain"><div class="panel-label">Granulado de filme</div>
+
+<div class="slider-row"><input id="grainAmount" max="100" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="grainAmount"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Intensidade</span></div>
+<div class="slider-row"><input id="grainSize" max="400" min="10" type="range" value="100"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Tamanho</span></div>
+<div class="slider-row"><input id="grainRoughness" max="100" min="0" type="range" value="45"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Aspereza</span></div>
+<div class="slider-row"><input id="grainShadowBias" max="100" min="-100" type="range" value="20"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Sombras/Luzes</span></div>
+<div class="slider-row"><input id="grainSpeckle" max="100" min="0" type="range" value="0"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Manchas</span></div>
+<label class="custom-checkbox"><input checked="" id="grainMono" type="checkbox"/><span class="checkmark"></span><span>Granulado Monocromático</span></label>
+</div>
+                        <div class="set-item" id="set-otica"><div class="panel-label">Ótica</div>
+                            <div class="row-lbl">Aberração cromática</div><div class="slider-row"><input id="rgbShift" max="15" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="rgbShift"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- ===== PIXEL: grade e padrão de dither ===== -->
+                <!-- ===== PIXEL: grade, dither, textura e contorno ===== -->
                 <div class="control-group" id="group-pixel">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-pxSize"><svg viewbox="0 0 24 24"><rect height="7" width="7" x="3" y="3"></rect><rect height="7" width="7" x="14" y="3"></rect><rect height="7" width="7" x="14" y="14"></rect><rect height="7" width="7" x="3" y="14"></rect></svg><span>Grade</span></button>
                         <button class="m-sub-btn" data-target="set-dither"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="6" r="1"></circle><circle cx="18" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="6" cy="18" r="1"></circle><circle cx="12" cy="18" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Dither</span></button>
+                        <button class="m-sub-btn" data-target="set-pxEfeitos"><span class="badge" id="bdg-fxEff"></span><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Textura</span></button>
+                        <button class="m-sub-btn" data-target="set-corCon"><span class="badge" id="bdg-edg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><rect x="8" y="8" width="8" height="8"></rect></svg><span>Contorno</span></button>
                         <button class="m-sub-btn reset-btn" data-target="pixelReset"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
@@ -356,31 +376,15 @@
 <input id="textureOpacity" max="100" min="0" type="range" value="100"/><button class="icon-btn lock-btn" data-target="textureOpacity"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
 </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- ===== EFEITOS: tudo que vai por cima da imagem pixelada ===== -->
-                <div class="control-group" id="group-efeitos">
-                    <div class="m-sub-nav">
-                        <button class="m-sub-btn active" data-target="set-pxEfeitos"><span class="badge" id="bdg-fxEff"></span><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Textura</span></button>
-                        <button class="m-sub-btn" data-target="set-pxGrain"><span class="badge" id="bdg-grain"></span><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="18" cy="7" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="13" r="1"></circle><circle cx="7" cy="18" r="1"></circle><circle cx="13" cy="19" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Grão</span></button>
-                        <button class="m-sub-btn" data-target="set-otica"><span class="badge" id="bdg-abe"></span><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"></circle><circle cx="14" cy="12" r="6"></circle></svg><span>Ótica</span></button>
-                        <button class="m-sub-btn" data-target="set-corCon"><span class="badge" id="bdg-edg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><rect x="8" y="8" width="8" height="8"></rect></svg><span>Contorno</span></button>
-                        <button class="m-sub-btn reset-btn" data-target="efeitos"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
-                    </div>
-                    <div class="sec-content">
-                        <div class="set-item active" id="set-pxEfeitos"><div class="panel-label">Efeito de textura</div>
-
-<div class="slider-row">
+                        <div class="set-item" id="set-pxEfeitos"><div class="panel-label">Textura</div>
+                            <div class="slider-row">
 <select id="fxEffectSelect">
 <option value="none">Nenhum</option>
 <optgroup label="Efeitos">
-<option value="bokeh_blur">Desfoque</option>
 <option value="channel_mixer">Misturador</option>
 <option value="color_adjustment">Ajuste</option>
 <option value="gooey_merge">Fusão</option>
 <option value="hatching">Gravura</option>
-<option value="lens_distortion">Distorção</option>
 <option value="outlines">Contornos</option>
 <option value="pattern_refraction">Refração</option>
 <option value="pixelate_fx">Pixelização</option>
@@ -388,47 +392,12 @@
 <option value="warp">Deformação</option>
 <option value="photocopy">Fotocópia</option>
 <option value="vhs">Fita</option>
-<option value="vignette">Vinheta</option>
-<option value="bloom">Bloom</option>
-<option value="solarize">Solarização</option>
-<option value="kodak_verde">Kodak</option>
-<option value="kodak_pb">Kodak P&amp;B</option>
-<option value="lumiere">Lumiere</option>
-<option value="vencido">Vencido</option>
 </optgroup>
 </select>
 </div>
-<div class="slider-row"><input id="fxEffectMix" max="100" min="0" type="range" value="100"/><span style="font-size:0.7rem; opacity:0.7; min-width:70px; text-align:right;">Intensidade</span></div>
-<div class="film-subpanel" id="set-lumiereHue" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
-<div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Matiz do Lumiere</div>
-<div class="slider-row">
-<svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg>
-<input id="lumiereHue" max="360" min="0" type="range" value="280"/>
-</div>
-</div>
-<div class="film-subpanel" id="set-vencidoVariant" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
-<div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Filme Vencido</div>
-<div id="vencidoVariantBar" style="display:flex; gap:4px; width:100%;">
-<button class="std-btn vencido-variant-btn" data-variant="0" style="flex:1 1 0%; padding:6px 4px;">1</button>
-<button class="std-btn vencido-variant-btn" data-variant="1" style="flex:1 1 0%; padding:6px 4px;">2</button>
-<button class="std-btn vencido-variant-btn" data-variant="2" style="flex:1 1 0%; padding:6px 4px;">3</button>
-<button class="std-btn vencido-variant-btn" data-variant="3" style="flex:1 1 0%; padding:6px 4px;">4</button>
-</div>
-</div>
-<div class="panel-label" style="border: none; margin-top: 8px;">Parâmetros</div>
-<div id="fxParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
-</div>
-                        <div class="set-item" id="set-pxGrain"><div class="panel-label">Granulado de filme</div>
-
-<div class="slider-row"><input id="grainAmount" max="100" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="grainAmount"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Intensidade</span></div>
-<div class="slider-row"><input id="grainSize" max="400" min="10" type="range" value="100"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Tamanho</span></div>
-<div class="slider-row"><input id="grainRoughness" max="100" min="0" type="range" value="45"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Aspereza</span></div>
-<div class="slider-row"><input id="grainShadowBias" max="100" min="-100" type="range" value="20"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Sombras/Luzes</span></div>
-<div class="slider-row"><input id="grainSpeckle" max="100" min="0" type="range" value="0"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Manchas</span></div>
-<label class="custom-checkbox"><input checked="" id="grainMono" type="checkbox"/><span class="checkmark"></span><span>Granulado Monocromático</span></label>
-</div>
-                        <div class="set-item" id="set-otica"><div class="panel-label">Ótica</div>
-                            <div class="row-lbl">Aberração cromática</div><div class="slider-row"><input id="rgbShift" max="15" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="rgbShift"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                            <div class="slider-row"><input id="fxEffectMix" max="100" min="0" type="range" value="100"/><span style="font-size:0.7rem; opacity:0.7; min-width:70px; text-align:right;">Intensidade</span></div>
+                            <div class="panel-label" style="border: none; margin-top: 8px;">Parâmetros</div>
+                            <div id="fxParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
                         </div>
                         <div class="set-item" id="set-corCon"><div class="panel-label">Contorno entre cores</div>
                             <div class="row-lbl">Espessura e cor</div><div class="slider-row">
@@ -505,13 +474,14 @@
                     </div>
                 </div>
 
-                <!-- ===== ANIMAR: loop por camada ===== -->
+                <!-- ===== ANIMAR: loop por camada (aberto pelo play flutuante, sem aba) ===== -->
                 <div class="control-group" id="group-anim">
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-anPlay"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg><span>Geral</span></button>
                         <button class="m-sub-btn" data-target="set-anDither"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="6" r="1"></circle><circle cx="18" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="6" cy="18" r="1"></circle><circle cx="12" cy="18" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Dither</span></button>
-                        <button class="m-sub-btn" data-target="set-anFx"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Efeito</span></button>
+                        <button class="m-sub-btn" data-target="set-anFx"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Textura</span></button>
                         <button class="m-sub-btn" data-target="set-anGrain"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="18" cy="7" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="7" cy="18" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Grão</span></button>
+                        <button class="m-sub-btn" data-target="set-anFilm"><svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20"></rect><path d="M7 2v20M17 2v20M3 7h4M3 12h4M3 17h4M17 7h4M17 12h4M17 17h4"></path></svg><span>Filme</span></button>
                         <button class="m-sub-btn" data-target="set-anCam"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14"></rect></svg><span>Câmera</span></button>
                         <button class="m-sub-btn" data-target="set-anCol"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18M3 12h18"></path></svg><span>Cor</span></button>
                         <button class="m-sub-btn reset-btn" data-target="anim"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
@@ -531,6 +501,7 @@
                                     <option value="oceano">Oceano</option>
                                     <option value="estrelas">Estrelas</option>
                                     <option value="radar">Radar</option>
+                                    <option value="projetor">Projetor de cinema</option>
                                 </select>
                             </div>
                             <div class="row-lbl">Intensidade geral <span class="anim-val" id="animAmountVal">100%</span></div>
@@ -587,8 +558,8 @@
                             </div>
                         </div>
 
-                        <div class="set-item" id="set-anFx"><div class="panel-label">Movimento do efeito de textura</div>
-                            <label class="custom-checkbox"><input type="checkbox" id="animFx" checked><span class="checkmark"></span><span>Animar efeito</span></label>
+                        <div class="set-item" id="set-anFx"><div class="panel-label">Movimento da textura</div>
+                            <label class="custom-checkbox"><input type="checkbox" id="animFx" checked><span class="checkmark"></span><span>Animar textura</span></label>
                             <div class="row-lbl">Estilo</div>
                             <div class="slider-row"><select id="animFxStyle">
                                 <option value="auto" selected>Próprio do efeito</option>
@@ -609,6 +580,18 @@
                             </select></div>
                             <div class="row-lbl">Força <span class="anim-val" id="animGrainAmtVal">100%</span></div>
                             <div class="slider-row"><input type="range" id="animGrainAmt" min="0" max="300" step="5" value="100"></div>
+                        </div>
+
+                        <div class="set-item" id="set-anFilm"><div class="panel-label">Movimento do filme</div>
+                            <label class="custom-checkbox"><input type="checkbox" id="animFilm" checked><span class="checkmark"></span><span>Animar filme e lente</span></label>
+                            <div class="row-lbl">Estilo</div>
+                            <div class="slider-row"><select id="animFilmStyle">
+                                <option value="auto" selected>Projetor antigo (tudo)</option><option value="weave">Quadro tremendo</option>
+                                <option value="flicker">Luz cintilando</option><option value="leak">Luz vazando</option>
+                                <option value="burn">Película queimando</option><option value="live">Só grão e poeira vivos</option>
+                            </select></div>
+                            <div class="row-lbl">Força <span class="anim-val" id="animFilmAmtVal">100%</span></div>
+                            <div class="slider-row"><input type="range" id="animFilmAmt" min="0" max="300" step="5" value="100"></div>
                         </div>
 
                         <div class="set-item" id="set-anCam"><div class="panel-label">Câmera (move a imagem inteira)</div>
@@ -637,17 +620,82 @@
                     </div>
                 </div>
 
-<div class="control-group" id="group-filtros">
-<div class="sec-content">
-<div class="set-item active" id="set-filTodos" style="display: flex !important;">
-<div class="panel-label">Meus Presets Salvos</div>
+                <!-- ===== FILTROS: filme & câmera, lente, presets ===== -->
+                <div class="control-group" id="group-filtros">
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-filFilme"><span class="badge" id="bdg-film"></span><svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20"></rect><path d="M7 2v20M17 2v20M3 7h4M3 12h4M3 17h4M17 7h4M17 12h4M17 17h4"></path></svg><span>Filme</span></button>
+                        <button class="m-sub-btn" data-target="set-filLente"><span class="badge" id="bdg-lens"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3l3 5M21 12l-5 2M12 21l-3-5M3 12l5-2"></path></svg><span>Lente</span></button>
+                        <button class="m-sub-btn" data-target="set-filTodos"><svg viewbox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg><span>Presets</span></button>
+                        <button class="m-sub-btn reset-btn" data-target="filtros"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
+                    </div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-filFilme"><div class="panel-label">Filme e câmera</div>
+                            <div class="slider-row"><select id="filmLook" title="Filmes e câmeras por época"></select></div>
+                            <div class="anim-info" id="filmDesc"></div>
+                            <div id="filmLookOpts" style="display:none; flex-direction:column; gap:6px; width:100%;">
+                                <div class="row-lbl">Intensidade <span class="anim-val" id="filmMixVal">100%</span></div>
+                                <div class="slider-row"><input type="range" id="filmMix" min="0" max="100" value="100"></div>
+                                <div class="row-lbl">Grão, poeira e riscos <span class="anim-val" id="filmGrainAmtVal">100%</span></div>
+                                <div class="slider-row"><input type="range" id="filmGrainAmt" min="0" max="200" step="5" value="100"></div>
+                            </div>
+                            <div class="row-lbl">Temperatura do filme <span class="anim-val" id="filmTempVal">0</span></div>
+                            <div class="slider-row"><input type="range" id="filmTemp" min="-100" max="100" value="0" title="Esquerda: frio (luz de tungstênio) · direita: quente"></div>
+                            <div class="row-lbl">Moldura</div>
+                            <div class="slider-row"><select id="filmFrame" style="flex:1;"></select><input type="color" class="icon-btn" id="filmFrameColor" value="#f5f2eb" title="Cor da moldura"></div>
+                            <div class="row-lbl">Data impressa</div>
+                            <div class="slider-row"><select id="filmStamp" style="flex:1;"><option value="auto" selected>Do filme</option><option value="on">Sempre</option><option value="off">Nunca</option></select><input type="color" class="icon-btn" id="filmStampColor" value="#ff8c1f" title="Cor da data"></div>
+                            <div class="film-subpanel" id="set-lumiereHue" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
+<div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Matiz do Lumiere</div>
+<div class="slider-row">
+<svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg>
+<input id="lumiereHue" max="360" min="0" type="range" value="280"/>
+</div>
+</div>
+                            <div class="film-subpanel" id="set-vencidoVariant" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
+<div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Filme Vencido</div>
+<div id="vencidoVariantBar" style="display:flex; gap:4px; width:100%;">
+<button class="std-btn vencido-variant-btn" data-variant="0" style="flex:1 1 0%; padding:6px 4px;">1</button>
+<button class="std-btn vencido-variant-btn" data-variant="1" style="flex:1 1 0%; padding:6px 4px;">2</button>
+<button class="std-btn vencido-variant-btn" data-variant="2" style="flex:1 1 0%; padding:6px 4px;">3</button>
+<button class="std-btn vencido-variant-btn" data-variant="3" style="flex:1 1 0%; padding:6px 4px;">4</button>
+</div>
+</div>
+                            <div id="filmParamsWrap" style="display:none; flex-direction:column; gap:6px; width:100%;">
+                                <div class="panel-label" style="border: none; margin-top: 8px; display:block !important;">Parâmetros do clássico</div>
+                                <div id="filmParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-filLente"><div class="panel-label">Lente e luz</div>
+                            <div class="row-lbl">Vinheta <span class="anim-val" id="lensVignetteVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensVignette" min="0" max="100" value="0"></div>
+                            <div class="slider-row"><span class="row-lbl" style="flex:1;">Cor da vinheta</span><input type="color" class="icon-btn" id="lensVigColor" value="#000000"></div>
+                            <div class="row-lbl">Halação (brilho avermelhado) <span class="anim-val" id="lensHalationVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensHalation" min="0" max="100" value="0"></div>
+                            <div class="row-lbl">Brilho nas luzes (bloom) <span class="anim-val" id="lensBloomVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensBloom" min="0" max="100" value="0"></div>
+                            <div class="row-lbl">Foco suave <span class="anim-val" id="lensSoftVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensSoft" min="0" max="100" value="0"></div>
+                            <div class="row-lbl">Distorção (barril ↔ almofada) <span class="anim-val" id="lensDistortVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensDistort" min="-100" max="100" value="0"></div>
+                            <div class="row-lbl">Aberração de lente <span class="anim-val" id="lensChromaVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensChroma" min="0" max="100" value="0"></div>
+                            <div class="row-lbl">Flash direto <span class="anim-val" id="lensFlashVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensFlash" min="0" max="100" value="0"></div>
+                            <div class="row-lbl">Vazamento de luz <span class="anim-val" id="lensLeakVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensLeak" min="0" max="100" value="0"></div>
+                            <div class="slider-row"><span class="row-lbl" style="flex:1;">Cor do vazamento</span><input type="color" class="icon-btn" id="lensLeakColor" value="#ff7319"></div>
+                            <div class="row-lbl">Poeira e fios de cabelo <span class="anim-val" id="lensDustVal">0%</span></div>
+                            <div class="slider-row"><input type="range" id="lensDust" min="0" max="100" value="0"></div>
+                        </div>
+                        <div class="set-item" id="set-filTodos"><div class="panel-label">Meus presets salvos</div>
+
 <button class="std-btn" id="btnSavePreset" style="width:100%; margin-bottom: 12px;">Salvar Ajuste Atual</button>
 <div class="horizontal-scroll-mobile" id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 8px; width:100%; margin-bottom: 16px;"></div>
 <div class="panel-label" style="border: none; margin-top: 8px;">Temas Prontos</div>
 <div class="horizontal-scroll-mobile" id="themesGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--pad-sm); width:100%;"></div>
 </div>
-</div>
-</div>
+                    </div>
+                </div>
 
                 <!-- Configurações (engrenagem na barra superior) -->
 <div class="control-group" id="group-config">
@@ -678,7 +726,8 @@
 <label class="custom-checkbox"><input checked="" id="randToggle-ditherParams" type="checkbox"/><span class="checkmark"></span><span>Escala e Intensidade do Dither</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-palette" type="checkbox"/><span class="checkmark"></span><span>Paleta de Cores</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-contorno" type="checkbox"/><span class="checkmark"></span><span>Contorno / Edge</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-fx" type="checkbox"/><span class="checkmark"></span><span>Efeito de Textura</span></label>
+<label class="custom-checkbox"><input checked="" id="randToggle-fx" type="checkbox"/><span class="checkmark"></span><span>Textura</span></label>
+<label class="custom-checkbox"><input checked="" id="randToggle-film" type="checkbox"/><span class="checkmark"></span><span>Filme e lente</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-grain" type="checkbox"/><span class="checkmark"></span><span>Granulado</span></label>
 <label class="custom-checkbox"><input checked="" id="randToggle-anim" type="checkbox"/><span class="checkmark"></span><span>Animação</span></label>
 </div>
@@ -723,11 +772,11 @@
             <input type="range" id="videoTimeline" min="0" max="100" value="0" style="flex: 1;">
         </div>
 
+        <button class="float-btn hidden-ui" id="btn-play-anim" title="Tocar animação e abrir suas opções (espaço)"></button>
         <div id="floating-bar">
             <button class="float-btn" id="btn-undo-view" disabled title="Desfazer Ação"><svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2"/></svg></button>
             <button class="float-btn" id="btn-redo-view" disabled title="Refazer Ação"><svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2"/></svg></button>
             <div style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
-            <button class="float-btn hidden-ui" id="btn-play-anim" title="Ver animação (espaço)"></button>
             <button class="float-btn" id="btnRecordVideoFloat" title="Exportar Mídia"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
             <button class="float-btn random-hint" id="btn-random-global" title="Mix Completo"><svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
         </div>
@@ -775,7 +824,7 @@
                             <option value="gif">GIF</option>
                         </select>
                     </div>
-                    <div class="anim-info">Intensidade, velocidade, duração e o resto ficam em Pixel → Animação.</div>
+                    <div class="anim-info">Intensidade, velocidade, duração e o movimento de cada camada ficam no painel do botão ▶ (acima da barra inferior).</div>
                     <div class="slider-row" id="animRepeatRow">
                         <span class="anim-lbl">Repetir volta</span>
                         <select id="animRepeat" title="Voltas no arquivo de vídeo (GIF repete sozinho)">
@@ -1359,20 +1408,6 @@ const PIXELAR_FX_LIST = [
     }`
   },
 
-  {
-    id: 'solarize', nome: 'Solarização',
-    uniforms: { uThreshold: 0.5, uSoftness: 0.05 },
-    src: `
-    uniform float uThreshold, uSoftness;
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        float l = luma(c);
-        float mask = smoothstep(uThreshold - uSoftness, uThreshold + uSoftness, l);
-        vec3 inverted = 1.0 - c;
-        vec3 result = mix(c, inverted, mask);
-        outColor = vec4(clamp(result, 0.0, 1.0), 1.0);
-    }`
-  },
 
   
   
@@ -1413,6 +1448,9 @@ uvec3 pcg3d(uvec3 v) {
 float phash(ivec2 p, float s) { return float(pcg3d(uvec3(uvec2(p), floatBitsToUint(s))).x) / 4294967295.0; }
 `;
 
+const FILM_INT_UNIFORMS = new Set(['uSwap', 'uFrame', 'uStamp']);
+const FILM_FX_IDS = ['kodak_verde', 'kodak_pb', 'lumiere', 'vencido'];
+const LENS_FX_IDS = ['vignette', 'bloom', 'bokeh_blur', 'lens_distortion']; // viraram controles da Lente (Filtros)
 const PixelarGPU = (function () {
     let gl = null, glCanvas = null;
     let initialized = false, ok = false, contextLost = false;
@@ -1723,6 +1761,292 @@ const PixelarGPU = (function () {
         outColor = vec4(clamp(d, 0.0, 255.0) / 255.0, c.a);
     }`;
 
+    // ==========================================
+    // FILM — simulação de filme e câmera analógica/digital antiga.
+    // Um único shader parametrizado: cada "look" (Kodachrome, Polaroid,
+    // Super 8, CCD...) é só um conjunto de valores destes uniforms.
+    // Ordem: moldura → tremor/lente → desfoque/nitidez → halação/bloom →
+    // química de cor (misturada por uMix) → flash/vazamento/queima/vinheta →
+    // vídeo/digital → grão/poeira/riscos → data carimbada.
+    // ==========================================
+    const FILM_FS = `#version 300 es
+    precision highp float; precision highp int;
+    out vec4 outColor;
+    uniform sampler2D uTex;
+    uniform vec2 uSize;
+    uniform float uMix, uLookOn;
+    uniform float uExposure, uContrast, uFade, uRoll, uSat, uTemp, uTint, uHue, uSplit, uCross, uBleach, uBW, uTone, uSwapAmt;
+    uniform vec3 uShadowTint, uHighTint, uBase, uBWMix, uToneColor;
+    uniform int uSwap;
+    uniform float uHalation, uBloom, uSoft, uBlur, uSharpen, uVignette, uDistort, uChroma, uFlash;
+    uniform vec3 uHalColor;
+    uniform float uLeak, uLeakPos, uDust, uScratch, uBurn, uGrain, uGrainSize, uJpeg, uChromaNoise, uInterlace, uAutochrome;
+    uniform vec3 uLeakColor, uVigColor;
+    uniform int uFrame;
+    uniform vec3 uFrameColor;
+    uniform int uStamp;
+    uniform vec4 uStampA;
+    uniform vec2 uStampB;
+    uniform vec3 uStampColor;
+    uniform float uAnim, uAnimFrame, uWeave, uFlicker, uLeakDrift, uBurnAnim;
+    ${GLSL_HASH}
+    const float TAU = 6.28318530718;
+    const int SEG[10] = int[10](63, 6, 91, 79, 102, 109, 125, 7, 127, 111);
+
+    float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+    float h21(vec2 p, float s) { return phash(ivec2(floor(p)), s); }
+    float vnoise(vec2 p, float s) {
+        vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(h21(i, s), h21(i + vec2(1.0, 0.0), s), f.x), mix(h21(i + vec2(0.0, 1.0), s), h21(i + vec2(1.0, 1.0), s), f.x), f.y);
+    }
+    vec3 img(vec2 uv) { return texture(uTex, clamp(uv, vec2(0.0), vec2(1.0))).rgb; }
+    vec3 hueRot(vec3 c, float a) {
+        const mat3 toY = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312);
+        const mat3 fromY = mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703);
+        vec3 y = toY * c; float cs = cos(a), sn = sin(a);
+        y.yz = mat2(cs, sn, -sn, cs) * y.yz;
+        return fromY * y;
+    }
+    float sdBox(vec2 p, vec2 b, float r) { vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
+    float segD(vec2 p, vec2 a, vec2 b) { vec2 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0); return length(pa - ba * h) - 0.11; }
+    float digitD(vec2 p, int d) {
+        if (d < 0 || d > 9) return 1e3;
+        int m = SEG[d]; float r = 1e3;
+        if ((m & 1) != 0) r = min(r, segD(p, vec2(0.15, 0.0), vec2(0.85, 0.0)));
+        if ((m & 2) != 0) r = min(r, segD(p, vec2(1.0, 0.15), vec2(1.0, 0.85)));
+        if ((m & 4) != 0) r = min(r, segD(p, vec2(1.0, 1.15), vec2(1.0, 1.85)));
+        if ((m & 8) != 0) r = min(r, segD(p, vec2(0.15, 2.0), vec2(0.85, 2.0)));
+        if ((m & 16) != 0) r = min(r, segD(p, vec2(0.0, 1.15), vec2(0.0, 1.85)));
+        if ((m & 32) != 0) r = min(r, segD(p, vec2(0.0, 0.15), vec2(0.0, 0.85)));
+        if ((m & 64) != 0) r = min(r, segD(p, vec2(0.15, 1.0), vec2(0.85, 1.0)));
+        return r;
+    }
+
+    void main() {
+        vec2 frag = gl_FragCoord.xy;              // linha 0 = topo da imagem
+        vec2 S = uSize;
+        float m = min(S.x, S.y);
+
+        // ---------- moldura: retângulo útil (em px) ----------
+        float L = 0.0, R = 0.0, T = 0.0, B = 0.0, rad = 0.0, rough = 0.0;
+        if (uFrame == 1) { L = R = T = 0.055 * m; B = 0.22 * m; }                  // Polaroid
+        else if (uFrame == 2) { L = R = 0.07 * m; T = 0.1 * m; B = 0.24 * m; rad = 0.015 * m; }  // Instax
+        else if (uFrame == 3) { T = B = 0.13 * S.y; L = R = 0.01 * S.x; }            // tira 35 mm
+        else if (uFrame == 4) { L = R = 0.05 * m; T = B = 0.04 * m; rad = 0.09 * m; } // Super 8
+        else if (uFrame == 5) { L = R = T = B = 0.035 * m; rough = 0.012 * m; }      // médio formato
+        else if (uFrame == 6) { float hb = max(0.0, (S.y - S.x / 2.39) * 0.5); T = B = hb; } // Cinemascope
+        else if (uFrame == 7) { L = R = T = B = 0.13 * m; rad = 0.03 * m; }          // moldura de slide
+        else if (uFrame == 8) { L = R = T = B = 0.06 * m; rough = 0.008 * m; }       // papel antigo
+        else if (uFrame == 9) { L = R = T = B = 0.03 * m; rough = 0.03 * m; }        // placa (ferrótipo)
+        else if (uFrame == 10) { L = R = T = 0.05 * m; B = 0.05 * m; rad = 0.04 * m; } // cantos arredondados
+        vec2 i0 = vec2(L, T), i1 = S - vec2(R, B);
+        vec2 isz = max(i1 - i0, vec2(1.0));
+        vec2 ic = (i0 + i1) * 0.5;
+        float sd = sdBox(frag - ic, isz * 0.5, rad);
+        if (rough > 0.0) sd += (vnoise(frag / (m * 0.02), 91.0) - 0.5) * rough * 2.0 + (vnoise(frag / (m * 0.004), 92.0) - 0.5) * rough * 0.6;
+        if (uFrame != 0 && sd > 0.0) {
+            vec3 fc = uFrameColor;
+            // textura do papel/plástico
+            fc *= 0.94 + 0.06 * vnoise(frag / 3.0, 71.0);
+            if (uFrame == 3) {
+                // furos de tracionamento
+                float pitch = 0.075 * m, hw = 0.022 * m, hh = 0.035 * m;
+                float cx = mod(frag.x, pitch) - pitch * 0.5;
+                float yTop = T * 0.5, yBot = S.y - B * 0.5;
+                float hole = min(sdBox(vec2(cx, frag.y - yTop), vec2(hw, hh * 0.5), 0.006 * m), sdBox(vec2(cx, frag.y - yBot), vec2(hw, hh * 0.5), 0.006 * m));
+                if (hole < 0.0) fc = vec3(0.92, 0.9, 0.84);
+            }
+            if (uFrame == 8) fc = mix(fc, fc * vec3(0.93, 0.86, 0.72), vnoise(frag / (m * 0.1), 77.0) * 0.35);
+            outColor = vec4(clamp(fc, 0.0, 1.0), 1.0);
+            return;
+        }
+        vec2 iuv = (frag - i0) / isz;             // 0..1 dentro da foto
+
+        // ---------- tremor de quadro (projetor) ----------
+        if (uWeave > 0.0) {
+            float ph = TAU * uAnim;
+            iuv += vec2(sin(ph * 2.0 + 1.7) * 0.6 + sin(ph * 5.0) * 0.3, sin(ph * 3.0 + 0.4) + sin(ph * 7.0 + 2.1) * 0.4) * 0.0025 * uWeave;
+        }
+
+        // ---------- lente: distorção + aberração ----------
+        vec2 cc = iuv - 0.5;
+        float r2 = dot(cc, cc);
+        vec2 duv = 0.5 + cc * (1.0 + uDistort * r2) / (1.0 + uDistort * 0.25);
+        // coordenada de amostragem na textura inteira
+        vec2 toTex = isz / S, offTex = i0 / S;
+        #define TEX(u) (offTex + clamp(u, 0.0, 1.0) * toTex)
+        vec3 col;
+        if (uChroma > 0.0) {
+            vec2 d = cc * uChroma * 0.02;
+            col = vec3(img(TEX(duv + d)).r, img(TEX(duv)).g, img(TEX(duv - d)).b);
+        } else col = img(TEX(duv));
+
+        // ---------- foco: desfoque suave e bordas moles ----------
+        float blurPx = (uSoft + uBlur * r2 * 5.0) * m * 0.004;
+        if (blurPx > 0.35) {
+            vec3 acc = col; float wsum = 1.0;
+            for (int i = 0; i < 12; i++) {
+                float a = float(i) * TAU / 12.0 + 0.2;
+                float rr = (i % 2 == 0) ? 1.0 : 0.55;
+                acc += img(TEX(duv + vec2(cos(a), sin(a)) * blurPx * rr / isz)); wsum += 1.0;
+            }
+            col = acc / wsum;
+        }
+        if (uSharpen > 0.0) {
+            vec2 px = 1.0 / isz;
+            vec3 b = (img(TEX(duv + vec2(px.x, 0.0))) + img(TEX(duv - vec2(px.x, 0.0))) + img(TEX(duv + vec2(0.0, px.y))) + img(TEX(duv - vec2(0.0, px.y)))) * 0.25;
+            col += (col - b) * uSharpen * 2.2;
+        }
+
+        // ---------- halação (brilho avermelhado nas luzes) e bloom ----------
+        if (uHalation > 0.0 || uBloom > 0.0) {
+            vec3 glow = vec3(0.0);
+            for (int i = 0; i < 16; i++) {
+                float a = float(i) * TAU / 16.0 + 0.3;
+                float rr = (float(i % 4) + 1.0) / 4.0;
+                vec3 s = img(TEX(duv + vec2(cos(a), sin(a)) * rr * m * 0.035 / isz));
+                glow += s * max(0.0, luma(s) - 0.68) / 0.32; // só as luzes fortes
+            }
+            glow /= 16.0;
+            col += uHalColor * luma(glow) * uHalation * 1.6;
+            col += glow * uBloom * 1.4;
+        }
+
+        // ---------- química do filme ----------
+        if (uLookOn > 0.5) {
+            vec3 src = col;
+            vec3 c = col * pow(2.0, uExposure);
+            c *= vec3(1.0 + uTemp * 0.14, 1.0 - uTint * 0.1, 1.0 - uTemp * 0.14) * vec3(1.0 + uTint * 0.03, 1.0, 1.0 + uTint * 0.05);
+            if (uSwap == 1) {           // Aerochrome: folhagem (verde) vira vermelho, vermelho vira verde, verde vira azul
+                float ir = clamp(c.g * 1.25 + max(0.0, c.g - max(c.r, c.b)) * 1.8 - c.b * 0.15, 0.0, 1.2);
+                c = mix(c, vec3(ir, c.r * 0.95, c.g * 0.8 + c.b * 0.25), uSwapAmt);
+            } else if (uSwap == 2) {    // LomoChrome Purple: verdes viram roxo, roxos viram verde
+                float gw = clamp((c.g - max(c.r, c.b)) * 3.0, 0.0, 1.0);
+                float pw = clamp((min(c.r, c.b) - c.g) * 3.0, 0.0, 1.0);
+                vec3 s = hueRot(c, -2.6 * gw + 2.6 * pw);
+                s = mix(s, vec3(c.r, c.b * 0.9, c.g * 0.6 + c.b * 0.5), 0.35);
+                c = mix(c, s, uSwapAmt);
+            } else if (uSwap == 3) {    // Technicolor 3 cores: separação de corantes
+                vec3 t = vec3(c.r - (c.g + c.b) * 0.5, c.g - (c.r + c.b) * 0.5, c.b - (c.r + c.g) * 0.5);
+                c = mix(c, c + t * 0.6, uSwapAmt);
+            } else if (uSwap == 4) {    // Technicolor 2 cores: só laranja-avermelhado e ciano-esverdeado
+                float gb = (c.g + c.b) * 0.5;
+                c = mix(c, vec3(c.r, gb * 0.95, gb), uSwapAmt);
+            }
+            c = max(c, 0.0);
+            if (uRoll > 0.0) c = c / (1.0 + c * uRoll) * (1.0 + uRoll);       // luzes comprimidas (negativo)
+            c = 0.5 + (c - 0.5) * uContrast;
+            if (uContrast > 1.0) c = mix(c, smoothstep(0.0, 1.0, c), (uContrast - 1.0) * 0.5);
+            c = clamp(c, 0.0, 1.0);
+            if (uCross > 0.0) c = mix(c, vec3(smoothstep(0.05, 0.95, c.r) * 1.05, pow(c.g, 0.85), c.b * 0.7 + 0.14), uCross);
+            if (uBleach > 0.0) { float l = luma(c); vec3 bb = 0.5 + (mix(vec3(l), c, 0.4) - 0.5) * 1.4; c = mix(c, bb, uBleach); }
+            float l = luma(c);
+            c = mix(vec3(l), c, uSat);
+            if (uHue != 0.0) c = hueRot(c, uHue);
+            if (uBW > 0.0) { float g = dot(c, uBWMix) / max(1e-3, uBWMix.r + uBWMix.g + uBWMix.b); c = mix(c, vec3(g), uBW); }
+            if (uTone > 0.0) {
+                float g = luma(c);
+                vec3 toned = g < 0.5 ? mix(vec3(0.02), uToneColor, g * 2.0) : mix(uToneColor, vec3(1.0), (g - 0.5) * 2.0);
+                c = mix(c, toned, uTone);
+            }
+            float lum = luma(c);
+            c += (uShadowTint - 0.5) * uSplit * (1.0 - smoothstep(0.0, 0.55, lum));
+            c += (uHighTint - 0.5) * uSplit * smoothstep(0.45, 1.0, lum);
+            c = mix(c, uBase + c * (1.0 - uBase), uFade);
+            col = mix(src, clamp(c, 0.0, 1.0), uMix);
+        }
+
+        // ---------- autocromo: grãos de amido coloridos ----------
+        if (uAutochrome > 0.0) {
+            float hsel = h21(frag / 1.3, 55.0);
+            vec3 dotc = hsel < 0.34 ? vec3(1.25, 0.55, 0.35) : hsel < 0.67 ? vec3(0.5, 1.2, 0.45) : vec3(0.55, 0.45, 1.3);
+            col = mix(col, col * dotc, uAutochrome * 0.55);
+        }
+        // ---------- flash direto ----------
+        if (uFlash > 0.0) {
+            vec2 q = (iuv - vec2(0.5, 0.42)) * vec2(isz.x / min(isz.x, isz.y), isz.y / min(isz.x, isz.y));
+            col *= 1.0 + uFlash * (1.2 * exp(-dot(q, q) * 5.0) - 0.45);
+        }
+        // ---------- vazamento de luz ----------
+        if (uLeak > 0.0) {
+            float ang = TAU * (uLeakPos + uLeakDrift * 0.08 * sin(TAU * uAnim));
+            vec2 lp = 0.5 + vec2(cos(ang), sin(ang)) * 0.8;
+            vec2 dv = iuv - lp;
+            float d = length(dv);
+            float leak = smoothstep(0.95, 0.0, d);
+            leak += smoothstep(0.1, 0.0, abs(dot(dv, vec2(-sin(ang), cos(ang))))) * smoothstep(1.1, 0.2, d) * 0.7;
+            leak *= 0.85 + 0.3 * uLeakDrift * sin(TAU * uAnim * 2.0 + 1.0);
+            col = 1.0 - (1.0 - col) * (1.0 - clamp(uLeakColor * leak * uLeak, 0.0, 1.0));
+        }
+        // ---------- filme queimado nas bordas ----------
+        if (uBurn > 0.0) {
+            float e = max(abs(iuv.x - 0.5), abs(iuv.y - 0.5)) * 2.0;
+            float n = vnoise(iuv * 5.0 + vec2(cos(TAU * uAnim), sin(TAU * uAnim)) * uBurnAnim * 0.8, 5.0); // trajetória circular → loop sem emenda
+            float burn = smoothstep(0.72, 1.05, e + (n - 0.5) * 0.45);
+            col = mix(col, vec3(1.0, 0.62, 0.22) * (1.1 + n * 0.3), burn * uBurn);
+        }
+        // ---------- vinheta ----------
+        if (uVignette > 0.0) {
+            vec2 v = (iuv - 0.5) * vec2(1.0, isz.y / isz.x) * 1.35;
+            float vk = clamp(min(1.0, uVignette) * smoothstep(0.25, 0.95, length(v)) + max(0.0, uVignette - 1.0) * smoothstep(0.1, 0.8, length(v)) * 0.6, 0.0, 1.0);
+            col = mix(col, uVigColor, vk); // cor da vinheta configurável
+        }
+        // ---------- cintilação do projetor ----------
+        if (uFlicker > 0.0) col *= 1.0 + uFlicker * (phash(ivec2(int(uAnimFrame), 3), 11.0) - 0.5) * 0.16;
+        // ---------- vídeo e digital ----------
+        if (uJpeg > 0.0) {
+            vec2 blk = (floor(iuv * isz / 8.0) * 8.0 + 4.0) / isz;
+            col = mix(col, mix(col, img(TEX(blk)), 0.55), uJpeg);
+            col = mix(col, floor(col * 24.0 + 0.5) / 24.0, uJpeg * 0.6);
+        }
+        if (uInterlace > 0.0) col *= 1.0 - uInterlace * 0.22 * step(0.5, fract(frag.y * 0.5 + uAnimFrame * 0.5));
+        if (uChromaNoise > 0.0) {
+            float sh = 1.0 - smoothstep(0.0, 0.6, luma(col));
+            col += (vec3(h21(frag, 1.0 + uAnimFrame), h21(frag, 2.0 + uAnimFrame), h21(frag, 3.0 + uAnimFrame)) - 0.5) * uChromaNoise * 0.3 * (0.3 + sh);
+        }
+        // ---------- grão de filme (mais forte nos meios-tons) ----------
+        if (uGrain > 0.0) {
+            vec2 gp = frag / max(1.0, uGrainSize);
+            float n = vnoise(gp, 7.0 + uAnimFrame) + vnoise(gp * 2.3, 13.0 + uAnimFrame) * 0.5 - 0.75;
+            float l = luma(col);
+            col += n * uGrain * 0.4 * (0.35 + 0.65 * (1.0 - abs(l - 0.5) * 2.0));
+        }
+        // ---------- poeira e riscos ----------
+        if (uDust > 0.0) {
+            float sd2 = h21(frag / max(1.0, m * 0.004), 31.0 + uAnimFrame);
+            if (sd2 > 1.0 - uDust * 0.006) col = mix(col, (h21(frag, 33.0 + uAnimFrame) > 0.5) ? vec3(0.95) : vec3(0.04), 0.85);
+            float hair = abs(sin(iuv.x * 17.0 + vnoise(iuv * 3.0, 41.0 + floor(uAnimFrame / 4.0)) * 9.0) * 0.5 + 0.5 - iuv.y);
+            if (h21(vec2(floor(uAnimFrame / 4.0), 1.0), 47.0) < uDust * 0.6) col = mix(col, vec3(0.05), (1.0 - smoothstep(0.0, 1.5 / isz.y, hair)) * 0.6);
+        }
+        if (uScratch > 0.0) {
+            float cx = floor(iuv.x * 300.0);
+            float s = h21(vec2(cx, floor(uAnimFrame / 2.0)), 57.0);
+            if (s > 1.0 - uScratch * 0.012) col = mix(col, vec3(0.92), 0.55 * vnoise(vec2(cx, iuv.y * 30.0), 3.0));
+        }
+        // ---------- data carimbada (display de 7 segmentos) ----------
+        if (uStamp == 1) {
+            float u = max(2.2, 0.026 * min(isz.x, isz.y));
+            vec2 br = i1 - vec2(0.05, 0.05) * min(isz.x, isz.y);
+            float cw = 1.75;
+            vec2 p = (frag - (br - vec2(cw * 9.0 * u, 2.0 * u))) / u;
+            p.x += (2.0 - p.y) * 0.12;
+            int ci = int(floor(p.x / cw));
+            if (ci >= 0 && ci < 9 && p.y > -0.5 && p.y < 2.5) {
+                vec2 lp = vec2(p.x - float(ci) * cw, p.y);
+                float d2 = 1e3;
+                if (ci == 0) d2 = segD(lp, vec2(0.7, 0.0), vec2(0.55, 0.45));
+                else {
+                    int dg = ci == 1 ? int(uStampA.x) : ci == 2 ? int(uStampA.y) : ci == 4 ? int(uStampA.z) : ci == 5 ? int(uStampA.w) : ci == 7 ? int(uStampB.x) : ci == 8 ? int(uStampB.y) : -1;
+                    d2 = digitD(lp, dg);
+                }
+                float core = 1.0 - smoothstep(0.0, 1.0 / u, d2);
+                float glow = exp(-max(d2, 0.0) * 2.5) * 0.45;
+                col = mix(col, uStampColor * (1.0 + core * 0.2), clamp(core + glow * (1.0 - core), 0.0, 1.0));
+            }
+        }
+        outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+    }`;
+
     // BLIT: inverte Y para a tela e aplica as camadas globais da animação
     // (câmera e cor) — funções periódicas, então o loop continua sem emenda
     const BLIT_FS = `#version 300 es
@@ -1834,7 +2158,7 @@ const PixelarGPU = (function () {
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
         progs.MAIN = link(MAIN_FS); progs.SHIFT = link(SHIFT_FS);
-        progs.GRAIN = link(GRAIN_FS); progs.BLIT = link(BLIT_FS);
+        progs.GRAIN = link(GRAIN_FS); progs.BLIT = link(BLIT_FS); progs.FILM = link(FILM_FS);
         srcTex = newTex(gl.NEAREST); gradTex = newTex(gl.NEAREST);
         palTex = newTex(gl.NEAREST); refPalTex = newTex(gl.NEAREST);
         gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
@@ -1988,6 +2312,37 @@ const PixelarGPU = (function () {
                     cur = next();
                 }
             }
+            // filme / câmera: efeito legado (Kodak, Lumiere...) e/ou o shader FILM
+            if (o.film) {
+                const fl = o.film;
+                if (fl.fx) {
+                    const fp = getFx(fl.fx.id);
+                    if (fp) {
+                        const params = Object.assign({}, fp.def.uniforms, fl.fx.params || {});
+                        pass(fp, targets[cur].tex, next(), (L) => {
+                            gl.uniform2f(L.uResolution, w, h);
+                            if (L.uAnim) gl.uniform1f(L.uAnim, fl.fx.animT || 0);
+                            if (L.uAnimFrame) gl.uniform1f(L.uAnimFrame, fl.fx.animFrame || 0);
+                            gl.uniform1f(L.uFxMix, fl.fx.mix);
+                            for (const k in params) if (L[k]) gl.uniform1f(L[k], params[k]);
+                        });
+                        cur = next();
+                    }
+                }
+                if (fl.u) {
+                    pass(progs.FILM, targets[cur].tex, next(), (L) => {
+                        gl.uniform2f(L.uSize, w, h);
+                        for (const k in fl.u) {
+                            const loc = L[k], v = fl.u[k];
+                            if (!loc) continue;
+                            if (Array.isArray(v)) { if (v.length === 3) gl.uniform3fv(loc, v); else if (v.length === 4) gl.uniform4fv(loc, v); else gl.uniform2fv(loc, v); }
+                            else if (FILM_INT_UNIFORMS.has(k)) gl.uniform1i(loc, v | 0);
+                            else gl.uniform1f(loc, v);
+                        }
+                    });
+                    cur = next();
+                }
+            }
             if (o.grain) {
                 const g = o.grain;
                 pass(progs.GRAIN, targets[cur].tex, next(), (L) => {
@@ -2024,7 +2379,8 @@ const PixelarGPU = (function () {
 
 // Catálogo de efeitos (usado pela UI): mesmo contrato do antigo PixelarFX
 const PixelarFX = {
-    listEffects: () => PIXELAR_FX_LIST.map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
+    // texturas artísticas (filmes e lentes ficam em Filtros)
+    listEffects: () => PIXELAR_FX_LIST.filter(fx => !FILM_FX_IDS.includes(fx.id) && !LENS_FX_IDS.includes(fx.id)).map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
     getEffectDef: (id) => PIXELAR_FX_LIST.find(fx => fx.id === id) || null,
     isAvailable: () => PixelarGPU.isAvailable(),
 };
@@ -3799,18 +4155,19 @@ try {
                 const target = btn.getAttribute('data-target');
                 const set = (id, v) => { const el = document.getElementById(id); if (el.type === 'checkbox') el.checked = v; else el.value = v; };
                 if (target === 'ajustes') {
-                    ['exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize'].forEach(id => set(id, 0));
+                    ['exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift'].forEach(id => set(id, 0));
                     isShadowsInverted = false; document.getElementById('btnInvertShadows').classList.remove('active-state');
+                    set('grainAmount', 0); set('grainSize', 100); set('grainRoughness', 45); set('grainShadowBias', 20); set('grainSpeckle', 0); set('grainMono', true);
                 }
                 if (target === 'pixelReset') {
                     set('pxSize', 1); set('imageScale', 100); set('ditherSelect', 'none'); set('ditherScale', 1); set('ditherIntensity', 100); set('textureOpacity', 100);
                     isMidDitherEnabled = false; document.getElementById('btnEffMidDither').classList.remove('active-state');
+                    set('fxEffectSelect', 'none'); set('fxEffectMix', 100); buildFxControls('none');
+                    set('edgePixelSize', 0); set('edgeOpacity', 100);
                 }
-                if (target === 'efeitos') {
-                    set('fxEffectSelect', 'none'); set('fxEffectMix', 100); buildFxControls('none'); updateFilmSubControls('none');
+                if (target === 'filtros') {
                     currentVencidoVariant = 0; set('lumiereHue', 280);
-                    set('grainAmount', 0); set('grainSize', 100); set('grainRoughness', 45); set('grainShadowBias', 20); set('grainSpeckle', 0); set('grainMono', true);
-                    set('rgbShift', 0); set('edgePixelSize', 0); set('edgeOpacity', 100);
+                    setFilmState(null);
                 }
                 if (target === 'colors') {
                     isImageInverted = false; currentPaletteMode = 'original'; set('colorSelect', 'all'); set('imgGradient', false); updateImgGradUI();
@@ -3916,8 +4273,8 @@ try {
             vignette: { uRadius: [0, 1.5], uSoftness: [0.01, 1.5], uIntensity: [0, 1.5] }
         };
 
-        function buildFxControls(effectId) {
-            const container = document.getElementById('fxParamsInner');
+        function buildFxControls(effectId, containerId = 'fxParamsInner') {
+            const container = document.getElementById(containerId);
             container.innerHTML = '';
             if (!effectId || effectId === 'none' || typeof PixelarFX === 'undefined') { return; }
             const def = PixelarFX.getEffectDef(effectId);
@@ -4052,7 +4409,8 @@ try {
 
         // Mostra/esconde os painéis extras (Matiz do Lumiere, barra do Vencido)
         // de acordo com o efeito de textura selecionado no momento.
-        function updateFilmSubControls(effectId) {
+        function updateFilmSubControls() {
+            const effectId = document.getElementById('filmLook').value; // painéis extras dos clássicos (aba Filtros)
             const lumierePanel = document.getElementById('set-lumiereHue');
             const vencidoPanel = document.getElementById('set-vencidoVariant');
             if (lumierePanel) lumierePanel.style.display = (effectId === 'lumiere') ? 'flex' : 'none';
@@ -4308,12 +4666,323 @@ try {
             set('animDWave', pick([32, 64, 96, 160, 240]));
             set('animFxStyle', pick(['auto', 'auto', 'breathe', 'pulse', 'drift', 'glitch', 'fade', 'colors', 'combo']));
             set('animGrainStyle', pick(['live', 'live', 'boil', 'pulse', 'breathe']));
+            set('animFilmStyle', pick(['auto', 'auto', 'weave', 'flicker', 'live', 'leak']));
             set('animCamStyle', pick(['none', 'none', 'none', 'shake', 'zoom', 'orbit', 'sway', 'tape', 'bumps', 'beat', 'pan']));
             set('animColStyle', pick(['none', 'none', 'none', 'hue', 'bright', 'sat', 'daynight', 'contrast', 'rainbow']));
-            ['animDAmt', 'animFxAmt', 'animGrainAmt', 'animCamAmt', 'animColAmt'].forEach(id => set(id, 60 + Math.floor(Math.random() * 9) * 10));
-            ['animDither', 'animFx', 'animGrain'].forEach(id => { document.getElementById(id).checked = true; });
+            ['animDAmt', 'animFxAmt', 'animGrainAmt', 'animCamAmt', 'animColAmt', 'animFilmAmt'].forEach(id => set(id, 60 + Math.floor(Math.random() * 9) * 10));
+            ['animDither', 'animFx', 'animGrain', 'animFilm'].forEach(id => { document.getElementById(id).checked = true; });
             updateAnimInfo();
         }
+        // ==========================================
+        // FILTROS: FILME & CÂMERA + LENTE
+        // Cada look = valores do shader FILM (PixelarGPU). Looks "legado" usam os
+        // efeitos antigos do catálogo (Kodak, Kodak P&B, Lumiere, Vencido).
+        // ==========================================
+        const FILM_NEUTRAL = {
+            uLookOn: 1, uMix: 1, uExposure: 0, uContrast: 1, uFade: 0, uRoll: 0, uSat: 1, uTemp: 0, uTint: 0, uHue: 0,
+            uSplit: 0, uCross: 0, uBleach: 0, uBW: 0, uTone: 0, uSwap: 0, uSwapAmt: 0,
+            uShadowTint: [0.5, 0.5, 0.5], uHighTint: [0.5, 0.5, 0.5], uBase: [0, 0, 0], uBWMix: [0.3, 0.59, 0.11], uToneColor: [0.5, 0.5, 0.5],
+            uHalation: 0, uHalColor: [1, 0.35, 0.1], uBloom: 0, uSoft: 0, uBlur: 0, uSharpen: 0, uVignette: 0, uVigColor: [0, 0, 0],
+            uDistort: 0, uChroma: 0, uFlash: 0, uLeak: 0, uLeakPos: 0.1, uLeakColor: [1, 0.45, 0.1],
+            uDust: 0, uScratch: 0, uBurn: 0, uGrain: 0, uGrainSize: 1.5, uJpeg: 0, uChromaNoise: 0, uInterlace: 0, uAutochrome: 0,
+            uFrame: 0, uFrameColor: [0.96, 0.95, 0.92], uStamp: 0, uStampA: [0, 0, 0, 0], uStampB: [0, 0], uStampColor: [1, 0.55, 0.12],
+            uWeave: 0, uFlicker: 0, uLeakDrift: 0, uBurnAnim: 0, uAnim: 0, uAnimFrame: 0,
+        };
+        // parâmetros "físicos" (escalam com a intensidade do filtro)
+        const FILM_SCALE_KEYS = ['uHalation', 'uBloom', 'uSoft', 'uBlur', 'uSharpen', 'uVignette', 'uDistort', 'uChroma', 'uFlash', 'uLeak',
+            'uDust', 'uScratch', 'uBurn', 'uGrain', 'uJpeg', 'uChromaNoise', 'uInterlace', 'uAutochrome'];
+        const FRAME_NAMES = { 1: 'Polaroid', 2: 'Instax', 3: 'Tira de 35 mm', 4: 'Super 8', 5: 'Médio formato (borda crua)', 6: 'Cinemascope (faixas)', 7: 'Moldura de slide', 8: 'Papel antigo', 9: 'Placa de metal', 10: 'Cantos arredondados' };
+        const FRAME_COLORS = { 1: [0.96, 0.95, 0.92], 2: [0.98, 0.98, 0.97], 3: [0.06, 0.05, 0.04], 4: [0.03, 0.03, 0.03], 5: [0.02, 0.02, 0.02], 6: [0, 0, 0], 7: [0.94, 0.93, 0.9], 8: [0.9, 0.86, 0.76], 9: [0.12, 0.1, 0.08], 10: [0.97, 0.96, 0.93] };
+
+        // [grupo, id, nome, descrição, uniforms, extras {frame, frameColor, stamp, year, fx}]
+        const FILM_LOOK_DEFS = [
+            ['Pioneiros (1839–1900)', [
+                ['daguerreotipo', 'Daguerreótipo (1839)', 'Placa de prata espelhada: tons frios metálicos, bordas escuras e foco macio.',
+                    { uBW: 1, uTone: 0.8, uToneColor: [0.62, 0.64, 0.66], uContrast: 0.85, uFade: 0.25, uBase: [0.12, 0.12, 0.13], uVignette: 1.1, uSoft: 0.8, uBlur: 1.2, uDust: 0.5, uScratch: 0.3, uExposure: 0.1 },
+                    { frame: 10, frameColor: [0.72, 0.58, 0.3] }],
+                ['cianotipia', 'Cianotipia (1842)', 'Cópia de contato azul da Prússia sobre papel, como as plantas de engenharia.',
+                    { uBW: 1, uTone: 1, uToneColor: [0.1, 0.35, 0.65], uContrast: 1.2, uFade: 0.15, uBase: [0.02, 0.12, 0.3], uDust: 0.2 },
+                    { frame: 8, frameColor: [0.93, 0.92, 0.86] }],
+                ['albumina', 'Albumina sépia (1850–1900)', 'Papel com clara de ovo: marrom quente, luzes amareladas, cantos gastos.',
+                    { uBW: 1, uTone: 1, uToneColor: [0.62, 0.45, 0.26], uContrast: 0.95, uFade: 0.3, uBase: [0.18, 0.12, 0.07], uVignette: 0.7, uSoft: 0.3, uDust: 0.4, uScratch: 0.2 },
+                    { frame: 8, frameColor: [0.86, 0.8, 0.66] }],
+                ['ferrotipo', 'Ferrótipo (1860)', 'Retrato sobre chapa de ferro: escuro, contrastado, cheio de marcas.',
+                    { uBW: 1, uTone: 0.7, uToneColor: [0.45, 0.42, 0.36], uContrast: 1.3, uExposure: -0.15, uFade: 0.1, uBase: [0.05, 0.05, 0.04], uVignette: 1.3, uBlur: 1.5, uDust: 0.7, uScratch: 0.6 },
+                    { frame: 9, frameColor: [0.12, 0.1, 0.08] }],
+                ['nitrato', 'Nitrato danificado (1910)', 'Rolo de cinema mudo em nitrato: bordas queimadas, riscos e poeira.',
+                    { uBW: 1, uTone: 0.5, uToneColor: [0.6, 0.5, 0.35], uContrast: 1.3, uBurn: 0.8, uDust: 1, uScratch: 1, uVignette: 0.8, uSoft: 0.4, uGrain: 0.5, uGrainSize: 1.8 }],
+            ]],
+            ['Início da cor (1900–1950)', [
+                ['autocromo', 'Autocromo Lumière (1907)', 'Primeira cor comercial: grãos de amido tingidos criam um pontilhismo pastel.',
+                    { uAutochrome: 0.9, uSat: 0.7, uContrast: 0.9, uFade: 0.3, uBase: [0.1, 0.08, 0.05], uSoft: 0.6, uTemp: 0.15, uGrain: 0.25, uGrainSize: 1, uVignette: 0.6 },
+                    { frame: 10, frameColor: [0.1, 0.1, 0.1] }],
+                ['techni2', 'Technicolor 2 cores (1922)', 'Só vermelho-alaranjado e ciano-esverdeado: o visual dos primeiros filmes coloridos.',
+                    { uSwap: 4, uSwapAmt: 1, uSat: 1.2, uContrast: 1.1, uTemp: 0.1, uFade: 0.1, uBase: [0.05, 0.04, 0.03], uSoft: 0.3, uGrain: 0.2, uDust: 0.3, uScratch: 0.2 }],
+                ['techni3', 'Technicolor 3 cores (1932)', 'Corantes separados: cores cheias, vermelhos profundos, como nos musicais clássicos.',
+                    { uSwap: 3, uSwapAmt: 1, uSat: 1.35, uContrast: 1.2, uRoll: 0.3, uSplit: 0.3, uShadowTint: [0.45, 0.5, 0.55], uHighTint: [0.58, 0.52, 0.42], uSoft: 0.2, uHalation: 0.15, uGrain: 0.15 }],
+                ['kodachrome', 'Kodachrome (1935)', 'Diapositivo lendário: vermelhos intensos, sombras densas, céus profundos.',
+                    { uSat: 1.25, uContrast: 1.25, uRoll: 0.2, uTemp: 0.15, uHue: -0.03, uSplit: 0.35, uShadowTint: [0.46, 0.48, 0.55], uHighTint: [0.58, 0.52, 0.44], uExposure: -0.1, uGrain: 0.12, uGrainSize: 1 },
+                    { frame: 7, frameColor: [0.94, 0.93, 0.9] }],
+                ['noir', 'Film noir (1940)', 'P&B de estúdio: pretos fundos, luz dura e brilho nas lâmpadas.',
+                    { uBW: 1, uContrast: 1.7, uExposure: -0.25, uVignette: 1.2, uBloom: 0.25, uGrain: 0.35, uSoft: 0.2 }],
+            ]],
+            ['Anos 50–70', [
+                ['ektachrome', 'Ektachrome (1946)', 'Diapositivo de revista: frio, limpo e contrastado.',
+                    { uSat: 1.15, uContrast: 1.2, uTemp: -0.2, uHue: 0.03, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.58], uHighTint: [0.5, 0.52, 0.52], uGrain: 0.1 },
+                    { frame: 7, frameColor: [0.2, 0.2, 0.22] }],
+                ['trix', 'Kodak Tri-X 400 (1954)', 'P&B do fotojornalismo: contraste forte e grão marcante.',
+                    { uBW: 1, uBWMix: [0.33, 0.55, 0.12], uContrast: 1.45, uRoll: 0.15, uGrain: 0.6, uGrainSize: 1.6, uVignette: 0.3 },
+                    { frame: 3 }],
+                ['scope', 'Cinemascope anamórfico (1953)', 'Tela larga com faixas pretas, brilho azulado e tons laranja/azul-petróleo.',
+                    { uHalation: 0.3, uHalColor: [0.4, 0.6, 1], uTemp: -0.1, uContrast: 1.15, uSat: 1.1, uDistort: -0.08, uChroma: 0.3, uSplit: 0.35, uShadowTint: [0.42, 0.52, 0.56], uHighTint: [0.6, 0.52, 0.42], uGrain: 0.25, uVignette: 0.4 },
+                    { frame: 6 }],
+                ['cine16', 'Cine 16 mm (1950–70)', 'Documentário e filme caseiro: cores gastas, grão grosso e riscos.',
+                    { uSat: 0.95, uContrast: 1.1, uTemp: 0.15, uFade: 0.1, uBase: [0.05, 0.04, 0.03], uGrain: 0.45, uGrainSize: 1.6, uDust: 0.4, uScratch: 0.5, uSoft: 0.3, uVignette: 0.5 }],
+                ['instamatic', 'Instamatic 126 (1963)', 'Cartucho quadrado de bolso: amarelado, sombras esverdeadas, flash de cubo.',
+                    { uFade: 0.25, uBase: [0.09, 0.07, 0.05], uSat: 0.9, uTemp: 0.3, uSplit: 0.3, uShadowTint: [0.45, 0.5, 0.5], uHighTint: [0.6, 0.52, 0.4], uVignette: 0.7, uSoft: 0.4, uFlash: 0.2, uGrain: 0.25 },
+                    { frame: 10, frameColor: [0.97, 0.96, 0.93] }],
+                ['super8', 'Super 8 (1965)', 'Filme caseiro: quente, saturado, cantos arredondados e projetor tremendo.',
+                    { uSat: 1.2, uContrast: 1.2, uTemp: 0.35, uFade: 0.12, uBase: [0.08, 0.05, 0.03], uSoft: 0.7, uVignette: 0.9, uHalation: 0.25, uGrain: 0.55, uGrainSize: 2, uDust: 0.6, uScratch: 0.4 },
+                    { frame: 4 }],
+                ['sx70', 'Polaroid SX-70 (1972)', 'Instantânea clássica: tons pastel, sombras azuladas e moldura branca.',
+                    { uFade: 0.35, uBase: [0.12, 0.1, 0.08], uContrast: 0.85, uSat: 0.8, uTemp: 0.25, uTint: 0.2, uSplit: 0.4, uShadowTint: [0.42, 0.5, 0.55], uHighTint: [0.6, 0.55, 0.42], uSoft: 0.5, uVignette: 0.5, uGrain: 0.2 },
+                    { frame: 1 }],
+                ['hp5', 'Ilford HP5 (1976)', 'P&B versátil: meio-tons suaves e grão fino.',
+                    { uBW: 1, uBWMix: [0.25, 0.6, 0.15], uContrast: 1.2, uRoll: 0.2, uGrain: 0.5, uGrainSize: 1.4, uFade: 0.03, uBase: [0.03, 0.03, 0.03] }],
+                ['cross', 'Processo cruzado (anos 70)', 'Diapositivo revelado como negativo: amarelos e verdes ácidos, contraste alto.',
+                    { uCross: 1, uSat: 1.3, uContrast: 1.2, uSplit: 0.3, uShadowTint: [0.45, 0.55, 0.5], uHighTint: [0.6, 0.58, 0.4], uVignette: 0.5 }],
+                ['bleach', 'Bleach bypass (cinema)', 'Revelação sem branqueamento: prata sobre a cor, dessaturado e duro.',
+                    { uBleach: 1, uSat: 0.8, uContrast: 1.15, uTemp: -0.05, uGrain: 0.3 }],
+            ]],
+            ['Anos 80–90', [
+                ['gold200', 'Kodak Gold 200 (1988)', 'O filme das férias: dourado, quente e alegre.',
+                    { uTemp: 0.35, uSat: 1.1, uContrast: 1.05, uSplit: 0.35, uShadowTint: [0.45, 0.47, 0.5], uHighTint: [0.62, 0.55, 0.4], uFade: 0.05, uBase: [0.04, 0.03, 0.02], uGrain: 0.25 }],
+                ['velvia', 'Fujichrome Velvia 50 (1990)', 'Diapositivo de paisagem: saturação extrema e verdes/azuis vivos.',
+                    { uSat: 1.6, uContrast: 1.35, uRoll: 0.1, uTemp: -0.05, uSplit: 0.25, uShadowTint: [0.45, 0.47, 0.56], uHighTint: [0.52, 0.5, 0.5], uExposure: -0.1, uGrain: 0.05 },
+                    { frame: 7, frameColor: [0.94, 0.93, 0.9] }],
+                ['superia', 'Fujifilm Superia 400 (1998)', 'Negativo do dia a dia: verdes marcantes e tons frios.',
+                    { uTemp: -0.1, uTint: -0.2, uSat: 1.1, uContrast: 1.1, uSplit: 0.35, uShadowTint: [0.44, 0.54, 0.52], uHighTint: [0.53, 0.53, 0.47], uGrain: 0.25 }],
+                ['portra', 'Kodak Portra 400 (1998)', 'Negativo de retrato: pele suave, luzes macias e baixo contraste.',
+                    { uContrast: 0.9, uRoll: 0.4, uSat: 0.9, uTemp: 0.15, uTint: 0.05, uFade: 0.06, uBase: [0.05, 0.04, 0.04], uSplit: 0.25, uShadowTint: [0.47, 0.5, 0.53], uHighTint: [0.55, 0.51, 0.47], uGrain: 0.15, uGrainSize: 1.2, uHalation: 0.05 }],
+                ['descartavel', 'Câmera descartável (1987)', 'Flash estourado no centro, lente de plástico e data laranja no canto.',
+                    { uFlash: 0.7, uTemp: 0.15, uSat: 1.1, uContrast: 1.15, uVignette: 0.6, uSoft: 0.35, uDistort: 0.15, uChroma: 0.6, uGrain: 0.35 },
+                    { stamp: true, year: 1998 }],
+                ['compacta', 'Compacta automática (1995)', 'Câmera de bolso com flash embutido e data impressa.',
+                    { uTemp: 0.2, uSat: 1.05, uContrast: 1.1, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.52], uHighTint: [0.56, 0.52, 0.45], uFlash: 0.35, uVignette: 0.35, uGrain: 0.25 },
+                    { stamp: true, year: 1995 }],
+                ['vhscam', 'Filmadora VHS (1985)', 'Cor borrada, entrelaçamento, ruído nas sombras e data da filmadora.',
+                    { uSoft: 0.8, uSharpen: 0.4, uSat: 1.25, uChroma: 1.2, uChromaNoise: 0.6, uInterlace: 0.6, uContrast: 0.95, uFade: 0.08, uBase: [0.04, 0.04, 0.05], uTemp: 0.1, uVignette: 0.2 },
+                    { stamp: true, year: 1989, stampColor: [1, 1, 1] }],
+                ['hi8', 'Hi8 (1989)', 'Filmadora de mão mais nítida: cor limpa, leve ruído e entrelaçamento.',
+                    { uSoft: 0.4, uSharpen: 0.5, uSat: 1.1, uChroma: 0.6, uChromaNoise: 0.35, uInterlace: 0.4, uTemp: -0.05, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.54, 0.51, 0.48] },
+                    { stamp: true, year: 1996, stampColor: [1, 1, 1] }],
+            ]],
+            ['Brinquedo e instantâneas', [
+                ['holga', 'Holga 120 (1982)', 'Lente de plástico: vinheta pesada, bordas borradas e vazamento de luz.',
+                    { uVignette: 1.6, uSoft: 0.5, uBlur: 2, uDistort: 0.25, uChroma: 0.8, uSat: 1.25, uContrast: 1.3, uLeak: 0.5, uLeakPos: 0.1, uLeakColor: [1, 0.35, 0.15], uGrain: 0.35 },
+                    { frame: 5 }],
+                ['diana', 'Diana F (1960)', 'Câmera de brinde: sonhadora, arroxeada e cheia de luz vazando.',
+                    { uVignette: 1.3, uBlur: 1.6, uSoft: 0.6, uFade: 0.2, uBase: [0.08, 0.06, 0.1], uTemp: -0.1, uTint: 0.2, uSat: 0.9, uContrast: 0.95, uLeak: 0.35, uLeakPos: 0.6, uLeakColor: [1, 0.5, 0.3], uGrain: 0.3 },
+                    { frame: 5 }],
+                ['lomo', 'Lomo LC-A (1984)', 'A câmera da lomografia: cores explosivas e túnel escuro nas bordas.',
+                    { uVignette: 1.5, uSat: 1.45, uContrast: 1.4, uCross: 0.25, uDistort: 0.1, uBlur: 0.6, uGrain: 0.3 }],
+                ['pinhole', 'Pinhole (câmera de furo)', 'Sem lente: tudo levemente fora de foco e escurecido nas bordas.',
+                    { uSoft: 1.6, uVignette: 1.4, uContrast: 0.9, uSat: 0.8, uFade: 0.15, uBase: [0.06, 0.05, 0.04], uTemp: 0.2, uGrain: 0.3 }],
+                ['instax', 'Instax Mini (1998)', 'Instantânea moderna: limpa, levemente fria, com moldura branca.',
+                    { uFade: 0.12, uBase: [0.06, 0.06, 0.08], uContrast: 1.05, uTemp: -0.1, uSplit: 0.25, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.54, 0.52, 0.5], uFlash: 0.3, uSoft: 0.2, uGrain: 0.12 },
+                    { frame: 2 }],
+            ]],
+            ['Filme contemporâneo', [
+                ['agfavista', 'Agfa Vista 200 (2000)', 'Negativo barato de supermercado: vermelhos fortes e céu ciano.',
+                    { uSat: 1.25, uContrast: 1.15, uTemp: 0.05, uHue: -0.04, uSplit: 0.35, uShadowTint: [0.44, 0.48, 0.56], uHighTint: [0.58, 0.5, 0.46], uGrain: 0.2 }],
+                ['ektar', 'Kodak Ektar 100 (2008)', 'Negativo de grão finíssimo: cores puras e nitidez alta.',
+                    { uSat: 1.35, uContrast: 1.2, uTemp: 0.05, uGrain: 0.06, uSharpen: 0.3 }],
+                ['cinestill', 'CineStill 800T (2012)', 'Filme de cinema sem remjet: frio (tungstênio) e brilho vermelho ao redor das luzes.',
+                    { uTemp: -0.45, uTint: 0.05, uHalation: 1, uHalColor: [1, 0.18, 0.08], uContrast: 1.05, uSat: 1.05, uRoll: 0.3, uGrain: 0.35, uGrainSize: 1.3, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46] }],
+                ['lomopurple', 'LomoChrome Purple (2013)', 'Troca de cores: verdes viram roxo e azuis viram verde.',
+                    { uSwap: 2, uSwapAmt: 1, uSat: 1.2, uContrast: 1.15, uGrain: 0.3, uVignette: 0.5 }],
+                ['aerochrome', 'Aerochrome infravermelho', 'Filme de reconhecimento aéreo: vegetação vira vermelho e rosa.',
+                    { uSwap: 1, uSwapAmt: 1, uSat: 1.25, uContrast: 1.2, uGrain: 0.2 }],
+            ]],
+            ['Vídeo e digital antigo', [
+                ['ccd', 'Compacta digital CCD (2004)', 'Câmera digital de bolso dos anos 2000 (tipo Cyber-shot): flash, nitidez dura e data.',
+                    { uSharpen: 0.6, uSat: 1.2, uContrast: 1.15, uTemp: -0.12, uBloom: 0.3, uFlash: 0.45, uJpeg: 0.35, uChromaNoise: 0.4, uExposure: 0.1 },
+                    { stamp: true, year: 2004 }],
+                ['webcam', 'Webcam (2005)', 'Imagem de chamada de vídeo: blocos de compressão, ruído e cor lavada.',
+                    { uJpeg: 0.8, uChromaNoise: 0.8, uSoft: 0.5, uSat: 0.8, uContrast: 0.9, uTemp: 0.15, uTint: -0.15, uExposure: -0.1, uVignette: 0.7 }],
+                ['vga', 'Celular VGA (2006)', 'Primeiras câmeras de celular: pouca resolução, ruído e luzes estouradas.',
+                    { uJpeg: 1, uChromaNoise: 1, uSat: 0.85, uContrast: 1.2, uSharpen: 0.8, uTemp: -0.2, uSoft: 0.3, uExposure: 0.15, uBloom: 0.35 }],
+            ]],
+            ['Clássicos do Pixelar', [
+                ['kodak_verde', 'Kodak desbotado', 'Filme antigo desbotado com dominante esverdeada.', {}, { fx: 'kodak_verde' }],
+                ['kodak_pb', 'Kodak P&B', 'Preto e branco contrastado com microgrão.', {}, { fx: 'kodak_pb' }],
+                ['lumiere', 'Lumiere', 'Tingimento monocromático de cinema mudo (matiz ajustável).', {}, { fx: 'lumiere' }],
+                ['vencido', 'Filme vencido', 'Filme fora da validade com vazamentos (4 variações).', {}, { fx: 'vencido' }],
+            ]],
+        ];
+        const FILM_LOOKS = {};
+        FILM_LOOK_DEFS.forEach(([group, list]) => list.forEach(([id, nome, desc, u, x]) => { FILM_LOOKS[id] = Object.assign({ id, nome, desc, group, u }, x || {}); }));
+
+        const LENS_IDS = ['lensVignette', 'lensHalation', 'lensBloom', 'lensSoft', 'lensDistort', 'lensChroma', 'lensLeak', 'lensDust', 'lensFlash'];
+        const FILM_IDS = ['filmLook', 'filmMix', 'filmTemp', 'filmGrainAmt', 'filmFrame', 'filmFrameColor', 'filmStamp', 'filmStampColor', 'lensVigColor', 'lensLeakColor', ...LENS_IDS];
+        const FILM_DEFAULTS = { filmLook: 'none', filmMix: 100, filmTemp: 0, filmGrainAmt: 100, filmFrame: 'auto', filmFrameColor: '#f5f2eb', filmStamp: 'auto', filmStampColor: '#ff8c1f', lensVigColor: '#000000', lensLeakColor: '#ff7319' };
+        LENS_IDS.forEach(id => { FILM_DEFAULTS[id] = 0; });
+
+        const rgbArr = (hex) => { const c = hexToRgb(hex); return [c.r / 255, c.g / 255, c.b / 255]; };
+        const arrHex = (a) => rgbToHex(Math.round(a[0] * 255), Math.round(a[1] * 255), Math.round(a[2] * 255));
+
+        // preenche o seletor de looks por época
+        (function buildFilmSelect() {
+            const sel = document.getElementById('filmLook');
+            sel.innerHTML = '<option value="none">Nenhum</option>' + FILM_LOOK_DEFS.map(([g, list]) =>
+                `<optgroup label="${g}">` + list.map(([id, nome]) => `<option value="${id}">${nome}</option>`).join('') + '</optgroup>').join('');
+            const fr = document.getElementById('filmFrame');
+            fr.innerHTML = '<option value="auto">Do filme</option><option value="0">Sem moldura</option>' + Object.entries(FRAME_NAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+        })();
+
+        // estado da data carimbada: ano do filme (ou atual) + dia/mês de hoje
+        function stampDigits(year) {
+            const d = new Date(), y = (year || d.getFullYear()) % 100, mo = d.getMonth() + 1, da = d.getDate();
+            return { A: [Math.floor(y / 10), y % 10, Math.floor(mo / 10), mo % 10], B: [Math.floor(da / 10), da % 10] };
+        }
+
+        function readFilmSettings() {
+            const $ = (id) => document.getElementById(id);
+            const n = (id) => parseFloat($(id).value) || 0;
+            const look = FILM_LOOKS[$('filmLook').value] || null;
+            const mix = n('filmMix') / 100;
+            const temp = n('filmTemp'), grainK = n('filmGrainAmt') / 100;
+            const frameSel = $('filmFrame').value;
+            const frame = frameSel === 'auto' ? (look && look.frame) || 0 : parseInt(frameSel, 10) || 0;
+            const stampSel = $('filmStamp').value;
+            const stamp = stampSel === 'on' || (stampSel === 'auto' && look && look.stamp);
+            const lens = {}; let lensOn = false;
+            LENS_IDS.forEach(id => { lens[id] = n(id) / 100; if (lens[id]) lensOn = true; });
+            if (!look && !lensOn && !frame && !stamp && !temp) return null;
+
+            const chem = look && !look.fx;
+            const u = Object.assign({}, FILM_NEUTRAL, chem ? look.u : {});
+            u.uLookOn = (chem || temp) ? 1 : 0;
+            u.uMix = chem ? mix : 1;
+            if (chem) FILM_SCALE_KEYS.forEach(k => { u[k] *= mix; });
+            ['uGrain', 'uDust', 'uScratch', 'uChromaNoise'].forEach(k => { u[k] *= grainK; });
+            u.uTemp += temp / 100 * 0.6;
+            // lente (soma com o que o filme já traz)
+            u.uVignette += lens.lensVignette * 1.5; u.uHalation += lens.lensHalation; u.uBloom += lens.lensBloom;
+            u.uSoft += lens.lensSoft * 2.5; u.uDistort += lens.lensDistort * 0.8; u.uChroma += lens.lensChroma * 1.5;
+            u.uLeak += lens.lensLeak; u.uDust += lens.lensDust; u.uFlash += lens.lensFlash;
+            u.uVigColor = rgbArr($('lensVigColor').value);
+            u.uLeakColor = rgbArr($('lensLeakColor').value);
+            u.uFrame = frame; u.uFrameColor = rgbArr($('filmFrameColor').value);
+            u.uStamp = stamp ? 1 : 0;
+            if (stamp) { const sd = stampDigits(look && look.year); u.uStampA = sd.A; u.uStampB = sd.B; }
+            u.uStampColor = rgbArr($('filmStampColor').value);
+            const active = u.uLookOn || frame || stamp || FILM_SCALE_KEYS.some(k => u[k] !== 0);
+            return {
+                id: look ? look.id : 'none', legacy: !!(look && look.fx),
+                fx: look && look.fx ? { id: look.fx, mix, params: getFxParamsFromUI(look.fx) } : null,
+                u: active ? u : null,
+            };
+        }
+
+        // UI do filme: descrição, cores padrão do look, parâmetros do clássico
+        function syncFilmLookUI(fromUser) {
+            const $ = (id) => document.getElementById(id);
+            const look = FILM_LOOKS[$('filmLook').value] || null;
+            $('filmDesc').textContent = look ? look.desc : 'Escolha um filme ou câmera. A lente abaixo funciona com ou sem filme.';
+            $('filmLookOpts').style.display = look ? 'flex' : 'none';
+            if (fromUser) {
+                const fr = look && look.frame;
+                if (fr) $('filmFrameColor').value = arrHex(look.frameColor || FRAME_COLORS[fr]);
+                $('filmStampColor').value = arrHex((look && look.stampColor) || FILM_NEUTRAL.uStampColor);
+                $('lensLeakColor').value = arrHex((look && look.u.uLeakColor) || FILM_NEUTRAL.uLeakColor);
+            }
+            buildFxControls(look && look.fx ? look.fx : 'none', 'filmParamsInner');
+            $('filmParamsWrap').style.display = look && look.fx ? 'flex' : 'none';
+            updateFilmSubControls();
+            const b = $('bdg-film'); if (b) b.style.display = look ? 'block' : 'none', b.textContent = '*';
+            const bl = $('bdg-lens'); if (bl) { const on = LENS_IDS.some(id => parseFloat($(id).value)); bl.style.display = on ? 'block' : 'none'; bl.textContent = '*'; }
+            updateFilmVals();
+        }
+        function updateFilmVals() {
+            ['filmMix', 'filmGrainAmt', ...LENS_IDS].forEach(id => { const v = document.getElementById(id + 'Val'); if (v) v.textContent = document.getElementById(id).value + '%'; });
+            const t = document.getElementById('filmTempVal'); if (t) t.textContent = document.getElementById('filmTemp').value;
+        }
+        function getFilmState() {
+            const o = {};
+            FILM_IDS.forEach(id => { o[id] = document.getElementById(id).value; });
+            const look = FILM_LOOKS[o.filmLook];
+            if (look && look.fx && fxUserParams[look.fx]) o.filmParams = Object.assign({}, fxUserParams[look.fx]);
+            return o;
+        }
+        function setFilmState(st) {
+            FILM_IDS.forEach(id => { document.getElementById(id).value = st && st[id] !== undefined ? st[id] : FILM_DEFAULTS[id]; });
+            const look = FILM_LOOKS[document.getElementById('filmLook').value];
+            if (look && look.fx && st && st.filmParams) fxUserParams[look.fx] = Object.assign({}, st.filmParams);
+            syncFilmLookUI(false);
+        }
+        // converte estados antigos (filmes e lentes que eram "texturas")
+        function migrateLegacyFx(p) {
+            const film = Object.assign({}, FILM_DEFAULTS);
+            const fx = p.fx || 'none', mix = p.fxMix !== undefined ? parseFloat(p.fxMix) / 100 : 1, pr = p.fxParams || {};
+            let changed = false;
+            if (FILM_FX_IDS.includes(fx)) { film.filmLook = fx; film.filmMix = Math.round(mix * 100); film.filmParams = pr; changed = true; }
+            else if (fx === 'vignette') { film.lensVignette = Math.round(Math.min(100, (pr.uIntensity !== undefined ? pr.uIntensity : 0.6) * mix * 100)); if (pr.uColor_r !== undefined) film.lensVigColor = arrHex([pr.uColor_r, pr.uColor_g, pr.uColor_b]); changed = true; }
+            else if (fx === 'bloom') { film.lensBloom = Math.round(Math.min(100, (pr.uIntensity || 1.2) * mix * 50)); changed = true; }
+            else if (fx === 'bokeh_blur') { film.lensSoft = Math.round(Math.min(100, (pr.uRadius || 6) * mix * 12)); changed = true; }
+            else if (fx === 'lens_distortion') { film.lensDistort = Math.round(Math.max(-100, Math.min(100, (pr.uAmount || 0.35) * mix * 100))); film.lensChroma = Math.round(Math.min(100, (pr.uChroma || 0.015) * mix * 2500)); changed = true; }
+            else if (fx === 'solarize') changed = true;
+            return changed ? { film, fx: 'none' } : { film: null, fx };
+        }
+
+        document.getElementById('filmLook').addEventListener('change', () => { syncFilmLookUI(true); scheduleAppProcess(); });
+        document.getElementById('filmFrame').addEventListener('change', (e) => {
+            const v = parseInt(e.target.value, 10);
+            const look = FILM_LOOKS[document.getElementById('filmLook').value];
+            const fr = e.target.value === 'auto' ? look && look.frame : v;
+            if (fr) document.getElementById('filmFrameColor').value = arrHex((look && look.frame === fr && look.frameColor) || FRAME_COLORS[fr]);
+            scheduleAppProcess();
+        });
+        FILM_IDS.filter(id => id !== 'filmLook' && id !== 'filmFrame').forEach(id => {
+            document.getElementById(id).addEventListener('input', () => { updateFilmVals(); if (LENS_IDS.includes(id)) syncFilmLookUI(false); scheduleAppProcess(); });
+        });
+        FILM_IDS.forEach(id => document.getElementById(id).addEventListener('change', () => saveHistoryState()));
+
+        // sorteio: às vezes um filme, às vezes só lente
+        function randFilm() {
+            const set = (id, v) => { document.getElementById(id).value = v; };
+            setFilmState(null);
+            const r = Math.random();
+            if (r < 0.5) {
+                const ids = Object.keys(FILM_LOOKS);
+                const id = ids[Math.floor(Math.random() * ids.length)];
+                set('filmLook', id);
+                set('filmMix', 60 + Math.floor(Math.random() * 5) * 10);
+                const look = FILM_LOOKS[id];
+                if (look.fx === 'vencido') currentVencidoVariant = Math.floor(Math.random() * 4);
+                if (look.fx === 'lumiere') set('lumiereHue', Math.floor(Math.random() * 360));
+                syncFilmLookUI(true);
+            }
+            if (Math.random() < 0.35) {
+                set('lensVignette', Math.floor(Math.random() * 50));
+                if (Math.random() < 0.3) set('lensHalation', Math.floor(Math.random() * 40));
+                if (Math.random() < 0.25) set('lensSoft', Math.floor(Math.random() * 30));
+                if (Math.random() < 0.2) set('lensLeak', Math.floor(Math.random() * 50));
+            }
+            syncFilmLookUI(false);
+        }
+
+        // painel da animação: aberto pelo play flutuante (não tem aba própria)
+        function openAnimPanel() {
+            const g = document.getElementById('group-anim');
+            allTabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.control-group').forEach(x => x.classList.remove('active'));
+            g.classList.add('active');
+            panelsContainer.classList.add('active'); controlsPanel.classList.remove('collapsed');
+            if (window.innerWidth <= 768 && !g.querySelector('.m-sub-btn.active')) { const f = g.querySelector('.m-sub-btn:not(.reset-btn)'); if (f) f.click(); }
+        }
+        syncFilmLookUI(false);
+
         function randToggle(id) { const el = document.getElementById(id); return !el || el.checked; }
 
         function applyTrueRandom() {
@@ -4333,6 +5002,7 @@ try {
                 else { document.getElementById('fxEffectSelect').value = 'none'; buildFxControls('none'); updateFilmSubControls('none'); }
             }
             if (randToggle('randToggle-grain') && !locks.grainAmount) randGrain();
+            if (randToggle('randToggle-film')) randFilm();
             if (randToggle('randToggle-anim')) randAnim();
             updateBadges(); scheduleAppProcess();
         }
@@ -4344,7 +5014,7 @@ try {
             return {
                 px: document.getElementById('pxSize').value, col: document.getElementById('colorSelect').value, dith: document.getElementById('ditherSelect').value, exp: document.getElementById('exposicao').value, bri: document.getElementById('brilho').value, som: document.getElementById('sombras').value, sat: document.getElementById('saturacao').value, cont: document.getElementById('contraste').value, temp: document.getElementById('temperatura').value, post: document.getElementById('posterize').value, dScale: document.getElementById('ditherScale').value, dInt: document.getElementById('ditherIntensity').value, shInv: isShadowsInverted, effMidDither: isMidDitherEnabled, fillBg: document.getElementById('fillBg').checked, bgColor: document.getElementById('btnBgColor').getAttribute('data-color'), cc: globalCurrentPalette.map(c => rgbToHex(c.r, c.g, c.b)), rc: referencePalette.map(c => rgbToHex(c.r, c.g, c.b)), palMode: currentPaletteMode, inv: isImageInverted, rSht: document.getElementById('rgbShift').value, edgC: document.getElementById('edgeColor').value, edgSiz: document.getElementById('edgePixelSize').value, pHue: document.getElementById('palHue').value, pSat: document.getElementById('palSat').value, pLig: document.getElementById('palLight').value, tOpa: document.getElementById('textureOpacity').value, eOpa: document.getElementById('edgeOpacity').value, iSca: document.getElementById('imageScale').value, iGrad: document.getElementById('imgGradient').checked, iGradTyp: document.getElementById('imgGradType').value, iGradAng: document.getElementById('imgGradAngle').value, iGradCol: currentImgGradColors, iGradStp: document.getElementById('imgGradSteps').value, iGradPos: document.getElementById('imgGradPos').value, iGradSmt: document.getElementById('imgGradSmooth').value, iGradBld: document.getElementById('imgGradBlend').value, fx: document.getElementById('fxEffectSelect') ? document.getElementById('fxEffectSelect').value : 'none', fxMix: document.getElementById('fxEffectMix') ? document.getElementById('fxEffectMix').value : 100, fxParams: (document.getElementById('fxEffectSelect') && fxUserParams[document.getElementById('fxEffectSelect').value]) ? fxUserParams[document.getElementById('fxEffectSelect').value] : {},
                 grainAmt: document.getElementById('grainAmount').value, grainSz: document.getElementById('grainSize').value, grainRough: document.getElementById('grainRoughness').value, grainSB: document.getElementById('grainShadowBias').value, grainSpk: document.getElementById('grainSpeckle').value, grainMono: document.getElementById('grainMono').checked,
-                anim: getAnimState(),
+                anim: getAnimState(), film: getFilmState(),
                 filmVencidoVariant: currentVencidoVariant, filmLumiereHue: document.getElementById('lumiereHue') ? document.getElementById('lumiereHue').value : 0,
             };
         }
@@ -4370,15 +5040,16 @@ try {
             document.getElementById('grainMono').checked = p.grainMono !== undefined ? p.grainMono : true;
             currentVencidoVariant = p.filmVencidoVariant !== undefined ? p.filmVencidoVariant : 0;
             setAnimState(p.anim || null);
+            const mig = migrateLegacyFx(p); // filmes/lentes que eram texturas
             if (document.getElementById('fxEffectSelect')) {
-                const fxId = p.fx || 'none';
+                const fxId = mig.fx;
                 document.getElementById('fxEffectSelect').value = fxId;
                 document.getElementById('fxEffectMix').value = p.fxMix !== undefined ? p.fxMix : 100;
                 if (fxId !== 'none' && p.fxParams) { fxUserParams[fxId] = Object.assign({}, p.fxParams); }
                 if (document.getElementById('lumiereHue')) { document.getElementById('lumiereHue').value = p.filmLumiereHue !== undefined ? p.filmLumiereHue : 280; }
                 buildFxControls(fxId);
-                updateFilmSubControls(fxId);
             }
+            setFilmState(p.film || mig.film);
             isRestoringState = true; scheduleAppProcess(); updateHistoryButtons();
         }
         document.getElementById('btn-undo-view').addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; applyState(historyArr[historyIndex]); } });
@@ -4488,6 +5159,7 @@ function renderPresets() {
                 edge: { size: n('edgePixelSize'), color: $('edgeColor').value, opacity: n('edgeOpacity') / 100 },
                 fillBg: $('fillBg').checked ? $('btnBgColor').getAttribute('data-color') : null,
                 grad: $('imgGradient').checked,
+                film: readFilmSettings(),
             };
         }
 
@@ -4675,13 +5347,20 @@ function renderPresets() {
             const mm = (needMinMax || !gpuReady) ? cpuAdjust(getSmallData(w, h), null, s.adj) : { minL: 0, maxL: 255 };
             const an = o.anim || null;
             const fx = s.fx ? { id: s.fx.id, mix: (an && an.fxMix !== null && an.fxMix !== undefined) ? an.fxMix : s.fx.mix, params: (an && an.fxParams) || s.fx.params } : null;
+            // filme: camada de animação própria (tremor, cintilação, vazamento, queima, grão vivo)
+            let film = s.film;
+            if (film && an && an.film) {
+                const af = an.film;
+                if (film.u) film.u = Object.assign({}, film.u, { uAnim: af.T, uAnimFrame: af.frame, uWeave: af.weave, uFlicker: af.flicker, uLeakDrift: af.leak, uBurnAnim: af.burn });
+                if (film.fx) film.fx = Object.assign({}, film.fx, { params: af.fxParams || film.fx.params, animT: af.fxT, animFrame: af.frame });
+            }
             const grain = s.grain ? Object.assign({}, s.grain, { seed: o.grainSeed || 0, strength: s.grain.strength * (o.grainScale !== undefined ? o.grainScale : 1), cell: Math.max(1, s.grain.cell * (o.grainCell || 1)) }) : null;
 
             let d = null;
             const usedGPU = gpuReady && PixelarGPU.render({
                 w, h, srcCanvas: smallCanvas, srcKey: key, adj: s.adj, dither: s.dither, anim: an,
                 minL: mm.minL, maxL: mm.maxL, shadowsInverted: isShadowsInverted, midDither: isMidDitherEnabled,
-                grad, color, rgbShift: s.rgbShift, fx, grain,
+                grad, color, rgbShift: s.rgbShift, fx, film, grain,
             });
             if (!usedGPU) {
                 d = renderCPU(w, h, s, color, grad, an, grain, mm);
@@ -5445,12 +6124,10 @@ function renderPresets() {
         // fn(params, T, a) → parâmetros do quadro | shader: usa uAnim/uAnimFrame no GLSL
         const clamp01 = (v) => Math.max(0, Math.min(1, v));
         const FX_ANIM = {
-            bokeh_blur: { nome: 'foco respirando', fn: (p, T, a) => ({ uRadius: Math.max(0, p.uRadius * (1 + 1.6 * a * (0.5 - 0.5 * Math.cos(TAU * T)))), uBoost: p.uBoost * (1 + 0.5 * a * sinT(T)) }) },
             channel_mixer: { nome: 'canais girando', fn: (p, T, a) => rotateMixer(p, T, Math.min(1, a)) },
             color_adjustment: { nome: 'tons pulsando', fn: (p, T, a) => ({ uToneAmount: clamp01(p.uToneAmount + 0.5 * a * sinT(T)), uContrast: Math.max(0.2, p.uContrast * (1 + 0.35 * a * sinT(T, 1.3))), uSatMid: Math.max(0, p.uSatMid * (1 + 0.6 * a * sinT(T, 2.1))) }) },
             gooey_merge: { nome: 'formas se fundindo', fn: (p, T, a) => ({ uThreshold: p.uThreshold + 0.25 * a * sinT(T) }) },
             hatching: { nome: 'anéis se expandindo', shader: true, fn: (p, T, a) => ({ uScale: Math.max(2, p.uScale * (1 + 0.2 * Math.max(0, a - 1) * sinT(T))) }) },
-            lens_distortion: { nome: 'lente respirando', fn: (p, T, a) => ({ uAmount: p.uAmount * (1 + a * sinT(T)), uChroma: p.uChroma * (1 + 1.5 * a * sinT(T, 0.7)) }) },
             outlines: { nome: 'contornos marchando', shader: true },
             pattern_refraction: { nome: 'faixas ondulando', shader: true, fn: (p, T, a) => ({ uShift: p.uShift * Math.max(0.2, a) }) },
             pixelate_fx: { nome: 'blocos pulsando', fn: (p, T, a) => { const k = 1 + a * (0.5 - 0.5 * Math.cos(TAU * T)); return { uSizeX: p.uSizeX * k, uSizeY: p.uSizeY * k }; } },
@@ -5462,9 +6139,6 @@ function renderPresets() {
             kodak_pb: { nome: 'grão de filme vivo', shader: true, fn: (p, T, a) => ({ uMicroGrain: p.uMicroGrain * Math.max(0.2, a) * 1.5 }) },
             lumiere: { nome: 'matiz oscilando', fn: (p, T, a) => ({ uHue: ((p.uHue + 0.12 * a * sinT(T)) % 1 + 1) % 1, uAmount: clamp01(p.uAmount * (1 + 0.5 * a * sinT(T, 1))) }) },
             vencido: { nome: 'luz vazando e grão vivo', shader: true, fn: (p, T, a) => ({ uIntensity: clamp01(p.uIntensity * (1 - 0.6 * Math.min(a, 1.5) * (0.5 - 0.5 * Math.cos(TAU * T))) + 0.25 * Math.max(0, a - 1) * (0.5 + 0.5 * sinT(T))), uLeak_g: clamp01(p.uLeak_g * (1 + 0.6 * a * sinT(T))) }) },
-            vignette: { nome: 'vinheta respirando', fn: (p, T, a) => ({ uRadius: Math.max(0.05, p.uRadius * (1 + 0.3 * a * sinT(T))) }) },
-            bloom: { nome: 'brilho pulsando', fn: (p, T, a) => { const k = 0.5 - 0.5 * Math.cos(TAU * T); return { uIntensity: p.uIntensity * (1 + 1.5 * a * k), uThreshold: clamp01(p.uThreshold - 0.35 * Math.min(a, 2) * k), uRadius: p.uRadius * (1 + 0.8 * a * k) }; } },
-            solarize: { nome: 'solarização varrendo', fn: (p, T, a) => ({ uThreshold: clamp01(p.uThreshold + 0.35 * a * sinT(T)) }) },
         };
 
         // ---------- Estilos por camada ----------
@@ -5482,16 +6156,19 @@ function renderPresets() {
         const COL_STYLES = { none: 0, hue: 1, bright: 2, sat: 3, flash: 4, daynight: 5, contrast: 6, rainbow: 7 };
         const COL_NAMES = { hue: 'matiz girando', bright: 'brilho pulsando', sat: 'saturação pulsando', flash: 'piscando em negativo', daynight: 'dia e noite', contrast: 'contraste pulsando', rainbow: 'arco-íris correndo' };
         const FX_STYLE_NAMES = { breathe: 'parâmetros respirando', pulse: 'parâmetros em batida', drift: 'parâmetros à deriva', glitch: 'parâmetros em glitch', fade: 'aparecendo e sumindo', colors: 'cores girando', combo: 'assinatura + respiração' };
+        const FILM_ANIM_NAMES = { auto: 'projetor antigo', weave: 'quadro tremendo', flicker: 'luz cintilando', leak: 'luz vazando', burn: 'película queimando', live: 'grão e poeira vivos' };
         const GRAIN_NAMES = { live: 'granulado vivo', boil: 'granulado fervendo', pulse: 'granulado pulsando', breathe: 'granulado respirando', frozen: null };
 
         const ANIM_IDS = ['animAmount', 'animCycles', 'animDuration', 'animFps', 'animDirection', 'animEase',
             'animDither', 'animDStyle', 'animDAngle', 'animDWave', 'animDAmt',
             'animFx', 'animFxStyle', 'animFxAmt', 'animGrain', 'animGrainStyle', 'animGrainAmt',
-            'animCamStyle', 'animCamAmt', 'animColStyle', 'animColAmt', 'animCamOffset', 'animColOffset'];
+            'animCamStyle', 'animCamAmt', 'animColStyle', 'animColAmt', 'animCamOffset', 'animColOffset',
+            'animFilm', 'animFilmStyle', 'animFilmAmt'];
         const ANIM_DEFAULTS = { animAmount: 100, animCycles: 2, animDuration: 2, animFps: 30, animDirection: 'forward', animEase: 'linear',
             animDither: true, animDStyle: 'auto', animDAngle: 0, animDWave: 64, animDAmt: 100,
             animFx: true, animFxStyle: 'auto', animFxAmt: 100, animGrain: true, animGrainStyle: 'live', animGrainAmt: 100,
-            animCamStyle: 'none', animCamAmt: 100, animColStyle: 'none', animColAmt: 100, animCamOffset: 0, animColOffset: 0 };
+            animCamStyle: 'none', animCamAmt: 100, animColStyle: 'none', animColAmt: 100, animCamOffset: 0, animColOffset: 0,
+            animFilm: true, animFilmStyle: 'auto', animFilmAmt: 100 };
         function getAnimState() {
             const o = {};
             ANIM_IDS.forEach(id => { const el = document.getElementById(id); o[id] = el.type === 'checkbox' ? el.checked : el.value; });
@@ -5524,6 +6201,7 @@ function renderPresets() {
                 dither: { on: $('animDither').checked, style: $('animDStyle').value, angle: n('animDAngle') * Math.PI / 180, wave: n('animDWave'), amt: amount * n('animDAmt') / 100 },
                 fx: { on: $('animFx').checked, style: $('animFxStyle').value, amt: amount * n('animFxAmt') / 100 },
                 grain: { on: $('animGrain').checked, style: $('animGrainStyle').value, amt: amount * n('animGrainAmt') / 100 },
+                film: { on: $('animFilm').checked, style: $('animFilmStyle').value, amt: amount * n('animFilmAmt') / 100 },
                 cam: { style: $('animCamStyle').value, amt: amount * n('animCamAmt') / 100, offset: n('animCamOffset') },
                 col: { style: $('animColStyle').value, amt: amount * n('animColAmt') / 100, offset: n('animColOffset') },
                 repeat: format === 'gif' ? 1 : parseInt($('animRepeat').value, 10),
@@ -5553,11 +6231,21 @@ function renderPresets() {
             }
             if (cfg.fx.on && cfg.fx.amt > 0 && s.fx && FX_ANIM[s.fx.id]) parts.push(cfg.fx.style === 'auto' ? FX_ANIM[s.fx.id].nome : FX_ANIM[s.fx.id].nome.split(' ')[0] + ': ' + FX_STYLE_NAMES[cfg.fx.style]);
             if (cfg.grain.on && cfg.grain.amt > 0 && s.grain && GRAIN_NAMES[cfg.grain.style]) parts.push(GRAIN_NAMES[cfg.grain.style]);
+            const fm = s.film;
+            if (fm && cfg.film.on && cfg.film.amt > 0) {
+                if (fm.fx && FX_ANIM[fm.fx.id]) parts.push(FX_ANIM[fm.fx.id].nome);
+                const u = fm.u, st = cfg.film.style;
+                if (u) {
+                    const live = u.uGrain + u.uDust + u.uScratch + u.uChromaNoise + u.uInterlace > 0;
+                    const ok = st === 'auto' || st === 'weave' || st === 'flicker' || (st === 'leak' && u.uLeak > 0) || (st === 'burn' && u.uBurn > 0) || (st === 'live' && live);
+                    if (ok) parts.push(FILM_ANIM_NAMES[st]);
+                }
+            }
             if (cfg.cam.style !== 'none' && cfg.cam.amt > 0) parts.push(CAM_NAMES[cfg.cam.style]);
             if (cfg.col.style !== 'none' && cfg.col.amt > 0) parts.push(COL_NAMES[cfg.col.style]);
             return parts;
         }
-        const NOTHING_TO_ANIMATE = 'Nada para animar: escolha um dither, efeito, granulado, câmera ou cor na aba Animação.';
+        const NOTHING_TO_ANIMATE = 'Nada para animar: escolha um dither, textura, granulado, filme, câmera ou cor no painel de animação (botão play).';
 
         // parâmetros genéricos de efeito (estilos que servem para qualquer efeito)
         const fxHash = (a, b) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -5626,6 +6314,19 @@ function renderPresets() {
                 if (F.style === 'fade') { anim.fxMix = s.fx.mix * Math.min(1, (0.5 - 0.5 * Math.cos(TAU * T)) * (0.6 + 0.4 * F.amt)); anim.fxT = def.shader ? T : 0; }
                 anim.fxParams = Object.assign({}, s.fx.params, params);
             }
+            // filme / câmera analógica
+            const Fm = cfg.film;
+            if (s.film && Fm.on && Fm.amt > 0) {
+                const a = Fm.amt, st = Fm.style, all = st === 'auto';
+                const af = { T, frame, weave: (all || st === 'weave') ? a : 0, flicker: (all || st === 'flicker') ? a : 0, leak: (all || st === 'leak') ? a * 1.5 : 0, burn: (all || st === 'burn') ? a : 0, fxParams: null, fxT: 0 };
+                const lf = s.film.fx, def = lf && FX_ANIM[lf.id];
+                if (def) {
+                    const base = Object.assign({}, PixelarFX.getEffectDef(lf.id).uniforms, lf.params);
+                    if (def.shader) af.fxT = T;
+                    if (def.fn) af.fxParams = Object.assign({}, lf.params, def.fn(base, T, a));
+                }
+                anim.film = af;
+            }
             // granulado
             let grainSeed = 0, grainScale = 1, grainCell = 1;
             if (s.grain && G.on && G.amt > 0) {
@@ -5685,7 +6386,7 @@ function renderPresets() {
 
         function updateAnimInfo() {
             const valEl = (id, suffix) => { const v = document.getElementById(id + 'Val'); if (v) v.textContent = document.getElementById(id).value + suffix; };
-            ['animAmount', 'animDAmt', 'animFxAmt', 'animGrainAmt', 'animCamAmt', 'animColAmt'].forEach(id => valEl(id, '%'));
+            ['animAmount', 'animDAmt', 'animFxAmt', 'animGrainAmt', 'animCamAmt', 'animColAmt', 'animFilmAmt'].forEach(id => valEl(id, '%'));
             valEl('animDAngle', '°'); valEl('animDWave', ' px'); valEl('animCamOffset', '°'); valEl('animColOffset', '°');
             // mostra só os controles que fazem sentido para o estilo escolhido
             const ds = document.getElementById('animDStyle').value;
@@ -5711,6 +6412,7 @@ function renderPresets() {
             vhs:      { animAmount: 130, animCycles: 2, animEase: 'linear', animDStyle: 'rain', animFxStyle: 'auto', animGrainStyle: 'live', animCamStyle: 'tape', animCamAmt: 120, animColStyle: 'contrast', animColAmt: 50 },
             oceano:   { animAmount: 120, animCycles: 1, animEase: 'linear', animDStyle: 'wave', animDAngle: 90, animDWave: 90, animFxStyle: 'drift', animGrainStyle: 'boil', animCamStyle: 'sway', animCamAmt: 80, animColStyle: 'daynight', animColAmt: 60 },
             estrelas: { animAmount: 140, animCycles: 2, animEase: 'linear', animDStyle: 'sparkle', animFxStyle: 'breathe', animGrainStyle: 'live', animCamStyle: 'orbit', animCamAmt: 60, animColStyle: 'bright', animColAmt: 40 },
+            projetor: { animAmount: 130, animCycles: 2, animEase: 'linear', animDStyle: 'jitter', animFxStyle: 'auto', animGrainStyle: 'live', animFilmStyle: 'auto', animFilmAmt: 150, animCamStyle: 'shake', animCamAmt: 40, animColStyle: 'bright', animColAmt: 30 },
             radar:    { animAmount: 150, animCycles: 2, animEase: 'linear', animDStyle: 'sweep', animDAngle: 45, animDWave: 160, animFxStyle: 'fade', animGrainStyle: 'frozen', animCamStyle: 'none', animColStyle: 'none' },
         };
         document.getElementById('animPreset').addEventListener('change', (e) => {
@@ -5778,7 +6480,7 @@ function renderPresets() {
             mainAnimRAF = requestAnimationFrame(tick);
         }
         btnPlayAnim.innerHTML = PLAY_ICON;
-        btnPlayAnim.addEventListener('click', () => { mainAnimRAF ? stopMainAnim() : startMainAnim(); });
+        btnPlayAnim.addEventListener('click', () => { if (mainAnimRAF) stopMainAnim(); else { openAnimPanel(); startMainAnim(); } });
         btnPlayPanel.addEventListener('click', () => { mainAnimRAF ? stopMainAnim() : startMainAnim(); });
         document.addEventListener('keydown', (e) => {
             if (e.code !== 'Space' || e.repeat || currentMediaType !== 'image' || !hasMediaLoaded) return;
