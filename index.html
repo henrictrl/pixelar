@@ -30,10 +30,12 @@
             --accent: #5A82A5; --shadow: #000000;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
         body, html { width: 100%; height: 100%; overflow: hidden; font-family: 'Departure Mono', monospace; font-size: var(--font-size-base); background-color: var(--bg); color: var(--text); display: flex; flex-direction: row; }
         input[type="file"], input[type="checkbox"] { display: none !important; }
         .hidden-ui { display: none !important; }
+        /* área de visualização: bloqueia pinch/double-tap nativo (zoom é feito pelos botões +/-) */
+        #view, #canvas-wrapper, #outputCanvas, #originalCanvas { touch-action: none; }
         
         ::-webkit-scrollbar { width: 10px; height: 10px; border-left: var(--border-width) solid var(--border); }
         ::-webkit-scrollbar-track { background: var(--panel); border-left: 1px solid var(--border-highlight); }
@@ -71,7 +73,7 @@
         .set-item { display: flex !important; flex-direction: column; gap: 6px; width: 100%; max-width: 100%; background: var(--bg); border: var(--border-width) solid var(--border); padding: var(--pad-sm); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); box-shadow: 1px 1px 0 var(--shadow); margin-bottom: 8px; }
         .set-item:last-child { margin-bottom: 0; }
         .sec-content { display: flex; flex-direction: column; width: 100%; gap: 8px; }
-        .panel-label { font-size: var(--font-size-small); font-weight: bold; color: var(--text); width: 100%; text-transform: uppercase; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px; margin-bottom: 2px;}
+        .panel-label { font-size: var(--font-size-small); font-weight: bold; color: var(--text); width: 100%; text-transform: uppercase; padding-bottom: 4px; margin-bottom: 2px;}
         .slider-row { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 100%; padding: 2px 0; }
         .slider-row > .icon-btn, .slider-row > .lbl-icon, .slider-row > input[type="color"], .slider-row > .custom-checkbox { flex: 0 0 auto; }
         .lbl-icon { width: 20px; height: 20px; stroke: var(--text); fill: none; stroke-width: 1.5; }
@@ -91,6 +93,14 @@
         .std-btn { padding: 8px 14px; background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); color: var(--text); font-family: inherit; cursor: pointer; font-size: var(--font-size-base); font-weight: normal; display: flex; align-items: center; justify-content: center; min-height: 40px; border-radius: 0; white-space: nowrap; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; gap: 8px; box-shadow: 1px 1px 0 var(--shadow); }
         .std-btn.active-state { background: var(--panel); border-top-color: var(--border); border-left-color: var(--border); border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); box-shadow: none; }
         label.std-btn[for] { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; }
+
+        /* seletor convertido em barra de botões rolável (substitui <select> de estilo/catálogo) */
+        .select-btn-row { display: flex; flex-direction: row; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding-bottom: 4px; width: 100%; }
+        .select-btn-row::-webkit-scrollbar { display: none; }
+        .select-btn-row .sbr-btn { flex: 0 0 auto; background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); color: var(--text); cursor: pointer; padding: 8px 12px; font-family: inherit; font-size: var(--font-size-small); text-transform: uppercase; white-space: nowrap; border-radius: 0; box-shadow: 1px 1px 0 var(--shadow); min-height: 40px; }
+        .select-btn-row .sbr-btn.active-state { background: var(--panel); border-top-color: var(--border); border-left-color: var(--border); border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); box-shadow: none; }
+        .select-btn-row .sbr-group-label { flex: 0 0 auto; display: flex; align-items: center; padding: 0 6px; font-size: 0.65rem; text-transform: uppercase; opacity: 0.55; white-space: nowrap; }
+        .select-btn-row .sbr-group-label:not(:first-child) { margin-left: 4px; }
 
         .custom-checkbox { display: flex; align-items: center; gap: var(--pad-sm); cursor: pointer; user-select: none; font-size: var(--font-size-base); font-weight: normal; text-transform: uppercase; }
         .checkmark { height: 20px; width: 20px; background-color: var(--panel); border: var(--border-width) solid var(--border); border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); display: flex; justify-content: center; align-items: center; flex: 0 0 auto; border-radius: 0; box-shadow: 1px 1px 0 var(--shadow) inset;}
@@ -116,12 +126,13 @@
         #loading-bar { height: 100%; width: 0%; background: var(--text); transition: width 0.1s linear; display: flex; align-items: center; justify-content: flex-end; overflow: hidden; }
         #loading-text { position: absolute; width: 100%; text-align: center; top: 2px; font-size: 12px; font-weight: bold; color: var(--bg); mix-blend-mode: difference; }
 
-        #top-bar, #floating-bar, #video-timeline-bar, #zoom-controls { display: flex; gap: 6px; background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); padding: 6px; border-radius: 0; z-index: 50; box-shadow: 2px 2px 0 var(--shadow); }
-        #top-bar { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); align-items: center; width: auto; max-width: 90%; }
-        #floating-bar { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); align-items: center; }
-        #zoom-controls { position: absolute; bottom: 16px; right: 16px; flex-direction: column; }
+        #top-bar, #floating-bar, #video-timeline-bar, #zoom-controls { display: flex; gap: 8px; background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); padding: 8px; border-radius: 0; z-index: 50; box-shadow: 2px 2px 0 var(--shadow); }
+        #top-bar { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); align-items: center; width: auto; max-width: calc(100% - 32px); }
+        /* barra inferior: colada perto da barra de ferramentas (AJUSTES/PIXEL/...), que fica logo abaixo do #view */
+        #floating-bar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); align-items: center; }
+        #zoom-controls { position: absolute; bottom: 20px; right: 16px; flex-direction: column; gap: 10px; }
         
-        #video-timeline-bar { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; align-items: center; }
+        #video-timeline-bar { position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; align-items: center; }
 
         .float-btn { background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); cursor: pointer; padding: 6px; color: var(--text); border-radius: 0; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; box-shadow: 1px 1px 0 var(--shadow); width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
         .float-btn.random-hint { animation: randomPulse 2.2s ease-in-out infinite; }
@@ -132,7 +143,8 @@
         }
         .float-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
         
-        #btn-exit-fullscreen { position: fixed; top: 16px; left: 16px; z-index: 100001; display: none; padding: 8px var(--pad); background: var(--bg); color: var(--text); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-weight: normal; text-transform: uppercase; cursor: pointer; box-shadow: 2px 2px 0 var(--shadow); min-height: 44px; font-size: var(--font-size-base);}
+        #btn-exit-fullscreen { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100001; display: none; align-items: center; gap: 6px; padding: 0 16px; background: var(--bg); color: var(--text); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-weight: normal; text-transform: uppercase; cursor: pointer; box-shadow: 2px 2px 0 var(--shadow); min-height: 40px; font-size: var(--font-size-small); font-family: inherit; }
+        @media (max-width: 768px) { #btn-exit-fullscreen { bottom: 12px; min-height: 36px; } }
 
         .modal { display: none; position: fixed; z-index: 100000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; padding: var(--pad); }
         .modal-content { background: var(--bg); padding: 20px; border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: var(--gap); box-shadow: 4px 4px 0 var(--shadow); }
@@ -149,16 +161,37 @@
         .row-lbl small { text-transform: none; opacity: 0.7; }
         .row-lbl .badge { position: static; margin-left: auto; }
         .row-lbl .anim-val { margin-left: auto; }
+
+        /* ===== Acordeão desktop: label vira toggle inline, só um slider aberto por vez ===== */
+        @media (min-width: 769px) {
+            .ctrl-item > .row-lbl { cursor: pointer; padding: 8px 2px; margin-top: 0; user-select: none; }
+            .ctrl-item > .row-lbl::before { content: '▸'; display: inline-block; width: 10px; flex: 0 0 auto; opacity: 0.6; transition: transform 0.15s; }
+            .ctrl-item.open > .row-lbl::before { transform: rotate(90deg); }
+            .ctrl-item > .slider-row { display: none; padding: 0 2px 10px 2px; }
+            .ctrl-item.open > .slider-row { display: flex; }
+        }
+
+        /* ===== Mobile: faixa de botões por controle → clique abre só aquele slider ===== */
+        .ctrl-btn-row { display: none; }
+        @media (max-width: 768px) {
+            .set-item.active { position: relative; }
+            .ctrl-btn-row { display: flex !important; flex-direction: row; flex-wrap: wrap; gap: 8px; width: 100%; }
+            .ctrl-btn { background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); color: var(--text); cursor: pointer; padding: 8px 12px; font-family: inherit; font-size: var(--font-size-small); text-transform: uppercase; border-radius: 0; box-shadow: 1px 1px 0 var(--shadow); min-height: 40px; flex: 1 1 auto; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 6px; }
+            .ctrl-btn.active { background: var(--panel); border-top-color: var(--border); border-left-color: var(--border); border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); box-shadow: none; transform: translate(1px, 1px); }
+            .ctrl-item.open > .row-lbl { display: none; } /* nome já está no botão; some pra não repetir */
+            .ctrl-btn .badge { position: static; margin-left: 2px; }
+            .ctrl-item { display: none !important; width: 100%; }
+            .ctrl-item.open { display: flex !important; flex-direction: column; gap: 6px; }
+            .ctrl-item.open > .row-lbl { margin-top: 0; }
+            /* elementos soltos fora do padrão label+slider (selects, grids, checkboxes) continuam visíveis normalmente */
+        }
         .set-item > .anim-info { font-size: 0.75rem; opacity: 0.85; }
         .anim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; width: 100%; }
         .anim-grid label { display: flex; flex-direction: column; gap: 3px; font-size: 0.7rem; text-transform: uppercase; }
         .anim-grid select { min-height: 34px; padding: 4px 28px 4px 8px; font-size: 0.85rem; }
         @media (max-width: 768px) { .anim-grid { grid-template-columns: 1fr 1fr 1fr; } }
-        /* play flutuante: acima da barra inferior, ao centro */
-        #btn-play-anim { position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%); z-index: 51; width: 48px; height: 48px; box-shadow: 2px 2px 0 var(--shadow); }
-        #btn-play-anim svg { width: 22px; height: 22px; }
-        #btn-play-anim.active-state { transform: translate(calc(-50% + 1px), 1px); }
-        @media (max-width: 768px) { #btn-play-anim { bottom: 66px; width: 44px; height: 44px; min-width: 44px; } }
+        /* play: agora vive dentro da #floating-bar, mesmo tamanho dos demais botões */
+        #btn-play-anim.active-state { transform: translate(1px, 1px); }
         #filmLook optgroup { font-style: normal; }
         /* botão de zerar um controle só */
         .ctrl-reset { width: 22px; height: 22px; min-width: 22px; min-height: 22px; padding: 2px; opacity: 0.5; flex: 0 0 auto; }
@@ -167,11 +200,11 @@
         .anim-grid label { position: relative; }
         .anim-grid .ctrl-reset { position: absolute; top: -3px; right: 0; }
         @media (max-width: 768px) { .icon-btn.ctrl-reset { width: 28px; height: 28px; min-width: 28px; min-height: 28px; } .ctrl-reset svg { width: 14px; height: 14px; } }
-        .modal-content h3 { font-size: var(--font-size-title); text-transform: uppercase; border-bottom: var(--border-width) solid var(--border); padding-bottom: 6px; margin-bottom: 6px; font-weight: normal; background: var(--accent); color: #FFFFFF; padding-left: 8px;}
+        .modal-content h3 { font-size: var(--font-size-title); text-transform: uppercase; border-bottom: var(--border-width) solid var(--border); padding-bottom: 6px; margin-bottom: 6px; font-weight: normal; background: var(--text); color: var(--bg); padding-left: 8px;}
         .modal-desc { font-size: var(--font-size-base); color: var(--text); margin-bottom: 8px; line-height: 1.4; }
 
-        #toast-container { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 100002; pointer-events: none; }
-        .toast { background: var(--bg); color: var(--text); padding: 12px 20px; border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-size: var(--font-size-base); text-transform: uppercase; box-shadow: 2px 2px 0 var(--shadow); transform: translateY(10px); opacity: 0; transition: transform 0.1s, opacity 0.1s; }
+        #toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 100002; pointer-events: none; width: min(92vw, 460px); }
+        .toast { background: var(--bg); color: var(--text); padding: 12px 20px; border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); border-radius: 0; font-size: var(--font-size-base); text-transform: uppercase; text-align: center; box-shadow: 2px 2px 0 var(--shadow); transform: translateY(10px); opacity: 0; transition: transform 0.1s, opacity 0.1s; max-width: 100%; }
         .toast.show { opacity: 1; transform: translateY(0); }
 
         input[type="text"] { background: var(--bg); color: var(--text); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); padding: 8px 12px; border-radius: 0; font-family: inherit; font-size: var(--font-size-base); box-shadow: 1px 1px 0 var(--shadow) inset; min-height: 40px;}
@@ -192,7 +225,7 @@
             #desktop-tabs .d-tab.active { width: auto; margin: 0; }
             .panels-container { padding: var(--pad-sm); overflow-y: auto; flex-direction: column; flex: 0 1 auto; height: auto; }
             .control-group.active { flex-direction: column !important; }
-            .m-sub-nav { display: flex !important; flex-direction: row; width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding: 4px 0 12px 0; border-bottom: 1px dashed var(--border-light); border-top: none; background: transparent; flex: 0 0 auto; gap: 6px; border-radius: 0; margin-bottom: 4px; }
+            .m-sub-nav { display: flex !important; flex-direction: row; width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding: 4px 0 12px 0; border-top: none; background: transparent; flex: 0 0 auto; gap: 6px; border-radius: 0; margin-bottom: 4px; }
             .m-sub-nav::-webkit-scrollbar { display: none; }
             .m-sub-btn { background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); color: var(--text); cursor: pointer; padding: 8px 12px; display: flex; flex-direction: row; align-items: center; justify-content: center; font-family: inherit; font-size: var(--font-size-small); text-transform: uppercase; position: relative; border-radius: 0; flex: 0 0 auto; white-space: nowrap; gap: 6px; box-shadow: 1px 1px 0 var(--shadow); min-height: 36px; }
             .m-sub-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
@@ -203,12 +236,12 @@
             .panel-label { display: none; }
             .row-lbl { font-size: 0.7rem; } 
             .icon-btn, .float-btn { width: 36px; height: 36px; min-width: 36px; }
-            .std-btn { min-height: 36px; padding: 6px 10px; }
+            .std-btn { min-height: 36px; padding: 6px 8px; white-space: normal; text-align: center; line-height: 1.2; word-break: break-word; }
             input[type="range"] { min-height: 32px; }
-            #video-timeline-bar { bottom: 120px; padding: 4px 8px; z-index: 50; }
-            #zoom-controls { bottom: 70px; right: 16px; z-index: 50; }
-            #floating-bar { bottom: 16px; z-index: 50; }
-            #toast-container { bottom: 180px; }
+            #video-timeline-bar { bottom: 68px; padding: 6px 10px; z-index: 50; }
+            #zoom-controls { bottom: 12px; right: 12px; z-index: 50; gap: 8px; }
+            #floating-bar { bottom: 12px; z-index: 50; }
+            #toast-container { bottom: 128px; }
             
             .horizontal-scroll-mobile {
                 display: flex !important;
@@ -430,6 +463,7 @@
                     </div>
                     <div class="sec-content">
                         <div class="set-item active" id="set-corPal"><div class="panel-label">Paleta de cores</div>
+<div class="row-lbl">Quantidade de cores</div>
 <div class="slider-row">
 <select id="colorSelect">
 <option value="2">2 Cores</option><option value="3">3 Cores</option><option value="4">4 Cores</option><option value="6">6 Cores</option>
@@ -439,12 +473,14 @@
 <option value="duotone">Duotone</option><option value="tritone">Tritone</option>
 </select>
 <button class="icon-btn lock-btn" data-target="colorSelect"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+</div>
+<div class="slider-row">
 <button class="icon-btn" id="btnInvert" title="Inverter Cores"><svg viewbox="0 0 24 24"><circle cx="12" cy="12" fill="none" r="10" stroke="currentColor"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"></path></svg></button>
 <button class="icon-btn" id="btnShufflePalette" title="Sortear Novas Cores"><svg viewbox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" x2="21" y1="20" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" x2="21" y1="15" y2="21"></line><line x1="4" x2="9" y1="4" y2="9"></line></svg></button>
 <button class="icon-btn" id="btnSwapColors" title="Misturar Ordem da Paleta Atual"><svg viewbox="0 0 24 24"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></button>
 </div>
 <div class="colors-grid" id="colorsGrid"></div>
-<div id="duotoneControls" style="display:none; flex-direction:column; gap:8px; margin-top:8px; border-top:1px dashed var(--border-light); padding-top:12px;">
+<div id="duotoneControls" style="display:none; flex-direction:column; gap:8px; margin-top:8px; padding-top:12px;">
 <div class="panel-label" style="border:none;">Cores do Tom</div>
 <div class="slider-row">
 <input class="icon-btn" id="duotoneColor1" type="color" value="#0A1A2F"/>
@@ -454,13 +490,13 @@
 </div>
 </div>
                         <div class="set-item" id="set-corAju"><div class="panel-label">Ajustar paleta (matiz · saturação · luz)</div>
-<div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input id="palHue" max="180" min="-180" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palHue"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
-<div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><input id="palSat" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palSat"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
-<div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" x2="12" y1="1" y2="3"></line><line x1="12" x2="12" y1="21" y2="23"></line><line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line><line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line><line x1="1" x2="3" y1="12" y2="12"></line><line x1="21" x2="23" y1="12" y2="12"></line></svg><input id="palLight" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palLight"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+<div class="row-lbl">Matiz</div><div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input id="palHue" max="180" min="-180" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palHue"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+<div class="row-lbl">Saturação</div><div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><input id="palSat" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palSat"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+<div class="row-lbl">Luz</div><div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" x2="12" y1="1" y2="3"></line><line x1="12" x2="12" y1="21" y2="23"></line><line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line><line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line><line x1="1" x2="3" y1="12" y2="12"></line><line x1="21" x2="23" y1="12" y2="12"></line></svg><input id="palLight" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palLight"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
 </div>
                         <div class="set-item" id="set-corDeg"><div class="panel-label">Degradê sobre a imagem</div>
                             <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar degradê</span></label>
-                            <div id="imgGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top:4px; border-top: 1px dashed var(--border-light); padding-top: 12px; width:100%;">
+                            <div id="imgGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top:4px; padding-top: 12px; width:100%;">
                                 <div class="row-lbl">Cores do degradê</div>
                                 <div class="slider-row">
                                     <div class="colors-grid" id="imgGradColorsContainer" style="display:flex;"></div>
@@ -557,32 +593,30 @@
                             </div>
                             <div class="row-lbl">Intensidade geral <span class="anim-val" id="animAmountVal">100%</span></div>
                             <div class="slider-row"><input type="range" id="animAmount" min="0" max="300" step="5" value="100" title="0% parado · 100% padrão · até 300% exagerado"></div>
-                            <div class="anim-grid">
-                                <label>Velocidade
-                                    <select id="animCycles" title="Quantas vezes o movimento acontece por volta">
-                                        <option value="1">1× lenta</option><option value="2" selected>2×</option><option value="3">3×</option>
-                                        <option value="4">4× rápida</option><option value="6">6×</option><option value="8">8× frenética</option>
-                                    </select></label>
-                                <label>Duração
-                                    <select id="animDuration" title="Duração de uma volta">
-                                        <option value="1">1 s</option><option value="2" selected>2 s</option><option value="3">3 s</option>
-                                        <option value="4">4 s</option><option value="6">6 s</option><option value="8">8 s</option>
-                                    </select></label>
-                                <label>FPS
-                                    <select id="animFps">
-                                        <option value="12">12</option><option value="24">24</option><option value="30" selected>30</option>
-                                        <option value="50">50</option><option value="60">60 (GIF: 50)</option>
-                                    </select></label>
-                                <label>Direção
-                                    <select id="animDirection">
-                                        <option value="forward" selected>Para frente</option><option value="reverse">Para trás</option><option value="pingpong">Vai e volta</option>
-                                    </select></label>
-                                <label>Ritmo
-                                    <select id="animEase">
-                                        <option value="linear" selected>Constante</option><option value="smooth">Suave</option><option value="pulse">Pulsado</option>
-                                        <option value="steps">Em quadros (stop motion)</option><option value="bounce">Com impulso</option>
-                                    </select></label>
-                            </div>
+                            <div class="row-lbl">Velocidade</div>
+                            <div class="slider-row"><select id="animCycles" title="Quantas vezes o movimento acontece por volta">
+                                <option value="1">1× lenta</option><option value="2" selected>2×</option><option value="3">3×</option>
+                                <option value="4">4× rápida</option><option value="6">6×</option><option value="8">8× frenética</option>
+                            </select></div>
+                            <div class="row-lbl">Duração</div>
+                            <div class="slider-row"><select id="animDuration" title="Duração de uma volta">
+                                <option value="1">1 s</option><option value="2" selected>2 s</option><option value="3">3 s</option>
+                                <option value="4">4 s</option><option value="6">6 s</option><option value="8">8 s</option>
+                            </select></div>
+                            <div class="row-lbl">FPS</div>
+                            <div class="slider-row"><select id="animFps">
+                                <option value="12">12</option><option value="24">24</option><option value="30" selected>30</option>
+                                <option value="50">50</option><option value="60">60 (GIF: 50)</option>
+                            </select></div>
+                            <div class="row-lbl">Direção</div>
+                            <div class="slider-row"><select id="animDirection">
+                                <option value="forward" selected>Para frente</option><option value="reverse">Para trás</option><option value="pingpong">Vai e volta</option>
+                            </select></div>
+                            <div class="row-lbl">Ritmo</div>
+                            <div class="slider-row"><select id="animEase">
+                                <option value="linear" selected>Constante</option><option value="smooth">Suave</option><option value="pulse">Pulsado</option>
+                                <option value="steps">Em quadros (stop motion)</option><option value="bounce">Com impulso</option>
+                            </select></div>
                             <button class="std-btn" id="btnAnimReset">Restaurar animação padrão</button>
                         </div>
 
@@ -741,14 +775,14 @@
                             <div class="row-lbl">Data impressa</div>
                             <div class="slider-row"><select id="filmStamp" style="flex:1;"><option value="auto" selected>Do filme</option><option value="on">Sempre</option><option value="off">Nunca</option></select><input type="color" class="icon-btn" id="filmStampColor" value="#ff8c1f" title="Cor da data"></div>
                             <div class="film-subpanel" id="set-lumiereHue" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
-<div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Matiz do Lumiere</div>
+<div class="panel-label" style="display:block !important;">Matiz do Lumiere</div>
 <div class="slider-row">
 <svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg>
 <input id="lumiereHue" max="360" min="0" type="range" value="280"/>
 </div>
 </div>
                             <div class="film-subpanel" id="set-vencidoVariant" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
-<div class="panel-label" style="border-bottom: 1px dashed var(--border-light); display:block !important;">Filme Vencido</div>
+<div class="panel-label" style="display:block !important;">Filme Vencido</div>
 <div id="vencidoVariantBar" style="display:flex; gap:4px; width:100%;">
 <button class="std-btn vencido-variant-btn" data-variant="0" style="flex:1 1 0%; padding:6px 4px;">1</button>
 <button class="std-btn vencido-variant-btn" data-variant="1" style="flex:1 1 0%; padding:6px 4px;">2</button>
@@ -793,45 +827,56 @@
                     </div>
                 </div>
 
-                <!-- Configurações (engrenagem na barra superior) -->
-<div class="control-group" id="group-config">
-<div class="m-sub-nav">
-<button class="m-sub-btn active" data-target="set-opFun"><svg viewbox="0 0 24 24"><rect height="18" rx="2" ry="2" width="18" x="3" y="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
-<button class="m-sub-btn" data-target="set-opExp"><svg viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
-<button class="m-sub-btn" data-target="set-opRand"><svg viewbox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg><span>Aleatório</span></button>
-</div>
-<div class="sec-content">
-<div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
-<label class="custom-checkbox"><input id="fillBg" type="checkbox"/><span class="checkmark"></span><span>Preencher Fundo</span></label>
-<div class="slider-row">
-<input class="icon-btn" data-color="#F0F0F0" id="btnBgColor" type="color" value="#F0F0F0"/>
-<input id="hexBgColor" maxlength="7" style="text-align:center;" type="text" value="#F0F0F0"/>
-</div>
-</div>
-<div class="set-item" id="set-opExp"><div class="panel-label">Exportar / Importar / Limpar</div>
-<button class="std-btn" id="btnDownloadConfig" style="width:100%; margin-bottom: 8px;">Exportar Arte</button>
-<label class="std-btn" style="text-align: center; display: flex; align-items: center; justify-content: center; width:100%; margin-bottom: 8px;">
-                                Importar Configuração <input accept="image/png, text/plain" id="importImgConfig" type="file"/>
-</label>
-<button class="std-btn" id="btnResetImage" style="width:100%; margin-bottom: 8px;">Limpar e Restaurar Mídia</button>
-</div>
-<div class="set-item" id="set-opRand">
-<div class="panel-label">O que incluir no Mix Aleatório</div>
-<label class="custom-checkbox"><input checked="" id="randToggle-pixel" type="checkbox"/><span class="checkmark"></span><span>Tamanho do Pixel</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-dither" type="checkbox"/><span class="checkmark"></span><span>Padrão de Dither</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-ditherParams" type="checkbox"/><span class="checkmark"></span><span>Escala e Intensidade do Dither</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-palette" type="checkbox"/><span class="checkmark"></span><span>Paleta de Cores</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-contorno" type="checkbox"/><span class="checkmark"></span><span>Contorno / Edge</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-fx" type="checkbox"/><span class="checkmark"></span><span>Textura</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-grad" type="checkbox"/><span class="checkmark"></span><span>Degradê</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-film" type="checkbox"/><span class="checkmark"></span><span>Filme e lente</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-grain" type="checkbox"/><span class="checkmark"></span><span>Granulado</span></label>
-<label class="custom-checkbox"><input checked="" id="randToggle-anim" type="checkbox"/><span class="checkmark"></span><span>Animação</span></label>
-</div>
-</div>
-</div>
             </div>
         </div>
+
+        <!-- Configurações (engrenagem na barra superior): fundo, tema, exportar/importar/limpar, aleatório -->
+        <div class="control-group" id="group-config">
+            <div class="m-sub-nav">
+                <button class="m-sub-btn active" data-target="set-opFun"><svg viewbox="0 0 24 24"><rect height="18" rx="2" ry="2" width="18" x="3" y="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
+                <button class="m-sub-btn" data-target="set-opTheme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg><span>Tema</span></button>
+                <button class="m-sub-btn" data-target="set-opExp"><svg viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
+                <button class="m-sub-btn" data-target="set-opRand"><svg viewbox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg><span>Aleatório</span></button>
+            </div>
+            <div class="sec-content">
+                <div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
+                    <label class="custom-checkbox"><input id="fillBg" type="checkbox"/><span class="checkmark"></span><span>Preencher Fundo</span></label>
+                    <div class="slider-row">
+                        <input class="icon-btn" data-color="#F0F0F0" id="btnBgColor" type="color" value="#F0F0F0"/>
+                        <input id="hexBgColor" maxlength="7" style="text-align:center;" type="text" value="#F0F0F0"/>
+                    </div>
+                </div>
+                <div class="set-item" id="set-opTheme"><div class="panel-label">Aparência</div>
+                    <div class="row-lbl">Modo</div>
+                    <div class="slider-row">
+                        <button class="std-btn" id="btnThemeDay" style="flex:1;">Diurno</button>
+                        <button class="std-btn" id="btnThemeNight" style="flex:1;">Noturno</button>
+                    </div>
+                    <div class="anim-info">Ao abrir o site, o modo segue o horário automaticamente. Escolha aqui para fixar manualmente.</div>
+                </div>
+                <div class="set-item" id="set-opExp"><div class="panel-label">Exportar / Importar / Limpar</div>
+                    <button class="std-btn" id="btnDownloadConfig" style="width:100%; margin-bottom: 8px;">Exportar Arte</button>
+                    <label class="std-btn" style="text-align: center; display: flex; align-items: center; justify-content: center; width:100%; margin-bottom: 8px;">
+                        Importar Configuração <input accept="image/png, text/plain" id="importImgConfig" type="file"/>
+                    </label>
+                    <button class="std-btn" id="btnResetImage" style="width:100%; margin-bottom: 8px;">Limpar e Restaurar Mídia</button>
+                </div>
+                <div class="set-item" id="set-opRand">
+                    <div class="panel-label">O que incluir no Mix Aleatório</div>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-pixel" type="checkbox"/><span class="checkmark"></span><span>Tamanho do Pixel</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-dither" type="checkbox"/><span class="checkmark"></span><span>Padrão de Dither</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-ditherParams" type="checkbox"/><span class="checkmark"></span><span>Escala e Intensidade do Dither</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-palette" type="checkbox"/><span class="checkmark"></span><span>Paleta de Cores</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-contorno" type="checkbox"/><span class="checkmark"></span><span>Contorno / Edge</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-fx" type="checkbox"/><span class="checkmark"></span><span>Textura</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-grad" type="checkbox"/><span class="checkmark"></span><span>Degradê</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-film" type="checkbox"/><span class="checkmark"></span><span>Filme e lente</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-grain" type="checkbox"/><span class="checkmark"></span><span>Granulado</span></label>
+                    <label class="custom-checkbox"><input checked="" id="randToggle-anim" type="checkbox"/><span class="checkmark"></span><span>Animação</span></label>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div id="view">
@@ -850,7 +895,6 @@
             </label>
             <div style="width: 1px; background: var(--border-light); margin: 0 2px; align-self: stretch;"></div>
 
-            <button class="float-btn" id="btnThemeToggle" title="Alternar Tema"></button>
             <button class="float-btn" id="btn-compare" disabled title="Comparar Original"><svg viewBox="0 0 24 24"><path d="M9 19l-7-7 7-7 M15 19l7-7-7-7 M12 22v-20"/></svg></button>
             <button class="float-btn" id="btn-fs-view" title="Tela Cheia"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
             <div style="width: 1px; background: var(--border-light); margin: 0 2px; align-self: stretch;"></div>
@@ -869,8 +913,9 @@
             <input type="range" id="videoTimeline" min="0" max="100" value="0" style="flex: 1;">
         </div>
 
-        <button class="float-btn hidden-ui" id="btn-play-anim" title="Tocar animação e abrir suas opções (espaço)"></button>
         <div id="floating-bar">
+            <button class="float-btn hidden-ui" id="btn-play-anim" title="Tocar animação e abrir suas opções (espaço)"></button>
+            <div class="hidden-ui" id="floating-bar-sep-play" style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
             <button class="float-btn" id="btn-undo-view" disabled title="Desfazer Ação"><svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2"/></svg></button>
             <button class="float-btn" id="btn-redo-view" disabled title="Refazer Ação"><svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2"/></svg></button>
             <div style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
@@ -933,13 +978,13 @@
                     </div>
                     <div class="slider-row">
                         <button class="std-btn" id="btnAnimPreview" style="flex:1;">Prévia</button>
-                        <button class="std-btn" id="btnAnimExport" style="flex:1; background:var(--accent); color:#fff; font-weight:bold;">Exportar</button>
+                        <button class="std-btn" id="btnAnimExport" style="flex:1; background:var(--text); color:var(--bg); font-weight:bold;">Exportar</button>
                     </div>
                 </div>
             </div>
             
             <div id="export-video-options" style="display: none; flex-direction: column; gap: 8px;">
-                <div style="background: var(--panel); border: 1px dashed var(--text); padding: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 4px;">
+                <div style="background: var(--panel); padding: 8px; font-size: 0.8rem; text-align: center; margin-bottom: 4px;">
                     Selecione a qualidade
                 </div>
 
@@ -956,7 +1001,7 @@
                     </select>
                 </div>
 
-                <button class="std-btn" id="btnChoiceMp4" style="background:var(--accent); color:#fff; font-weight:bold;">MP4</button>
+                <button class="std-btn" id="btnChoiceMp4" style="background:var(--text); color:var(--bg); font-weight:bold;">MP4</button>
                 <button class="std-btn" id="btnChoiceWebm">WebM</button>
             </div>
 
@@ -2579,6 +2624,9 @@ const PixelarFX = {
             panelsContainer.classList.remove('active');
             document.querySelectorAll('.control-group.active').forEach(g => g.classList.remove('active'));
             controlsPanel.classList.add('collapsed');
+            // no mobile, nenhuma sub-aba fica pré-selecionada (no desktop a primeira continua ativa por padrão)
+            document.querySelectorAll('.m-sub-btn.active').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.set-item.active').forEach(s => s.classList.remove('active'));
         }
 
         allTabs.forEach(tab => {
@@ -2590,10 +2638,7 @@ const PixelarFX = {
                 } else {
                     allTabs.forEach(t => t.classList.remove('active')); document.querySelectorAll('.control-group').forEach(g => g.classList.remove('active')); 
                     tab.classList.add('active');
-                    if(targetGroup) {
-                        targetGroup.classList.add('active');
-                        if(window.innerWidth <= 768) { const firstSubBtn = targetGroup.querySelector('.m-sub-btn:not(.reset-btn)'); if(firstSubBtn && !targetGroup.querySelector('.m-sub-btn.active')) firstSubBtn.click(); }
-                    }
+                    if(targetGroup) { targetGroup.classList.add('active'); } // mobile: abre só a 2ª barra (sub-abas), sem pré-selecionar nenhuma
                     panelsContainer.classList.add('active'); controlsPanel.classList.remove('collapsed');
                 }
             });
@@ -2604,6 +2649,7 @@ const PixelarFX = {
                 const targetId = btn.getAttribute('data-target'); const targetItem = document.getElementById(targetId); const group = btn.closest('.control-group');
                 if (btn.classList.contains('active')) {
                     if(window.innerWidth > 768) { btn.classList.remove('active'); if(targetItem) targetItem.classList.remove('active'); }
+                    else { btn.classList.remove('active'); if(targetItem) targetItem.classList.remove('active'); } // mobile: reclicar na sub-aba ativa fecha só esse nível, volta pra lista de sub-abas
                 } else {
                     group.querySelectorAll('.m-sub-btn:not(.reset-btn)').forEach(b => b.classList.remove('active')); group.querySelectorAll('.set-item').forEach(p => p.classList.remove('active'));
                     btn.classList.add('active'); if(targetItem) targetItem.classList.add('active');
@@ -2617,12 +2663,18 @@ const PixelarFX = {
         document.getElementById('btn-zoom-in').addEventListener('click', () => { currentZoom += zoomStep; updateZoom(); });
         document.getElementById('btn-zoom-out').addEventListener('click', () => { currentZoom = Math.max(0.2, currentZoom - zoomStep); updateZoom(); });
 
-        const themeBtn = document.getElementById('btnThemeToggle'); const rootHtml = document.documentElement;
-        const moonIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
-        const sunIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
-        function updateThemeIcon() { themeBtn.innerHTML = rootHtml.getAttribute('data-theme') === 'dark' ? sunIcon : moonIcon; }
-        if (localStorage.getItem('pixelarTheme') === 'dark') { rootHtml.setAttribute('data-theme', 'dark'); } updateThemeIcon();
-        themeBtn.addEventListener('click', () => { if (rootHtml.getAttribute('data-theme') === 'dark') { rootHtml.removeAttribute('data-theme'); localStorage.setItem('pixelarTheme', 'light'); } else { rootHtml.setAttribute('data-theme', 'dark'); localStorage.setItem('pixelarTheme', 'dark'); } updateThemeIcon(); });
+        const rootHtml = document.documentElement;
+        function applyDarkMode(isDark) {
+            if (isDark) rootHtml.setAttribute('data-theme', 'dark'); else rootHtml.removeAttribute('data-theme');
+            const btnDay = document.getElementById('btnThemeDay'), btnNight = document.getElementById('btnThemeNight');
+            if (btnDay) btnDay.classList.toggle('active-state', !isDark);
+            if (btnNight) btnNight.classList.toggle('active-state', isDark);
+        }
+        function isNightByClock() { const h = new Date().getHours(); return h < 6 || h >= 18; } // 18h–6h = noturno
+        const savedTheme = localStorage.getItem('pixelarTheme'); // 'dark' | 'light' | null (segue o horário)
+        applyDarkMode(savedTheme ? savedTheme === 'dark' : isNightByClock());
+        document.getElementById('btnThemeDay').addEventListener('click', () => { localStorage.setItem('pixelarTheme', 'light'); applyDarkMode(false); });
+        document.getElementById('btnThemeNight').addEventListener('click', () => { localStorage.setItem('pixelarTheme', 'dark'); applyDarkMode(true); });
 
         const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight', 'grainAmount' ];
         const locks = {}; lockTargets.forEach(t => locks[t] = false);
@@ -4300,6 +4352,7 @@ try {
         const videoTimeline = document.getElementById('videoTimeline');
         const videoTimeDisplay = document.getElementById('videoTimeDisplay');
         const btnDownloadConfig = document.getElementById('btnDownloadConfig');
+        const btnRecordVideoFloat = document.getElementById('btnRecordVideoFloat');
 
         videoTimeline.addEventListener('input', (e) => {
             if (currentMediaType !== 'video' || !hasMediaLoaded || isVideoRendering) return;
@@ -4346,13 +4399,15 @@ try {
             stopMainAnim(false);
             currentMediaType = type;
             document.getElementById('btn-play-anim').classList.toggle('hidden-ui', type !== 'image');
+            document.getElementById('floating-bar-sep-play').classList.toggle('hidden-ui', type !== 'image');
             document.getElementById('welcomeMsg').style.display = 'none';
             canvasWrapper.style.display = 'block'; currentZoom = 1; updateZoom();
             document.getElementById('video-timeline-bar').classList.toggle('hidden-ui', type !== 'video');
             document.getElementById('set-corDeg').style.display = type === 'video' ? 'none' : 'flex';
+            btnRecordVideoFloat.title = type === 'video' ? 'Gravar Vídeo' : 'Exportar Mídia';
             btnDownloadConfig.textContent = type === 'video' ? 'Gravar Vídeo' : 'Exportar Arte';
-            btnDownloadConfig.style.background = type === 'video' ? 'var(--accent)' : 'var(--bg)';
-            btnDownloadConfig.style.color = type === 'video' ? '#fff' : 'var(--text)';
+            btnDownloadConfig.style.background = type === 'video' ? 'var(--text)' : 'var(--bg)';
+            btnDownloadConfig.style.color = type === 'video' ? 'var(--bg)' : 'var(--text)';
             btnDownloadConfig.style.fontWeight = type === 'video' ? 'bold' : 'normal';
             document.getElementById('btn-compare').disabled = false;
             historyArr = []; historyIndex = -1; initPresetPool();
@@ -5298,7 +5353,11 @@ try {
             document.querySelectorAll('.control-group').forEach(x => x.classList.remove('active'));
             g.classList.add('active');
             panelsContainer.classList.add('active'); controlsPanel.classList.remove('collapsed');
-            if (window.innerWidth <= 768 && !g.querySelector('.m-sub-btn.active')) { const f = g.querySelector('.m-sub-btn:not(.reset-btn)'); if (f) f.click(); }
+            // mobile: abre só a faixa de sub-abas (Geral/Dither/Textura...), sem pré-selecionar nenhuma
+            if (window.innerWidth <= 768) {
+                g.querySelectorAll('.m-sub-btn.active').forEach(b => b.classList.remove('active'));
+                g.querySelectorAll('.set-item.active').forEach(s => s.classList.remove('active'));
+            }
         }
         syncFilmLookUI(false);
 
@@ -5751,8 +5810,8 @@ function renderPresets() {
         }
         function closeExportModal() { stopAnimPreview(); exportModal.style.display = 'none'; }
 
-        document.getElementById('btnDownloadConfig').addEventListener('click', openExportModal);
         document.getElementById('btnRecordVideoFloat').addEventListener('click', openExportModal);
+        document.getElementById('btnDownloadConfig').addEventListener('click', openExportModal);
         document.getElementById('dl-close').addEventListener('click', closeExportModal);
 
 
@@ -6764,8 +6823,11 @@ function renderPresets() {
             document.getElementById('animRepeatRow').style.display = document.getElementById('animFormat').value === 'gif' ? 'none' : 'flex';
             if (currentMediaType !== 'image') return;
             const parts = describeAnimation(readSettings());
-            const txt = parts.length ? 'Movimento: ' + parts.join(' + ') + '.' : NOTHING_TO_ANIMATE;
-            ['animInfo', 'animPanelInfo'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = txt; });
+            const fullTxt = parts.length ? 'Movimento: ' + parts.join(' + ') + '.' : NOTHING_TO_ANIMATE;
+            const infoEl = document.getElementById('animInfo'); if (infoEl) infoEl.textContent = fullTxt;
+            // painel "Geral": sem aviso quando não há nada pra animar, só mostra quando há algo configurado
+            const panelEl = document.getElementById('animPanelInfo');
+            if (panelEl) panelEl.textContent = parts.length ? fullTxt : '';
         }
         ANIM_IDS.forEach(id => {
             const el = document.getElementById(id);
@@ -7123,6 +7185,204 @@ function renderPresets() {
                 const row = el.closest('.slider-row') || el.parentElement;
                 if (!row || row.querySelector(':scope > .ctrl-reset')) return;
                 row.appendChild(makeCtrlResetBtn('Zerar este controle', () => resetControl(el.id)));
+            });
+        })();
+
+        // ==========================================
+        // SELECT → BARRA DE BOTÕES ROLÁVEL
+        // Converte um <select> de estilo/catálogo (textura, dither, filmes...) numa
+        // barra horizontal de botões. O <select> original continua no DOM (escondido),
+        // como fonte de verdade: clicar num botão seta select.value e dispara 'change',
+        // então toda a lógica que já lê/observa o select continua funcionando sem mudança.
+        // ==========================================
+        function turnSelectIntoButtons(select) {
+            if (!select || select.dataset.sbrDone) return;
+            select.dataset.sbrDone = '1';
+            const row = document.createElement('div');
+            row.className = 'select-btn-row';
+            select.parentNode.insertBefore(row, select.nextSibling);
+            select.style.display = 'none';
+
+            const buttons = []; // { value, btn }
+            Array.from(select.children).forEach(node => {
+                if (node.tagName === 'OPTGROUP') {
+                    const lbl = document.createElement('span');
+                    lbl.className = 'sbr-group-label';
+                    lbl.textContent = node.label;
+                    row.appendChild(lbl);
+                    Array.from(node.children).forEach(opt => buttons.push(makeBtn(opt)));
+                } else if (node.tagName === 'OPTION') {
+                    buttons.push(makeBtn(node));
+                }
+            });
+            function makeBtn(opt) {
+                const btn = document.createElement('button');
+                btn.type = 'button'; btn.className = 'sbr-btn';
+                btn.textContent = opt.textContent;
+                btn.addEventListener('click', () => {
+                    select.value = opt.value;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncActive();
+                });
+                row.appendChild(btn);
+                return { value: opt.value, btn };
+            }
+            function syncActive() {
+                buttons.forEach(({ value, btn }) => {
+                    const active = value === select.value;
+                    btn.classList.toggle('active-state', active);
+                    if (active) btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                });
+            }
+            syncActive();
+            // o valor do select pode mudar por fora (presets, randomização, JS interno) —
+            // observamos o próprio evento 'change' do select para manter os botões em sincronia
+            select.addEventListener('change', syncActive);
+            // MutationObserver cobre o caso de o valor ser setado via JS sem disparar 'change'
+            new MutationObserver(syncActive).observe(select, { attributes: true, attributeFilter: ['value'] });
+            return { syncActive };
+        }
+        // seletores de estilo/catálogo (não numéricos/técnicos) a converter
+        ['ditherSelect', 'fxEffectSelect', 'animDStyle', 'animFxStyle', 'animGrainStyle', 'animFilmStyle', 'animCamStyle', 'animColStyle', 'imgGradType', 'imgGradBlend', 'filmLook', 'filmFrame']
+            .forEach(id => turnSelectIntoButtons(document.getElementById(id)));
+
+        // ==========================================
+        // CONTROLES POR NÍVEL — cada par .row-lbl + .slider-row (ou um .slider-row
+        // solto com um <span> de rótulo interno) vira um item.
+        // Desktop: acordeão inline (clique no label abre/fecha só aquele slider).
+        // Mobile: uma faixa de botões por sub-aba; clique num botão esconde a
+        // faixa e mostra só aquele slider, com um botão de voltar.
+        // Conteúdo fora desse padrão (selects sem rótulo, presets, grids, conteúdo
+        // dinâmico) não entra no drill-down: continua sempre visível, mas é
+        // deslocado para depois da faixa de botões, num bloco próprio.
+        // ==========================================
+        (function setupCtrlAccordion() {
+            const isMobile = () => window.innerWidth <= 768;
+            const KNOWN_ROW_CLASSES = ['icon-btn', 'lock-btn', 'shuffle-btn', 'lbl-icon', 'badge', 'ctrl-reset'];
+            const registry = []; // { showList } por sub-aba, pra resincronizar em resize
+            const ctrlItemResets = {}; // setItem.id -> reset completo (fecha nível 3, volta pra faixa de botões)
+
+            // acha, dentro de um .slider-row solto, um <span> de texto que sirva de rótulo
+            function findInlineLabel(row) {
+                const spans = row.querySelectorAll(':scope > span');
+                for (const sp of spans) {
+                    const cls = sp.className || '';
+                    if (KNOWN_ROW_CLASSES.some(c => cls.includes(c))) continue;
+                    const txt = sp.textContent.trim();
+                    if (txt) return { span: sp, text: txt };
+                }
+                return null;
+            }
+
+            document.querySelectorAll('.set-item').forEach(setItem => {
+                const children = Array.from(setItem.children);
+                const items = []; // { wrap, labelText }
+                const restNodes = []; // conteúdo fora do padrão, fica sempre visível
+
+                for (let i = 0; i < children.length; i++) {
+                    const node = children[i];
+                    if (node.classList && node.classList.contains('row-lbl')) {
+                        const row = children[i + 1];
+                        if (row && row.classList && row.classList.contains('slider-row')) {
+                            const wrap = document.createElement('div');
+                            wrap.className = 'ctrl-item';
+                            node.parentNode.insertBefore(wrap, node);
+                            wrap.appendChild(node);
+                            wrap.appendChild(row);
+                            const clone = node.cloneNode(true);
+                            clone.querySelectorAll('.badge, small, .anim-val').forEach(n => n.remove());
+                            items.push({ wrap, labelText: clone.textContent.trim() || 'Ajuste' });
+                            i++; // já consumiu o próximo
+                            continue;
+                        }
+                    }
+                    if (node.classList && node.classList.contains('slider-row') && !node.closest('.ctrl-item')) {
+                        const inline = findInlineLabel(node);
+                        if (inline) {
+                            const wrap = document.createElement('div');
+                            wrap.className = 'ctrl-item';
+                            node.parentNode.insertBefore(wrap, node);
+                            wrap.appendChild(node);
+                            items.push({ wrap, labelText: inline.text });
+                            continue;
+                        }
+                    }
+                    if (!node.classList || !node.classList.contains('ctrl-item')) restNodes.push(node);
+                }
+
+                if (!items.length) return; // nada no padrão: deixa a sub-aba como está
+
+                // move o conteúdo fora do padrão para antes da faixa de botões,
+                // preservando a ordem relativa original entre si
+                restNodes.forEach(n => setItem.insertBefore(n, items[0].wrap));
+
+                // --- desktop: clique no label/rótulo abre/fecha inline ---
+                items.forEach(({ wrap }) => {
+                    const clickTarget = wrap.querySelector('.row-lbl') || wrap;
+                    clickTarget.style.cursor = 'pointer';
+                    clickTarget.addEventListener('click', () => {
+                        if (isMobile()) return;
+                        const wasOpen = wrap.classList.contains('open');
+                        setItem.querySelectorAll(':scope > .ctrl-item.open').forEach(o => o.classList.remove('open'));
+                        if (!wasOpen) wrap.classList.add('open');
+                    });
+                });
+                items[0].wrap.classList.add('open'); // desktop: primeiro item aberto por padrão
+
+                // --- mobile: faixa de botões + drill-down (sem botão "voltar": reclicar no botão ativo fecha) ---
+                const btnRow = document.createElement('div');
+                btnRow.className = 'ctrl-btn-row';
+                setItem.insertBefore(btnRow, items[0].wrap);
+
+                function showList() {
+                    btnRow.style.display = '';
+                    items.forEach(({ wrap }) => wrap.classList.remove('open'));
+                    btnRow.querySelectorAll('.ctrl-btn.active').forEach(b => b.classList.remove('active'));
+                    if (isMobile()) items[0] && items[0].wrap.classList.remove('open');
+                    else items[0] && items[0].wrap.classList.add('open'); // desktop volta a mostrar o primeiro
+                }
+                function showItemAt(idx) {
+                    btnRow.style.display = 'none';
+                    items.forEach(({ wrap }, i) => wrap.classList.toggle('open', i === idx));
+                    btnRow.querySelectorAll('.ctrl-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+                }
+                let activeIdx = -1;
+                items.forEach(({ labelText }, idx) => {
+                    const b = document.createElement('button');
+                    b.type = 'button'; b.className = 'ctrl-btn';
+                    b.innerHTML = labelText;
+                    b.addEventListener('click', () => {
+                        if (!isMobile()) return;
+                        if (activeIdx === idx) { activeIdx = -1; showList(); }
+                        else { activeIdx = idx; showItemAt(idx); }
+                    });
+                    btnRow.appendChild(b);
+                });
+                if (isMobile()) showList();
+                registry.push({ showList: () => { activeIdx = -1; showList(); } });
+                ctrlItemResets[setItem.id] = () => { activeIdx = -1; showList(); };
+
+                // conteúdo fora do padrão (restNodes) já fica onde estava; sem mudança de posição
+                // além da já feita pela inserção dos wraps acima — nada a fazer aqui.
+            });
+
+            // ao trocar de sub-aba no mobile, sempre volta pra faixa de botões daquele item
+            document.querySelectorAll('.m-sub-btn:not(.reset-btn)').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (window.innerWidth > 768) return;
+                    const targetId = btn.getAttribute('data-target');
+                    if (ctrlItemResets[targetId]) ctrlItemResets[targetId]();
+                });
+            });
+
+            // ao cruzar o breakpoint mobile/desktop, resincroniza todas as sub-abas
+            let wasMobile = isMobile();
+            window.addEventListener('resize', () => {
+                const nowMobile = isMobile();
+                if (nowMobile !== wasMobile) {
+                    wasMobile = nowMobile;
+                    registry.forEach(r => r.showList());
+                }
             });
         })();
     </script>
