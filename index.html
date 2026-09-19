@@ -74,6 +74,15 @@
         .set-item:last-child { margin-bottom: 0; }
         .sec-content { display: flex; flex-direction: column; width: 100%; gap: 8px; }
         .panel-label { font-size: var(--font-size-small); font-weight: bold; color: var(--text); width: 100%; text-transform: uppercase; padding-bottom: 4px; margin-bottom: 2px;}
+        /* Acordeão desktop por seção (Luz, Cor, Tons...): clique no título recolhe/expande;
+           várias seções podem ficar abertas ao mesmo tempo. */
+        @media (min-width: 769px) {
+            .set-item > .panel-label { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; }
+            .set-item > .panel-label::before { content: '▾'; display: inline-block; font-size: 0.7em; opacity: 0.7; transition: transform 0.15s; }
+            .set-item.sec-collapsed > .panel-label::before { transform: rotate(-90deg); }
+            .set-item.sec-collapsed > *:not(.panel-label) { display: none !important; }
+            .set-item.sec-collapsed { padding-bottom: var(--pad-sm); }
+        }
         .slider-row { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 100%; padding: 2px 0; }
         .slider-row > .icon-btn, .slider-row > .lbl-icon, .slider-row > input[type="color"], .slider-row > .custom-checkbox { flex: 0 0 auto; }
         .lbl-icon { width: 20px; height: 20px; stroke: var(--text); fill: none; stroke-width: 1.5; }
@@ -101,8 +110,13 @@
         .select-btn-row .sbr-btn.active-state { background: var(--panel); border-top-color: var(--border); border-left-color: var(--border); border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); box-shadow: none; }
         .select-btn-row .sbr-group-label { flex: 0 0 auto; display: flex; align-items: center; padding: 0 6px; font-size: 0.65rem; text-transform: uppercase; opacity: 0.55; white-space: nowrap; }
         .select-btn-row .sbr-group-label:not(:first-child) { margin-left: 4px; }
+        /* dentro de um .slider-row com outros controles ao lado (lock, botão auxiliar):
+           a barra força quebra de linha e ocupa a linha inteira, os demais controles vêm logo abaixo */
+        .slider-row:has(> .select-btn-row) { flex-wrap: wrap; }
+        .slider-row > .select-btn-row { flex-basis: 100%; order: -1; margin-bottom: 4px; }
 
         .custom-checkbox { display: flex; align-items: center; gap: var(--pad-sm); cursor: pointer; user-select: none; font-size: var(--font-size-base); font-weight: normal; text-transform: uppercase; }
+        .custom-checkbox:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
         .checkmark { height: 20px; width: 20px; background-color: var(--panel); border: var(--border-width) solid var(--border); border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); display: flex; justify-content: center; align-items: center; flex: 0 0 auto; border-radius: 0; box-shadow: 1px 1px 0 var(--shadow) inset;}
         .custom-checkbox input[type="checkbox"]:checked ~ .checkmark::after { content: "✓"; font-family: sans-serif; font-weight: bold; color: var(--text); font-size: 14px; line-height: 1;}
 
@@ -200,7 +214,7 @@
         .anim-grid label { position: relative; }
         .anim-grid .ctrl-reset { position: absolute; top: -3px; right: 0; }
         @media (max-width: 768px) { .icon-btn.ctrl-reset { width: 28px; height: 28px; min-width: 28px; min-height: 28px; } .ctrl-reset svg { width: 14px; height: 14px; } }
-        .modal-content h3 { font-size: var(--font-size-title); text-transform: uppercase; border-bottom: var(--border-width) solid var(--border); padding-bottom: 6px; margin-bottom: 6px; font-weight: normal; background: var(--text); color: var(--bg); padding-left: 8px;}
+        .modal-content h3 { font-size: var(--font-size-title); text-transform: uppercase; padding-bottom: 6px; margin-bottom: 6px; font-weight: bold; color: var(--text); }
         .modal-desc { font-size: var(--font-size-base); color: var(--text); margin-bottom: 8px; line-height: 1.4; }
 
         #toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 100002; pointer-events: none; width: min(92vw, 460px); }
@@ -232,7 +246,7 @@
             .m-sub-btn.active { background: var(--panel); border-top-color: var(--border); border-left-color: var(--border); border-bottom-color: var(--border-highlight); border-right-color: var(--border-highlight); box-shadow: none; transform: translate(1px, 1px);}
             .m-sub-btn.reset-btn { border-color: var(--text); background: var(--panel); color: var(--text); }
             .set-item { display: none !important; }
-            .set-item.active { display: flex !important; border: none; box-shadow: none; background: transparent; padding: 0; }
+            .set-item.active { display: flex !important; border: none; box-shadow: none; background: transparent; padding: 0 4px; }
             .panel-label { display: none; }
             .row-lbl { font-size: 0.7rem; } 
             .icon-btn, .float-btn { width: 36px; height: 36px; min-width: 36px; }
@@ -263,29 +277,52 @@
         /* =========================================
            BOTÕES QUADRADOS (TEMAS E PRESETS) 
            ========================================= */
-        #themesGrid, #myPresetsGrid {
+        #themesGrid, #myPresetsGrid, #filmLookGrid {
             display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-            gap: 8px !important;
+            grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)) !important;
+            gap: 6px !important;
         }
         
-        #themesGrid > *, #myPresetsGrid > div {
+        #themesGrid > *, #myPresetsGrid > div, #filmLookGrid > .std-btn {
             aspect-ratio: 1 / 1;
             position: relative;
             display: flex !important;
             width: 100% !important;
             margin: 0 !important;
         }
+        #filmLookGrid .sbr-group-label {
+            font-size: 0.65rem; text-transform: uppercase; opacity: 0.55; white-space: nowrap;
+        }
+        /* grid vazio (sem presets salvos) não deve reservar espaço nenhum */
+        #themesGrid:empty, #myPresetsGrid:empty, #filmLookGrid:empty { display: none !important; padding: 0 !important; margin: 0 !important; }
+
+        /* Configurações: cobre a página inteira, com botão de voltar */
+        #group-config.control-group {
+            position: fixed; inset: 0; z-index: 100005;
+            background: var(--bg); padding: 16px; overflow-y: auto;
+            flex-direction: column; gap: 12px;
+        }
+        #group-config.control-group:not(.active) { display: none !important; }
+        #group-config.control-group.active { display: flex !important; }
+        #group-config .m-sub-nav { display: flex !important; flex-direction: row; flex-wrap: wrap; gap: 6px; border: none; background: transparent; padding: 0; margin: 0 0 8px 0; }
+        #group-config .set-item { display: none !important; }
+        #group-config .set-item.active { display: flex !important; }
+        #cfg-back { align-self: flex-start; display: flex; align-items: center; gap: 6px; background: var(--bg); border: var(--border-width) solid var(--border); border-top-color: var(--border-highlight); border-left-color: var(--border-highlight); color: var(--text); cursor: pointer; padding: 8px 16px; font-family: inherit; font-size: var(--font-size-small); text-transform: uppercase; box-shadow: 2px 2px 0 var(--shadow); min-height: 40px; margin-bottom: 4px; }
         
-        /* Força a quebra de texto e centraliza */
+        /* Força a quebra de texto e centraliza; nunca corta uma palavra no meio —
+           se não couber, a palavra inteira pula pra próxima linha */
         #themesGrid .std-btn, 
-        #myPresetsGrid .std-btn {
+        #myPresetsGrid .std-btn,
+        #filmLookGrid .std-btn {
             width: 100% !important;
             height: 100% !important;
             white-space: normal !important;
-            word-wrap: break-word !important;
-            line-height: 1.2 !important;
-            padding: 8px !important;
+            overflow-wrap: normal !important;
+            word-break: keep-all !important;
+            hyphens: none !important;
+            line-height: 1.15 !important;
+            padding: 8px 6px !important;
+            font-size: 0.62rem !important;
             text-align: center;
             align-items: center;
             justify-content: center;
@@ -311,18 +348,19 @@
 
         /* Comportamento de linha horizontal apenas no mobile */
         @media (max-width: 768px) {
-            #themesGrid, #myPresetsGrid {
+            #themesGrid, #myPresetsGrid, #filmLookGrid {
                 display: flex !important;
                 flex-direction: row !important;
                 overflow-x: auto !important;
                 flex-wrap: nowrap !important;
-                padding-bottom: 12px !important;
+                padding-bottom: 4px !important;
             }
-            #themesGrid > *, #myPresetsGrid > div {
+            #themesGrid > *, #myPresetsGrid > div, #filmLookGrid > .std-btn {
                 flex: 0 0 auto !important;
-                width: 105px !important;
-                min-width: 105px !important;
+                width: 64px !important;
+                min-width: 64px !important;
             }
+            #filmLookGrid .sbr-group-label { flex: 0 0 auto !important; }
         }
     </style>
     </style>
@@ -345,10 +383,7 @@
                     <div class="m-sub-nav">
                         <button class="m-sub-btn active" data-target="set-luz"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></svg><span>Luz</span></button>
                         <button class="m-sub-btn" data-target="set-cor"><svg viewBox="0 0 24 24"><path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.3 0z"></path></svg><span>Cor</span></button>
-                        <button class="m-sub-btn" data-target="set-tons"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><path d="M3 9h18M9 21V9"></path></svg><span>Tons</span></button>
                         <button class="m-sub-btn" data-target="set-pxGrain"><span class="badge" id="bdg-grain"></span><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="18" cy="7" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="13" r="1"></circle><circle cx="7" cy="18" r="1"></circle><circle cx="13" cy="19" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Grão</span></button>
-                        <button class="m-sub-btn" data-target="set-otica"><span class="badge" id="bdg-abe"></span><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="6"></circle><circle cx="14" cy="12" r="6"></circle></svg><span>Ótica</span></button>
-                        <button class="m-sub-btn reset-btn" data-target="ajustes"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
                         <div class="set-item active" id="set-luz"><div class="panel-label">Luz</div>
@@ -364,50 +399,41 @@
                             <div class="row-lbl">Temperatura<span class="badge" id="bdg-tem"></span></div><div class="slider-row"><input id="temperatura" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="temperatura"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
                             <div class="row-lbl">Saturação<span class="badge" id="bdg-sat"></span></div><div class="slider-row"><input id="saturacao" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="saturacao"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
                         </div>
-                        <div class="set-item" id="set-tons"><div class="panel-label">Tons</div>
-                            <div class="row-lbl">Posterizar (menos níveis de tom)<span class="badge" id="bdg-pos"></span></div><div class="slider-row"><input id="posterize" max="100" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="posterize"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
-                        </div>
                         <div class="set-item" id="set-pxGrain"><div class="panel-label">Granulado de filme</div>
-
-<div class="slider-row"><input id="grainAmount" max="100" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="grainAmount"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Intensidade</span></div>
-<div class="slider-row"><input id="grainSize" max="400" min="10" type="range" value="100"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Tamanho</span></div>
-<div class="slider-row"><input id="grainRoughness" max="100" min="0" type="range" value="45"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Aspereza</span></div>
-<div class="slider-row"><input id="grainShadowBias" max="100" min="-100" type="range" value="20"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Sombras/Luzes</span></div>
-<div class="slider-row"><input id="grainSpeckle" max="100" min="0" type="range" value="0"/><span style="font-size:0.7rem; opacity:0.7; min-width:66px; text-align:right;">Manchas</span></div>
+                            <div class="row-lbl">Intensidade</div><div class="slider-row"><input id="grainAmount" max="100" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="grainAmount"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+                            <div class="row-lbl">Tamanho</div><div class="slider-row"><input id="grainSize" max="400" min="10" type="range" value="100"/></div>
+                            <div class="row-lbl">Aspereza</div><div class="slider-row"><input id="grainRoughness" max="100" min="0" type="range" value="45"/></div>
+                            <div class="row-lbl">Sombras/Luzes</div><div class="slider-row"><input id="grainShadowBias" max="100" min="-100" type="range" value="20"/></div>
+                            <div class="row-lbl">Manchas</div><div class="slider-row"><input id="grainSpeckle" max="100" min="0" type="range" value="0"/></div>
 <label class="custom-checkbox"><input checked="" id="grainMono" type="checkbox"/><span class="checkmark"></span><span>Granulado Monocromático</span></label>
 </div>
-                        <div class="set-item" id="set-otica"><div class="panel-label">Ótica</div>
-                            <div class="row-lbl">Aberração cromática</div><div class="slider-row"><input id="rgbShift" max="15" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="rgbShift"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
-                        </div>
                     </div>
                 </div>
 
                 <!-- ===== PIXEL: grade, dither, textura e contorno ===== -->
                 <div class="control-group" id="group-pixel">
                     <div class="m-sub-nav">
-                        <button class="m-sub-btn active" data-target="set-pxSize"><svg viewbox="0 0 24 24"><rect height="7" width="7" x="3" y="3"></rect><rect height="7" width="7" x="14" y="3"></rect><rect height="7" width="7" x="14" y="14"></rect><rect height="7" width="7" x="3" y="14"></rect></svg><span>Grade</span></button>
-                        <button class="m-sub-btn" data-target="set-dither"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="6" r="1"></circle><circle cx="18" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="6" cy="18" r="1"></circle><circle cx="12" cy="18" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Dither</span></button>
-                        <button class="m-sub-btn" data-target="set-pxEfeitos"><span class="badge" id="bdg-fxEff"></span><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span>Textura</span></button>
+                        <button class="m-sub-btn active" data-target="set-dither"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1"></circle><circle cx="12" cy="6" r="1"></circle><circle cx="18" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="6" cy="18" r="1"></circle><circle cx="12" cy="18" r="1"></circle><circle cx="18" cy="18" r="1"></circle></svg><span>Dither</span></button>
                         <button class="m-sub-btn" data-target="set-corCon"><span class="badge" id="bdg-edg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><rect x="8" y="8" width="8" height="8"></rect></svg><span>Contorno</span></button>
-                        <button class="m-sub-btn reset-btn" data-target="pixelReset"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
-                        <div class="set-item active" id="set-pxSize"><div class="panel-label">Grade de pixels</div>
+                        <div class="set-item active" id="set-dither"><div class="panel-label">Dither</div>
                             <div class="row-lbl">Tamanho do pixel<span class="badge" id="bdg-px"></span></div><div class="slider-row">
 <input id="pxSize" max="64" min="1" type="range" value="1"/>
 <button class="icon-btn lock-btn" data-target="pxSize"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
 <button class="icon-btn shuffle-btn" data-target="pxSize"><svg viewbox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" x2="21" y1="20" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" x2="21" y1="15" y2="21"></line><line x1="4" x2="9" y1="4" y2="9"></line></svg></button>
 </div>
-                            <div class="row-lbl">Escala da imagem na tela</div><div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><rect height="18" rx="2" ry="2" width="18" x="3" y="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><input id="imageScale" max="200" min="30" title="Escala da Imagem Fundo" type="range" value="100"/><button class="icon-btn lock-btn" data-target="imageScale"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
-                        </div>
-                        <div class="set-item" id="set-dither"><div class="panel-label">Dither</div>
-                            <div class="row-lbl">Padrão <small>(botão: suavizar tons médios)</small><span class="badge" id="bdg-dPat"></span></div><div class="slider-row">
+                            <input type="hidden" id="imageScale" value="100">
+                            <div class="row-lbl">Padrão<span class="badge" id="bdg-dPat"></span></div><div class="slider-row">
 <select id="ditherSelect">
-<option value="none">Padrão Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
+<option value="none">Sólido</option><option value="nintendo_ds">Pontilhismo</option><option value="halftone">Meiotonagem</option>
 <option value="checkerboard">Xadrez</option><option value="scanlines">TV Analógica</option><option value="noise">Ruído Aleatório</option>
 <option value="bayer8">Bayer Fino 8x8</option><option value="floyd_approx">Difusão de Erro</option>
 </select>
+</div>
+                            <div class="slider-row" style="justify-content:center;">
 <button class="icon-btn lock-btn" data-target="ditherSelect"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+<button class="icon-btn shuffle-btn" data-target="ditherSelect"><svg viewbox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" x2="21" y1="20" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" x2="21" y1="15" y2="21"></line><line x1="4" x2="9" y1="4" y2="9"></line></svg></button>
 <button class="icon-btn" id="btnEffMidDither" title="Suavizar Tons Médios"><svg viewbox="0 0 24 24"><path d="M2 12 Q 7 2 12 12 T 22 12" fill="none" stroke="currentColor" stroke-linecap="round"></path></svg></button>
 </div>
                             <div class="row-lbl">Escala do padrão<span class="badge" id="bdg-dSca"></span></div><div class="slider-row"><input id="ditherScale" max="10" min="1" type="range" value="1"/><button class="icon-btn lock-btn" data-target="ditherScale"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
@@ -440,13 +466,14 @@
                             <div id="fxParamsInner" style="display:flex; flex-direction:column; gap:6px;"></div>
                         </div>
                         <div class="set-item" id="set-corCon"><div class="panel-label">Contorno entre cores</div>
-                            <div class="row-lbl">Espessura e cor</div><div class="slider-row">
+                            <div class="row-lbl">Espessura</div><div class="slider-row">
 <input id="edgePixelSize" max="10" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="edgePixelSize"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
-<input class="icon-btn" id="edgeColor" type="color" value="#1A1A1A"/><button class="icon-btn lock-btn" data-target="edgeColor"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
 </div>
                             <div class="row-lbl">Opacidade</div><div class="slider-row">
-<svg class="lbl-icon" title="Opacidade" viewbox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path></svg>
 <input id="edgeOpacity" max="100" min="0" type="range" value="100"/><button class="icon-btn lock-btn" data-target="edgeOpacity"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+</div>
+                            <div class="row-lbl">Cor</div><div class="slider-row" style="justify-content:center;">
+<input class="icon-btn" id="edgeColor" type="color" value="#1A1A1A"/><button class="icon-btn lock-btn" data-target="edgeColor"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
 </div>
                         </div>
                     </div>
@@ -459,7 +486,6 @@
                         <button class="m-sub-btn" data-target="set-corAju"><span class="badge" id="bdg-corAju"></span><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"></path></svg><span>Ajustar</span></button>
                         <button class="m-sub-btn" data-target="set-corDeg"><span class="badge" id="bdg-corDeg"></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><line x1="3" y1="12" x2="21" y2="12"></line></svg><span>Degradê</span></button>
                         <button class="m-sub-btn" data-target="set-corSal"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline></svg><span>Salvas</span></button>
-                        <button class="m-sub-btn reset-btn" data-target="colors"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
                         <div class="set-item active" id="set-corPal"><div class="panel-label">Paleta de cores</div>
@@ -473,8 +499,6 @@
 <option value="duotone">Duotone</option><option value="tritone">Tritone</option>
 </select>
 <button class="icon-btn lock-btn" data-target="colorSelect"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
-</div>
-<div class="slider-row">
 <button class="icon-btn" id="btnInvert" title="Inverter Cores"><svg viewbox="0 0 24 24"><circle cx="12" cy="12" fill="none" r="10" stroke="currentColor"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"></path></svg></button>
 <button class="icon-btn" id="btnShufflePalette" title="Sortear Novas Cores"><svg viewbox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" x2="21" y1="20" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" x2="21" y1="15" y2="21"></line><line x1="4" x2="9" y1="4" y2="9"></line></svg></button>
 <button class="icon-btn" id="btnSwapColors" title="Misturar Ordem da Paleta Atual"><svg viewbox="0 0 24 24"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></button>
@@ -493,26 +517,22 @@
 <div class="row-lbl">Matiz</div><div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2v20M12 12L22 7M12 12L2 7M12 12L22 17M12 12L2 17"></path></svg><input id="palHue" max="180" min="-180" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palHue"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
 <div class="row-lbl">Saturação</div><div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg><input id="palSat" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palSat"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
 <div class="row-lbl">Luz</div><div class="slider-row"><svg class="lbl-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" x2="12" y1="1" y2="3"></line><line x1="12" x2="12" y1="21" y2="23"></line><line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line><line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line><line x1="1" x2="3" y1="12" y2="12"></line><line x1="21" x2="23" y1="12" y2="12"></line></svg><input id="palLight" max="100" min="-100" type="range" value="0"/><button class="icon-btn lock-btn" data-target="palLight"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+<div class="row-lbl">Posterizar<span class="badge" id="bdg-pos"></span></div><div class="slider-row"><input id="posterize" max="100" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="posterize"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
+<div class="row-lbl">Croma<span class="badge" id="bdg-abe"></span></div><div class="slider-row"><input id="rgbShift" max="15" min="0" type="range" value="0"/><button class="icon-btn lock-btn" data-target="rgbShift"><svg class="icon-unlock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg><svg class="icon-lock" viewbox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></div>
 </div>
                         <div class="set-item" id="set-corDeg"><div class="panel-label">Degradê sobre a imagem</div>
                             <label class="custom-checkbox"><input type="checkbox" id="imgGradient"><span class="checkmark"></span><span>Aplicar degradê</span></label>
                             <div id="imgGradientControls" style="display:none; flex-direction:column; gap:6px; margin-top:4px; padding-top: 12px; width:100%;">
                                 <div class="row-lbl">Cores do degradê</div>
-                                <div class="slider-row">
+                                <div class="slider-row" style="justify-content:center;">
+                                    <button class="std-btn icon-btn" id="btnImgGradRemCol" style="flex: 0 0 auto;" title="Menos uma cor">-</button>
                                     <div class="colors-grid" id="imgGradColorsContainer" style="display:flex;"></div>
                                     <button class="std-btn icon-btn" id="btnImgGradAddCol" style="flex: 0 0 auto;" title="Mais uma cor">+</button>
-                                    <button class="std-btn icon-btn" id="btnImgGradRemCol" style="flex: 0 0 auto;" title="Menos uma cor">-</button>
-                                </div>
-                                <div class="row-lbl">Sortear só o degradê</div>
-                                <div class="slider-row">
-                                    <button class="std-btn" id="btnGradRandColors" style="flex:1;" title="Sorteia uma combinação de cores harmônica">Cores</button>
-                                    <button class="std-btn" id="btnGradRandShape" style="flex:1;" title="Sorteia forma, ângulo, centro, escala e repetições">Forma</button>
-                                    <button class="std-btn" id="btnGradRandAll" style="flex:1;" title="Sorteia tudo do degradê">Tudo</button>
                                 </div>
                                 <div class="row-lbl">Forma</div>
                                 <div class="slider-row"><select id="imgGradType">
                                     <option value="linear" selected>Linear</option><option value="mirror">Linear espelhado</option>
-                                    <option value="radial">Radial</option><option value="conic">Cônico (leque)</option>
+                                    <option value="radial">Radial</option><option value="conic">Cônico</option>
                                     <option value="diamond">Diamante</option><option value="box">Quadrado</option>
                                     <option value="wave">Onda</option><option value="spiral">Espiral</option>
                                 </select></div>
@@ -521,27 +541,27 @@
                                     <div class="slider-row"><input type="range" id="imgGradAngle" min="0" max="360" step="5" value="90"></div>
                                 </div>
                                 <div id="imgGradCenterRow" style="display:none; flex-direction:column; width:100%;">
-                            <div class="row-lbl">Centro ↔ <span class="anim-val" id="imgGradCXVal">50%</span></div>
+                            <div class="row-lbl">Centro horizontal <span class="anim-val" id="imgGradCXVal">50%</span></div>
                             <div class="slider-row"><input type="range" id="imgGradCX" min="0" max="100" step="1" value="50"></div>
-                            <div class="row-lbl">Centro ↕ <span class="anim-val" id="imgGradCYVal">50%</span></div>
+                            <div class="row-lbl">Centro vertical <span class="anim-val" id="imgGradCYVal">50%</span></div>
                             <div class="slider-row"><input type="range" id="imgGradCY" min="0" max="100" step="1" value="50"></div>
                                 </div>
                             <div class="row-lbl">Escala <span class="anim-val" id="imgGradScaleVal">100%</span></div>
                             <div class="slider-row"><input type="range" id="imgGradScale" min="10" max="400" step="5" value="100"></div>
                             <div class="row-lbl">Repetições <span class="anim-val" id="imgGradRepeatVal">1×</span></div>
                                 <div class="slider-row"><input type="range" id="imgGradRepeat" min="1" max="8" value="1"></div>
-                                <label class="custom-checkbox"><input type="checkbox" id="imgGradMirror"><span class="checkmark"></span><span>Espelhar a cada repetição</span></label>
-                                <div class="row-lbl">Faixas (0 = contínuo) <span class="anim-val" id="imgGradStepsVal">0</span></div>
+                                <div class="slider-row" style="justify-content:center;"><button type="button" class="std-btn" id="btnImgGradMirror">Espelhar</button><input type="checkbox" id="imgGradMirror" style="display:none;"></div>
+                                <div class="row-lbl">Faixas <span class="anim-val" id="imgGradStepsVal">0</span></div>
                                 <div class="slider-row"><input type="range" id="imgGradSteps" min="0" max="30" value="0"></div>
                             <div class="row-lbl">Posição das cores <span class="anim-val" id="imgGradPosVal">50%</span></div>
                             <div class="slider-row"><input type="range" id="imgGradPos" min="0" max="100" step="1" value="50"></div>
                             <div class="row-lbl">Suavidade <span class="anim-val" id="imgGradSmoothVal">100%</span></div>
                             <div class="slider-row"><input type="range" id="imgGradSmooth" min="0" max="100" step="1" value="100"></div>
-                            <div class="row-lbl">Ruído (quebra as faixas) <span class="anim-val" id="imgGradNoiseVal">0%</span></div>
+                            <div class="row-lbl">Ruído <span class="anim-val" id="imgGradNoiseVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="imgGradNoise" min="0" max="100" step="1" value="0"></div>
-                            <div class="row-lbl">Opacidade do degradê <span class="anim-val" id="imgGradOpacityVal">100%</span></div>
+                            <div class="row-lbl">Opacidade <span class="anim-val" id="imgGradOpacityVal">100%</span></div>
                             <div class="slider-row"><input type="range" id="imgGradOpacity" min="0" max="100" step="1" value="100"></div>
-                                <div class="row-lbl">Mistura com a imagem</div>
+                                <div class="row-lbl">Mesclagem</div>
                                 <div class="slider-row"><select id="imgGradBlend">
                                     <option value="source-atop" selected>Substituir</option><option value="multiply">Multiplicar</option>
                                     <option value="screen">Clarear</option><option value="overlay">Sobrepor</option>
@@ -568,7 +588,6 @@
                         <button class="m-sub-btn" data-target="set-anFilm"><svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20"></rect><path d="M7 2v20M17 2v20M3 7h4M3 12h4M3 17h4M17 7h4M17 12h4M17 17h4"></path></svg><span>Filme</span></button>
                         <button class="m-sub-btn" data-target="set-anCam"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14"></rect></svg><span>Câmera</span></button>
                         <button class="m-sub-btn" data-target="set-anCol"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18M3 12h18"></path></svg><span>Cor</span></button>
-                        <button class="m-sub-btn reset-btn" data-target="anim"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
                         <div class="set-item active" id="set-anPlay"><div class="panel-label">Animação em loop</div>
@@ -756,11 +775,11 @@
                         <button class="m-sub-btn active" data-target="set-filFilme"><span class="badge" id="bdg-film"></span><svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20"></rect><path d="M7 2v20M17 2v20M3 7h4M3 12h4M3 17h4M17 7h4M17 12h4M17 17h4"></path></svg><span>Filme</span></button>
                         <button class="m-sub-btn" data-target="set-filLente"><span class="badge" id="bdg-lens"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3l3 5M21 12l-5 2M12 21l-3-5M3 12l5-2"></path></svg><span>Lente</span></button>
                         <button class="m-sub-btn" data-target="set-filTodos"><svg viewbox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg><span>Presets</span></button>
-                        <button class="m-sub-btn reset-btn" data-target="filtros"><svg viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg><span>Zerar</span></button>
                     </div>
                     <div class="sec-content">
                         <div class="set-item active" id="set-filFilme"><div class="panel-label">Filme e câmera</div>
-                            <div class="slider-row"><select id="filmLook" title="Filmes e câmeras por época"></select></div>
+                            <select id="filmLook" title="Filmes e câmeras por época" style="display:none;"></select>
+                            <div id="filmLookGrid"></div>
                             <div class="anim-info" id="filmDesc"></div>
                             <div id="filmLookOpts" style="display:none; flex-direction:column; gap:6px; width:100%;">
                                 <div class="row-lbl">Intensidade <span class="anim-val" id="filmMixVal">100%</span></div>
@@ -768,12 +787,11 @@
                                 <div class="row-lbl">Grão, poeira e riscos <span class="anim-val" id="filmGrainAmtVal">100%</span></div>
                                 <div class="slider-row"><input type="range" id="filmGrainAmt" min="0" max="200" step="5" value="100"></div>
                             </div>
-                            <div class="row-lbl">Temperatura do filme <span class="anim-val" id="filmTempVal">0</span></div>
-                            <div class="slider-row"><input type="range" id="filmTemp" min="-100" max="100" value="0" title="Esquerda: frio (luz de tungstênio) · direita: quente"></div>
-                            <div class="row-lbl">Moldura</div>
-                            <div class="slider-row"><select id="filmFrame" style="flex:1;"></select><input type="color" class="icon-btn" id="filmFrameColor" value="#f5f2eb" title="Cor da moldura"></div>
-                            <div class="row-lbl">Data impressa</div>
-                            <div class="slider-row"><select id="filmStamp" style="flex:1;"><option value="auto" selected>Do filme</option><option value="on">Sempre</option><option value="off">Nunca</option></select><input type="color" class="icon-btn" id="filmStampColor" value="#ff8c1f" title="Cor da data"></div>
+                            <input type="hidden" id="filmTemp" value="0">
+                            <input type="hidden" id="filmFrame" value="auto">
+                            <input type="hidden" id="filmFrameColor" value="#f5f2eb">
+                            <input type="hidden" id="filmStamp" value="off">
+                            <input type="hidden" id="filmStampColor" value="#ff8c1f">
                             <div class="film-subpanel" id="set-lumiereHue" style="display:none; flex-direction:column; gap:6px; width:100%; margin-top:8px;">
 <div class="panel-label" style="display:block !important;">Matiz do Lumiere</div>
 <div class="slider-row">
@@ -798,14 +816,13 @@
                         <div class="set-item" id="set-filLente"><div class="panel-label">Lente e luz</div>
                             <div class="row-lbl">Vinheta <span class="anim-val" id="lensVignetteVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensVignette" min="0" max="100" value="0"></div>
-                            <div class="slider-row"><span class="row-lbl" style="flex:1;">Cor da vinheta</span><input type="color" class="icon-btn" id="lensVigColor" value="#000000"></div>
-                            <div class="row-lbl">Halação (brilho avermelhado) <span class="anim-val" id="lensHalationVal">0%</span></div>
+                            <div class="row-lbl">Halação <span class="anim-val" id="lensHalationVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensHalation" min="0" max="100" value="0"></div>
-                            <div class="row-lbl">Brilho nas luzes (bloom) <span class="anim-val" id="lensBloomVal">0%</span></div>
+                            <div class="row-lbl">Brilho nas luzes <span class="anim-val" id="lensBloomVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensBloom" min="0" max="100" value="0"></div>
                             <div class="row-lbl">Foco suave <span class="anim-val" id="lensSoftVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensSoft" min="0" max="100" value="0"></div>
-                            <div class="row-lbl">Distorção (barril ↔ almofada) <span class="anim-val" id="lensDistortVal">0%</span></div>
+                            <div class="row-lbl">Distorção <span class="anim-val" id="lensDistortVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensDistort" min="-100" max="100" value="0"></div>
                             <div class="row-lbl">Aberração de lente <span class="anim-val" id="lensChromaVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensChroma" min="0" max="100" value="0"></div>
@@ -813,70 +830,77 @@
                             <div class="slider-row"><input type="range" id="lensFlash" min="0" max="100" value="0"></div>
                             <div class="row-lbl">Vazamento de luz <span class="anim-val" id="lensLeakVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensLeak" min="0" max="100" value="0"></div>
-                            <div class="slider-row"><span class="row-lbl" style="flex:1;">Cor do vazamento</span><input type="color" class="icon-btn" id="lensLeakColor" value="#ff7319"></div>
                             <div class="row-lbl">Poeira e fios de cabelo <span class="anim-val" id="lensDustVal">0%</span></div>
                             <div class="slider-row"><input type="range" id="lensDust" min="0" max="100" value="0"></div>
+                            <div class="row-lbl">Cores</div>
+                            <div class="slider-row" style="justify-content:center;"><input type="color" class="icon-btn" id="lensVigColor" value="#000000" title="Cor da vinheta"><input type="color" class="icon-btn" id="lensLeakColor" value="#ff7319" title="Cor do vazamento"></div>
                         </div>
                         <div class="set-item" id="set-filTodos"><div class="panel-label">Meus presets salvos</div>
 
 <button class="std-btn" id="btnSavePreset" style="width:100%; margin-bottom: 12px;">Salvar Ajuste Atual</button>
-<div class="horizontal-scroll-mobile" id="myPresetsGrid" style="display: flex; flex-direction: column; gap: 8px; width:100%; margin-bottom: 16px;"></div>
+<div class="horizontal-scroll-mobile" id="myPresetsGrid" style="width:100%;"></div>
 <div class="panel-label" style="border: none; margin-top: 8px;">Temas Prontos</div>
-<div class="horizontal-scroll-mobile" id="themesGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--pad-sm); width:100%;"></div>
+<div class="horizontal-scroll-mobile" id="themesGrid" style="width:100%;"></div>
 </div>
                     </div>
                 </div>
 
-            </div>
-        </div>
-
-        <!-- Configurações (engrenagem na barra superior): fundo, tema, exportar/importar/limpar, aleatório -->
-        <div class="control-group" id="group-config">
-            <div class="m-sub-nav">
-                <button class="m-sub-btn active" data-target="set-opFun"><svg viewbox="0 0 24 24"><rect height="18" rx="2" ry="2" width="18" x="3" y="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
-                <button class="m-sub-btn" data-target="set-opTheme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg><span>Tema</span></button>
-                <button class="m-sub-btn" data-target="set-opExp"><svg viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
-                <button class="m-sub-btn" data-target="set-opRand"><svg viewbox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg><span>Aleatório</span></button>
-            </div>
-            <div class="sec-content">
-                <div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
-                    <label class="custom-checkbox"><input id="fillBg" type="checkbox"/><span class="checkmark"></span><span>Preencher Fundo</span></label>
-                    <div class="slider-row">
-                        <input class="icon-btn" data-color="#F0F0F0" id="btnBgColor" type="color" value="#F0F0F0"/>
-                        <input id="hexBgColor" maxlength="7" style="text-align:center;" type="text" value="#F0F0F0"/>
+                <!-- Configurações (engrenagem na barra superior): fundo, tema, exportar/importar/limpar, aleatório -->
+                <div class="control-group" id="group-config">
+                    <button type="button" id="cfg-back">Voltar</button>
+                    <div class="m-sub-nav">
+                        <button class="m-sub-btn active" data-target="set-opFun"><svg viewbox="0 0 24 24"><rect height="18" rx="2" ry="2" width="18" x="3" y="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Fundo</span></button>
+                        <button class="m-sub-btn" data-target="set-opTheme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg><span>Tema</span></button>
+                        <button class="m-sub-btn" data-target="set-opExp"><svg viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><span>Exportar</span></button>
+                        <button class="m-sub-btn" data-target="set-opRand"><svg viewbox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg><span>Aleatório</span></button>
+                    </div>
+                    <div class="sec-content">
+                        <div class="set-item active" id="set-opFun"><div class="panel-label">Fundo do Canvas</div>
+                            <label class="custom-checkbox"><input id="fillBg" type="checkbox"/><span class="checkmark"></span><span>Preencher Fundo</span></label>
+                            <div class="slider-row">
+                                <input class="icon-btn" data-color="#F0F0F0" id="btnBgColor" type="color" value="#F0F0F0"/>
+                                <input id="hexBgColor" maxlength="7" style="text-align:center;" type="text" value="#F0F0F0"/>
+                            </div>
+                        </div>
+                        <div class="set-item" id="set-opTheme"><div class="panel-label">Aparência</div>
+                            <div class="row-lbl">Modo</div>
+                            <div class="slider-row">
+                                <button class="std-btn" id="btnThemeMode" style="flex:1;">Modo: Diurno</button>
+                            </div>
+                            <div class="anim-info">Ao abrir o site, o modo segue o horário automaticamente. Toque para fixar manualmente.</div>
+                        </div>
+                        <div class="set-item" id="set-opExp"><div class="panel-label">Exportar / Importar / Limpar</div>
+                            <button class="std-btn" id="btnDownloadConfig" style="width:100%; margin-bottom: 8px;">Exportar Arte</button>
+                            <label class="std-btn" style="text-align: center; display: flex; align-items: center; justify-content: center; width:100%; margin-bottom: 8px;">
+                                Importar Configuração <input accept="image/png, text/plain" id="importImgConfig" type="file"/>
+                            </label>
+                            <button class="std-btn" id="btnResetImage" style="width:100%; margin-bottom: 8px;">Limpar e Restaurar Mídia</button>
+                        </div>
+                        <div class="set-item" id="set-opRand">
+                            <div class="panel-label">O que incluir no Mix Aleatório</div>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-exposicao" type="checkbox"/><span class="checkmark"></span><span>Exposição</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-brilho" type="checkbox"/><span class="checkmark"></span><span>Brilho</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-contraste" type="checkbox"/><span class="checkmark"></span><span>Contraste</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-sombras" type="checkbox"/><span class="checkmark"></span><span>Sombras</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-temperatura" type="checkbox"/><span class="checkmark"></span><span>Temperatura</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-saturacao" type="checkbox"/><span class="checkmark"></span><span>Saturação</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-posterize" type="checkbox"/><span class="checkmark"></span><span>Posterizar</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-pixel" type="checkbox"/><span class="checkmark"></span><span>Tamanho do Pixel</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-dither" type="checkbox"/><span class="checkmark"></span><span>Padrão de Dither</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-ditherParams" type="checkbox"/><span class="checkmark"></span><span>Escala e Intensidade do Dither</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-palette" type="checkbox"/><span class="checkmark"></span><span>Paleta de Cores</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-contorno" type="checkbox"/><span class="checkmark"></span><span>Contorno / Edge</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-fx" type="checkbox"/><span class="checkmark"></span><span>Textura</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-grad" type="checkbox"/><span class="checkmark"></span><span>Degradê</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-film" type="checkbox"/><span class="checkmark"></span><span>Filme e lente</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-grain" type="checkbox"/><span class="checkmark"></span><span>Granulado</span></label>
+                            <label class="custom-checkbox" style="margin: 4px 0;"><input checked="" id="randToggle-anim" type="checkbox"/><span class="checkmark"></span><span>Animação</span></label>
+                        </div>
                     </div>
                 </div>
-                <div class="set-item" id="set-opTheme"><div class="panel-label">Aparência</div>
-                    <div class="row-lbl">Modo</div>
-                    <div class="slider-row">
-                        <button class="std-btn" id="btnThemeDay" style="flex:1;">Diurno</button>
-                        <button class="std-btn" id="btnThemeNight" style="flex:1;">Noturno</button>
-                    </div>
-                    <div class="anim-info">Ao abrir o site, o modo segue o horário automaticamente. Escolha aqui para fixar manualmente.</div>
-                </div>
-                <div class="set-item" id="set-opExp"><div class="panel-label">Exportar / Importar / Limpar</div>
-                    <button class="std-btn" id="btnDownloadConfig" style="width:100%; margin-bottom: 8px;">Exportar Arte</button>
-                    <label class="std-btn" style="text-align: center; display: flex; align-items: center; justify-content: center; width:100%; margin-bottom: 8px;">
-                        Importar Configuração <input accept="image/png, text/plain" id="importImgConfig" type="file"/>
-                    </label>
-                    <button class="std-btn" id="btnResetImage" style="width:100%; margin-bottom: 8px;">Limpar e Restaurar Mídia</button>
-                </div>
-                <div class="set-item" id="set-opRand">
-                    <div class="panel-label">O que incluir no Mix Aleatório</div>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-pixel" type="checkbox"/><span class="checkmark"></span><span>Tamanho do Pixel</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-dither" type="checkbox"/><span class="checkmark"></span><span>Padrão de Dither</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-ditherParams" type="checkbox"/><span class="checkmark"></span><span>Escala e Intensidade do Dither</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-palette" type="checkbox"/><span class="checkmark"></span><span>Paleta de Cores</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-contorno" type="checkbox"/><span class="checkmark"></span><span>Contorno / Edge</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-fx" type="checkbox"/><span class="checkmark"></span><span>Textura</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-grad" type="checkbox"/><span class="checkmark"></span><span>Degradê</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-film" type="checkbox"/><span class="checkmark"></span><span>Filme e lente</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-grain" type="checkbox"/><span class="checkmark"></span><span>Granulado</span></label>
-                    <label class="custom-checkbox"><input checked="" id="randToggle-anim" type="checkbox"/><span class="checkmark"></span><span>Animação</span></label>
-                </div>
+
             </div>
         </div>
-
     </div>
 
     <div id="view">
@@ -914,8 +938,8 @@
         </div>
 
         <div id="floating-bar">
-            <button class="float-btn hidden-ui" id="btn-play-anim" title="Tocar animação e abrir suas opções (espaço)"></button>
-            <div class="hidden-ui" id="floating-bar-sep-play" style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
+            <button class="float-btn" id="btn-play-anim" title="Tocar animação e abrir suas opções (espaço)"></button>
+            <div id="floating-bar-sep-play" style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
             <button class="float-btn" id="btn-undo-view" disabled title="Desfazer Ação"><svg viewBox="0 0 24 24"><path d="M3 9l4-4m-4 4l4 4M3 9h13a5 5 0 0 1 0 10h-2"/></svg></button>
             <button class="float-btn" id="btn-redo-view" disabled title="Refazer Ação"><svg viewBox="0 0 24 24"><path d="M21 9l-4-4m4 4l-4 4M21 9H8a5 5 0 0 0 0 10h2"/></svg></button>
             <div style="width: 1px; background: var(--border); margin: 0 4px; align-self: stretch;"></div>
@@ -928,7 +952,7 @@
             <button class="float-btn" id="btn-zoom-out" title="Diminuir Zoom"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
         </div>
 
-        <button id="btn-exit-fullscreen" title="Sair da Tela Cheia"><svg viewBox="0 0 24 24" style="width:12px;height:12px;margin-right:4px;"><path d="M15 18l-6-6 6-6"/></svg> VOLTAR</button>
+        <button id="btn-exit-fullscreen" title="Sair da Tela Cheia">VOLTAR</button>
     </div>
 
     <div id="toast-container"></div>
@@ -978,7 +1002,7 @@
                     </div>
                     <div class="slider-row">
                         <button class="std-btn" id="btnAnimPreview" style="flex:1;">Prévia</button>
-                        <button class="std-btn" id="btnAnimExport" style="flex:1; background:var(--text); color:var(--bg); font-weight:bold;">Exportar</button>
+                        <button class="std-btn" id="btnAnimExport" style="flex:1;">Exportar</button>
                     </div>
                 </div>
             </div>
@@ -1001,7 +1025,7 @@
                     </select>
                 </div>
 
-                <button class="std-btn" id="btnChoiceMp4" style="background:var(--text); color:var(--bg); font-weight:bold;">MP4</button>
+                <button class="std-btn" id="btnChoiceMp4">MP4</button>
                 <button class="std-btn" id="btnChoiceWebm">WebM</button>
             </div>
 
@@ -2666,20 +2690,46 @@ const PixelarFX = {
         const rootHtml = document.documentElement;
         function applyDarkMode(isDark) {
             if (isDark) rootHtml.setAttribute('data-theme', 'dark'); else rootHtml.removeAttribute('data-theme');
-            const btnDay = document.getElementById('btnThemeDay'), btnNight = document.getElementById('btnThemeNight');
-            if (btnDay) btnDay.classList.toggle('active-state', !isDark);
-            if (btnNight) btnNight.classList.toggle('active-state', isDark);
+            const btnMode = document.getElementById('btnThemeMode');
+            if (btnMode) btnMode.textContent = isDark ? 'Modo: Noturno' : 'Modo: Diurno';
         }
         function isNightByClock() { const h = new Date().getHours(); return h < 6 || h >= 18; } // 18h–6h = noturno
         const savedTheme = localStorage.getItem('pixelarTheme'); // 'dark' | 'light' | null (segue o horário)
         applyDarkMode(savedTheme ? savedTheme === 'dark' : isNightByClock());
-        document.getElementById('btnThemeDay').addEventListener('click', () => { localStorage.setItem('pixelarTheme', 'light'); applyDarkMode(false); });
-        document.getElementById('btnThemeNight').addEventListener('click', () => { localStorage.setItem('pixelarTheme', 'dark'); applyDarkMode(true); });
+        document.getElementById('btnThemeMode').addEventListener('click', () => {
+            const goingDark = rootHtml.getAttribute('data-theme') !== 'dark';
+            localStorage.setItem('pixelarTheme', goingDark ? 'dark' : 'light');
+            applyDarkMode(goingDark);
+        });
 
         const lockTargets = [ 'pxSize', 'colorSelect', 'colors', 'ditherSelect', 'ditherScale', 'ditherIntensity', 'edgePixelSize', 'edgeColor', 'textureOpacity', 'edgeOpacity', 'imageScale', 'exposicao', 'brilho', 'contraste', 'temperatura', 'saturacao', 'sombras', 'posterize', 'rgbShift', 'palHue', 'palSat', 'palLight', 'grainAmount' ];
         const locks = {}; lockTargets.forEach(t => locks[t] = false);
+
+        // cada controle travável aponta para o(s) toggle(s) "O que incluir no Mix Aleatório"
+        // que ele afeta — travar o controle desmarca o(s) toggle(s) e desabilita a caixinha,
+        // deixando claro que o Mix Aleatório não vai tocar nele; destravar devolve o controle ao toggle.
+        const LOCK_TO_RAND_TOGGLE = {
+            pxSize: ['randToggle-pixel'], ditherSelect: ['randToggle-dither'],
+            ditherScale: ['randToggle-ditherParams'], ditherIntensity: ['randToggle-ditherParams'],
+            colors: ['randToggle-palette'], colorSelect: ['randToggle-palette'],
+            palHue: ['randToggle-palette'], palSat: ['randToggle-palette'], palLight: ['randToggle-palette'],
+            edgePixelSize: ['randToggle-contorno'], edgeColor: ['randToggle-contorno'],
+            grainAmount: ['randToggle-grain'],
+            exposicao: ['randToggle-exposicao'], brilho: ['randToggle-brilho'], contraste: ['randToggle-contraste'],
+            sombras: ['randToggle-sombras'], temperatura: ['randToggle-temperatura'], saturacao: ['randToggle-saturacao'],
+            posterize: ['randToggle-posterize'],
+        };
+        function syncRandToggleFromLocks(target) {
+            const ids = LOCK_TO_RAND_TOGGLE[target]; if (!ids) return;
+            ids.forEach(id => {
+                const cb = document.getElementById(id); if (!cb) return;
+                cb.disabled = locks[target];
+                if (locks[target]) cb.checked = false;
+                cb.dispatchEvent(new Event('change', { bubbles: true })); // mantém o botão correspondente em sincronia
+            });
+        }
         document.querySelectorAll('.lock-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const target = btn.getAttribute('data-target'); if (locks[target] !== undefined) { locks[target] = !locks[target]; btn.classList.toggle('active-state', locks[target]); } });
+            btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const target = btn.getAttribute('data-target'); if (locks[target] !== undefined) { locks[target] = !locks[target]; btn.classList.toggle('active-state', locks[target]); syncRandToggleFromLocks(target); } });
         });
 
         const loadingContainer = document.getElementById('loading-bar-container');
@@ -2711,7 +2761,6 @@ const PixelarFX = {
         
         let isImageInverted = false; let isShadowsInverted = false; let isMidDitherEnabled = false;
         let savedPresets = {}; let savedPalettes = {}; let currentImgGradColors = ['#FF00FF', '#00FFFF'];
-        let sessionPresetsPool = []; let isNextRandomAPreset = true;
 
 let activeTool = 'move'; let historyArr = []; let historyIndex = -1;
 
@@ -4057,7 +4106,6 @@ try {
         
         const THEMES = {}; 
 
-        function initPresetPool() { sessionPresetsPool = []; Object.keys(THEMES).forEach(k => sessionPresetsPool.push({ type: 'theme', name: k })); Object.keys(savedPresets).forEach(k => sessionPresetsPool.push({ type: 'preset', name: k })); sessionPresetsPool = sessionPresetsPool.sort(() => Math.random() - 0.5); isNextRandomAPreset = true; }
 
         const canvas = document.getElementById('outputCanvas'); const ctx = canvas.getContext('2d');
         const origCanvas = document.getElementById('originalCanvas'); const oCtx = origCanvas.getContext('2d');
@@ -4328,9 +4376,16 @@ try {
             GRAD_NEW_IDS.forEach(id => { const el = document.getElementById(id); const v = GRAD_DEFAULTS[id]; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; });
         }
 
-        document.getElementById('btnGradRandColors').addEventListener('click', () => { randGradColors(); scheduleAppProcess(); saveHistoryState(); });
-        document.getElementById('btnGradRandShape').addEventListener('click', () => { randGradShape(); scheduleAppProcess(); saveHistoryState(); });
-        document.getElementById('btnGradRandAll').addEventListener('click', () => { randGradAll(); scheduleAppProcess(); saveHistoryState(); });
+        // botão Espelhar do degradê (substitui o checkbox, que fica escondido como fonte de verdade)
+        (function setupGradMirrorBtn() {
+            const btn = document.getElementById('btnImgGradMirror');
+            const cb = document.getElementById('imgGradMirror');
+            if (!btn || !cb) return;
+            const sync = () => btn.classList.toggle('active-state', cb.checked);
+            btn.addEventListener('click', () => { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); sync(); });
+            cb.addEventListener('change', sync);
+            sync();
+        })();
         ['imgGradCX', 'imgGradCY', 'imgGradScale', 'imgGradRepeat', 'imgGradMirror', 'imgGradNoise', 'imgGradOpacity'].forEach(id => {
             const el = document.getElementById(id);
             el.addEventListener('input', () => { updateGradVals(); scheduleAppProcess(); });
@@ -4398,19 +4453,16 @@ try {
         function setupMediaUI(type) {
             stopMainAnim(false);
             currentMediaType = type;
-            document.getElementById('btn-play-anim').classList.toggle('hidden-ui', type !== 'image');
-            document.getElementById('floating-bar-sep-play').classList.toggle('hidden-ui', type !== 'image');
+            document.getElementById('btn-play-anim').classList.toggle('hidden-ui', type === 'video');
+            document.getElementById('floating-bar-sep-play').classList.toggle('hidden-ui', type === 'video');
             document.getElementById('welcomeMsg').style.display = 'none';
             canvasWrapper.style.display = 'block'; currentZoom = 1; updateZoom();
             document.getElementById('video-timeline-bar').classList.toggle('hidden-ui', type !== 'video');
             document.getElementById('set-corDeg').style.display = type === 'video' ? 'none' : 'flex';
             btnRecordVideoFloat.title = type === 'video' ? 'Gravar Vídeo' : 'Exportar Mídia';
             btnDownloadConfig.textContent = type === 'video' ? 'Gravar Vídeo' : 'Exportar Arte';
-            btnDownloadConfig.style.background = type === 'video' ? 'var(--text)' : 'var(--bg)';
-            btnDownloadConfig.style.color = type === 'video' ? 'var(--bg)' : 'var(--text)';
-            btnDownloadConfig.style.fontWeight = type === 'video' ? 'bold' : 'normal';
             document.getElementById('btn-compare').disabled = false;
-            historyArr = []; historyIndex = -1; initPresetPool();
+            historyArr = []; historyIndex = -1;
         }
 
         let loadToken = 0;
@@ -4697,37 +4749,25 @@ try {
                 container.appendChild(row);
             });
 
-            const isMobileFx = window.matchMedia('(max-width: 768px)').matches;
-            Object.keys(colorGroups).forEach(prefix => {
-                const g = colorGroups[prefix];
-                if (!g.r || !g.g || !g.b) return;
-                const rDef = (saved[g.r] !== undefined) ? saved[g.r] : def.uniforms[g.r];
-                const gDef = (saved[g.g] !== undefined) ? saved[g.g] : def.uniforms[g.g];
-                const bDef = (saved[g.b] !== undefined) ? saved[g.b] : def.uniforms[g.b];
-                const hex = rgbToHex(Math.round(rDef*255), Math.round(gDef*255), Math.round(bDef*255));
-                const row = document.createElement('div'); row.className = 'slider-row';
-                if (isMobileFx) {
-                    // No mobile, evita ter todos os color pickers sempre visíveis/abertos ao mesmo tempo:
-                    // mostra um botão com a cor atual, e só abre o seletor real ao tocar nele.
-                    const swatchBtn = document.createElement('button');
-                    swatchBtn.className = 'icon-btn';
-                    swatchBtn.style.cssText = `background:${hex}; width:28px; height:28px; border-radius:4px; padding:0; flex-shrink:0;`;
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'color'; hiddenInput.value = hex; hiddenInput.setAttribute('data-fxcolor', prefix);
-                    hiddenInput.style.cssText = 'position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;';
-                    swatchBtn.addEventListener('click', () => hiddenInput.click());
-                    hiddenInput.addEventListener('input', () => { swatchBtn.style.background = hiddenInput.value; });
-                    const lbl = document.createElement('span');
-                    lbl.style.cssText = 'font-size:0.7rem; opacity:0.7;';
-                    lbl.textContent = fxColorGroupLabel(prefix);
-                    row.appendChild(swatchBtn); row.appendChild(hiddenInput); row.appendChild(lbl);
-                } else {
-                    row.innerHTML = `<input type="color" class="icon-btn" value="${hex}" data-fxcolor="${prefix}"><span style="font-size:0.7rem; opacity:0.7;">${fxColorGroupLabel(prefix)}</span>`;
-                    const ci = row.querySelector('input[type=color]');
-                    row.appendChild(makeCtrlResetBtn('Zerar esta cor', () => { ci.value = hex; ci.dispatchEvent(new Event('input')); }));
-                }
+            // cores dos efeitos: mesmo visual dos seletores de cor das paletas (.icon-btn),
+            // agrupadas numa única linha centralizada — sem linha por cor
+            const colorKeys = Object.keys(colorGroups).filter(p => { const g = colorGroups[p]; return g.r && g.g && g.b; });
+            if (colorKeys.length) {
+                const row = document.createElement('div'); row.className = 'slider-row'; row.style.justifyContent = 'center';
+                colorKeys.forEach(prefix => {
+                    const g = colorGroups[prefix];
+                    const rDef = (saved[g.r] !== undefined) ? saved[g.r] : def.uniforms[g.r];
+                    const gDef = (saved[g.g] !== undefined) ? saved[g.g] : def.uniforms[g.g];
+                    const bDef = (saved[g.b] !== undefined) ? saved[g.b] : def.uniforms[g.b];
+                    const hex = rgbToHex(Math.round(rDef*255), Math.round(gDef*255), Math.round(bDef*255));
+                    const ci = document.createElement('input');
+                    ci.type = 'color'; ci.className = 'icon-btn'; ci.value = hex;
+                    ci.setAttribute('data-fxcolor', prefix);
+                    ci.title = fxColorGroupLabel(prefix);
+                    row.appendChild(ci);
+                });
                 container.appendChild(row);
-            });
+            }
 
             container.querySelectorAll('input[type=range][data-fxkey]').forEach(inp => {
                 inp.addEventListener('input', () => {
@@ -5010,10 +5050,11 @@ try {
         document.querySelectorAll('.shuffle-btn').forEach(btn => { btn.addEventListener('click', () => { const tgt = btn.getAttribute('data-target'); if(locks[tgt]) return; if(tgt === 'pxSize') randPx(); if(tgt === 'ditherSelect') randDith(); updateBadges(); scheduleAppProcess(); }); });
         
         // granulado: às vezes liga, sempre em valores contidos
-        function randGrain() {
+        function randGrain(A) {
             const set = (id, v) => { document.getElementById(id).value = v; };
-            if (Math.random() < 0.45) {
-                set('grainAmount', 10 + Math.floor(Math.random() * 30));
+            const busy = A && A.isBusy;
+            if (Math.random() < (busy ? 0.3 : 0.45)) {
+                set('grainAmount', 10 + Math.floor(Math.random() * (busy ? 15 : 30)));
                 set('grainSize', 70 + Math.floor(Math.random() * 90));
                 set('grainRoughness', 25 + Math.floor(Math.random() * 45));
                 set('grainShadowBias', Math.floor(Math.random() * 50));
@@ -5071,56 +5112,20 @@ try {
         // [grupo, id, nome, descrição, uniforms, extras {frame, frameColor, stamp, year, fx}]
         const FILM_LOOK_DEFS = [
             ['Pioneiros (1839–1900)', [
-                ['daguerreotipo', 'Daguerreótipo (1839)', 'Placa de prata espelhada: tons frios metálicos, bordas escuras e foco macio.',
-                    { uBW: 1, uTone: 0.8, uToneColor: [0.62, 0.64, 0.66], uContrast: 0.85, uFade: 0.25, uBase: [0.12, 0.12, 0.13], uVignette: 1.1, uSoft: 0.8, uBlur: 1.2, uDust: 0.5, uScratch: 0.3, uExposure: 0.1 },
-                    { frame: 10, frameColor: [0.72, 0.58, 0.3] }],
-                ['cianotipia', 'Cianotipia (1842)', 'Cópia de contato azul da Prússia sobre papel, como as plantas de engenharia.',
-                    { uBW: 1, uTone: 1, uToneColor: [0.1, 0.35, 0.65], uContrast: 1.2, uFade: 0.15, uBase: [0.02, 0.12, 0.3], uDust: 0.2 },
-                    { frame: 8, frameColor: [0.93, 0.92, 0.86] }],
-                ['albumina', 'Albumina sépia (1850–1900)', 'Papel com clara de ovo: marrom quente, luzes amareladas, cantos gastos.',
-                    { uBW: 1, uTone: 1, uToneColor: [0.62, 0.45, 0.26], uContrast: 0.95, uFade: 0.3, uBase: [0.18, 0.12, 0.07], uVignette: 0.7, uSoft: 0.3, uDust: 0.4, uScratch: 0.2 },
-                    { frame: 8, frameColor: [0.86, 0.8, 0.66] }],
-                ['ferrotipo', 'Ferrótipo (1860)', 'Retrato sobre chapa de ferro: escuro, contrastado, cheio de marcas.',
-                    { uBW: 1, uTone: 0.7, uToneColor: [0.45, 0.42, 0.36], uContrast: 1.3, uExposure: -0.15, uFade: 0.1, uBase: [0.05, 0.05, 0.04], uVignette: 1.3, uBlur: 1.5, uDust: 0.7, uScratch: 0.6 },
-                    { frame: 9, frameColor: [0.12, 0.1, 0.08] }],
                 ['nitrato', 'Nitrato danificado (1910)', 'Rolo de cinema mudo em nitrato: bordas queimadas, riscos e poeira.',
                     { uBW: 1, uTone: 0.5, uToneColor: [0.6, 0.5, 0.35], uContrast: 1.3, uBurn: 0.8, uDust: 1, uScratch: 1, uVignette: 0.8, uSoft: 0.4, uGrain: 0.5, uGrainSize: 1.8 }],
             ]],
             ['Início da cor (1900–1950)', [
-                ['autocromo', 'Autocromo Lumière (1907)', 'Primeira cor comercial: grãos de amido tingidos criam um pontilhismo pastel.',
-                    { uAutochrome: 0.9, uSat: 0.7, uContrast: 0.9, uFade: 0.3, uBase: [0.1, 0.08, 0.05], uSoft: 0.6, uTemp: 0.15, uGrain: 0.25, uGrainSize: 1, uVignette: 0.6 },
-                    { frame: 10, frameColor: [0.1, 0.1, 0.1] }],
                 ['techni2', 'Technicolor 2 cores (1922)', 'Só vermelho-alaranjado e ciano-esverdeado: o visual dos primeiros filmes coloridos.',
                     { uSwap: 4, uSwapAmt: 1, uSat: 1.2, uContrast: 1.1, uTemp: 0.1, uFade: 0.1, uBase: [0.05, 0.04, 0.03], uSoft: 0.3, uGrain: 0.2, uDust: 0.3, uScratch: 0.2 }],
                 ['techni3', 'Technicolor 3 cores (1932)', 'Corantes separados: cores cheias, vermelhos profundos, como nos musicais clássicos.',
                     { uSwap: 3, uSwapAmt: 1, uSat: 1.35, uContrast: 1.2, uRoll: 0.3, uSplit: 0.3, uShadowTint: [0.45, 0.5, 0.55], uHighTint: [0.58, 0.52, 0.42], uSoft: 0.2, uHalation: 0.15, uGrain: 0.15 }],
-                ['kodachrome', 'Kodachrome (1935)', 'Diapositivo lendário: vermelhos intensos, sombras densas, céus profundos.',
-                    { uSat: 1.25, uContrast: 1.25, uRoll: 0.2, uTemp: 0.15, uHue: -0.03, uSplit: 0.35, uShadowTint: [0.46, 0.48, 0.55], uHighTint: [0.58, 0.52, 0.44], uExposure: -0.1, uGrain: 0.12, uGrainSize: 1 },
-                    { frame: 7, frameColor: [0.94, 0.93, 0.9] }],
                 ['noir', 'Film noir (1940)', 'P&B de estúdio: pretos fundos, luz dura e brilho nas lâmpadas.',
                     { uBW: 1, uContrast: 1.7, uExposure: -0.25, uVignette: 1.2, uBloom: 0.25, uGrain: 0.35, uSoft: 0.2 }],
             ]],
             ['Anos 50–70', [
-                ['ektachrome', 'Ektachrome (1946)', 'Diapositivo de revista: frio, limpo e contrastado.',
-                    { uSat: 1.15, uContrast: 1.2, uTemp: -0.2, uHue: 0.03, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.58], uHighTint: [0.5, 0.52, 0.52], uGrain: 0.1 },
-                    { frame: 7, frameColor: [0.2, 0.2, 0.22] }],
-                ['trix', 'Kodak Tri-X 400 (1954)', 'P&B do fotojornalismo: contraste forte e grão marcante.',
-                    { uBW: 1, uBWMix: [0.33, 0.55, 0.12], uContrast: 1.45, uRoll: 0.15, uGrain: 0.6, uGrainSize: 1.6, uVignette: 0.3 },
-                    { frame: 3 }],
-                ['scope', 'Cinemascope anamórfico (1953)', 'Tela larga com faixas pretas, brilho azulado e tons laranja/azul-petróleo.',
-                    { uHalation: 0.3, uHalColor: [0.4, 0.6, 1], uTemp: -0.1, uContrast: 1.15, uSat: 1.1, uDistort: -0.08, uChroma: 0.3, uSplit: 0.35, uShadowTint: [0.42, 0.52, 0.56], uHighTint: [0.6, 0.52, 0.42], uGrain: 0.25, uVignette: 0.4 },
-                    { frame: 6 }],
                 ['cine16', 'Cine 16 mm (1950–70)', 'Documentário e filme caseiro: cores gastas, grão grosso e riscos.',
                     { uSat: 0.95, uContrast: 1.1, uTemp: 0.15, uFade: 0.1, uBase: [0.05, 0.04, 0.03], uGrain: 0.45, uGrainSize: 1.6, uDust: 0.4, uScratch: 0.5, uSoft: 0.3, uVignette: 0.5 }],
-                ['instamatic', 'Instamatic 126 (1963)', 'Cartucho quadrado de bolso: amarelado, sombras esverdeadas, flash de cubo.',
-                    { uFade: 0.25, uBase: [0.09, 0.07, 0.05], uSat: 0.9, uTemp: 0.3, uSplit: 0.3, uShadowTint: [0.45, 0.5, 0.5], uHighTint: [0.6, 0.52, 0.4], uVignette: 0.7, uSoft: 0.4, uFlash: 0.2, uGrain: 0.25 },
-                    { frame: 10, frameColor: [0.97, 0.96, 0.93] }],
-                ['super8', 'Super 8 (1965)', 'Filme caseiro: quente, saturado, cantos arredondados e projetor tremendo.',
-                    { uSat: 1.2, uContrast: 1.2, uTemp: 0.35, uFade: 0.12, uBase: [0.08, 0.05, 0.03], uSoft: 0.7, uVignette: 0.9, uHalation: 0.25, uGrain: 0.55, uGrainSize: 2, uDust: 0.6, uScratch: 0.4 },
-                    { frame: 4 }],
-                ['sx70', 'Polaroid SX-70 (1972)', 'Instantânea clássica: tons pastel, sombras azuladas e moldura branca.',
-                    { uFade: 0.35, uBase: [0.12, 0.1, 0.08], uContrast: 0.85, uSat: 0.8, uTemp: 0.25, uTint: 0.2, uSplit: 0.4, uShadowTint: [0.42, 0.5, 0.55], uHighTint: [0.6, 0.55, 0.42], uSoft: 0.5, uVignette: 0.5, uGrain: 0.2 },
-                    { frame: 1 }],
                 ['hp5', 'Ilford HP5 (1976)', 'P&B versátil: meio-tons suaves e grão fino.',
                     { uBW: 1, uBWMix: [0.25, 0.6, 0.15], uContrast: 1.2, uRoll: 0.2, uGrain: 0.5, uGrainSize: 1.4, uFade: 0.03, uBase: [0.03, 0.03, 0.03] }],
                 ['cross', 'Processo cruzado (anos 70)', 'Diapositivo revelado como negativo: amarelos e verdes ácidos, contraste alto.',
@@ -5131,40 +5136,24 @@ try {
             ['Anos 80–90', [
                 ['gold200', 'Kodak Gold 200 (1988)', 'O filme das férias: dourado, quente e alegre.',
                     { uTemp: 0.35, uSat: 1.1, uContrast: 1.05, uSplit: 0.35, uShadowTint: [0.45, 0.47, 0.5], uHighTint: [0.62, 0.55, 0.4], uFade: 0.05, uBase: [0.04, 0.03, 0.02], uGrain: 0.25 }],
-                ['velvia', 'Fujichrome Velvia 50 (1990)', 'Diapositivo de paisagem: saturação extrema e verdes/azuis vivos.',
-                    { uSat: 1.6, uContrast: 1.35, uRoll: 0.1, uTemp: -0.05, uSplit: 0.25, uShadowTint: [0.45, 0.47, 0.56], uHighTint: [0.52, 0.5, 0.5], uExposure: -0.1, uGrain: 0.05 },
-                    { frame: 7, frameColor: [0.94, 0.93, 0.9] }],
                 ['superia', 'Fujifilm Superia 400 (1998)', 'Negativo do dia a dia: verdes marcantes e tons frios.',
                     { uTemp: -0.1, uTint: -0.2, uSat: 1.1, uContrast: 1.1, uSplit: 0.35, uShadowTint: [0.44, 0.54, 0.52], uHighTint: [0.53, 0.53, 0.47], uGrain: 0.25 }],
                 ['portra', 'Kodak Portra 400 (1998)', 'Negativo de retrato: pele suave, luzes macias e baixo contraste.',
                     { uContrast: 0.9, uRoll: 0.4, uSat: 0.9, uTemp: 0.15, uTint: 0.05, uFade: 0.06, uBase: [0.05, 0.04, 0.04], uSplit: 0.25, uShadowTint: [0.47, 0.5, 0.53], uHighTint: [0.55, 0.51, 0.47], uGrain: 0.15, uGrainSize: 1.2, uHalation: 0.05 }],
-                ['descartavel', 'Câmera descartável (1987)', 'Flash estourado no centro, lente de plástico e data laranja no canto.',
-                    { uFlash: 0.7, uTemp: 0.15, uSat: 1.1, uContrast: 1.15, uVignette: 0.6, uSoft: 0.35, uDistort: 0.15, uChroma: 0.6, uGrain: 0.35 },
-                    { stamp: true, year: 1998 }],
-                ['compacta', 'Compacta automática (1995)', 'Câmera de bolso com flash embutido e data impressa.',
-                    { uTemp: 0.2, uSat: 1.05, uContrast: 1.1, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.52], uHighTint: [0.56, 0.52, 0.45], uFlash: 0.35, uVignette: 0.35, uGrain: 0.25 },
-                    { stamp: true, year: 1995 }],
-                ['vhscam', 'Filmadora VHS (1985)', 'Cor borrada, entrelaçamento, ruído nas sombras e data da filmadora.',
-                    { uSoft: 0.8, uSharpen: 0.4, uSat: 1.25, uChroma: 1.2, uChromaNoise: 0.6, uInterlace: 0.6, uContrast: 0.95, uFade: 0.08, uBase: [0.04, 0.04, 0.05], uTemp: 0.1, uVignette: 0.2 },
-                    { stamp: true, year: 1989, stampColor: [1, 1, 1] }],
+                ['descartavel', 'Câmera descartável (1987)', 'Flash estourado no centro, lente de plástico.',
+                    { uFlash: 0.7, uTemp: 0.15, uSat: 1.1, uContrast: 1.15, uVignette: 0.6, uSoft: 0.35, uDistort: 0.15, uChroma: 0.6, uGrain: 0.35 }],
+                ['compacta', 'Compacta automática (1995)', 'Câmera de bolso com flash embutido.',
+                    { uTemp: 0.2, uSat: 1.05, uContrast: 1.1, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.52], uHighTint: [0.56, 0.52, 0.45], uFlash: 0.35, uVignette: 0.35, uGrain: 0.25 }],
+                ['vhscam', 'Filmadora VHS (1985)', 'Cor borrada, entrelaçamento e ruído nas sombras.',
+                    { uSoft: 0.8, uSharpen: 0.4, uSat: 1.25, uChroma: 1.2, uChromaNoise: 0.6, uInterlace: 0.6, uContrast: 0.95, uFade: 0.08, uBase: [0.04, 0.04, 0.05], uTemp: 0.1, uVignette: 0.2 }],
                 ['hi8', 'Hi8 (1989)', 'Filmadora de mão mais nítida: cor limpa, leve ruído e entrelaçamento.',
-                    { uSoft: 0.4, uSharpen: 0.5, uSat: 1.1, uChroma: 0.6, uChromaNoise: 0.35, uInterlace: 0.4, uTemp: -0.05, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.54, 0.51, 0.48] },
-                    { stamp: true, year: 1996, stampColor: [1, 1, 1] }],
+                    { uSoft: 0.4, uSharpen: 0.5, uSat: 1.1, uChroma: 0.6, uChromaNoise: 0.35, uInterlace: 0.4, uTemp: -0.05, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.54, 0.51, 0.48] }],
             ]],
             ['Brinquedo e instantâneas', [
-                ['holga', 'Holga 120 (1982)', 'Lente de plástico: vinheta pesada, bordas borradas e vazamento de luz.',
-                    { uVignette: 1.6, uSoft: 0.5, uBlur: 2, uDistort: 0.25, uChroma: 0.8, uSat: 1.25, uContrast: 1.3, uLeak: 0.5, uLeakPos: 0.1, uLeakColor: [1, 0.35, 0.15], uGrain: 0.35 },
-                    { frame: 5 }],
-                ['diana', 'Diana F (1960)', 'Câmera de brinde: sonhadora, arroxeada e cheia de luz vazando.',
-                    { uVignette: 1.3, uBlur: 1.6, uSoft: 0.6, uFade: 0.2, uBase: [0.08, 0.06, 0.1], uTemp: -0.1, uTint: 0.2, uSat: 0.9, uContrast: 0.95, uLeak: 0.35, uLeakPos: 0.6, uLeakColor: [1, 0.5, 0.3], uGrain: 0.3 },
-                    { frame: 5 }],
                 ['lomo', 'Lomo LC-A (1984)', 'A câmera da lomografia: cores explosivas e túnel escuro nas bordas.',
                     { uVignette: 1.5, uSat: 1.45, uContrast: 1.4, uCross: 0.25, uDistort: 0.1, uBlur: 0.6, uGrain: 0.3 }],
                 ['pinhole', 'Pinhole (câmera de furo)', 'Sem lente: tudo levemente fora de foco e escurecido nas bordas.',
                     { uSoft: 1.6, uVignette: 1.4, uContrast: 0.9, uSat: 0.8, uFade: 0.15, uBase: [0.06, 0.05, 0.04], uTemp: 0.2, uGrain: 0.3 }],
-                ['instax', 'Instax Mini (1998)', 'Instantânea moderna: limpa, levemente fria, com moldura branca.',
-                    { uFade: 0.12, uBase: [0.06, 0.06, 0.08], uContrast: 1.05, uTemp: -0.1, uSplit: 0.25, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.54, 0.52, 0.5], uFlash: 0.3, uSoft: 0.2, uGrain: 0.12 },
-                    { frame: 2 }],
             ]],
             ['Filme contemporâneo', [
                 ['agfavista', 'Agfa Vista 200 (2000)', 'Negativo barato de supermercado: vermelhos fortes e céu ciano.',
@@ -5179,9 +5168,8 @@ try {
                     { uSwap: 1, uSwapAmt: 1, uSat: 1.25, uContrast: 1.2, uGrain: 0.2 }],
             ]],
             ['Vídeo e digital antigo', [
-                ['ccd', 'Compacta digital CCD (2004)', 'Câmera digital de bolso dos anos 2000 (tipo Cyber-shot): flash, nitidez dura e data.',
-                    { uSharpen: 0.6, uSat: 1.2, uContrast: 1.15, uTemp: -0.12, uBloom: 0.3, uFlash: 0.45, uJpeg: 0.35, uChromaNoise: 0.4, uExposure: 0.1 },
-                    { stamp: true, year: 2004 }],
+                ['ccd', 'Compacta digital CCD (2004)', 'Câmera digital de bolso dos anos 2000 (tipo Cyber-shot): flash e nitidez dura.',
+                    { uSharpen: 0.6, uSat: 1.2, uContrast: 1.15, uTemp: -0.12, uBloom: 0.3, uFlash: 0.45, uJpeg: 0.35, uChromaNoise: 0.4, uExposure: 0.1 }],
                 ['webcam', 'Webcam (2005)', 'Imagem de chamada de vídeo: blocos de compressão, ruído e cor lavada.',
                     { uJpeg: 0.8, uChromaNoise: 0.8, uSoft: 0.5, uSat: 0.8, uContrast: 0.9, uTemp: 0.15, uTint: -0.15, uExposure: -0.1, uVignette: 0.7 }],
                 ['vga', 'Celular VGA (2006)', 'Primeiras câmeras de celular: pouca resolução, ruído e luzes estouradas.',
@@ -5210,8 +5198,25 @@ try {
             const sel = document.getElementById('filmLook');
             sel.innerHTML = '<option value="none">Nenhum</option>' + FILM_LOOK_DEFS.map(([g, list]) =>
                 `<optgroup label="${g}">` + list.map(([id, nome]) => `<option value="${id}">${nome}</option>`).join('') + '</optgroup>').join('');
-            const fr = document.getElementById('filmFrame');
-            fr.innerHTML = '<option value="auto">Do filme</option><option value="0">Sem moldura</option>' + Object.entries(FRAME_NAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+
+            // grid de cards (mesmo padrão visual de Temas Prontos / Presets), sem
+            // rótulos de época e sem o que estiver entre parênteses no nome (ex: anos)
+            const grid = document.getElementById('filmLookGrid');
+            const cards = []; // { value, btn }
+            function stripParens(s) { return s.replace(/\s*\([^)]*\)/g, '').trim(); }
+            function makeCard(value, label) {
+                const btn = document.createElement('button');
+                btn.type = 'button'; btn.className = 'std-btn';
+                btn.textContent = stripParens(label);
+                btn.addEventListener('click', () => { sel.value = value; sel.dispatchEvent(new Event('change', { bubbles: true })); syncActive(); });
+                grid.appendChild(btn);
+                cards.push({ value, btn });
+            }
+            makeCard('none', 'Nenhum');
+            FILM_LOOK_DEFS.forEach(([g, list]) => { list.forEach(([id, nome]) => makeCard(id, nome)); });
+            function syncActive() { cards.forEach(({ value, btn }) => btn.classList.toggle('active-state', value === sel.value)); }
+            syncActive();
+            sel.addEventListener('change', syncActive);
         })();
 
         // estado da data carimbada: ano do filme (ou atual) + dia/mês de hoje
@@ -5263,7 +5268,7 @@ try {
         function syncFilmLookUI(fromUser) {
             const $ = (id) => document.getElementById(id);
             const look = FILM_LOOKS[$('filmLook').value] || null;
-            $('filmDesc').textContent = look ? look.desc : 'Escolha um filme ou câmera. A lente abaixo funciona com ou sem filme.';
+            $('filmDesc').textContent = look ? look.desc : '';
             $('filmLookOpts').style.display = look ? 'flex' : 'none';
             if (fromUser) {
                 const fr = look && look.frame;
@@ -5363,23 +5368,123 @@ try {
 
         function randToggle(id) { const el = document.getElementById(id); return !el || el.checked; }
 
+        // ==========================================
+        // ANÁLISE DA IMAGEM (para o Mix Aleatório)
+        // Amostra a mídia original num canvas pequeno e mede luminosidade média,
+        // contraste (desvio-padrão da luminosidade), saturação média e uma medida
+        // simples de complexidade/ruído (variação entre pixels vizinhos). Essas
+        // métricas orientam os ranges do sorteio, para não estourar valores numa
+        // imagem que já é escura, contrastada ou cheia de detalhe.
+        // ==========================================
+        const analyzeCanvas = document.createElement('canvas');
+        const analyzeCtx = analyzeCanvas.getContext('2d', { willReadFrequently: true });
+        function analyzeImage() {
+            try {
+                const media = currentMediaType === 'image' ? sourceImg : sourceVideo;
+                const ow = currentMediaType === 'image' ? media.width : media.videoWidth;
+                const oh = currentMediaType === 'image' ? media.height : media.videoHeight;
+                if (!media || !ow || !oh || !analyzeCtx) return null;
+                const S = 64; // amostragem pequena, suficiente para médias estatísticas
+                const w = ow >= oh ? S : Math.max(1, Math.round(S * ow / oh));
+                const h = oh >= ow ? S : Math.max(1, Math.round(S * oh / ow));
+                analyzeCanvas.width = w; analyzeCanvas.height = h;
+                analyzeCtx.drawImage(media, 0, 0, w, h);
+                const data = analyzeCtx.getImageData(0, 0, w, h).data;
+
+            let sumL = 0, sumSat = 0, n = w * h;
+            const lumas = new Float32Array(n);
+            for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+                const l = 0.3 * r + 0.59 * g + 0.11 * b;
+                const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+                const sat = mx === 0 ? 0 : (mx - mn) / mx;
+                lumas[p] = l; sumL += l; sumSat += sat;
+            }
+            const meanL = sumL / n;
+            let varL = 0; for (let p = 0; p < n; p++) { const d = lumas[p] - meanL; varL += d * d; }
+            const stdL = Math.sqrt(varL / n);
+            const meanSat = sumSat / n;
+
+            // complexidade: diferença média entre pixels horizontalmente vizinhos (proxy de detalhe/ruído já presente)
+            let sumDiff = 0, nDiff = 0;
+            for (let y = 0; y < h; y++) {
+                for (let x = 1; x < w; x++) {
+                    const p = y * w + x;
+                    sumDiff += Math.abs(lumas[p] - lumas[p - 1]); nDiff++;
+                }
+            }
+            const complexity = nDiff ? sumDiff / nDiff : 0; // tipicamente 0–40+
+
+            return {
+                meanL,                          // 0–255: brilho médio
+                stdL,                            // 0–128ish: contraste já presente
+                meanSat,                         // 0–1: saturação média
+                complexity,                      // 0–40+: detalhe/ruído já presente
+                isDark: meanL < 85, isBright: meanL > 170,
+                isLowContrast: stdL < 30, isHighContrast: stdL > 70,
+                isLowSat: meanSat < 0.15, isHighSat: meanSat > 0.55,
+                isBusy: complexity > 18, isFlat: complexity < 6,
+                };
+            } catch (e) { return null; } // qualquer falha de leitura (canvas indisponível, mídia cross-origin) só desliga a análise
+        }
+        // amostra em torno de uma base, com distribuição triangular (concentrada perto do centro,
+        // raramente perto dos extremos) — evita que o sorteio "estoure" com frequência
+        function randNear(base, spread) { return base + (Math.random() - Math.random()) * spread; }
+        function clampV(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
         function applyTrueRandom() {
+            const A = analyzeImage(); // null se a mídia não puder ser lida (ex: vídeo ainda sem frame pronto)
+
+            // --- Luz e cor básicas: sorteadas perto do neutro, com viés pela análise da imagem ---
+            // spread pequeno perto de 0 (a maioria das voltas fica sutil); viés empurra o range
+            // para o lado que a imagem já pede (ex: se já é escura, evita escurecer ainda mais)
+            if (randToggle('randToggle-exposicao') && !locks.exposicao) {
+                const bias = A ? (A.isDark ? 12 : A.isBright ? -12 : 0) : 0;
+                document.getElementById('exposicao').value = Math.round(clampV(randNear(bias, 35), -60, 60));
+            }
+            if (randToggle('randToggle-brilho') && !locks.brilho) {
+                const bias = A ? (A.isDark ? 10 : A.isBright ? -10 : 0) : 0;
+                document.getElementById('brilho').value = Math.round(clampV(randNear(bias, 30), -55, 55));
+            }
+            if (randToggle('randToggle-contraste') && !locks.contraste) {
+                const bias = A ? (A.isLowContrast ? 14 : A.isHighContrast ? -14 : 0) : 0;
+                document.getElementById('contraste').value = Math.round(clampV(randNear(bias, 30), -55, 55));
+            }
+            if (randToggle('randToggle-sombras') && !locks.sombras) {
+                document.getElementById('sombras').value = Math.round(clampV(randNear(0, 30), -55, 55));
+            }
+            if (randToggle('randToggle-temperatura') && !locks.temperatura) {
+                document.getElementById('temperatura').value = Math.round(clampV(randNear(0, 30), -55, 55));
+            }
+            if (randToggle('randToggle-saturacao') && !locks.saturacao) {
+                const bias = A ? (A.isLowSat ? 10 : A.isHighSat ? -10 : 0) : 0;
+                document.getElementById('saturacao').value = Math.round(clampV(randNear(bias, 30), -55, 55));
+            }
+            if (randToggle('randToggle-posterize') && !locks.posterize) {
+                // posterize é destrutivo mesmo em doses pequenas: raramente forte, quase sempre leve ou desligado
+                document.getElementById('posterize').value = Math.random() < 0.7 ? 0 : Math.round(5 + Math.random() * 25);
+            }
+
             if (randToggle('randToggle-pixel') && !locks.pxSize) randPx();
             if (randToggle('randToggle-dither') && !locks.ditherSelect) randDith();
             if (randToggle('randToggle-palette') && !locks.colors) { if(!locks.colorSelect) randColQty(); let qty = parseInt(document.getElementById('colorSelect').value, 10); if(isNaN(qty)) { qty = [4,6,8,12,16][Math.floor(Math.random() * 5)]; document.getElementById('colorSelect').value = qty.toString(); } currentPaletteMode = 'random'; globalCurrentPalette = generateHarmonyPalette(qty); referencePalette = clone(globalCurrentPalette); setBasePalette(globalCurrentPalette); }
             if (randToggle('randToggle-ditherParams')) {
-                if(!locks.ditherScale) document.getElementById('ditherScale').value = Math.floor(Math.random() * 3) + 1;
-                if(!locks.ditherIntensity) document.getElementById('ditherIntensity').value = Math.floor(Math.random() * 80) + 40;
+                // imagem já cheia de detalhe: dither mais sutil, para não empilhar ruído sobre ruído
+                const busy = A && A.isBusy;
+                if(!locks.ditherScale) document.getElementById('ditherScale').value = Math.floor(Math.random() * (busy ? 2 : 3)) + 1;
+                if(!locks.ditherIntensity) document.getElementById('ditherIntensity').value = Math.floor(Math.random() * (busy ? 50 : 80)) + 30;
             }
             if (randToggle('randToggle-contorno')) {
                 if(!locks.edgePixelSize) { document.getElementById('edgePixelSize').value = Math.random() > 0.5 ? 0 : Math.floor(Math.random() * 2) + 1; }
                 if(!locks.edgeColor) { document.getElementById('edgeColor').value = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'); }
             }
             if (randToggle('randToggle-fx')) {
-                if (Math.random() < 0.6) { randFxEffect(); }
+                // imagem já complexa: menos provável escolher uma textura forte por cima
+                const chance = A && A.isBusy ? 0.35 : 0.6;
+                if (Math.random() < chance) { randFxEffect(); }
                 else { document.getElementById('fxEffectSelect').value = 'none'; buildFxControls('none'); updateFilmSubControls('none'); }
             }
-            if (randToggle('randToggle-grain') && !locks.grainAmount) randGrain();
+            if (randToggle('randToggle-grain') && !locks.grainAmount) randGrain(A);
             if (randToggle('randToggle-film')) randFilm();
             if (randToggle('randToggle-grad') && !locks.colors) {
                 if (Math.random() < 0.35) randGradAll();
@@ -5389,7 +5494,7 @@ try {
             updateBadges(); scheduleAppProcess();
         }
 
-        document.getElementById('btn-random-global').addEventListener('click', (e) => { e.currentTarget.classList.remove('random-hint'); try { localStorage.setItem('pixelarRandomHintSeen', '1'); } catch(err){} if (isNextRandomAPreset && sessionPresetsPool.length > 0) { const item = sessionPresetsPool.pop(); if (item.type === 'theme') { applyTheme(item.name); } else if (item.type === 'preset') { applyState(savedPresets[item.name]); } isNextRandomAPreset = false; } else { applyTrueRandom(); if (sessionPresetsPool.length > 0) isNextRandomAPreset = true; } });
+        document.getElementById('btn-random-global').addEventListener('click', (e) => { e.currentTarget.classList.remove('random-hint'); try { localStorage.setItem('pixelarRandomHintSeen', '1'); } catch(err){} applyTrueRandom(); });
         try { if (localStorage.getItem('pixelarRandomHintSeen') === '1') { const rb = document.getElementById('btn-random-global'); if (rb) rb.classList.remove('random-hint'); } } catch(e){}
 
         function getStateObject() {
@@ -5801,12 +5906,13 @@ function renderPresets() {
         const exportModal = document.getElementById('universalExportModal');
 
         function openExportModal() {
-            if (!hasMediaLoaded) { showToast("Carregue uma mídia primeiro."); return; }
             if (isVideoRendering) { showToast("Uma exportação já está em andamento."); return; }
-            document.getElementById('export-image-options').style.display = currentMediaType === 'image' ? 'flex' : 'none';
-            document.getElementById('export-video-options').style.display = currentMediaType === 'video' ? 'flex' : 'none';
+            // abre mesmo sem mídia: as opções ficam visíveis, só a exportação em si exige mídia
+            const asImage = !hasMediaLoaded || currentMediaType === 'image';
+            document.getElementById('export-image-options').style.display = asImage ? 'flex' : 'none';
+            document.getElementById('export-video-options').style.display = (hasMediaLoaded && currentMediaType === 'video') ? 'flex' : 'none';
             exportModal.style.display = 'flex';
-            if (currentMediaType === 'image') updateAnimInfo();
+            if (hasMediaLoaded && currentMediaType === 'image') updateAnimInfo();
         }
         function closeExportModal() { stopAnimPreview(); exportModal.style.display = 'none'; }
 
@@ -6665,7 +6771,7 @@ function renderPresets() {
             }
             return parts;
         }
-        const NOTHING_TO_ANIMATE = 'Nada para animar: escolha um dither, textura, granulado, filme, câmera ou cor no painel de animação (botão play).';
+        const NOTHING_TO_ANIMATE = 'Nada para animar';
 
         // parâmetros genéricos de efeito (estilos que servem para qualquer efeito)
         const fxHash = (a, b) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -6899,7 +7005,6 @@ function renderPresets() {
             if (!sourceImg || currentMediaType !== 'image' || isVideoRendering) return;
             const parts = describeAnimation(readSettings());
             if (!parts.length) { showToast(NOTHING_TO_ANIMATE); return; }
-            showToast('Movimento: ' + parts.join(' + '));
             btnPlayAnim.innerHTML = PAUSE_ICON; btnPlayAnim.classList.add('active-state'); btnPlayAnim.title = 'Parar animação (espaço)';
             btnPlayPanel.textContent = 'Parar'; btnPlayPanel.classList.add('active-state');
             const t0 = performance.now();
@@ -7231,7 +7336,7 @@ function renderPresets() {
                 buttons.forEach(({ value, btn }) => {
                     const active = value === select.value;
                     btn.classList.toggle('active-state', active);
-                    if (active) btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    if (active && typeof btn.scrollIntoView === 'function') btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 });
             }
             syncActive();
@@ -7242,9 +7347,80 @@ function renderPresets() {
             new MutationObserver(syncActive).observe(select, { attributes: true, attributeFilter: ['value'] });
             return { syncActive };
         }
+        // Configurações: overlay de página inteira, com botão Voltar.
+        (function setupConfigOverlay() {
+            const group = document.getElementById('group-config');
+            const back = document.getElementById('cfg-back');
+            if (!group || !back) return;
+            back.addEventListener('click', () => {
+                group.classList.remove('active');
+                const tab = document.querySelector('.d-tab[data-target="group-config"]');
+                if (tab) tab.classList.remove('active');
+            });
+            // dentro do overlay, as sub-abas (Fundo/Tema/Exportar/Aleatório) são sempre
+            // botões pressionáveis, em qualquer largura de tela
+            group.querySelectorAll('.m-sub-btn:not(.reset-btn)').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    group.querySelectorAll('.m-sub-btn').forEach(b => b.classList.toggle('active', b === btn));
+                    group.querySelectorAll('.set-item').forEach(s => s.classList.toggle('active', s.id === targetId));
+                });
+            });
+            // "O que incluir no Mix Aleatório": checkbox vira botão que fica pressionado quando ativo
+            const randPanel = document.getElementById('set-opRand');
+            if (randPanel) {
+                randPanel.querySelectorAll('.custom-checkbox').forEach(lab => {
+                    const input = lab.querySelector('input[type=checkbox]');
+                    if (!input) return;
+                    const btn = document.createElement('button');
+                    btn.type = 'button'; btn.className = 'std-btn rand-toggle-btn';
+                    btn.textContent = lab.textContent.trim();
+                    btn.style.cssText = 'width:100%; margin:3px 0; justify-content:flex-start;';
+                    const sync = () => { btn.classList.toggle('active-state', input.checked); btn.disabled = input.disabled; };
+                    btn.addEventListener('click', () => { if (input.disabled) return; input.checked = !input.checked; input.dispatchEvent(new Event('change', { bubbles: true })); sync(); });
+                    input.addEventListener('change', sync);
+                    lab.style.display = 'none';
+                    lab.parentNode.insertBefore(btn, lab.nextSibling);
+                    sync();
+                });
+            }
+        })();
+
+        // Textura passa a viver dentro de Dither (não tem mais aba própria):
+        // move o conteúdo de #set-pxEfeitos para o fim de #set-dither.
+        (function mergeTextureIntoDither() {
+            const src = document.getElementById('set-pxEfeitos');
+            const dst = document.getElementById('set-dither');
+            if (!src || !dst) return;
+            const title = document.createElement('div');
+            title.className = 'row-lbl'; title.textContent = 'Textura';
+            dst.appendChild(title);
+            Array.from(src.children).forEach(node => {
+                if (node.classList && node.classList.contains('panel-label') && node.textContent.trim() === 'Textura') return;
+                dst.appendChild(node);
+            });
+            src.remove();
+        })();
+
         // seletores de estilo/catálogo (não numéricos/técnicos) a converter
-        ['ditherSelect', 'fxEffectSelect', 'animDStyle', 'animFxStyle', 'animGrainStyle', 'animFilmStyle', 'animCamStyle', 'animColStyle', 'imgGradType', 'imgGradBlend', 'filmLook', 'filmFrame']
+        ['ditherSelect', 'fxEffectSelect', 'animDStyle', 'animFxStyle', 'animGrainStyle', 'animFilmStyle', 'animCamStyle', 'animColStyle', 'imgGradType', 'imgGradBlend']
             .forEach(id => turnSelectIntoButtons(document.getElementById(id)));
+
+        // ==========================================
+        // ACORDEÃO DE SEÇÃO (DESKTOP) — clique no título de cada .set-item (Luz, Cor,
+        // Tons...) recolhe/expande aquela seção inteira. Várias podem ficar abertas
+        // ao mesmo tempo. Só reage ao título QUE É filho direto do .set-item (o
+        // título principal da seção) — sub-títulos internos (ex: "Parâmetros",
+        // "Matiz do Lumiere") não abrem/fecham nada.
+        // ==========================================
+        document.querySelectorAll('.set-item').forEach(setItem => {
+            const lbl = setItem.querySelector(':scope > .panel-label');
+            if (!lbl) return;
+            lbl.addEventListener('click', () => {
+                if (window.innerWidth <= 768) return; // no mobile o título não é clicável
+                setItem.classList.toggle('sec-collapsed');
+            });
+        });
 
         // ==========================================
         // CONTROLES POR NÍVEL — cada par .row-lbl + .slider-row (ou um .slider-row
