@@ -536,6 +536,8 @@ function drawEdges(octx, d, w, h, pSize, e) {
 }
 
 const Engine = (() => {
+    // celular: 2048 px; computador: 3072 px (o suficiente para exportar até 4K sem perder o estilo)
+    let workCap = (matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 700) ? 2048 : 3072;
     const small = document.createElement('canvas'), sCtx = small.getContext('2d', { willReadFrequently: true });
     const cpuCanvas = document.createElement('canvas'), cCtx = cpuCanvas.getContext('2d');
     let smallKey = null, smallData = null;
@@ -567,16 +569,20 @@ const Engine = (() => {
         const geo = cropGeometry(media, st.crop);
         if (!geo.W || !geo.H) return null;
         const s = readSettings(st), px = s.px;
-        const w = Math.max(1, Math.floor(geo.cw / px)), h = Math.max(1, Math.floor(geo.ch / px));
+        let w = Math.max(1, Math.floor(geo.cw / px)), h = Math.max(1, Math.floor(geo.ch / px));
+        // resolução de trabalho: fotos enormes (12–48 MP do celular) são processadas numa
+        // cópia de até `cap` px — a mesma na prévia e na exportação, então o que se vê é o que sai
+        const cap = o.maxWork !== undefined ? o.maxWork : workCap;
+        if (cap && Math.max(w, h) > cap) { const k = cap / Math.max(w, h); w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k)); }
         const cropKey = JSON.stringify(st.crop);
-        const key = o.key ? `${o.key}|${px}|${s.imageScale}|${cropKey}` : null;
+        const key = o.key ? `${o.key}|${px}|${s.imageScale}|${cropKey}|${w}x${h}` : null;
         if (key === null || key !== smallKey) {
             if (small.width !== w || small.height !== h) { small.width = w; small.height = h; } else sCtx.clearRect(0, 0, w, h);
             sCtx.imageSmoothingEnabled = px > 1 ? false : true;
             drawCropped(sCtx, media, geo, w, h, s.imageScale);
             smallKey = key; smallData = null;
         }
-        const maxDim = Math.max(geo.cw, geo.ch), limit = o.maxDim || 2000;
+        const maxDim = Math.max(w, h) * px, limit = o.maxDim || 2000;
         let displayScale = maxDim > limit ? limit / maxDim : 1;
         if (o.targetRes) displayScale = o.targetRes / (h * px);
         let W = Math.max(1, Math.round(w * px * displayScale)), H = Math.max(1, Math.round(h * px * displayScale));
@@ -618,16 +624,17 @@ const Engine = (() => {
             cCtx.putImageData(new ImageData(d, w, h), 0, 0);
         }
         const octx = out.ctx;
-        octx.imageSmoothingEnabled = false;
+        octx.imageSmoothingEnabled = !!o.smooth; if (o.smooth) octx.imageSmoothingQuality = 'high';
         if (s.fillBg) { octx.fillStyle = s.fillBg; octx.fillRect(0, 0, W, H); } else octx.clearRect(0, 0, W, H);
         if (usedGPU) { const g = PixelarGPU.region(); octx.drawImage(PixelarGPU.canvas, g.x, g.y, w, h, 0, 0, W, H); }
         else octx.drawImage(cpuCanvas, 0, 0, w, h, 0, 0, W, H);
-        if (s.edge.size > 0) { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, s.edge); }
+        // contorno medido em pixels da arte: mesma espessura relativa na tela, nas miniaturas e em qualquer tamanho exportado
+        if (s.edge.size > 0) { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, Object.assign({}, s.edge, { size: s.edge.size * displayScale * (o.edgeScale || 1) })); }
         return { w, h, W, H, usedGPU, settings: s };
     }
 
     function invalidate() { smallKey = null; smallData = null; }
-    return { render, invalidate, readSettings };
+    return { render, invalidate, readSettings, get workCap() { return workCap; }, set workCap(v) { workCap = v; smallKey = null; } };
 })();
 
 // ============================================================

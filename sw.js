@@ -1,7 +1,7 @@
 /* Pixelar — service worker: abre instantâneo nas próximas visitas e funciona offline.
  * Estratégia "stale-while-revalidate": responde do cache e atualiza em segundo plano.
  * Ao publicar mudanças, basta aumentar VERSION. */
-const VERSION = 'pixelar-2.4.0';
+const VERSION = 'pixelar-2.5.0';
 const CORE = ['./', 'index.html', 'css/app.css', 'js/gpu.js', 'js/engine.js', 'js/anim.js', 'js/presets.js', 'js/media.js', 'js/export.js', 'js/icons.js', 'js/sample.js', 'js/ui.js', 'DepartureMono-Regular.otf', 'manifest.webmanifest', 'icons/icon-192.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
