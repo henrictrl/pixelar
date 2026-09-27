@@ -305,7 +305,6 @@ const DITHER_OPTS = [['none', 'Sólido'], ['nintendo_ds', 'Pontilhismo'], ['half
 const COLOR_OPTS = [['all', 'Original'], ['2', '2'], ['3', '3'], ['4', '4'], ['6', '6'], ['8', '8'], ['12', '12'], ['16', '16'], ['24', '24'], ['32', '32'], ['48', '48'], ['64', '64'], ['128', '128'], ['256', '256'], ['duotone', 'Duotone'], ['tritone', 'Tritone']];
 const GRAD_TYPE_OPTS = [['linear', 'Linear'], ['mirror', 'Espelhado'], ['radial', 'Radial'], ['conic', 'Cônico'], ['diamond', 'Diamante'], ['box', 'Quadrado'], ['wave', 'Onda'], ['spiral', 'Espiral']];
 const BLEND_OPTS = [['source-atop', 'Substituir'], ['multiply', 'Multiplicar'], ['screen', 'Clarear'], ['overlay', 'Sobrepor'], ['softlight', 'Luz suave'], ['color', 'Só cor'], ['darken', 'Escurecer'], ['lighten', 'Iluminar'], ['difference', 'Diferença']];
-const FRAME_OPTS = [['auto', 'Do filme'], ['0', 'Nenhuma'], ...Object.entries(FRAME_NAMES)];
 const FILM_OPTS = [['none', 'Nenhum'], ...Object.values(FILM_LOOKS).map(l => [l.id, l.nome])];
 const FX_OPTS = () => [['none', 'Nenhum'], ...PixelarFX.listEffects().map(f => [f.id, f.nome])];
 const PALETTE_LIBRARY = {
@@ -387,7 +386,7 @@ const TABS = [
             A('Restaurar', 'reset', () => { st.crop = deepClone(DEFAULT_STATE.crop); st.pixel.scale = 100; Engine.invalidate(); afterExternalChange(); commit(true); }),
         ] }
     ] },
-    // Efeitos: pixel/dither, contorno, filmes, lente, moldura e texturas
+    // Efeitos: pixel/dither, contorno, filmes, lente e texturas
     { id: 'efeitos', label: 'Efeitos', icon: 'fx', groups: [
         { id: 'padrao', label: 'Pixel', controls: () => [
             randomOnly(['pixel', 'dither'], 'Pixel sorteado'),
@@ -415,11 +414,6 @@ const TABS = [
             R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta'), R('film.halation', 'Halação', 'halation', 0, 100), R('film.bloom', 'Brilho', 'bloom', 0, 100),
             R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100),
             R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento'), R('film.dust', 'Poeira', 'dust', 0, 100),
-        ] },
-        { id: 'moldura', label: 'Moldura', controls: () => [
-            C('film.frame', 'Moldura', 'frame', FRAME_OPTS, { view: 'thumbs', variant: (s, v) => { s.film.frame = v; if (v !== 'auto' && v !== '0') s.film.frameColor = arrHex(FRAME_COLORS[v]); } , onPick: (v) => { if (v !== 'auto' && v !== '0') st.film.frameColor = arrHex(FRAME_COLORS[v]); } }),
-            K('film.frameColor', 'Cor da moldura'),
-            C('film.stamp', 'Data', 'stamp', [['off', 'Sem data'], ['auto', 'Do filme'], ['on', 'Sempre']]), K('film.stampColor', 'Cor da data'),
         ] },
 
         { id: 'fx', label: 'Texturas', controls: () => {
