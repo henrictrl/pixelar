@@ -87,8 +87,9 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 2px 5px; border-
 .icon-btn.round { background: var(--glass); box-shadow: var(--shadow); border: .5px solid var(--hair); }
 .icon-btn.dice.rolling .ic { animation: roll .5s var(--ease); }
 @keyframes roll { 0% { transform: rotate(0) scale(1); } 40% { transform: rotate(200deg) scale(.8); } 100% { transform: rotate(360deg) scale(1); } }
-.is-welcome #btnExport, .is-welcome #btnOpen { visibility: hidden; }
-.is-welcome .subbar, .is-welcome .panel, .is-welcome .tabbar, .is-welcome .videobar, .is-welcome .canvas-wrap { display: none; }
+.is-welcome .panel, .is-welcome .videobar, .is-welcome .canvas-wrap, .is-welcome #subbarCenter { display: none; }
+/* sem mídia: a interface aparece inteira, só inativa até a pessoa carregar algo */
+.is-welcome .tabbar, .is-welcome .subbar .glass-group { opacity: .35; pointer-events: none; }
 
 /* ---------- palco ---------- */
 .stage { grid-area: stage; position: relative; min-height: 0; overflow: hidden; background: var(--stage); }
@@ -111,17 +112,11 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 2px 5px; border-
 @keyframes develop { from { filter: blur(6px) saturate(.4); opacity: .6; } to { filter: none; opacity: 1; } }
 
 /* ---------- boas-vindas ---------- */
-.welcome { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; overflow: auto; }
+.welcome { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; }
 #app:not(.is-welcome) .welcome { display: none; }
-.welcome-card { width: min(520px, 100%); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.welcome-demo { position: relative; width: min(340px, 78vw); aspect-ratio: 4 / 3; border-radius: 22px; overflow: hidden; box-shadow: var(--shadow); cursor: pointer; background: var(--dial); }
-.welcome-demo canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; object-fit: cover; }
-.demo-name { position: absolute; left: 10px; bottom: 10px; padding: 4px 9px; border-radius: 7px; background: var(--label-bg); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; backdrop-filter: blur(10px); transition: opacity .3s; }
-.logo { font-family: 'Departure Mono', ui-monospace, monospace; font-weight: 400; font-size: clamp(34px, 9vw, 48px); letter-spacing: -.01em; line-height: 1; margin-top: 6px; }
-.logo span { display: inline-block; margin-left: .35em; font-size: .42em; vertical-align: middle; padding: .25em .5em; border-radius: .5em; background: var(--accent); color: var(--accent-ink); letter-spacing: .08em; text-transform: uppercase; transform: translateY(-.15em); }
-.welcome-sub { color: var(--text-2); max-width: 400px; text-wrap: pretty; }
-.welcome-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
-.welcome-hint { color: var(--text-3); font-size: 13px; }
+.upload-big { width: min(420px, 100%); height: min(300px, 100%); border-radius: 22px; border: 1px dashed var(--dial-ring); background: var(--dial); color: var(--text-2); display: grid; place-content: center; justify-items: center; gap: 12px; font-size: 15px; font-weight: 500; transition: border-color .2s, color .2s; }
+.upload-big .ic { width: 40px; height: 40px; stroke-width: 1; }
+.upload-big:hover, .dragging .upload-big { border-color: var(--text-2); color: var(--text); }
 
 /* ---------- barra de vídeo ---------- */
 .videobar { grid-area: video; display: flex; align-items: center; gap: 10px; padding: 8px 16px 4px; }
@@ -302,9 +297,7 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 2px 5px; border-
     .sheet { left: 50%; right: auto; bottom: auto; top: 50%; width: 460px; max-height: 86vh; border-radius: 24px; transform: translate(-50%, -46%) scale(.97); opacity: 0; transition: transform .3s var(--ease), opacity .25s; padding: 18px 22px 22px; }
     .sheet.show { transform: translate(-50%, -50%); opacity: 1; }
     .sheet .grabber { display: none; }
-    .is-welcome .stage { margin-top: 0; grid-area: 2 / 1 / 4 / 3; }
 }
-@media (min-width: 900px) and (max-height: 640px) { .welcome-demo { width: 240px; } }
 @media (max-width: 460px) { .tabbar { padding: 4px; margin-left: 8px; margin-right: 8px; max-width: calc(100vw - 16px); } .tab { width: calc((100vw - 40px) / 4); max-width: 80px; } }
 @media (max-width: 380px) { .dial { width: 54px; } }
 /* telas baixas (celular com barras do navegador, aparelhos pequenos) */
