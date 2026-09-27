@@ -23,7 +23,7 @@
     <div id="app" class="is-welcome">
         <header class="topbar">
             <button class="pill" id="btnOpen" type="button">Abrir</button>
-            <div class="title" id="toolTitle">PIXELAR</div>
+            <div class="title" id="toolTitle"></div>
             <button class="pill primary" id="btnExport" type="button" disabled>Exportar</button>
         </header>
 
@@ -52,16 +52,7 @@
             <div class="orig-badge" id="origBadge" hidden>ORIGINAL</div>
 
             <section class="welcome" id="welcome">
-                <div class="welcome-card">
-                    <div class="welcome-demo" id="welcomeDemo"><canvas id="demoCanvas"></canvas><span class="demo-name" id="demoName"></span></div>
-                    <h1 class="logo">Pixelar<span>Studio</span></h1>
-                    <p class="welcome-sub">Pixel art, dither, filmes analógicos e animações para fotos e vídeos. Tudo roda no seu aparelho: nada é enviado.</p>
-                    <div class="welcome-actions">
-                        <button class="pill primary big" id="btnWelcomeOpen" type="button">Abrir foto ou vídeo</button>
-                        <button class="pill big" id="btnSample" type="button">Usar imagem de exemplo</button>
-                    </div>
-                    <p class="welcome-hint">Ou arraste um arquivo para cá · <kbd>⌘</kbd><kbd>V</kbd> cola uma imagem</p>
-                </div>
+                <button class="upload-big" id="btnWelcomeOpen" type="button" aria-label="Carregar imagem ou vídeo"></button>
             </section>
             <div class="drop-hint" id="dropHint">Solte para abrir</div>
         </main>
