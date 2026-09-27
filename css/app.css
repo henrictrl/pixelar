@@ -143,7 +143,7 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 2px 5px; border-
 .seg { height: 30px; padding: 0 13px; border-radius: 15px; font-size: 13px; font-weight: 500; color: var(--text-2); white-space: nowrap; transition: background .2s, color .2s; flex: none; }
 .seg.on { background: var(--chip); color: var(--text); }
 .dials { display: flex; gap: 12px; padding: 4px 16px; overflow-x: auto; scrollbar-width: none; flex: none; justify-content: flex-start; }   /* alinhada à esquerda: o 1º botão (Sortear) nunca muda de lugar */
-.dial { flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 58px; scroll-snap-align: center; position: relative; }
+.dial { flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 58px; position: relative; }
 .dial .face { width: var(--dial-size); height: var(--dial-size); border-radius: 50%; display: grid; place-items: center; background: var(--dial); position: relative; transition: transform .15s var(--ease), background .2s; color: var(--text); }
 .dial .face svg.ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
 .dial .face svg.ring circle { fill: none; stroke-width: 1.1; }
@@ -169,7 +169,7 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 2px 5px; border-
 .panel.single { --thumb: var(--thumb-big); }   /* Estilos: sem fileira de botões, miniaturas maiores */
 .editor { height: var(--editor-h); display: flex; flex-direction: column; justify-content: center; gap: 8px; flex: none; overflow: hidden; }
 .editor > * { flex: none; }
-.panel.single .editor { height: calc(var(--editor-h) + var(--dial-size) + 30px); justify-content: flex-start; padding-top: 4px; }
+.panel.single .editor { height: auto; justify-content: flex-start; padding-top: 2px; }   /* Estilos: altura do próprio conteúdo, sem vão */
 
 /* régua */
 .ruler { position: relative; height: 50px; margin: 0 16px; touch-action: none; cursor: ew-resize; user-select: none; -webkit-user-select: none; overflow: hidden; outline: none; -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
@@ -183,8 +183,8 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 2px 5px; border-
 .ruler-hint { text-align: center; font-size: 11px; color: var(--text-3); height: 14px; }
 
 /* tiras de miniaturas e chips */
-.strip { display: flex; gap: 8px; padding: 4px 16px 6px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; scrollbar-width: none; scroll-snap-type: x proximity; }
-.thumb { flex: none; width: var(--thumb); display: flex; flex-direction: column; align-items: center; gap: 5px; scroll-snap-align: center; }
+.strip { display: flex; gap: 8px; padding: 4px 16px 6px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; scrollbar-width: none; }
+.thumb { flex: none; width: var(--thumb); display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .thumb .pic { width: var(--thumb); height: var(--thumb); flex: none; border-radius: 12px; overflow: hidden; position: relative; background: var(--dial); transition: box-shadow .2s; }
 .thumb .pic canvas { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; opacity: 0; transition: opacity .35s; }
 .thumb .pic canvas.ready { opacity: 1; }
