@@ -345,54 +345,80 @@ const FILM_NEUTRAL = {
 const FILM_SCALE_KEYS = ['uHalation', 'uBloom', 'uSoft', 'uBlur', 'uSharpen', 'uVignette', 'uDistort', 'uChroma', 'uFlash', 'uLeak', 'uDust', 'uScratch', 'uBurn', 'uGrain', 'uJpeg', 'uChromaNoise', 'uInterlace', 'uAutochrome'];
 const FRAME_NAMES = { 1: 'Polaroid', 2: 'Instax', 3: 'Filme 35 mm', 4: 'Super 8', 5: 'Médio formato', 6: 'Cinemascope', 7: 'Slide', 8: 'Papel antigo', 9: 'Placa de metal', 10: 'Cantos redondos' };
 const FRAME_COLORS = { 1: [0.96, 0.95, 0.92], 2: [0.98, 0.98, 0.97], 3: [0.06, 0.05, 0.04], 4: [0.03, 0.03, 0.03], 5: [0.02, 0.02, 0.02], 6: [0, 0, 0], 7: [0.94, 0.93, 0.9], 8: [0.9, 0.86, 0.76], 9: [0.12, 0.1, 0.08], 10: [0.97, 0.96, 0.93] };
+// Emulações sutis de filmes e câmeras reais (sem molduras, datas ou danos exagerados).
+// Referências: características publicadas de cada filme (saturação, contraste, dominante,
+// grão e halação) — ex.: Kodachrome = vermelhos quentes e densos, azuis profundos e
+// contraste firme; Ektachrome = neutro e limpo; Velvia = saturação intensa.
+// [grupo, [id, nome, descrição, uniforms do shader FILM, extras]]
 const FILM_LOOK_DEFS = [
-    ['Pioneiros', [
-        ['nitrato', 'Nitrato 1910', 'Rolo de cinema mudo em nitrato: bordas queimadas, riscos e poeira.', { uBW: 1, uTone: 0.5, uToneColor: [0.6, 0.5, 0.35], uContrast: 1.3, uBurn: 0.8, uDust: 1, uScratch: 1, uVignette: 0.8, uSoft: 0.4, uGrain: 0.5, uGrainSize: 1.8 }],
+    ['Kodak', [
+        ['kodachrome64', 'Kodachrome 64', 'Vermelhos quentes e densos, azuis profundos e contraste firme: o slide clássico de viagem.', { uSat: 1.28, uContrast: 1.2, uExposure: -0.05, uTemp: 0.12, uTint: 0.03, uSplit: 0.25, uShadowTint: [0.45, 0.47, 0.55], uHighTint: [0.58, 0.52, 0.44], uGrain: 0.08 }],
+        ['kodachrome25', 'Kodachrome 25', 'Versão de grão finíssimo do Kodachrome: cores ricas com um pouco mais de suavidade.', { uSat: 1.2, uContrast: 1.14, uTemp: 0.08, uSplit: 0.2, uShadowTint: [0.46, 0.47, 0.54], uHighTint: [0.56, 0.52, 0.46], uGrain: 0.04, uSharpen: 0.1 }],
+        ['ektachrome', 'Ektachrome E100', 'Slide neutro e limpo: cores fiéis, levemente frio, grão quase invisível.', { uSat: 1.12, uContrast: 1.14, uTemp: -0.06, uSplit: 0.15, uShadowTint: [0.46, 0.49, 0.55], uGrain: 0.04, uSharpen: 0.15 }],
+        ['portra160', 'Portra 160', 'Negativo de retrato: pele suave, pouco contraste e grão fino.', { uContrast: 0.9, uRoll: 0.4, uSat: 0.85, uTemp: 0.1, uFade: 0.04, uBase: [0.04, 0.035, 0.03], uSplit: 0.2, uShadowTint: [0.48, 0.5, 0.52], uHighTint: [0.54, 0.51, 0.48], uGrain: 0.08 }],
+        ['portra', 'Portra 400', 'Negativo de retrato: pele suave, luzes macias e baixo contraste.', { uContrast: 0.9, uRoll: 0.4, uSat: 0.9, uTemp: 0.15, uTint: 0.05, uFade: 0.06, uBase: [0.05, 0.04, 0.04], uSplit: 0.25, uShadowTint: [0.47, 0.5, 0.53], uHighTint: [0.55, 0.51, 0.47], uGrain: 0.15, uGrainSize: 1.2, uHalation: 0.05 }],
+        ['portra800', 'Portra 800', 'Portra para pouca luz: mais quente, mais cor e grão aparente.', { uContrast: 0.95, uRoll: 0.35, uSat: 1.0, uTemp: 0.18, uTint: 0.04, uFade: 0.05, uBase: [0.05, 0.04, 0.035], uSplit: 0.3, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.57, 0.52, 0.46], uGrain: 0.25, uGrainSize: 1.3 }],
+        ['gold200', 'Gold 200', 'O filme das férias: dourado, quente e alegre.', { uTemp: 0.3, uSat: 1.1, uContrast: 1.05, uSplit: 0.3, uShadowTint: [0.46, 0.47, 0.5], uHighTint: [0.6, 0.55, 0.42], uFade: 0.04, uBase: [0.04, 0.03, 0.02], uGrain: 0.2 }],
+        ['ultramax', 'Ultramax 400', 'Negativo popular: cores vivas, quente e contrastado.', { uSat: 1.2, uContrast: 1.1, uTemp: 0.2, uTint: 0.03, uSplit: 0.25, uShadowTint: [0.46, 0.48, 0.5], uHighTint: [0.6, 0.54, 0.42], uGrain: 0.25 }],
+        ['colorplus', 'ColorPlus 200', 'Negativo barato e nostálgico: amarelado, suave e granulado.', { uSat: 1.05, uContrast: 1.05, uTemp: 0.28, uFade: 0.06, uBase: [0.05, 0.04, 0.02], uSplit: 0.3, uShadowTint: [0.48, 0.47, 0.46], uHighTint: [0.6, 0.55, 0.4], uGrain: 0.28 }],
+        ['ektar', 'Ektar 100', 'Grão finíssimo: cores puras, saturadas e nítidas.', { uSat: 1.3, uContrast: 1.18, uTemp: 0.05, uGrain: 0.05, uSharpen: 0.25 }],
+        ['trix', 'Tri-X 400', 'O P&B do fotojornalismo: contraste marcante e grão vigoroso.', { uBW: 1, uBWMix: [0.3, 0.6, 0.1], uContrast: 1.3, uRoll: 0.1, uGrain: 0.4, uGrainSize: 1.3 }],
+        ['tmax', 'T-Max 100', 'P&B moderno: tons limpos, grão fino e muita nitidez.', { uBW: 1, uContrast: 1.15, uRoll: 0.25, uGrain: 0.08, uSharpen: 0.2 }],
     ]],
-    ['Cor antiga', [
-        ['techni2', 'Technicolor 2', 'Só vermelho-alaranjado e ciano-esverdeado: os primeiros filmes coloridos.', { uSwap: 4, uSwapAmt: 1, uSat: 1.2, uContrast: 1.1, uTemp: 0.1, uFade: 0.1, uBase: [0.05, 0.04, 0.03], uSoft: 0.3, uGrain: 0.2, uDust: 0.3, uScratch: 0.2 }],
-        ['techni3', 'Technicolor 3', 'Corantes separados: cores cheias e vermelhos profundos dos musicais clássicos.', { uSwap: 3, uSwapAmt: 1, uSat: 1.35, uContrast: 1.2, uRoll: 0.3, uSplit: 0.3, uShadowTint: [0.45, 0.5, 0.55], uHighTint: [0.58, 0.52, 0.42], uSoft: 0.2, uHalation: 0.15, uGrain: 0.15 }],
-        ['noir', 'Film noir', 'P&B de estúdio: pretos fundos, luz dura e brilho nas lâmpadas.', { uBW: 1, uContrast: 1.7, uExposure: -0.25, uVignette: 1.2, uBloom: 0.25, uGrain: 0.35, uSoft: 0.2 }],
+    ['Fujifilm', [
+        ['velvia', 'Velvia 50', 'Slide de paisagem: saturação intensa, verdes e azuis profundos, contraste alto.', { uSat: 1.45, uContrast: 1.28, uExposure: -0.08, uTemp: -0.02, uTint: 0.06, uSplit: 0.2, uShadowTint: [0.47, 0.46, 0.56], uHighTint: [0.52, 0.52, 0.47], uGrain: 0.04 }],
+        ['provia', 'Provia 100F', 'Slide equilibrado: cor natural com um toque de brilho, grão mínimo.', { uSat: 1.12, uContrast: 1.12, uTemp: -0.04, uGrain: 0.03, uSharpen: 0.1 }],
+        ['astia', 'Astia 100F', 'Slide suave para retrato: contraste baixo e pele delicada.', { uSat: 1.05, uContrast: 0.94, uRoll: 0.3, uTemp: 0.03, uGrain: 0.03 }],
+        ['pro400h', 'Pro 400H', 'Negativo arejado: tons pastel, verdes frescos e luz suave.', { uContrast: 0.9, uRoll: 0.35, uSat: 0.9, uTemp: -0.08, uTint: -0.06, uFade: 0.05, uBase: [0.04, 0.05, 0.05], uSplit: 0.3, uShadowTint: [0.46, 0.53, 0.52], uHighTint: [0.5, 0.52, 0.52], uGrain: 0.15 }],
+        ['superia', 'Superia 400', 'Negativo do dia a dia: verdes marcantes e tons frios.', { uTemp: -0.1, uTint: -0.15, uSat: 1.1, uContrast: 1.1, uSplit: 0.3, uShadowTint: [0.44, 0.54, 0.52], uHighTint: [0.53, 0.53, 0.47], uGrain: 0.22 }],
+        ['c200', 'C200', 'Negativo simples: um pouco esverdeado, suave e honesto.', { uSat: 1.0, uContrast: 1.05, uTemp: -0.05, uTint: -0.1, uFade: 0.05, uBase: [0.03, 0.05, 0.04], uSplit: 0.25, uShadowTint: [0.45, 0.53, 0.5], uGrain: 0.25 }],
+        ['natura', 'Natura 1600', 'Filme de luz ambiente: tons naturais, sombras esverdeadas e grão.', { uContrast: 0.95, uTemp: 0.05, uTint: -0.05, uFade: 0.06, uBase: [0.04, 0.05, 0.05], uSplit: 0.2, uShadowTint: [0.45, 0.52, 0.53], uGrain: 0.35, uGrainSize: 1.3 }],
+        ['acros', 'Neopan Acros', 'P&B de grão finíssimo e tons muito limpos.', { uBW: 1, uBWMix: [0.25, 0.6, 0.15], uContrast: 1.2, uGrain: 0.06, uSharpen: 0.15 }],
     ]],
-    ['Anos 50–70', [
-        ['cine16', 'Cine 16 mm', 'Documentário e filme caseiro: cores gastas, grão grosso e riscos.', { uSat: 0.95, uContrast: 1.1, uTemp: 0.15, uFade: 0.1, uBase: [0.05, 0.04, 0.03], uGrain: 0.45, uGrainSize: 1.6, uDust: 0.4, uScratch: 0.5, uSoft: 0.3, uVignette: 0.5 }],
-        ['hp5', 'Ilford HP5', 'P&B versátil: meios-tons suaves e grão fino.', { uBW: 1, uBWMix: [0.25, 0.6, 0.15], uContrast: 1.2, uRoll: 0.2, uGrain: 0.5, uGrainSize: 1.4, uFade: 0.03, uBase: [0.03, 0.03, 0.03] }],
-        ['cross', 'Processo cruzado', 'Diapositivo revelado como negativo: amarelos e verdes ácidos.', { uCross: 1, uSat: 1.3, uContrast: 1.2, uSplit: 0.3, uShadowTint: [0.45, 0.55, 0.5], uHighTint: [0.6, 0.58, 0.4], uVignette: 0.5 }],
-        ['bleach', 'Bleach bypass', 'Revelação sem branqueamento: prata sobre a cor, dessaturado e duro.', { uBleach: 1, uSat: 0.8, uContrast: 1.15, uTemp: -0.05, uGrain: 0.3 }],
+    ['Ilford, Agfa e outros', [
+        ['hp5', 'Ilford HP5', 'P&B versátil: meios-tons suaves e grão fino.', { uBW: 1, uBWMix: [0.25, 0.6, 0.15], uContrast: 1.2, uRoll: 0.2, uGrain: 0.35, uGrainSize: 1.3 }],
+        ['delta3200', 'Ilford Delta 3200', 'P&B noturno: grão grande e pretos levemente lavados.', { uBW: 1, uContrast: 1.15, uFade: 0.05, uBase: [0.04, 0.04, 0.04], uGrain: 0.5, uGrainSize: 1.5 }],
+        ['xp2', 'Ilford XP2', 'P&B cromogênico: tons macios e grão quase invisível.', { uBW: 1, uContrast: 0.95, uRoll: 0.3, uGrain: 0.08 }],
+        ['agfavista', 'Agfa Vista 200', 'Negativo de supermercado: vermelhos fortes e céu ciano.', { uSat: 1.22, uContrast: 1.12, uTemp: 0.05, uHue: -0.04, uSplit: 0.3, uShadowTint: [0.44, 0.48, 0.56], uHighTint: [0.58, 0.5, 0.46], uGrain: 0.2 }],
+        ['agfaapx', 'Agfa APX 100', 'P&B clássico alemão: contraste médio e textura fina.', { uBW: 1, uBWMix: [0.28, 0.6, 0.12], uContrast: 1.12, uGrain: 0.15 }],
+        ['lomo800', 'Lomography 800', 'Negativo da lomografia: cores fortes, quente e com grão.', { uSat: 1.28, uContrast: 1.15, uTemp: 0.12, uTint: 0.05, uSplit: 0.3, uShadowTint: [0.46, 0.46, 0.56], uHighTint: [0.6, 0.52, 0.44], uGrain: 0.3, uVignette: 0.2 }],
+        ['cross', 'Processo cruzado', 'Slide revelado como negativo: amarelos e verdes ácidos.', { uCross: 0.8, uSat: 1.2, uContrast: 1.15, uSplit: 0.25, uShadowTint: [0.45, 0.55, 0.5], uHighTint: [0.6, 0.58, 0.4] }],
+        ['lomopurple', 'LomoChrome Purple', 'Troca de cores: verdes viram roxo e azuis viram verde.', { uSwap: 2, uSwapAmt: 1, uSat: 1.15, uContrast: 1.1, uGrain: 0.25 }],
+        ['aerochrome', 'Aerochrome', 'Infravermelho colorido: vegetação vira vermelho e rosa.', { uSwap: 1, uSwapAmt: 1, uSat: 1.2, uContrast: 1.15, uGrain: 0.15 }],
     ]],
-    ['Anos 80–90', [
-        ['gold200', 'Kodak Gold 200', 'O filme das férias: dourado, quente e alegre.', { uTemp: 0.35, uSat: 1.1, uContrast: 1.05, uSplit: 0.35, uShadowTint: [0.45, 0.47, 0.5], uHighTint: [0.62, 0.55, 0.4], uFade: 0.05, uBase: [0.04, 0.03, 0.02], uGrain: 0.25 }],
-        ['superia', 'Fuji Superia 400', 'Negativo do dia a dia: verdes marcantes e tons frios.', { uTemp: -0.1, uTint: -0.2, uSat: 1.1, uContrast: 1.1, uSplit: 0.35, uShadowTint: [0.44, 0.54, 0.52], uHighTint: [0.53, 0.53, 0.47], uGrain: 0.25 }],
-        ['portra', 'Kodak Portra 400', 'Negativo de retrato: pele suave, luzes macias e baixo contraste.', { uContrast: 0.9, uRoll: 0.4, uSat: 0.9, uTemp: 0.15, uTint: 0.05, uFade: 0.06, uBase: [0.05, 0.04, 0.04], uSplit: 0.25, uShadowTint: [0.47, 0.5, 0.53], uHighTint: [0.55, 0.51, 0.47], uGrain: 0.15, uGrainSize: 1.2, uHalation: 0.05 }],
-        ['descartavel', 'Descartável', 'Flash estourado no centro, lente de plástico.', { uFlash: 0.7, uTemp: 0.15, uSat: 1.1, uContrast: 1.15, uVignette: 0.6, uSoft: 0.35, uDistort: 0.15, uChroma: 0.6, uGrain: 0.35 }],
-        ['compacta', 'Compacta', 'Câmera de bolso com flash embutido.', { uTemp: 0.2, uSat: 1.05, uContrast: 1.1, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.52], uHighTint: [0.56, 0.52, 0.45], uFlash: 0.35, uVignette: 0.35, uGrain: 0.25 }],
-        ['vhscam', 'Filmadora VHS', 'Cor borrada, entrelaçamento e ruído nas sombras.', { uSoft: 0.8, uSharpen: 0.4, uSat: 1.25, uChroma: 1.2, uChromaNoise: 0.6, uInterlace: 0.6, uContrast: 0.95, uFade: 0.08, uBase: [0.04, 0.04, 0.05], uTemp: 0.1, uVignette: 0.2 }],
-        ['hi8', 'Hi8', 'Filmadora de mão mais nítida: cor limpa, leve ruído e entrelaçamento.', { uSoft: 0.4, uSharpen: 0.5, uSat: 1.1, uChroma: 0.6, uChromaNoise: 0.35, uInterlace: 0.4, uTemp: -0.05, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.54, 0.51, 0.48] }],
+    ['Cinema', [
+        ['vision250d', 'Vision3 250D', 'Negativo de cinema para o dia: luzes macias, sombras levemente frias.', { uContrast: 0.95, uRoll: 0.5, uSat: 0.95, uTemp: 0.05, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.54], uHighTint: [0.57, 0.52, 0.46], uHalation: 0.15, uGrain: 0.12 }],
+        ['vision500t', 'Vision3 500T', 'Negativo de cinema para a noite: frio, suave e com brilho nas luzes.', { uTemp: -0.3, uContrast: 0.95, uRoll: 0.45, uSat: 0.95, uSplit: 0.3, uShadowTint: [0.43, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46], uHalation: 0.35, uHalColor: [1, 0.25, 0.12], uGrain: 0.25 }],
+        ['cinestill50', 'CineStill 50D', 'Cinema para a luz do dia: azuis frios, vermelhos acentuados e halo nas luzes.', { uTemp: -0.08, uSat: 1.1, uContrast: 1.05, uSplit: 0.25, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.47], uHalation: 0.5, uHalColor: [1, 0.2, 0.1], uGrain: 0.05 }],
+        ['cinestill', 'CineStill 800T', 'Tungstênio: frio, com brilho vermelho ao redor das luzes.', { uTemp: -0.4, uTint: 0.05, uHalation: 0.8, uHalColor: [1, 0.18, 0.08], uContrast: 1.05, uSat: 1.05, uRoll: 0.3, uGrain: 0.3, uGrainSize: 1.3, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46] }],
+        ['techni3', 'Technicolor', 'Cores cheias e vermelhos profundos dos musicais clássicos.', { uSwap: 3, uSwapAmt: 0.8, uSat: 1.25, uContrast: 1.15, uRoll: 0.3, uSplit: 0.25, uShadowTint: [0.45, 0.5, 0.55], uHighTint: [0.58, 0.52, 0.42], uGrain: 0.12 }],
+        ['noir', 'Film noir', 'P&B de estúdio: pretos fundos e luz dura.', { uBW: 1, uContrast: 1.5, uExposure: -0.15, uVignette: 0.5, uBloom: 0.15, uGrain: 0.25 }],
+        ['bleach', 'Bleach bypass', 'Prata sobre a cor: dessaturado e duro.', { uBleach: 0.9, uSat: 0.85, uContrast: 1.12, uTemp: -0.05, uGrain: 0.2 }],
     ]],
-    ['Instantâneas', [
-        ['lomo', 'Lomo LC-A', 'Cores explosivas e túnel escuro nas bordas.', { uVignette: 1.5, uSat: 1.45, uContrast: 1.4, uCross: 0.25, uDistort: 0.1, uBlur: 0.6, uGrain: 0.3 }],
-        ['pinhole', 'Pinhole', 'Sem lente: tudo levemente fora de foco e escurecido nas bordas.', { uSoft: 1.6, uVignette: 1.4, uContrast: 0.9, uSat: 0.8, uFade: 0.15, uBase: [0.06, 0.05, 0.04], uTemp: 0.2, uGrain: 0.3 }],
-        ['polaroid', 'Polaroid', 'Instantânea clássica: cores lavadas, sombras esverdeadas e moldura branca.', { uContrast: 0.92, uFade: 0.12, uBase: [0.06, 0.07, 0.05], uSat: 0.9, uTemp: 0.12, uSplit: 0.3, uShadowTint: [0.45, 0.53, 0.5], uHighTint: [0.57, 0.53, 0.45], uVignette: 0.3, uSoft: 0.25, uGrain: 0.15 }, { frame: 1 }],
-        ['instax', 'Instax', 'Instantânea moderna: nítida, fria e com borda larga embaixo.', { uContrast: 1.05, uSat: 1.08, uTemp: -0.08, uFade: 0.05, uBase: [0.03, 0.04, 0.05], uFlash: 0.2, uGrain: 0.08 }, { frame: 2 }],
+    ['Câmeras', [
+        ['contaxt2', 'Contax T2', 'Compacta de luxo: nítida, tons de pele quentes e contraste agradável.', { uSharpen: 0.35, uContrast: 1.08, uSat: 1.05, uTemp: 0.12, uSplit: 0.2, uHighTint: [0.56, 0.52, 0.47], uVignette: 0.15, uGrain: 0.15 }],
+        ['mju2', 'Olympus mju II', 'Compacta cult: contraste vivo, cor quente e cantos levemente escuros.', { uSharpen: 0.25, uContrast: 1.12, uSat: 1.1, uTemp: 0.15, uVignette: 0.35, uGrain: 0.2 }],
+        ['ae1', 'Canon AE-1', 'Reflex dos anos 70: suave, levemente quente e desbotado.', { uContrast: 1.02, uSat: 1.02, uTemp: 0.12, uSoft: 0.12, uVignette: 0.2, uFade: 0.04, uBase: [0.04, 0.035, 0.03], uGrain: 0.2 }],
+        ['leica', 'Leica M6', 'Telemétrica: microcontraste alto, cor sóbria e vinheta discreta.', { uSharpen: 0.3, uContrast: 1.12, uRoll: 0.2, uSat: 0.95, uVignette: 0.25, uGrain: 0.15 }],
+        ['hasselblad', 'Hasselblad 500C/M', 'Médio formato: tons longos e suaves, detalhe fino e grão mínimo.', { uContrast: 0.97, uRoll: 0.35, uSat: 0.98, uSharpen: 0.2, uGrain: 0.04, uVignette: 0.1 }],
+        ['lomo', 'Lomo LC-A', 'Cores fortes e bordas escuras da lomografia.', { uVignette: 0.9, uSat: 1.3, uContrast: 1.25, uCross: 0.15, uGrain: 0.25 }],
+        ['holga', 'Holga 120', 'Câmera de plástico: foco macio nas bordas e vinheta.', { uVignette: 0.8, uSoft: 0.4, uBlur: 0.5, uSat: 1.1, uContrast: 1.08, uGrain: 0.2 }],
+        ['descartavel', 'Descartável', 'Câmera descartável: flash no centro e lente simples.', { uFlash: 0.45, uTemp: 0.12, uSat: 1.08, uContrast: 1.1, uVignette: 0.4, uSoft: 0.2, uChroma: 0.4, uGrain: 0.3 }],
+        ['compacta', 'Compacta automática', 'Câmera de bolso dos anos 90 com flash embutido.', { uTemp: 0.18, uSat: 1.05, uContrast: 1.08, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.52], uHighTint: [0.56, 0.52, 0.45], uFlash: 0.25, uVignette: 0.25, uGrain: 0.22 }],
     ]],
-    ['Atuais', [
-        ['agfavista', 'Agfa Vista 200', 'Negativo de supermercado: vermelhos fortes e céu ciano.', { uSat: 1.25, uContrast: 1.15, uTemp: 0.05, uHue: -0.04, uSplit: 0.35, uShadowTint: [0.44, 0.48, 0.56], uHighTint: [0.58, 0.5, 0.46], uGrain: 0.2 }],
-        ['ektar', 'Kodak Ektar 100', 'Grão finíssimo: cores puras e nitidez alta.', { uSat: 1.35, uContrast: 1.2, uTemp: 0.05, uGrain: 0.06, uSharpen: 0.3 }],
-        ['cinestill', 'CineStill 800T', 'Filme de cinema: frio (tungstênio) e brilho vermelho ao redor das luzes.', { uTemp: -0.45, uTint: 0.05, uHalation: 1, uHalColor: [1, 0.18, 0.08], uContrast: 1.05, uSat: 1.05, uRoll: 0.3, uGrain: 0.35, uGrainSize: 1.3, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46] }],
-        ['lomopurple', 'LomoChrome Purple', 'Verdes viram roxo e azuis viram verde.', { uSwap: 2, uSwapAmt: 1, uSat: 1.2, uContrast: 1.15, uGrain: 0.3, uVignette: 0.5 }],
-        ['aerochrome', 'Aerochrome', 'Infravermelho: vegetação vira vermelho e rosa.', { uSwap: 1, uSwapAmt: 1, uSat: 1.25, uContrast: 1.2, uGrain: 0.2 }],
-        ['super8', 'Super 8', 'Filme caseiro dos anos 70: quente, granulado, cantos arredondados e data.', { uTemp: 0.25, uSat: 1.15, uContrast: 1.1, uFade: 0.08, uBase: [0.05, 0.03, 0.02], uGrain: 0.5, uGrainSize: 1.7, uSoft: 0.45, uVignette: 0.7, uDust: 0.3, uScratch: 0.2, uHalation: 0.2 }, { frame: 4, stamp: true, year: 1978 }],
+    ['Instantâneas e vídeo', [
+        ['polaroid', 'Polaroid 600', 'Instantânea clássica: cores lavadas e sombras esverdeadas.', { uContrast: 0.92, uFade: 0.12, uBase: [0.06, 0.07, 0.05], uSat: 0.9, uTemp: 0.12, uSplit: 0.3, uShadowTint: [0.45, 0.53, 0.5], uHighTint: [0.57, 0.53, 0.45], uSoft: 0.2, uGrain: 0.1 }],
+        ['instax', 'Instax Mini', 'Instantânea moderna: nítida, fria e brilhante.', { uContrast: 1.05, uSat: 1.08, uTemp: -0.08, uFade: 0.05, uBase: [0.03, 0.04, 0.05], uGrain: 0.06 }],
+        ['super8', 'Super 8', 'Filme caseiro dos anos 70: quente, suave e granulado.', { uTemp: 0.22, uSat: 1.12, uContrast: 1.08, uFade: 0.07, uBase: [0.05, 0.03, 0.02], uGrain: 0.35, uGrainSize: 1.5, uSoft: 0.3, uVignette: 0.35, uHalation: 0.15 }],
+        ['vhscam', 'Filmadora VHS', 'Cor borrada, entrelaçamento e ruído nas sombras.', { uSoft: 0.6, uSharpen: 0.3, uSat: 1.2, uChroma: 0.9, uChromaNoise: 0.45, uInterlace: 0.45, uContrast: 0.95, uFade: 0.06, uBase: [0.04, 0.04, 0.05], uTemp: 0.08 }],
+        ['hi8', 'Hi8', 'Filmadora de mão: cor limpa, leve ruído.', { uSoft: 0.3, uSharpen: 0.4, uSat: 1.08, uChroma: 0.5, uChromaNoise: 0.3, uInterlace: 0.3, uTemp: -0.05 }],
+        ['ccd', 'Digital CCD', 'Compacta digital dos anos 2000: nítida, fria e com flash.', { uSharpen: 0.5, uSat: 1.15, uContrast: 1.12, uTemp: -0.1, uBloom: 0.2, uFlash: 0.3, uJpeg: 0.2, uChromaNoise: 0.25, uExposure: 0.08 }],
     ]],
-    ['Digital', [
-        ['ccd', 'Digital CCD', 'Câmera digital de bolso dos anos 2000: flash e nitidez dura.', { uSharpen: 0.6, uSat: 1.2, uContrast: 1.15, uTemp: -0.12, uBloom: 0.3, uFlash: 0.45, uJpeg: 0.35, uChromaNoise: 0.4, uExposure: 0.1 }, { stamp: true, year: 2004 }],
-        ['webcam', 'Webcam', 'Chamada de vídeo: blocos de compressão, ruído e cor lavada.', { uJpeg: 0.8, uChromaNoise: 0.8, uSoft: 0.5, uSat: 0.8, uContrast: 0.9, uTemp: 0.15, uTint: -0.15, uExposure: -0.1, uVignette: 0.7 }],
-        ['vga', 'Celular VGA', 'Primeiras câmeras de celular: pouca resolução, ruído e luzes estouradas.', { uJpeg: 1, uChromaNoise: 1, uSat: 0.85, uContrast: 1.2, uSharpen: 0.8, uTemp: -0.2, uSoft: 0.3, uExposure: 0.15, uBloom: 0.35 }],
-    ]],
-    ['Clássicos', [
+    ['Clássicos do Pixelar', [
         ['kodak_verde', 'Kodak desbotado', 'Filme antigo desbotado com dominante esverdeada.', {}, { fx: 'kodak_verde' }],
         ['kodak_pb', 'Kodak P&B', 'Preto e branco contrastado com microgrão.', {}, { fx: 'kodak_pb' }],
-        ['lumiere', 'Lumiere', 'Tingimento monocromático de cinema mudo (matiz ajustável).', {}, { fx: 'lumiere' }],
-        ['vencido', 'Filme vencido', 'Filme fora da validade com vazamentos (4 variações).', {}, { fx: 'vencido' }],
+        ['lumiere', 'Lumiere', 'Tingimento monocromático (matiz ajustável).', {}, { fx: 'lumiere' }],
+        ['vencido', 'Filme vencido', 'Filme fora da validade (4 variações).', {}, { fx: 'vencido' }],
     ]],
 ];
 const FILM_LOOKS = {};
@@ -414,8 +440,7 @@ function fxParamsFor(st, effectId) {
 function readFilm(st) {
     const f = st.film, look = FILM_LOOKS[f.look] || null;
     const mix = f.mix / 100, temp = +f.temp || 0, grainK = f.grainAmt / 100;
-    const frame = f.frame === 'auto' ? (look && look.frame) || 0 : parseInt(f.frame, 10) || 0;
-    const stamp = f.stamp === 'on' || (f.stamp === 'auto' && look && look.stamp);
+    const frame = 0, stamp = false;   // molduras e data carimbada foram removidas do app
     const lens = {}; let lensOn = false;
     LENS_KEYS.forEach(k => { lens[k] = (+f[k] || 0) / 100; if (lens[k]) lensOn = true; });
     if (!look && !lensOn && !frame && !stamp && !temp) return null;
