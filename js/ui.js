@@ -491,7 +491,7 @@ function buildTabbar() {
 function selectTab(id) {
     ui.tab = id;
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
-    $('toolTitle').textContent = M.el ? currentTab().label : 'Pixelar';
+    $('toolTitle').textContent = M.el ? currentTab().label : '';
     buildPanel(); updateSubbarCenter();
     const on = document.querySelector('.tab.on'); if (on) on.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
 }
@@ -1257,7 +1257,6 @@ function setMedia(type, el, name) {
     st.crop = deepClone(DEFAULT_STATE.crop);
     Engine.invalidate();
     app.classList.remove('is-welcome'); $('btnExport').disabled = false;
-    stopDemo();
     M.analysis = analyzeMedia(el);
     Thumbs.setSource(el, true);
     ui.surprise = [];
@@ -1421,22 +1420,9 @@ function rollDice() {
 }
 
 // ============================================================
-// BOAS-VINDAS: demonstração ao vivo com a imagem de exemplo
+// IMAGEM DE EXEMPLO (só para testes: Pixelar.openSample no console)
 // ============================================================
-let demo = { timer: 0, src: null, i: 0 };
-function startDemo() {
-    const cv = $('demoCanvas'), ctx = cv.getContext('2d');
-    demo.src = makeSampleImage(600, 450);
-    const names = ['Super 8', 'GameBoy', 'Pop Art', 'Portra', 'Manga', 'CineStill', 'Pixel Pastel', 'Risografia', 'Matrix', 'Polaroid'];
-    const show = () => {
-        const name = names[demo.i++ % names.length], s = presetState(name);
-        if (s) { s.pixel.size = Math.max(1, Math.round(s.pixel.size * 0.8)); Engine.render(s, { media: demo.src, key: 'demo', out: { canvas: cv, ctx }, maxDim: 600 }); }
-        Accent.schedule(cv, 0);
-        const n = $('demoName'); n.style.opacity = 0; setTimeout(() => { n.textContent = name; n.style.opacity = 1; }, 150);
-    };
-    show(); demo.timer = setInterval(show, 1800);
-}
-function stopDemo() { clearInterval(demo.timer); demo.timer = 0; }
+
 function openSample() { const c = makeSampleImage(); setMedia('image', c, 'Exemplo'); }
 
 // ============================================================
@@ -1446,8 +1432,6 @@ $('btnUndo').innerHTML = icon('undo'); $('btnRedo').innerHTML = icon('redo');
 $('btnCompare').innerHTML = icon('compare'); $('btnDice').innerHTML = icon('dice'); $('btnMore').innerHTML = icon('more');
 $('btnOpen').onclick = () => $('fileInput').click();
 $('btnWelcomeOpen').onclick = () => $('fileInput').click();
-$('btnSample').onclick = openSample;
-$('welcomeDemo').onclick = openSample;
 $('btnExport').onclick = openExport;
 $('btnUndo').onclick = undo; $('btnRedo').onclick = redo;
 $('btnCompare').onclick = () => M.el && toggleSplit();
@@ -1496,6 +1480,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 // INÍCIO
 // ============================================================
 buildTabbar(); selectTab('estilos'); updateHistoryButtons();
-if (PixelarGPU.isAvailable()) startDemo(); else { startDemo(); console.warn('WebGL2 indisponível: usando o processador (mais lento).'); }
+$('btnWelcomeOpen').innerHTML = icon('share') + '<span>Carregar imagem ou vídeo</span>';
+if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
 window.Pixelar = { get state() { return st; }, set state(v) { st = normalizeState(v); afterExternalChange(); }, openFile, openSample, render: renderMain, selectTab, media: M };
 })();
