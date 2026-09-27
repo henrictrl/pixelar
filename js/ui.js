@@ -532,6 +532,7 @@ function buildPanel() {
     // aba com um único editor (Estilos) não mostra a fileira de botões
     const single = controls.length === 1 && controls[0].kind === 'custom';
     dials.hidden = single;
+    $('panel').classList.toggle('single', single);   // sem fileira de botões: o editor usa esse espaço
     if (!single) controls.forEach(c => { const d = makeDial(c, c === active); dials.append(d); dialEls.push({ c, el: d }); });
     ui.keepScroll = !!(keep && keep.ctrl === ui.active[aKey]);
     buildEditor(active);
@@ -856,7 +857,7 @@ function editPresets(ed) {
         if (ui.presetFilter === 'Todos') strip.append(h('span', 'strip-group', g));
         names.forEach(n => addThumb(n, () => presetState(n)));
     });
-    ed.append(chips, strip, h('div', 'editor-note', 'Toque num estilo para aplicar. Tudo continua editável nas outras abas.'));
+    ed.append(chips, strip);
 }
 function makeSurprises() {
     ui.surprise = Array.from({ length: 12 }, () => { const s = deepClone(st); const g = new Set(prefs.groups); g.delete('anim'); g.add('palette'); randomize(s, M.analysis, g, prefs.locks, null, true); return s; });
