@@ -274,18 +274,19 @@ function undo() { if (hist.i > 0) { hist.i--; restore(hist.stack[hist.i]); updat
 function redo() { if (hist.i < hist.stack.length - 1) { hist.i++; restore(hist.stack[hist.i]); updateHistoryButtons(); } }
 
 // mudança feita por um controle
-function change(path, v, { rebuild = false, soft = false } = {}) {
+function change(path, v, { rebuild = false, soft = false, dials = false } = {}) {
     if (path) setP(path, v);
     if (path && path.startsWith('crop.')) Engine.invalidate();
     requestRender(); markTabs();
     if (!soft) commit();
-    if (rebuild) buildPanel(); else refreshDials();
+    if (rebuild) buildPanel(); else if (dials) rebuildDials(); else refreshDials();
     Thumbs.stateChanged();
     if (anim.playing && !canAnimate()) stopAnim();
 }
 // estado trocado por fora (aleatório, preset, desfazer): remonta tudo
-function afterExternalChange() {
-    requestRender(); markTabs(); buildPanel(); Thumbs.stateChanged();
+// keepEditor: mantém a faixa tocada intacta (só a fileira de botões é refeita)
+function afterExternalChange({ keepEditor = false } = {}) {
+    requestRender(); markTabs(); if (keepEditor) rebuildDials(); else buildPanel(); Thumbs.stateChanged();
     if (anim.playing && !canAnimate()) stopAnim();
 }
 
@@ -545,6 +546,17 @@ function buildPanel() {
         const on = seg.querySelector('.seg.on'); if (on) centerIn(seg, on);
     }
 }
+// Refaz só a fileira de botões (ex.: escolher um filme com parâmetros próprios), sem
+// tocar no editor — a faixa que o usuário está rolando continua exatamente onde está.
+function rebuildDials() {
+    const tab = currentTab(), grp = currentGroup(), aKey = tab.id + '/' + grp.id;
+    const dials = $('dials'); if (dials.hidden) { refreshDials(); return; }
+    const x = dials.scrollLeft;
+    const controls = grp.controls().filter(c => !c.hidden);
+    dials.innerHTML = ''; dialEls = [];
+    controls.forEach(c => { const d = makeDial(c, ctrlId(c) === ui.active[aKey]); dials.append(d); dialEls.push({ c, el: d }); });
+    dials.scrollLeft = x;
+}
 // centraliza um item dentro da sua fileira sem rolar a página inteira
 function centerIn(row, el) { if (!row || !el) return; row.scrollLeft = el.offsetLeft - row.clientWidth / 2 + el.offsetWidth / 2; }
 const ctrlId = (c) => c.key || c.id || c.label;
@@ -726,8 +738,9 @@ function makeChips(c) {
         b.onclick = () => {
             const v = typeof defP(c.key) === 'number' ? +val : val;
             if (c.onPick) c.onPick(v);
-            if (c.key && !c.key.startsWith('_')) change(c.key, v, { rebuild: grpDependsOn(c.key) || !!c.onPick });
-            if (!grpDependsOn(c.key)) { row.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); refreshDials(); const n = $('editor').querySelector('.editor-note'); if (n) n.textContent = choiceNote(c); }
+            if (c.key && !c.key.startsWith('_')) change(c.key, v, { dials: grpDependsOn(c.key) || !!c.onPick });
+            row.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+            const n = $('editor').querySelector('.editor-note'); if (n) n.textContent = choiceNote(c);
             flashLabel(label);
         };
         row.append(b);
@@ -747,8 +760,8 @@ function makeThumbChoice(c) {
         Thumbs.attach(pic, c.key + ':' + val, variant, true, !!c.detail);
         t.onclick = () => {
             if (c.onPick) c.onPick(val);
-            change(c.key, val, { rebuild: grpDependsOn(c.key) });
-            if (!grpDependsOn(c.key)) { strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t)); refreshDials(); }
+            change(c.key, val, { dials: grpDependsOn(c.key) || !!c.onPick });
+            strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t));
             flashLabel(label);
             const n = $('editor').querySelector('.editor-note'); if (n) n.textContent = choiceNote(c);
         };
@@ -763,6 +776,11 @@ function makeThumbChoice(c) {
 }
 
 // Renderizador de miniaturas: fila por quadro, com esqueleto nas cores da própria foto
+let lastInput = 0, pointerDown = false;
+addEventListener('pointerdown', () => { pointerDown = true; lastInput = performance.now(); }, true);
+addEventListener('pointerup', () => { pointerDown = false; lastInput = performance.now(); }, true);
+addEventListener('pointercancel', () => { pointerDown = false; }, true);
+addEventListener('scroll', () => { lastInput = performance.now(); }, true);
 const Thumbs = (() => {
     const src = document.createElement('canvas'), sctx = src.getContext('2d');
     let serial = 0, dominant = ['#888', '#aaa', '#666'];
@@ -783,6 +801,7 @@ const Thumbs = (() => {
     // Miniatura fiel: renderiza com o MESMO processo e resolução da imagem principal
     // (pixel, dither, grão e contorno ficam na escala real) e só depois reduz.
     const full = document.createElement('canvas'), fullCtx = full.getContext('2d');
+    const halfA = document.createElement('canvas'), halfB = document.createElement('canvas'); let step = 0;
     function drawThumb(it, W, H) {
         const T = it.canvas, side = Math.round(Math.min(220, (it.pic.clientWidth || 66) * (window.devicePixelRatio || 1)));
         if (T.width !== side) { T.width = side; T.height = side; }
@@ -792,8 +811,19 @@ const Thumbs = (() => {
         else { sw = sh = Math.min(W, H); }                                             // quadrado central da imagem inteira
         const sx = Math.round((W - sw) / 2), sy = Math.round((H - sh) / 2);
         tctx.clearRect(0, 0, side, side);
-        tctx.imageSmoothingEnabled = !it.detail; tctx.imageSmoothingQuality = 'high';
-        tctx.drawImage(full, sx, sy, sw, sh, 0, 0, side, side);
+        if (it.detail) { tctx.imageSmoothingEnabled = false; tctx.drawImage(full, sx, sy, sw, sh, 0, 0, side, side); return; }
+        // redução em etapas de ½ (média de verdade, sem moiré em retículas e hachuras)
+        let src = full, x = sx, y = sy, w = sw, hh = sh;
+        while (w / 2 >= side) {
+            const nw = Math.round(w / 2), nh = Math.round(hh / 2);
+            const buf = step % 2 ? halfA : halfB; step++;
+            if (buf.width < nw || buf.height < nh) { buf.width = nw; buf.height = nh; }
+            const bx = buf.getContext('2d'); bx.imageSmoothingEnabled = true; bx.imageSmoothingQuality = 'high';
+            bx.clearRect(0, 0, nw, nh); bx.drawImage(src, x, y, w, hh, 0, 0, nw, nh);
+            src = buf; x = 0; y = 0; w = nw; hh = nh;
+        }
+        tctx.imageSmoothingEnabled = true; tctx.imageSmoothingQuality = 'high';
+        tctx.drawImage(src, x, y, w, hh, 0, 0, side, side);
     }
     const cache = new Map();   // id → { canvas, hash }: miniaturas sobrevivem à remontagem do painel
     function attach(pic, id, variant, liveState, detail) {
@@ -809,10 +839,12 @@ const Thumbs = (() => {
     function pump() { if (!raf) raf = requestAnimationFrame(work); }
     function work() {
         raf = 0; live = live.filter(it => it.pic.isConnected);
+        // enquanto o dedo está na tela (régua, rolagem), as miniaturas esperam: o gesto tem prioridade
+        if (pointerDown || performance.now() - lastInput < 250) { setTimeout(pump, 150); return; }
         if (!M.el) { queue = []; return; }
         const t0 = performance.now();
         const vis = (it) => { const r = it.pic.getBoundingClientRect(); return r.width && r.right > -40 && r.left < innerWidth + 40 && r.bottom > 0 && r.top < innerHeight; };
-        while (queue.length && performance.now() - t0 < 12) {
+        while (queue.length && performance.now() - t0 < 8) {
             // primeiro as miniaturas visíveis
             let k = queue.findIndex(vis); if (k < 0) k = 0;
             const it = queue.splice(k, 1)[0]; if (!it.pic.isConnected) continue;
@@ -820,6 +852,7 @@ const Thumbs = (() => {
             const hash = M.serial + '|' + (M.type === 'video' ? video.currentTime : '') + '|' + it.detail + '|' + JSON.stringify(s);
             if (hash === it.hash) continue;
             it.hash = hash;
+            // mesma base e mesma saída da imagem principal: a miniatura é o resultado real, reduzido
             const r = Engine.render(s, { media: M.el, key: M.type === 'image' ? 'main' + M.serial : null, out: { canvas: full, ctx: fullCtx }, maxDim: 2000 });
             if (r) { drawThumb(it, r.W, r.H); it.canvas.classList.add('ready'); }
         }
@@ -836,7 +869,7 @@ function applyPreset(name, ps) {
     const before = snapshot();
     ui.lastPreset = name;
     stopAnim();
-    st = normalizeState(presetApplyState(ps)); Engine.invalidate(); afterExternalChange(); commit(true);
+    st = normalizeState(presetApplyState(ps)); Engine.invalidate(); afterExternalChange({ keepEditor: true }); commit(true);
     flashLabel(name);
     return before;
 }
@@ -872,7 +905,7 @@ function editSurprise(ed) {
         const t = h('button', 'thumb'); t.type = 'button';
         const pic = h('span', 'pic'); t.append(pic, h('span', 't', 'Variação ' + (i + 1)));
         Thumbs.attach(pic, 'surprise:' + i, () => s, false);
-        t.onclick = () => { const before = snapshot(); st = normalizeState(deepClone(s)); Engine.invalidate(); afterExternalChange(); commit(true); toast('Variação aplicada', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); };
+        t.onclick = () => { const before = snapshot(); st = normalizeState(deepClone(s)); Engine.invalidate(); afterExternalChange({ keepEditor: true }); commit(true); strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t)); toast('Variação aplicada', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); };
         strip.append(t);
     });
     ed.append(strip, h('div', 'editor-note', 'Doze combinações novas a partir da sua foto. Segure qualquer botão nas outras abas para travá-lo.'));
