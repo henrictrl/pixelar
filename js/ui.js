@@ -799,7 +799,7 @@ const Thumbs = (() => {
     function setSource(el, force) {
         if (!el) return;
         const { W, H } = mediaSize(el); if (!W || !H) return;
-        const k = 200 / Math.max(W, H); src.width = Math.max(1, Math.round(W * k)); src.height = Math.max(1, Math.round(H * k));
+        const k = 480 / Math.max(W, H); src.width = Math.max(1, Math.round(W * k)); src.height = Math.max(1, Math.round(H * k));
         sctx.drawImage(el, 0, 0, src.width, src.height); serial++;
         try {
             const d = sctx.getImageData(0, 0, src.width, src.height).data, px = [];
@@ -835,13 +835,22 @@ const Thumbs = (() => {
         tctx.imageSmoothingEnabled = true; tctx.imageSmoothingQuality = 'high';
         tctx.drawImage(src, x, y, w, hh, 0, 0, side, side);
     }
+    function placeholder(cv, pic) {
+        if (!src.width) return;
+        const side = Math.round(Math.min(220, 66 * (window.devicePixelRatio || 1)));
+        if (cv.width !== side) { cv.width = side; cv.height = side; }
+        const c = cv.getContext('2d'), sw = Math.min(src.width, src.height);
+        c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+        c.drawImage(src, (src.width - sw) / 2, (src.height - sw) / 2, sw, sw, 0, 0, side, side);
+    }
     const cache = new Map();   // id → { canvas, hash }: miniaturas sobrevivem à remontagem do painel
     function attach(pic, id, variant, liveState, detail) {
         const old = cache.get(id);
-        const cv = old ? old.canvas : document.createElement('canvas'); const sk = h('span', 'sk');
-        const pal = (() => { try { const s = variant(); if (s.color.sel !== 'all' && s.color.base.length) return s.color.base.slice(0, 4); if (s.color.sel === 'duotone' || s.color.sel === 'tritone') return s.color.duo; } catch (e) {} return dominant; })();
-        sk.style.backgroundImage = `linear-gradient(100deg, ${pal.join(', ')}, ${pal[0]})`; sk.style.opacity = '.55';
-        pic.append(cv, sk);
+        const cv = old ? old.canvas : document.createElement('canvas');
+        pic.append(cv);
+        // enquanto o efeito não fica pronto, a miniatura mostra a própria foto enviada
+        // (nada de degradê ou esmaecer): depois o efeito entra no lugar, na hora
+        if (!cv.classList.contains('ready')) placeholder(cv, pic);
         const item = { pic, canvas: cv, id, variant, liveState, detail: !!detail, hash: old ? old.hash : null };
         cache.set(id, item); if (cache.size > 100) cache.delete(cache.keys().next().value);
         // só remove repetidos do mesmo item — as outras miniaturas desta faixa ainda não
