@@ -11,7 +11,7 @@ const Media = (() => {
         if (!mbPromise) {
             mbPromise = new Promise((res, rej) => {
                 if (typeof VideoEncoder === 'undefined') { rej(new Error('WebCodecs indisponível')); return; }
-                const s = document.createElement('script'); s.src = 'vendor/mediabunny.js'; s.async = true;
+                const s = document.createElement('script'); s.src = 'vendor/mediabunny.js?v=' + (window.PIXELAR_V || ''); s.async = true;
                 s.onload = () => window.Mediabunny ? res(window.Mediabunny) : rej(new Error('mediabunny não carregou'));
                 s.onerror = () => rej(new Error('mediabunny não carregou'));
                 document.head.appendChild(s);
@@ -38,7 +38,7 @@ const Media = (() => {
             ffPromise = (async () => {
                 const libURL = await fetchBlobURL(FFMPEG_BASE.ffmpeg + 'ffmpeg.js', 'text/javascript');
                 await new Promise((res, rej) => { const s = document.createElement('script'); s.src = libURL; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
-                const worker = await fetchBlobURL('vendor/ffmpeg-worker.js', 'text/javascript');
+                const worker = await fetchBlobURL('vendor/ffmpeg-worker.js?v=' + (window.PIXELAR_V || ''), 'text/javascript');
                 const ff = new FFmpegWASM.FFmpeg();
                 await ff.load({ classWorkerURL: worker, coreURL: await fetchBlobURL(FFMPEG_BASE.core + 'ffmpeg-core.js', 'text/javascript'), wasmURL: await fetchBlobURL(FFMPEG_BASE.core + 'ffmpeg-core.wasm', 'application/wasm', onProgress) });
                 return ff;

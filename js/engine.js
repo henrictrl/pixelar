@@ -661,7 +661,7 @@ const Engine = (() => {
         // contorno medido em pixels da arte: mesma espessura relativa na tela, nas miniaturas e em qualquer tamanho exportado
         if (s.edge.size > 0) {
             const thick = s.edge.size * displayScale * (o.edgeScale || 1);
-            const rg = usedGPU && PixelarGPU.edges({ W, H, scale: W / w, half: thick / 2, color: rgbArr(s.edge.color), opacity: s.edge.opacity });
+            const rg = usedGPU && typeof PixelarGPU.edges === 'function' && PixelarGPU.edges({ W, H, scale: W / w, half: thick / 2, color: rgbArr(s.edge.color), opacity: s.edge.opacity });
             if (rg) { octx.imageSmoothingEnabled = false; octx.drawImage(PixelarGPU.canvas, rg.x, rg.y, W, H, 0, 0, W, H); }
             else { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, Object.assign({}, s.edge, { size: thick })); }
         }

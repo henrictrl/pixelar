@@ -92,7 +92,16 @@ function mainFrameOptions() {
     }
     return {};
 }
+let renderFailures = 0;
 function renderMain() {
+    try { renderMainUnsafe(); renderFailures = 0; }
+    catch (e) {
+        console.error('[Pixelar] falha ao desenhar:', e);
+        // não deixa um erro travar o app: avisa uma vez e continua respondendo
+        if (++renderFailures === 1) toast('Algo falhou ao desenhar. Tente de novo ou recarregue a página.');
+    }
+}
+function renderMainUnsafe() {
     if (!M.el) return;
     if (M.type === 'video' && !video.videoWidth) return;
     const showOrig = compare.split || compare.hold;
@@ -104,7 +113,9 @@ function renderMain() {
     outCanvas.classList.toggle('smooth', st.pixel.size <= 1 && r.W < view.fitW * devicePixelRatio);
     if (!anim.playing && (M.type !== 'video' || video.paused)) Accent.schedule(outCanvas);
 }
-window.onGpuRestored = requestRender;
+let gpuLost = false;
+window.onGpuLost = () => { gpuLost = true; toast('O processador gráfico foi reiniciado pelo sistema. Recuperando…', null, 4000); };
+window.onGpuRestored = () => { gpuLost = false; Engine.invalidate(); requestRender(); Thumbs.refreshAll(); };
 
 // ============================================================
 // COR DE DESTAQUE: vem da cor dominante (mais viva) da imagem editada
@@ -832,7 +843,7 @@ const Thumbs = (() => {
         sk.style.backgroundImage = `linear-gradient(100deg, ${pal.join(', ')}, ${pal[0]})`; sk.style.opacity = '.55';
         pic.append(cv, sk);
         const item = { pic, canvas: cv, id, variant, liveState, detail: !!detail, hash: old ? old.hash : null };
-        cache.set(id, item); if (cache.size > 160) cache.delete(cache.keys().next().value);
+        cache.set(id, item); if (cache.size > 100) cache.delete(cache.keys().next().value);
         live = live.filter(x => x.pic.isConnected && x.id !== id); queue = queue.filter(x => x.pic.isConnected && x.id !== id);
         live.push(item); queue.push(item); pump();
     }
@@ -843,6 +854,7 @@ const Thumbs = (() => {
         queue = [...new Set(queue.filter(it => it.pic.isConnected))];
         // enquanto o dedo está na tela (régua, rolagem), as miniaturas esperam: o gesto tem prioridade
         if (pointerDown || performance.now() - lastInput < 250) { setTimeout(pump, 150); return; }
+        if (gpuLost || !PixelarGPU.isAvailable()) { setTimeout(pump, 800); return; }   // sem GPU, miniaturas esperam
         if (!M.el) { queue = []; return; }
         const t0 = performance.now();
         // Só as miniaturas visíveis (com uma de folga) são renderizadas. As outras esperam na
@@ -856,7 +868,9 @@ const Thumbs = (() => {
             if (hash === it.hash) continue;
             it.hash = hash;
             // mesma base e mesma saída da imagem principal: a miniatura é o resultado real, reduzido
-            const r = Engine.render(s, { media: M.el, key: M.type === 'image' ? 'main' + M.serial : null, out: { canvas: full, ctx: fullCtx }, maxDim: 2000 });
+            let r = null;
+            try { r = Engine.render(s, { media: M.el, key: M.type === 'image' ? 'main' + M.serial : null, out: { canvas: full, ctx: fullCtx }, maxDim: 2000 }); }
+            catch (e) { console.warn('[Pixelar] miniatura falhou:', e); continue; }
             if (r) { drawThumb(it, r.W, r.H); it.canvas.classList.add('ready'); }
         }
         if (queue.length) pump();
@@ -1418,6 +1432,9 @@ function updateSubbarCenter() {
 // ALEATÓRIO GLOBAL
 // ============================================================
 function rollDice() {
+    try { rollDiceUnsafe(); } catch (e) { console.error('[Pixelar] aleatório falhou:', e); toast('Não foi possível sortear agora. Tente de novo.'); }
+}
+function rollDiceUnsafe() {
     if (!M.el) return;
     const before = snapshot();
     const dice = $('btnDice'); dice.classList.remove('rolling'); void dice.offsetWidth; dice.classList.add('rolling');

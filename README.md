@@ -38,7 +38,7 @@ Tudo o que a imagem precisa está num único objeto de estado (`st`). O motor (`
 - Para **criar um controle**, adicione uma linha na lista `TABS` em `ui.js` apontando para um campo do estado, por exemplo `R('adj.exposure', 'Exposição', 'exposure', -100, 100)`.
 - Para **criar um filme**, adicione uma linha em `FILM_LOOK_DEFS` (`engine.js`).
 - Para **criar um estilo pronto**, adicione em `MODERN_PRESETS` e em `PRESET_GROUPS` (`presets.js`).
-- Ao publicar mudanças, aumente `VERSION` em `sw.js` para os visitantes receberem a versão nova.
+- **Ao publicar mudanças, rode `python3 tools/versao.py X.Y.Z`** (ex.: `2.9.2`). Isso carimba a versão nos endereços de todos os arquivos e no `sw.js`. Sem isso, o navegador pode misturar arquivos novos e antigos (o servidor deixa cada arquivo em cache por 10 min) e o app quebra.
 
 ## Atalhos
 
