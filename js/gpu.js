@@ -817,7 +817,8 @@ const PixelarGPU = (function () {
         if (factor != 0.0) rgb = clamp(rgb + factor * 120.0, 0.0, 255.0);
 
         if (uUseGrad) {
-            vec3 g = floor(texelFetch(uGrad, ip, 0).rgb * 255.0 + 0.5);
+            // o degradê vem numa grade pequena e é interpolado aqui (é suave por natureza)
+            vec3 g = floor(texture(uGrad, (vec2(ip) + 0.5) / uImgSize).rgb * 255.0 + 0.5);
             vec3 pre = rgb;
             if (uGradBlend == 1) rgb = rgb * g / 255.0;
             else if (uGradBlend == 2) rgb = 255.0 - (255.0 - rgb) * (255.0 - g) / 255.0;
@@ -1322,6 +1323,36 @@ const PixelarGPU = (function () {
         outColor = col;
     }`;
 
+    // CONTORNO: desenhado direto na resolução de saída, a partir da imagem final da GPU.
+    // Para cada pixel de saída, verifica se está a menos de meia espessura de uma divisa
+    // entre dois pixels da arte com cores diferentes (mesmo critério do antigo desenho em CPU).
+    const EDGE_FS = `#version 300 es
+    precision highp float; precision highp int;
+    out vec4 outColor;
+    uniform sampler2D uTex;
+    uniform vec2 uOut; uniform float uScale, uHalf; uniform vec4 uColor;
+    bool differs(ivec2 p, ivec2 q) {
+        ivec2 sz = textureSize(uTex, 0);
+        if (p.x < 0 || p.y < 0 || q.x >= sz.x || q.y >= sz.y) return false;
+        vec3 a = texelFetch(uTex, p, 0).rgb, b = texelFetch(uTex, q, 0).rgb;
+        vec3 d = abs(a - b) * 255.0;
+        return d.r + d.g + d.b > 40.0;
+    }
+    void main() {
+        vec2 q = vec2(gl_FragCoord.x, uOut.y - gl_FragCoord.y);   // centro do pixel de saída
+        ivec2 a = ivec2(floor(q / uScale));
+        float xr = float(a.x + 1) * uScale - q.x, xl = q.x - float(a.x) * uScale;
+        float yb = float(a.y + 1) * uScale - q.y, yt = q.y - float(a.y) * uScale;
+        // cobertura antisserrilhada de uma linha de largura 2·uHalf (como o canvas faz com retângulos)
+        float c = 0.0;
+        if (differs(a, a + ivec2(1, 0))) c = max(c, clamp(uHalf + 0.5 - xr, 0.0, 1.0));
+        if (differs(a - ivec2(1, 0), a)) c = max(c, clamp(uHalf + 0.5 - xl, 0.0, 1.0));
+        if (differs(a, a + ivec2(0, 1))) c = max(c, clamp(uHalf + 0.5 - yb, 0.0, 1.0));
+        if (differs(a - ivec2(0, 1), a)) c = max(c, clamp(uHalf + 0.5 - yt, 0.0, 1.0));
+        c = min(c, 2.0 * uHalf);   // linhas mais finas que 1 px ficam proporcionalmente mais claras
+        outColor = vec4(uColor.rgb, uColor.a * c);
+    }`;
+
     function compile(type, src) {
         const sh = gl.createShader(type);
         gl.shaderSource(sh, src); gl.compileShader(sh);
@@ -1361,8 +1392,8 @@ const PixelarGPU = (function () {
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
         progs.MAIN = link(MAIN_FS); progs.SHIFT = link(SHIFT_FS);
-        progs.GRAIN = link(GRAIN_FS); progs.BLIT = link(BLIT_FS); progs.FILM = link(FILM_FS);
-        srcTex = newTex(gl.NEAREST); gradTex = newTex(gl.NEAREST);
+        progs.GRAIN = link(GRAIN_FS); progs.BLIT = link(BLIT_FS); progs.FILM = link(FILM_FS); progs.EDGE = link(EDGE_FS);
+        srcTex = newTex(gl.NEAREST); gradTex = newTex(gl.LINEAR);
         palTex = newTex(gl.NEAREST); refPalTex = newTex(gl.NEAREST);
         gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -1465,7 +1496,7 @@ const PixelarGPU = (function () {
             }
             if (o.grad && o.grad.key !== gradKey) {
                 bindTex(0, gradTex);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(o.grad.d.buffer, o.grad.d.byteOffset, o.grad.d.length));
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, o.grad.w, o.grad.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(o.grad.d.buffer, o.grad.d.byteOffset, o.grad.d.length));
                 gradKey = o.grad.key;
             }
             const cm = o.color;
@@ -1589,9 +1620,30 @@ const PixelarGPU = (function () {
         return buf;
     }
 
+    // desenha o contorno (W × H, já na escala de saída) e devolve a região no canvas WebGL
+    function edges(o) {
+        if (!isAvailable() || lastTarget < 0 || !targets.length) return null;
+        const W = o.W, H = o.H; if (W > maxTex || H > maxTex) return null;
+        try {
+            if (glCanvas.width < W || glCanvas.height < H) {
+                glCanvas.width = Math.min(maxTex, Math.max(glCanvas.width, Math.ceil(W / 256) * 256));
+                glCanvas.height = Math.min(maxTex, Math.max(glCanvas.height, Math.ceil(H / 256) * 256));
+            }
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, glCanvas.width, glCanvas.height); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.viewport(0, 0, W, H);
+            gl.bindVertexArray(vao); gl.useProgram(progs.EDGE.p);
+            bindTex(0, targets[lastTarget].tex);
+            const L = progs.EDGE.loc;
+            gl.uniform1i(L.uTex, 0); gl.uniform2f(L.uOut, W, H); gl.uniform1f(L.uScale, o.scale); gl.uniform1f(L.uHalf, o.half);
+            gl.uniform4f(L.uColor, o.color[0], o.color[1], o.color[2], o.opacity);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            return { x: 0, y: glCanvas.height - H, w: W, h: H };
+        } catch (e) { console.warn('[PixelarGPU] contorno falhou:', e); return null; }
+    }
     // retângulo do último resultado dentro do canvas WebGL (coordenadas de imagem, origem no topo)
     function region() { return { x: 0, y: glCanvas.height - th, w: tw, h: th }; }
-    return { init, isAvailable, fits, render, readPixels, region, get canvas() { return glCanvas; } };
+    return { init, isAvailable, fits, render, readPixels, region, edges, get canvas() { return glCanvas; } };
 })();
 
 // Catálogo de efeitos (usado pela UI): mesmo contrato do antigo PixelarFX
