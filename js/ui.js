@@ -44,7 +44,7 @@ function toast(msg, action, ms = 3200) {
     box.style.left = (sheetOpen ? innerWidth / 2 : r.left + r.width / 2) + 'px';
     const t = h('div', 'toast'); t.append(h('span', '', '')); t.firstChild.textContent = msg;
     if (action) { const b = h('button', '', action.label); b.type = 'button'; b.onclick = () => { action.run(); t.remove(); }; t.append(b); }
-    box.append(t); requestAnimationFrame(() => t.classList.add('show'));
+    box.append(t); void t.offsetWidth; t.classList.add('show');
     setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, ms);
 }
 
@@ -188,6 +188,7 @@ new ResizeObserver(() => fitView()).observe(viewport);
     const pts = new Map(); let pinch = null, holdTimer = 0, moved = false, lastTap = 0, dragSplit = false, start = null;
     viewport.addEventListener('pointerdown', (e) => {
         if (!M.el) return;
+        if (e.isPrimary && pts.size) { pts.clear(); pinch = null; }   // um novo 1º toque descarta restos de toques perdidos
         viewport.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
         moved = false; start = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
         if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: view.zoom, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 }; clearTimeout(holdTimer); return; }
@@ -219,6 +220,7 @@ new ResizeObserver(() => fitView()).observe(viewport);
         dragSplit = false; start = null;
     };
     viewport.addEventListener('pointerup', end); viewport.addEventListener('pointercancel', end);
+    viewport.addEventListener('lostpointercapture', (e) => { if (pts.has(e.pointerId)) end(e); });
     viewport.addEventListener('wheel', (e) => {
         if (!M.el) return; e.preventDefault();
         if (e.ctrlKey || e.metaKey) zoomAt(Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
@@ -774,7 +776,10 @@ let lastInput = 0, pointerDown = false;
 addEventListener('pointerdown', () => { pointerDown = true; lastInput = performance.now(); }, true);
 addEventListener('pointerup', () => { pointerDown = false; lastInput = performance.now(); }, true);
 addEventListener('pointercancel', () => { pointerDown = false; }, true);
-addEventListener('scroll', () => { lastInput = performance.now(); }, true);
+['touchend', 'touchcancel', 'blur'].forEach(ev => addEventListener(ev, () => { pointerDown = false; }, true));
+document.addEventListener('visibilitychange', () => { pointerDown = false; });
+let scrollPumpT = 0;
+addEventListener('scroll', () => { lastInput = performance.now(); clearTimeout(scrollPumpT); scrollPumpT = setTimeout(() => Thumbs.pump(), 160); }, true);
 const Thumbs = (() => {
     const src = document.createElement('canvas'), sctx = src.getContext('2d');
     let serial = 0, dominant = ['#888', '#aaa', '#666'];
@@ -827,20 +832,24 @@ const Thumbs = (() => {
         sk.style.backgroundImage = `linear-gradient(100deg, ${pal.join(', ')}, ${pal[0]})`; sk.style.opacity = '.55';
         pic.append(cv, sk);
         const item = { pic, canvas: cv, id, variant, liveState, detail: !!detail, hash: old ? old.hash : null };
-        cache.set(id, item); if (cache.size > 400) cache.delete(cache.keys().next().value);
+        cache.set(id, item); if (cache.size > 160) cache.delete(cache.keys().next().value);
+        live = live.filter(x => x.pic.isConnected && x.id !== id); queue = queue.filter(x => x.pic.isConnected && x.id !== id);
         live.push(item); queue.push(item); pump();
     }
     function pump() { if (!raf) raf = requestAnimationFrame(work); }
     function work() {
         raf = 0; live = live.filter(it => it.pic.isConnected);
+        // fila sempre limpa: sem itens de faixas que já saíram da tela e sem repetidos
+        queue = [...new Set(queue.filter(it => it.pic.isConnected))];
         // enquanto o dedo está na tela (régua, rolagem), as miniaturas esperam: o gesto tem prioridade
         if (pointerDown || performance.now() - lastInput < 250) { setTimeout(pump, 150); return; }
         if (!M.el) { queue = []; return; }
         const t0 = performance.now();
-        const vis = (it) => { const r = it.pic.getBoundingClientRect(); return r.width && r.right > -40 && r.left < innerWidth + 40 && r.bottom > 0 && r.top < innerHeight; };
+        // Só as miniaturas visíveis (com uma de folga) são renderizadas. As outras esperam na
+        // fila até a faixa ser rolada até elas — é o que mantém o celular leve e responsivo.
+        const vis = (it) => { const r = it.pic.getBoundingClientRect(); const m = r.width || 60; return r.width && r.right > -m && r.left < innerWidth + m && r.bottom > 0 && r.top < innerHeight; };
         while (queue.length && performance.now() - t0 < 8) {
-            // primeiro as miniaturas visíveis
-            let k = queue.findIndex(vis); if (k < 0) k = 0;
+            const k = queue.findIndex(vis); if (k < 0) return;   // nada visível pendente: para até rolar
             const it = queue.splice(k, 1)[0]; if (!it.pic.isConnected) continue;
             let s; try { s = it.variant(); } catch (e) { continue; }
             const hash = M.serial + '|' + (M.type === 'video' ? video.currentTime : '') + '|' + it.detail + '|' + JSON.stringify(s);
@@ -854,7 +863,9 @@ const Thumbs = (() => {
     }
     function refreshAll() { live = live.filter(it => it.pic.isConnected); queue = live.slice(); pump(); }
     function stateChanged() { clearTimeout(dirtyTimer); dirtyTimer = setTimeout(() => { live = live.filter(it => it.pic.isConnected); queue = live.filter(it => it.liveState); pump(); }, 260); }
-    return { setSource, attach, stateChanged, refreshAll, get src() { return src; } };
+    // (testes) processa a fila inteira agora, sem esperar quadros de tela
+    function flush() { let n = 0; while (queue.length && n++ < 1000) { raf = 0; pointerDown = false; lastInput = 0; work(); } }
+    return { setSource, attach, stateChanged, refreshAll, flush, pump, get pending() { return queue.length; }, get src() { return src; } };
 })();
 
 // ---------- editores personalizados ----------
@@ -991,10 +1002,13 @@ function editGradColors(ed) {
 }
 
 // ---------- seletor de cor nativo ----------
+let colorHandlers = null;
 function pickColor(value, cb, label) {
     const inp = $('colorInput'); inp.value = /^#[0-9a-f]{6}$/i.test(value) ? value : '#000000';
+    if (colorHandlers) { inp.removeEventListener('input', colorHandlers[0]); inp.removeEventListener('change', colorHandlers[1]); }
     const onInput = () => cb(inp.value.toUpperCase(), false);
-    const onChange = () => { cb(inp.value.toUpperCase(), true); inp.removeEventListener('input', onInput); inp.removeEventListener('change', onChange); };
+    const onChange = () => { cb(inp.value.toUpperCase(), true); inp.removeEventListener('input', onInput); inp.removeEventListener('change', onChange); colorHandlers = null; };
+    colorHandlers = [onInput, onChange];
     inp.addEventListener('input', onInput); inp.addEventListener('change', onChange);
     if (label) flashLabel(label);
     inp.click();
@@ -1008,7 +1022,7 @@ function openSheet(build, onClose) {
     const sh = $('sheet'), bd = $('sheetBackdrop');
     sh.innerHTML = '<div class="grabber"></div>'; build(sh);
     sh.hidden = false; bd.hidden = false;
-    requestAnimationFrame(() => { sh.classList.add('show'); bd.classList.add('show'); });
+    void sh.offsetWidth; sh.classList.add('show'); bd.classList.add('show');   // reflow forçado: anima sem depender do próximo quadro
     sheetClose = onClose || null;
     const f = sh.querySelector('button, input'); if (f && matchMedia('(pointer:fine)').matches) f.focus({ preventScroll: true });
 }
@@ -1476,5 +1490,5 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 buildTabbar(); selectTab('estilos'); updateHistoryButtons();
 $('btnWelcomeOpen').innerHTML = icon('share') + '<span>Carregar imagem ou vídeo</span>';
 if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
-window.Pixelar = { get state() { return st; }, set state(v) { st = normalizeState(v); afterExternalChange(); }, openFile, openSample, render: renderMain, selectTab, media: M };
+window.Pixelar = { thumbs: Thumbs, get state() { return st; }, set state(v) { st = normalizeState(v); afterExternalChange(); }, openFile, openSample, render: renderMain, selectTab, media: M };
 })();

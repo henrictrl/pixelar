@@ -255,7 +255,8 @@ function renderCPU(src, w, h, s, color, grad, anim, grain, mm) {
         if (factor !== 0) { const k = factor * 120; r = Math.max(0, Math.min(255, r + k)); g = Math.max(0, Math.min(255, g + k)); b = Math.max(0, Math.min(255, b + k)); }
         if (grad) {
             const pr = r, pg = g, pb = b;
-            [r, g, b] = blendCPU(grad.b, r, g, b, grad.d[i], grad.d[i + 1], grad.d[i + 2]);
+            const gi = ((Math.min(grad.h - 1, (y * grad.h / h) | 0)) * grad.w + Math.min(grad.w - 1, (x * grad.w / w) | 0)) * 4;
+            [r, g, b] = blendCPU(grad.b, r, g, b, grad.d[gi], grad.d[gi + 1], grad.d[gi + 2]);
             const ga = grad.a !== undefined ? grad.a : 1;
             if (ga < 1) { r = pr + (r - pr) * ga; g = pg + (g - pg) * ga; b = pb + (b - pb) * ga; }
         }
@@ -323,7 +324,7 @@ function getGradientData(g, w, h) {
                 const i = (y * w + x) * 4; d[i] = lut[idx]; d[i + 1] = lut[idx + 1]; d[i + 2] = lut[idx + 2]; d[i + 3] = 255;
             }
         }
-        if (gradCache.size > 24) gradCache.delete(gradCache.keys().next().value);
+        if (gradCache.size > 2) gradCache.delete(gradCache.keys().next().value);   // cada degradê ocupa w×h×4 bytes: guarda só os últimos
         gradCache.set(key, d);
     }
     return { d, b: g.blend, key, a: g.opacity / 100 };
@@ -597,7 +598,9 @@ const Engine = (() => {
         let w = Math.max(1, Math.floor(geo.cw / px)), h = Math.max(1, Math.floor(geo.ch / px));
         // resolução de trabalho: fotos enormes (12–48 MP do celular) são processadas numa
         // cópia de até `cap` px — a mesma na prévia e na exportação, então o que se vê é o que sai
-        const cap = o.maxWork !== undefined ? o.maxWork : workCap;
+        let cap = o.maxWork !== undefined ? o.maxWork : workCap;
+        // sem GPU (ou contexto perdido no celular): processa numa base menor para não travar a tela
+        if (!PixelarGPU.isAvailable()) cap = Math.min(cap || 1024, 1024);
         if (cap && Math.max(w, h) > cap) { const k = cap / Math.max(w, h); w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k)); }
         const cropKey = JSON.stringify(st.crop);
         const key = o.key ? `${o.key}|${px}|${s.imageScale}|${cropKey}|${w}x${h}` : null;
@@ -623,7 +626,9 @@ const Engine = (() => {
 
         ensureAutoPalette(st, s, w, h);
         const color = resolveColor(st);
-        const grad = st.grad.on ? getGradientData(st.grad, w, h) : null;
+        // degradê numa grade de até 512 px (rápido e leve); a GPU interpola até o tamanho real
+        let grad = null;
+        if (st.grad.on) { const k = Math.min(1, 512 / Math.max(w, h)); const gw = Math.max(1, Math.round(w * k)), gh = Math.max(1, Math.round(h * k)); grad = Object.assign(getGradientData(st.grad, gw, gh), { w: gw, h: gh }); }
         const gpuReady = PixelarGPU.isAvailable() && PixelarGPU.fits(w, h);
         const needMinMax = s.shadowsInverted || s.midDither;
         const mm = (needMinMax || !gpuReady) ? cpuAdjust(getSmallData(w, h), null, s.adj) : { minL: 0, maxL: 255 };
@@ -654,7 +659,12 @@ const Engine = (() => {
         if (usedGPU) { const g = PixelarGPU.region(); octx.drawImage(PixelarGPU.canvas, g.x, g.y, w, h, 0, 0, W, H); }
         else octx.drawImage(cpuCanvas, 0, 0, w, h, 0, 0, W, H);
         // contorno medido em pixels da arte: mesma espessura relativa na tela, nas miniaturas e em qualquer tamanho exportado
-        if (s.edge.size > 0) { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, Object.assign({}, s.edge, { size: s.edge.size * displayScale * (o.edgeScale || 1) })); }
+        if (s.edge.size > 0) {
+            const thick = s.edge.size * displayScale * (o.edgeScale || 1);
+            const rg = usedGPU && PixelarGPU.edges({ W, H, scale: W / w, half: thick / 2, color: rgbArr(s.edge.color), opacity: s.edge.opacity });
+            if (rg) { octx.imageSmoothingEnabled = false; octx.drawImage(PixelarGPU.canvas, rg.x, rg.y, W, H, 0, 0, W, H); }
+            else { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, Object.assign({}, s.edge, { size: thick })); }
+        }
         return { w, h, W, H, usedGPU, settings: s };
     }
 
