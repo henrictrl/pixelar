@@ -388,13 +388,13 @@ const TABS = [
                 R('grad.steps', 'Faixas', 'steps', 0, 30), R('grad.pos', 'Posição', 'position', 0, 100), R('grad.smooth', 'Suavidade', 'smooth', 0, 100), R('grad.noise', 'Ruído', 'noise', 0, 100));
             return list;
         } },
-        { id: 'fundo', label: 'Fundo', controls: () => [T('bg.fill', 'Preencher', 'fill'), K('bg.color', 'Cor do fundo')] },
+        { id: 'fundo', label: 'Fundo', controls: () => [T('bg.fill', 'Preencher', 'fill'), K('bg.color', 'Cor do fundo', { ensure: () => { st.bg.fill = true; } })] },
 
         { id: 'crop', label: 'Cortar', controls: () => [
             C('crop.aspect', 'Proporção', 'crop', [['original', 'Original'], ['1:1', 'Quadrado'], ['4:5', '4:5'], ['5:4', '5:4'], ['3:4', '3:4'], ['4:3', '4:3'], ['2:3', '2:3'], ['3:2', '3:2'], ['9:16', '9:16 Stories'], ['16:9', '16:9'], ['21:9', 'Cinema']], { onPick: () => { st.crop.x = 0; st.crop.y = 0; } }),
             A('Girar', 'rotate', () => { st.crop.rot = (st.crop.rot + 90) % 360; change(null, null, { rebuild: true }); Engine.invalidate(); }),
             T('crop.flipH', 'Espelhar ↔', 'flipH'), T('crop.flipV', 'Espelhar ↕', 'flipV'),
-            R('crop.zoom', 'Zoom', 'zoom', 100, 400, { step: 5 }), R('crop.x', 'Horizontal', 'move', -1, 1, { step: 0.01, fmt: (v) => Math.round(v * 100) }), R('crop.y', 'Vertical', 'move', -1, 1, { step: 0.01, fmt: (v) => Math.round(v * 100) }),
+            R('crop.zoom', 'Zoom', 'zoom', 100, 400, { step: 5 }), ...cropMoveControls(),
             R('pixel.scale', 'Escala', 'scale', 20, 100),
             A('Restaurar', 'reset', () => { st.crop = deepClone(DEFAULT_STATE.crop); st.pixel.scale = 100; Engine.invalidate(); afterExternalChange(); commit(true); }),
         ] }
@@ -404,11 +404,13 @@ const TABS = [
         { id: 'padrao', label: 'Pixel', controls: () => [
             randomOnly(['pixel', 'dither'], 'Pixel sorteado'),
             C('dither.mode', 'Padrão', 'pattern', DITHER_OPTS, { view: 'thumbs', variant: (s, v) => { s.dither.mode = v; if (v !== 'none' && s.dither.intensity < 40) s.dither.intensity = 100; }, detail: true }),
-            R('pixel.size', 'Tamanho do pixel', 'pixel', 1, 64), R('dither.scale', 'Escala do padrão', 'scale', 1, 10), R('dither.intensity', 'Intensidade', 'intensity', 0, 200),
-            R('dither.opacity', 'Opacidade', 'opacity', 0, 100), T('dither.midOnly', 'Só meios-tons', 'mid'),
+            R('pixel.size', 'Tamanho do pixel', 'pixel', 1, 64),
+            // ajustes do padrão só aparecem quando há um padrão escolhido
+            ...(st.dither.mode === 'none' ? [] : [R('dither.scale', 'Escala do padrão', 'scale', 1, 10), R('dither.intensity', 'Intensidade', 'intensity', 0, 200),
+                R('dither.opacity', 'Opacidade', 'opacity', 0, 100), T('dither.midOnly', 'Só meios-tons', 'mid')]),
         ] },
         { id: 'contorno', label: 'Contorno', controls: () => [
-            R('edge.size', 'Espessura', 'edge', 0, 10), R('edge.opacity', 'Opacidade', 'opacity', 0, 100), K('edge.color', 'Cor'),
+            R('edge.size', 'Espessura', 'edge', 0, 10), R('edge.opacity', 'Opacidade', 'opacity', 0, 100), K('edge.color', 'Cor', { ensure: () => { if (!st.edge.size) st.edge.size = 2; if (!st.edge.opacity) st.edge.opacity = 100; } }),
         ] },
 
         { id: 'filmes', label: 'Filme', controls: () => {
@@ -416,17 +418,20 @@ const TABS = [
             const list = [
                 randomOnly(['film'], 'Filme sorteado'),
                 C('film.look', 'Filme', 'film', FILM_OPTS, { view: 'thumbs', groupsOf: FILM_LOOK_DEFS, variant: (s, v) => { s.film.look = v; if (v !== 'none' && s.film.mix < 30) s.film.mix = 100; } }),
-                R('film.mix', 'Intensidade', 'intensity', 0, 100), R('film.grainAmt', 'Grão do filme', 'grain', 0, 200, { step: 5 }), R('film.temp', 'Temperatura', 'temp', -100, 100),
             ];
+            // só mostra o que tem efeito: sem filme não há intensidade; grão só existe nos filmes químicos
+            if (look) list.push(R('film.mix', 'Intensidade', 'intensity', 0, 100));
+            if (look && !look.fx) list.push(R('film.grainAmt', 'Grão do filme', 'grain', 0, 200, { step: 5 }));
+            list.push(R('film.temp', 'Temperatura', 'temp', -100, 100));
             if (look && look.fx === 'lumiere') list.push(R('film.lumiereHue', 'Matiz', 'hue', 0, 360));
             if (look && look.fx === 'vencido') list.push(C('film.vencido', 'Variação', 'film', [[0, 'Quente'], [1, 'Névoa magenta'], [2, 'Frio'], [3, 'Desbotado']]));
             if (look && look.fx) list.push(...fxParamControls(look.fx, ['uVariant', 'uHue']));
             return list;
         } },
         { id: 'lente', label: 'Lente', controls: () => [
-            R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta'), R('film.halation', 'Halação', 'halation', 0, 100), R('film.bloom', 'Brilho', 'bloom', 0, 100),
+            R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta', { ensure: () => { if (!st.film.vignette) st.film.vignette = 50; } }), R('film.halation', 'Halação', 'halation', 0, 100), R('film.bloom', 'Brilho', 'bloom', 0, 100),
             R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100),
-            R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento'), R('film.dust', 'Poeira', 'dust', 0, 100),
+            R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }), R('film.dust', 'Poeira', 'dust', 0, 100),
         ] },
 
         { id: 'fx', label: 'Texturas', controls: () => {
@@ -496,6 +501,7 @@ function buildTabbar() {
     markTabs();
 }
 function selectTab(id) {
+    if (!TABS.some(t => t.id === id)) id = TABS[0].id;
     ui.tab = id;
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
     $('toolTitle').textContent = M.el ? currentTab().label : '';
@@ -631,7 +637,7 @@ function onDialClick(c, d) {
         flashLabel(c.label + (nv ? ' · ligado' : ' · desligado'));
         return;
     }
-    if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { change(c.key, hex, { soft: !final }); updateDial(d, c); }, c.label); return; }
+    if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); if (final && c.ensure) refreshDials(); else updateDial(d, c); }, c.label); return; }
     ui.active[aKey] = ctrlId(c);
     dialEls.forEach(({ el }) => el.classList.toggle('active', el === d));
     refreshDials();
@@ -639,7 +645,20 @@ function onDialClick(c, d) {
     flashLabel(c.label);
 }
 // controles cujo valor muda quais outros controles aparecem
-function grpDependsOn(key) { return ['grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'anim.dStyle'].includes(key); }
+function grpDependsOn(key) { return ['grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'anim.dStyle', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot'].includes(key); }
+// mover o recorte só faz sentido no eixo em que sobra imagem
+function cropMoveControls() {
+    const out = [];
+    try {
+        const g = M.el ? cropGeometry(M.el, st.crop) : null;
+        const mv = (k, l) => R(k, l, 'move', -1, 1, { step: 0.01, fmt: (v) => Math.round(v * 100) });
+        if (!g) return out;
+        const rw = st.crop.rot % 180 ? g.H : g.W, rh = st.crop.rot % 180 ? g.W : g.H;
+        if (g.cw < rw - 0.5) out.push(mv('crop.x', 'Horizontal'));
+        if (g.ch < rh - 0.5) out.push(mv('crop.y', 'Vertical'));
+    } catch (e) {}
+    return out;
+}
 
 let labelTimer = 0;
 function flashLabel(text, ms = 1100) {
@@ -695,7 +714,7 @@ function makeRuler(c) {
         if (qv !== getP(c.key)) { setP(c.key, qv); requestRender(); Thumbs.stateChanged(); markTabs(); }
         const d = dialEls.find(x => x.c === c); if (d) updateDial(d.el, c);
         $('paramLabel').textContent = c.label + '  ' + fmtShow(qv);
-        if (final) { commit(); if (grpDependsOn(c.key)) buildPanel(); }
+        if (final) { commit(); if (grpDependsOn(c.key)) rebuildDials(); }
     };
     const setV = (nv) => {
         // detente no valor padrão (como o zero da régua da Apple)
@@ -1027,25 +1046,111 @@ function editGradColors(ed) {
     ed.append(row, h('div', 'editor-note', 'Cores do degradê, da primeira à última.'));
 }
 
-// ---------- seletor de cor nativo ----------
-let colorHandlers = null;
-function pickColor(value, cb, label) {
-    const inp = $('colorInput'); inp.value = /^#[0-9a-f]{6}$/i.test(value) ? value : '#000000';
-    if (colorHandlers) { inp.removeEventListener('input', colorHandlers[0]); inp.removeEventListener('change', colorHandlers[1]); }
-    const onInput = () => cb(inp.value.toUpperCase(), false);
-    const onChange = () => { cb(inp.value.toUpperCase(), true); inp.removeEventListener('input', onInput); inp.removeEventListener('change', onChange); colorHandlers = null; };
-    colorHandlers = [onInput, onChange];
-    inp.addEventListener('input', onInput); inp.addEventListener('change', onChange);
-    if (label) flashLabel(label);
-    inp.click();
+// ---------- seletor de cor (próprio do app: igual em todo navegador e aparelho) ----------
+const RECENT_KEY = 'pixelar.recentColors';
+function recentColors() { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => /^#[0-9A-F]{6}$/.test(x)).slice(0, 8) : []; } catch (e) { return []; } }
+function pushRecent(hex) { try { localStorage.setItem(RECENT_KEY, JSON.stringify([hex, ...recentColors().filter(x => x !== hex)].slice(0, 8))); } catch (e) {} }
+function imageColors(n) {
+    const src = Thumbs.src; if (!src.width) return [];
+    try {
+        const d = src.getContext('2d').getImageData(0, 0, src.width, src.height).data, px = [];
+        for (let i = 0; i < d.length; i += 4 * 23) px.push({ r: d[i], g: d[i + 1], b: d[i + 2] });
+        return [...new Set(getMedianCut(px, n).map(c => rgbHex(c).toUpperCase()))];
+    } catch (e) { return []; }
 }
-
+function hsvToHex(hh, s, v) {
+    const f = n => { const k = (n + hh / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+    return rgbToHex(Math.round(f(5) * 255), Math.round(f(3) * 255), Math.round(f(1) * 255)).toUpperCase();
+}
+function hexToHsv(hex) {
+    const { r, g, b } = hexToRgb(hex), R = r / 255, G = g / 255, B = b / 255;
+    const mx = Math.max(R, G, B), mn = Math.min(R, G, B), d = mx - mn;
+    let hh = 0;
+    if (d) hh = mx === R ? ((G - B) / d) % 6 : mx === G ? (B - R) / d + 2 : (R - G) / d + 4;
+    return { h: (hh * 60 + 360) % 360, s: mx ? d / mx : 0, v: mx };
+}
+const BASIC_COLORS = ['#000000', '#FFFFFF', '#8E8E93', '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#00C7BE', '#007AFF', '#5856D6', '#AF52DE', '#FF2D55'];
+function pickColor(value, cb, label) {
+    const start = /^#[0-9a-f]{6}$/i.test(value || '') ? value.toUpperCase() : '#000000';
+    let cur = start, hsv = hexToHsv(start), raf = 0, touched = false;
+    const emit = () => { touched = true; if (raf) return; raf = requestAnimationFrame(() => { raf = 0; cb(cur, false); }); };
+    let sv, svKnob, hue, hueKnob, prevNew, hexIn;
+    function paint(fromInput) {
+        sv.style.background = `linear-gradient(to top, #000 11px, transparent calc(100% - 11px)), linear-gradient(to right, #fff 11px, transparent calc(100% - 11px)), hsl(${hsv.h} 100% 50%)`;
+        svKnob.style.left = `calc(11px + ${hsv.s} * (100% - 22px))`; svKnob.style.top = `calc(11px + ${1 - hsv.v} * (100% - 22px))`; svKnob.style.background = cur;
+        hueKnob.style.left = `calc(13px + ${hsv.h / 360} * (100% - 26px))`; hueKnob.style.background = `hsl(${hsv.h} 100% 50%)`;
+        prevNew.style.background = cur;
+        if (!fromInput) hexIn.value = cur.slice(1);
+    }
+    function set(hex, keepHue) {
+        hex = hex.toUpperCase(); if (hex === cur && keepHue) return;
+        const n = hexToHsv(hex); if (keepHue && (n.s === 0 || n.v === 0)) n.h = hsv.h;
+        hsv = n; cur = hex; paint(); emit();
+        sh().querySelectorAll('.cp-swatch').forEach(b => b.classList.toggle('on', b.dataset.c === cur));
+    }
+    const sh = () => $('sheet');
+    const inset = el => el === hue ? 13 : 11;
+    function drag(el, onMove) {
+        el.addEventListener('pointerdown', e => {
+            e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (_) {}
+            const move = ev => { const r = el.getBoundingClientRect(), p = inset(el); onMove(Math.max(0, Math.min(1, (ev.clientX - r.left - p) / (r.width - 2 * p))), Math.max(0, Math.min(1, (ev.clientY - r.top - p) / (r.height - 2 * p)))); };
+            const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+            el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+            move(e);
+        });
+    }
+    function swatches(title, list) {
+        const frag = [];
+        list.forEach(c => { const b = h('button', 'cp-swatch' + (c === cur ? ' on' : '')); b.type = 'button'; b.dataset.c = c; b.style.background = c; b.title = title; b.setAttribute('aria-label', title + ' ' + c); b.onclick = () => set(c); frag.push(b); });
+        return frag;
+    }
+    openSheet(s => {
+        s.classList.add('color-sheet');
+        sheetHead(s, label || 'Cor');
+        sv = h('div', 'cp-sv'); svKnob = h('span', 'cp-knob'); sv.append(svKnob);
+        sv.setAttribute('role', 'slider'); sv.setAttribute('aria-label', 'Saturação e brilho');
+        drag(sv, (x, y) => { hsv.s = x; hsv.v = 1 - y; cur = hsvToHex(hsv.h, hsv.s, hsv.v); paint(); emit(); });
+        hue = h('div', 'cp-hue'); hueKnob = h('span', 'cp-knob'); hue.append(hueKnob);
+        hue.setAttribute('role', 'slider'); hue.setAttribute('aria-label', 'Matiz');
+        drag(hue, x => { hsv.h = Math.min(359.9, x * 360); cur = hsvToHex(hsv.h, hsv.s, hsv.v); paint(); emit(); });
+        const row = h('div', 'cp-row');
+        const prev = h('div', 'cp-preview'), prevOld = h('button', 'cp-old'); prevNew = h('span', 'cp-new');
+        prevOld.type = 'button'; prevOld.style.background = start; prevOld.title = 'Voltar à cor anterior'; prevOld.setAttribute('aria-label', 'Voltar à cor anterior'); prevOld.onclick = () => set(start);
+        prev.append(prevOld, prevNew);
+        const hexBox = h('label', 'cp-hex'); hexBox.append(h('span', '', '#'));
+        hexIn = h('input'); hexIn.type = 'text'; hexIn.maxLength = 7; hexIn.spellcheck = false; hexIn.autocomplete = 'off'; hexIn.setAttribute('autocapitalize', 'characters'); hexIn.setAttribute('aria-label', 'Código hexadecimal');
+        hexIn.oninput = () => { const v = hexIn.value.replace(/[^0-9a-f]/gi, '').slice(0, 6); if (v.length === 6) { const n = '#' + v.toUpperCase(); hsv = hexToHsv(n); cur = n; paint(true); emit(); } };
+        hexIn.onblur = () => { hexIn.value = cur.slice(1); };
+        hexIn.onkeydown = e => { if (e.key === 'Enter') { hexIn.blur(); closeSheet(); } };
+        hexBox.append(hexIn);
+        row.append(prev, hexBox);
+        if (window.EyeDropper) {
+            const eye = h('button', 'icon-btn round', icon('eyedropper')); eye.type = 'button'; eye.title = 'Conta-gotas'; eye.setAttribute('aria-label', 'Conta-gotas');
+            eye.onclick = async () => { try { const r = await new EyeDropper().open(); if (r && r.sRGBHex) set(r.sRGBHex); } catch (e) {} };
+            row.append(eye);
+        }
+        s.append(sv, hue, row);
+        // uma única fileira: cores da imagem · recentes · básicas
+        const strip = h('div', 'cp-strip');
+        [swatches('Da imagem', imageColors(8)), swatches('Recente', recentColors()), swatches('Básica', BASIC_COLORS)].filter(g => g.length)
+            .forEach((g, i) => { if (i) strip.append(h('span', 'cp-sep')); strip.append(...g); });
+        s.append(strip);
+        paint();
+    }, () => {
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        setTimeout(() => $('sheetBackdrop').classList.remove('clear'), 330);
+        if (cur !== start) pushRecent(cur);
+        if (touched) cb(cur, true);
+    });
+    $('sheetBackdrop').classList.add('clear');
+}
 // ============================================================
 // FOLHAS (sheets)
 // ============================================================
 let sheetClose = null;
 function openSheet(build, onClose) {
     const sh = $('sheet'), bd = $('sheetBackdrop');
+    sh.className = 'sheet' + (sh.classList.contains('show') ? ' show' : ''); bd.classList.remove('clear');
     sh.innerHTML = '<div class="grabber"></div>'; build(sh);
     sh.hidden = false; bd.hidden = false;
     void sh.offsetWidth; sh.classList.add('show'); bd.classList.add('show');   // reflow forçado: anima sem depender do próximo quadro
@@ -1417,9 +1522,24 @@ async function buildFilmstrip() {
 
 // ---------- animação na imagem ----------
 function togglePlay() { if (M.type === 'video') { video.paused ? playVideo() : pauseVideo(); return; } anim.playing ? stopAnim() : startAnim(); }
+// ▶ numa imagem sem nada que se mova: liga o movimento dos efeitos existentes
+// ou, numa foto limpa, acrescenta um grão vivo discreto (com Desfazer), em vez de não fazer nada
+function makeAnimatable() {
+    const before = snapshot(), a = st.anim;
+    if (a.amount <= 0) a.amount = 100;
+    a.dither = true; a.fx = true; a.grain = true; a.film = true;
+    if (!a.dAmt) a.dAmt = 100; if (!a.fxAmt) a.fxAmt = 100; if (!a.grainAmt) a.grainAmt = 100; if (!a.filmAmt) a.filmAmt = 100;
+    if (a.grainStyle === 'frozen') a.grainStyle = 'live';
+    let msg = 'Movimento ligado';
+    if (!animOn()) { st.grain.amount = Math.max(st.grain.amount, 16); msg = 'Grão vivo adicionado para animar'; }
+    if (!animOn()) { restore(before); return false; }
+    afterExternalChange(); commit(true);
+    toast(msg, { label: 'Desfazer', run: () => { stopAnim(); restore(before); commit(true); } });
+    return true;
+}
 function startAnim() {
     if (M.type !== 'image') return;
-    if (!animOn()) { toast('Nada para animar ainda', { label: 'Configurar', run: () => selectTab('movimento') }); return; }
+    if (!animOn() && !makeAnimatable()) { toast('Nada para animar ainda', { label: 'Configurar', run: () => selectTab('movimento') }); return; }
     anim.playing = true; anim.t0 = performance.now();
     const tick = () => { if (!anim.playing) return; renderMain(); anim.raf = requestAnimationFrame(tick); };
     anim.raf = requestAnimationFrame(tick);

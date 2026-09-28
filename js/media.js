@@ -143,6 +143,9 @@ const Media = (() => {
         return { channels: out.slice(0, 2), sampleRate: a.sampleRate };
     }
     const evenDim = (n) => Math.max(2, n - (n % 2));
+    // Safari (Mac e todos os navegadores do iPhone): o codificador H.264 no modo 'quality' retém os quadros
+    // e o envio trava após ~7 quadros; no modo 'realtime' ele libera cada quadro na hora
+    const encExtra = () => (/^Apple/.test(navigator.vendor || '') ? { latencyMode: 'realtime' } : {});
     async function pickVideoCodec(MB, format, width, height, bitrate, fps) {
         const pref = ['avc', 'vp9', 'av1', 'hevc', 'vp8'];
         const list = format.getSupportedVideoCodecs().filter(c => pref.includes(c)).sort((a, b) => pref.indexOf(a) - pref.indexOf(b));
@@ -163,7 +166,7 @@ const Media = (() => {
         const fmt = new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), bitrate = Math.max(8e6, W * H * avi.fps * 0.3);
         const vcodec = await pickVideoCodec(MB, fmt, W, H, bitrate, avi.fps); if (!vcodec) throw new Error('sem codificador de vídeo');
         const output = new MB.Output({ format: fmt, target: new MB.BufferTarget() });
-        const vsrc = new MB.VideoSampleSource({ codec: vcodec, quality: new MB.Quality({ bitrate }), keyFrameInterval: 1, sizeChangeBehavior: 'fill' });
+        const vsrc = new MB.VideoSampleSource(Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate }), keyFrameInterval: 1, sizeChangeBehavior: 'fill' }, encExtra()));
         output.addVideoTrack(vsrc, { frameRate: avi.fps });
         const pcm = decodeAviAudio(avi); let asrc = null;
         if (pcm) { const ac = await pickAudioCodec(MB, fmt, pcm.channels.length, pcm.sampleRate); if (ac) { asrc = new MB.AudioSampleSource({ codec: ac.codec, quality: new MB.Quality({ bitrate: 192000 }), transform: ac.transform }); output.addAudioTrack(asrc); } }
@@ -206,5 +209,5 @@ const Media = (() => {
     }
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || IS_IOS;
-    return { loadMediabunny, prefetch, prepareVideoBlob, isVideoFile, pickVideoCodec, pickAudioCodec, evenDim, IS_IOS, IS_SAFARI };
+    return { loadMediabunny, prefetch, prepareVideoBlob, isVideoFile, pickVideoCodec, pickAudioCodec, evenDim, encExtra, IS_IOS, IS_SAFARI };
 })();
