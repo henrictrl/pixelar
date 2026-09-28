@@ -320,6 +320,8 @@ function randomize(st, A, groups, locks, only, vivid) {
     if (vivid && groups.has('palette')) { groups = new Set(groups); }
     const on = (g) => (only ? only === g || (Array.isArray(only) && only.includes(g)) : groups.has(g));
     const L = (p) => locks.has(p);
+    // sorteio de uma seção específica: sempre produz algo visível (nunca sorteia "desligado")
+    const force = !!only;
     const set = (path, v) => { if (L(path)) return; const [a, b] = path.split('.'); st[a][b] = v; };
     const touched = [];
     if (on('luz')) {
@@ -354,9 +356,9 @@ function randomize(st, A, groups, locks, only, vivid) {
         c.base = pal.slice(); c.ref = ramp; c.hue = c.sat = c.light = 0;
         touched.push(pal.length + ' cores');
     }
-    if (on('edge')) { set('edge.size', Math.random() > 0.5 ? 0 : Math.floor(Math.random() * 2) + 1); set('edge.color', rgbToHex(Math.random() * 255, Math.random() * 255, Math.random() * 255)); }
+    if (on('edge')) { set('edge.size', !force && Math.random() > 0.5 ? 0 : Math.floor(Math.random() * 2) + 1); set('edge.color', rgbToHex(Math.random() * 255, Math.random() * 255, Math.random() * 255)); }
     if (on('fx') && !L('fx.id')) {
-        if (Math.random() < (vivid ? 0.3 : A && A.isBusy ? 0.35 : 0.6)) {
+        if (force || Math.random() < (vivid ? 0.3 : A && A.isBusy ? 0.35 : 0.6)) {
             // no modo vivo, só texturas que preservam as cores (as outras repintam com cores próprias)
             const keepColor = ['pattern_refraction', 'pixelate_fx', 'slice_shift', 'vhs', 'channel_mixer'];
             const choice = pick(PixelarFX.listEffects().filter(f => !vivid || keepColor.includes(f.id)));
@@ -366,7 +368,7 @@ function randomize(st, A, groups, locks, only, vivid) {
     }
     if (on('grain') && !L('grain.amount')) {
         const g = st.grain, busy = A && A.isBusy;
-        if (Math.random() < (vivid ? 0.25 : busy ? 0.3 : 0.45)) {
+        if (force || Math.random() < (vivid ? 0.25 : busy ? 0.3 : 0.45)) {
             g.amount = 10 + Math.floor(Math.random() * (busy ? 15 : 30)); g.size = 70 + Math.floor(Math.random() * 90); g.rough = 25 + Math.floor(Math.random() * 45);
             g.bias = Math.floor(Math.random() * 50); g.speckle = Math.random() < 0.3 ? Math.floor(Math.random() * 30) : 0; g.mono = Math.random() < 0.7;
             touched.push('grão');
@@ -375,7 +377,7 @@ function randomize(st, A, groups, locks, only, vivid) {
     if (on('film') && !L('film.look')) {
         const keep = { frame: st.film.frame, stamp: st.film.stamp, frameColor: st.film.frameColor, stampColor: st.film.stampColor };
         st.film = Object.assign(deepClone(DEFAULT_STATE.film), keep);
-        if (Math.random() < (vivid ? 0.3 : 0.5)) {
+        if (force || Math.random() < (vivid ? 0.3 : 0.5)) {
             const bw = ['noir', 'hp5', 'nitrato', 'kodak_pb', 'lumiere'];
             const ids = Object.keys(FILM_LOOKS).filter(k => !(st.color.sel !== 'all' && bw.includes(k)));
             const id = pick(ids); st.film.look = id; st.film.mix = vivid ? 35 + Math.floor(Math.random() * 3) * 10 : 50 + Math.floor(Math.random() * 4) * 10;
@@ -391,7 +393,7 @@ function randomize(st, A, groups, locks, only, vivid) {
         }
     }
     if (on('grad') && !L('grad.on')) {
-        if (Math.random() < 0.35) { randGradAll(st.grad); touched.push('degradê'); } else st.grad.on = false;
+        if (force || Math.random() < 0.35) { randGradAll(st.grad); touched.push('degradê'); } else st.grad.on = false;
     }
     if (on('anim')) randAnim(st.anim);
     return touched;

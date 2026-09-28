@@ -86,7 +86,7 @@ const Exporter = (() => {
             if (vcodec) {
                 const enc = document.createElement('canvas'); enc.width = W; enc.height = H; const ectx = enc.getContext('2d');
                 const output = new MB.Output({ format: outFmt, target: new MB.BufferTarget() });
-                const vsrc = new MB.CanvasSource(enc, { codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 });
+                const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 }, Media.encExtra()));
                 output.addVideoTrack(vsrc, { frameRate: fps });
                 let audioTask = null;
                 if (audio) { const a = await audio(MB, outFmt, output); audioTask = a; }
@@ -96,7 +96,9 @@ const Exporter = (() => {
                     if (job.cancelled) { try { await output.cancel(); } catch (e) {} throw new Error('cancelado'); }
                     if (k > 0 && !renderAt(k)) continue;
                     ectx.fillStyle = bg; ectx.fillRect(0, 0, W, H); ectx.drawImage(frameCanvas, 0, 0, W, H, 0, 0, W, H);
-                    await vsrc.add(k / fps, 1 / fps, isKey ? { keyFrame: isKey(k) } : undefined);
+                    // vigia: se o codificador do navegador travar, grava pelo caminho alternativo em vez de ficar parado
+                    const ok = await Promise.race([vsrc.add(k / fps, 1 / fps, isKey ? { keyFrame: isKey(k) } : undefined).then(() => true), new Promise(r => setTimeout(() => r(false), 15000))]);
+                    if (!ok) { try { await output.cancel(); } catch (e) {} if (audio) throw new Error('O codificador de vídeo do navegador travou. Tente WebM ou GIF.'); return recordRealtime(total, fps, renderAt, frameCanvas, job, prefix); }
                     if (k % 2 === 0) job.progress(k / total, enc);
                 }
                 if (audioTask) await audioTask;
@@ -290,7 +292,7 @@ const Exporter = (() => {
         const bitrate = bitrateFor(job.res, fps);
         const vcodec = await Media.pickVideoCodec(MB, outFmt, W, H, bitrate, fps); if (!vcodec) throw new Error('Sem codificador de vídeo para ' + job.format);
         const output = new MB.Output({ format: outFmt, target: new MB.BufferTarget() });
-        const vsrc = new MB.CanvasSource(enc, { codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 });
+        const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 }, Media.encExtra()));
         output.addVideoTrack(vsrc, { frameRate: fps });
         let asrc = null, at = null, audioTask = null;
         if (!job.mute) try {
@@ -309,7 +311,9 @@ const Exporter = (() => {
             if (wc) last = wc.canvas;
             renderWith(last, i);
             ectx.drawImage(frameCanvas, 0, 0, W, H, 0, 0, W, H);
-            await vsrc.add(i / fps, 1 / fps); i++;
+            const ok = await Promise.race([vsrc.add(i / fps, 1 / fps).then(() => true), new Promise(r => setTimeout(() => r(false), 15000))]);
+            if (!ok) { try { await output.cancel(); } catch (e) {} throw new Error('O codificador de vídeo do navegador travou. Tente WebM ou GIF.'); }
+            i++;
             if (i % 2 === 0) job.progress(i / N, enc);
         }
         if (audioTask) await audioTask;

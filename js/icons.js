@@ -106,6 +106,7 @@ const ICONS = {
     keyboard: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
     info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
     chevron: '<path d="M9 6l6 6-6 6"/>',
+    eyedropper: '<path d="M14.5 5.5l4 4"/><path d="M16.2 3.8a1.9 1.9 0 0 1 2.7 0l1.3 1.3a1.9 1.9 0 0 1 0 2.7L17.8 10.2l-4-4z"/><path d="M15.5 8.5L7 17l-3 1 1-3 8.5-8.5"/>',
     trim: '<path d="M6 4v16M18 4v16"/><path d="M6 12h12" opacity=".4"/>',
 };
 function icon(name, cls = '') {
