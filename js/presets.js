@@ -87,11 +87,11 @@ const MODERN_PRESETS = {
     'Klimt': { color: pal(['#2A1A0A', '#6B4A1B', '#B8862B', '#E3C16F', '#F7E7B4', '#3E5B3A']), dither: { mode: 'checkerboard', scale: 3, intensity: 90 }, film: { bloom: 35, halation: 20 }, adj: { temperature: 25, contrast: 10 } },
     'Hokusai': { color: pal(['#15233F', '#2E5E8C', '#7FA7C9', '#E9DFC7', '#C4553A']), edge: { size: 1, color: '#15233F', opacity: 70 }, film: { look: 'kodak_verde', mix: 30 }, grain: { amount: 10, size: 140, rough: 70, bias: 0, speckle: 0, mono: true }, adj: { contrast: 10 } },
     'Mondrian': { pixel: { size: 18 }, color: pal(['#111111', '#F5F5F0', '#D52B1E', '#1D4E9E', '#F7D002']), edge: { size: 3, color: '#111111', opacity: 100 }, adj: { contrast: 30, saturation: 30 } },
-    'Lichtenstein': { dither: { mode: 'halftone', scale: 3, intensity: 130 }, color: pal(['#111111', '#F5F0E6', '#E63B2E', '#FFD23F', '#2F6BD8']), edge: { size: 2, color: '#111111', opacity: 100 }, adj: { contrast: 25, saturation: 40 } },
+    'Lichtenstein': { dither: { mode: 'halftone', scale: 3, intensity: 130 }, color: pal(['#111111', '#F5F0E6', '#E63B2E', '#FFD23F', '#2F6BD8']), adj: { contrast: 25, saturation: 40 } },
     'Warhol': { color: duo('#1A0B3D', '#FF3EA5', '#FFE94E'), adj: { contrast: 45, posterize: 40 } },
     'Rothko': { film: { soft: 70, vignette: 30 }, grad: { on: true, type: 'linear', angle: 180, colors: ['#5A0F12', '#C2361F', '#E88A2E'], steps: 3, smooth: 30, blend: 'overlay', opacity: 75 }, adj: { saturation: -30, contrast: -10 }, grain: { amount: 12, size: 200, rough: 80, bias: 0, speckle: 0, mono: true } },
     'Hopper': { film: { look: 'gold200', mix: 80, vignette: 25 }, adj: { contrast: 18, shadows: -15, saturation: -5 }, color: { sel: '24', mode: 'original' } },
-    'Kandinsky': { fx: { id: 'pattern_refraction', mix: 80 }, fxParams: { pattern_refraction: { uBands: 10, uShift: 0.03, uAngle: 0.6 } }, color: pal(['#101820', '#F2AA4C', '#D7263D', '#1B998B', '#2E86AB', '#F4F1DE']), edge: { size: 1, color: '#101820', opacity: 70 } },
+    'Kandinsky': { fx: { id: 'pattern_refraction', mix: 80 }, fxParams: { pattern_refraction: { uBands: 10, uShift: 0.03, uAngle: 0.6 } }, color: pal(['#101820', '#F2AA4C', '#D7263D', '#1B998B', '#2E86AB', '#F4F1DE']) },
     'Munch': { fx: { id: 'warp', mix: 100 }, fxParams: { warp: { uAmount: 0.035, uFreq: 5, uPhase: 1, uDuo: 0 } }, color: pal(['#1E1B3A', '#3D5A80', '#D9642C', '#F2A541', '#E8D6A8']), film: { soft: 20 }, adj: { saturation: 30 } },
     // ---------- Brasil ----------
     'Tarsila': { color: pal(['#2E5E3E', '#E9A23B', '#D9573B', '#F2D7A6', '#3A7CA5', '#6B3E26']), film: { soft: 25 }, adj: { saturation: 25, posterize: 20 } },
