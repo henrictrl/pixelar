@@ -181,10 +181,7 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 2px 5px; border-
 .strip { display: flex; gap: 8px; padding: 4px 16px 6px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; scrollbar-width: none; }
 .thumb { flex: none; width: var(--thumb); display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .thumb .pic { width: var(--thumb); height: var(--thumb); flex: none; border-radius: 12px; overflow: hidden; position: relative; background: var(--dial); transition: box-shadow .2s; }
-.thumb .pic canvas { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; opacity: 0; transition: opacity .35s; }
-.thumb .pic canvas.ready { opacity: 1; }
-.thumb .pic .sk { position: absolute; inset: 0; background-size: 300% 100%; animation: shimmer 1.4s linear infinite; }
-.thumb .pic canvas.ready + .sk { opacity: 0; transition: opacity .4s; animation: none; }
+.thumb .pic canvas { width: 100%; height: 100%; display: block; object-fit: cover; }   /* sem esmaecer: troca direta */
 .thumb .t { height: var(--thumb-label); flex: none; font-size: 10.5px; color: var(--text-2); font-weight: 500; text-align: center; width: var(--thumb); max-width: var(--thumb); hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-height: 24px; }
 .thumb.on .pic { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .thumb.on .pic canvas { border-radius: 12px; clip-path: inset(1.5px round 10.5px); }
