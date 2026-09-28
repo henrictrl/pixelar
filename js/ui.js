@@ -844,7 +844,9 @@ const Thumbs = (() => {
         pic.append(cv, sk);
         const item = { pic, canvas: cv, id, variant, liveState, detail: !!detail, hash: old ? old.hash : null };
         cache.set(id, item); if (cache.size > 100) cache.delete(cache.keys().next().value);
-        live = live.filter(x => x.pic.isConnected && x.id !== id); queue = queue.filter(x => x.pic.isConnected && x.id !== id);
+        // só remove repetidos do mesmo item — as outras miniaturas desta faixa ainda não
+        // estão na página neste momento (a faixa é inserida depois), então não podem ser filtradas aqui
+        live = live.filter(x => x.id !== id); queue = queue.filter(x => x.id !== id);
         live.push(item); queue.push(item); pump();
     }
     function pump() { if (!raf) raf = requestAnimationFrame(work); }
@@ -870,8 +872,9 @@ const Thumbs = (() => {
             // mesma base e mesma saída da imagem principal: a miniatura é o resultado real, reduzido
             let r = null;
             try { r = Engine.render(s, { media: M.el, key: M.type === 'image' ? 'main' + M.serial : null, out: { canvas: full, ctx: fullCtx }, maxDim: 2000 }); }
-            catch (e) { console.warn('[Pixelar] miniatura falhou:', e); continue; }
-            if (r) { drawThumb(it, r.W, r.H); it.canvas.classList.add('ready'); }
+            catch (e) { console.warn('[Pixelar] miniatura falhou:', e); if (window.__diagErrs) window.__diagErrs.push('thumb: ' + (e && e.message) + ' @ ' + String(e && e.stack).split('\n').slice(0, 3).join(' | ')); continue; }
+            if (r) { try { drawThumb(it, r.W, r.H); it.canvas.classList.add('ready'); } catch (e) { if (window.__diagErrs) window.__diagErrs.push('drawThumb: ' + e.message + ' @ ' + String(e.stack).split('\n').slice(0, 3).join(' | ')); } }
+            else if (window.__diagErrs) window.__diagErrs.push('render devolveu null: ' + it.id);
         }
         if (queue.length) pump();
     }
@@ -1507,5 +1510,39 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 buildTabbar(); selectTab('estilos'); updateHistoryButtons();
 $('btnWelcomeOpen').innerHTML = icon('share') + '<span>Carregar imagem ou vídeo</span>';
 if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
+// (testes) ?demo=1 abre a imagem de exemplo; ?tab=... escolhe a aba; mostra um relatório das miniaturas
+if (/[?&]demo=1/.test(location.search)) { window.__diagErrs = []; addEventListener('error', (e) => window.__diagErrs.push(e.message)); }
+if (/[?&]demo=1/.test(location.search)) setTimeout(() => {
+    openSample(); const m = location.search.match(/[?&]tab=(\w+)/); if (m) selectTab(m[1]);
+    setTimeout(() => {
+        const all = document.querySelectorAll('.thumb canvas'), ok = document.querySelectorAll('.thumb canvas.ready');
+        const d = document.createElement('div'); d.id = 'diag';
+        d.style.cssText = 'position:fixed;left:8px;top:8px;z-index:9999;background:#000;color:#0f0;font:12px monospace;padding:6px;border-radius:6px';
+        d.textContent = `miniaturas prontas ${ok.length}/${all.length} · gpu ${PixelarGPU.isAvailable()} · ${navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome') ? 'WebKit' : 'outro'}`;
+        document.body.append(d);
+        if (/[?&]report=1/.test(location.search)) {
+            // amostra de pixels das miniaturas para confirmar que não estão em branco
+            const readyBefore = ok.length, hidden = document.hidden, focus = document.hasFocus();
+            if (/[?&]scroll=1/.test(location.search)) {
+                // rola a faixa até o fim (como o dedo faria) e conta as miniaturas visíveis prontas depois
+                const sc = document.querySelector('#editor .strip') || document.querySelector('#panel');
+                sc.scrollLeft = sc.scrollWidth; if (sc === document.querySelector('#panel')) sc.scrollTop = sc.scrollHeight;
+                setTimeout(() => {
+                    const vis = [...document.querySelectorAll('.thumb canvas')].filter(c => { const r = c.getBoundingClientRect(); return r.width && r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight; });
+                    fetch('/result', { method: 'POST', body: JSON.stringify({ afterScroll: true, visible: vis.length, visibleReady: vis.filter(c => c.classList.contains('ready')).length, errors: window.__diagErrs || [] }) });
+                }, 2500);
+                return;
+            }
+            let rafs = 0; const t0 = performance.now(); const count = () => { rafs++; if (performance.now() - t0 < 1000) requestAnimationFrame(count); };
+            requestAnimationFrame(count);
+            setTimeout(() => {
+                Thumbs.flush();
+                const ok2 = document.querySelectorAll('.thumb canvas.ready');
+                const px = [...ok2].slice(0, 8).map(c => { const x = c.getContext('2d').getImageData(c.width >> 1, c.height >> 1, 1, 1).data; return x[0] + x[1] + x[2] + x[3]; });
+                fetch('/result', { method: 'POST', body: JSON.stringify({ readyBefore, readyAfterFlush: ok2.length, total: all.length, rafsPerSecond: rafs, hidden, focus, gpu: PixelarGPU.isAvailable(), centerSums: px, errors: window.__diagErrs || [] }) });
+            }, 1100);
+        }
+    }, 4000);
+}, 300);
 window.Pixelar = { thumbs: Thumbs, get state() { return st; }, set state(v) { st = normalizeState(v); afterExternalChange(); }, openFile, openSample, render: renderMain, selectTab, media: M };
 })();
