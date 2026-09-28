@@ -1405,9 +1405,11 @@ const PixelarGPU = (function () {
         if (initialized) return ok;
         initialized = true;
         glCanvas = document.createElement('canvas');
-        gl = glCanvas.getContext('webgl2', { premultipliedAlpha: false, alpha: true, antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+        // preserveDrawingBuffer desligado: o resultado é sempre copiado na mesma tarefa em que é desenhado,
+        // e sem a cópia extra o canvas usa metade da memória (importante no iPhone)
+        gl = glCanvas.getContext('webgl2', { premultipliedAlpha: false, alpha: true, antialias: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
         if (!gl) return (ok = false);
-        glCanvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; console.warn('[PixelarGPU] contexto perdido'); });
+        glCanvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; console.warn('[PixelarGPU] contexto perdido'); if (typeof window.onGpuLost === 'function') window.onGpuLost(); });
         glCanvas.addEventListener('webglcontextrestored', () => {
             try { setup(); contextLost = false; if (typeof window.onGpuRestored === 'function') window.onGpuRestored(); }
             catch (e) { console.warn('[PixelarGPU] falha ao restaurar:', e); }
