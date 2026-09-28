@@ -13,8 +13,9 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/app.css?v=2.9.1">
     <script>
+        window.PIXELAR_V = '2.9.1';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
     </script>
@@ -85,19 +86,27 @@
     <input type="color" id="colorInput" class="visually-hidden" tabindex="-1" aria-hidden="true">
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js"></script>
-    <script defer src="js/engine.js"></script>
-    <script defer src="js/anim.js"></script>
-    <script defer src="js/presets.js"></script>
-    <script defer src="js/media.js"></script>
-    <script defer src="js/export.js"></script>
-    <script defer src="js/icons.js"></script>
-    <script defer src="js/sample.js"></script>
-    <script defer src="js/ui.js"></script>
+    <script defer src="js/gpu.js?v=2.9.1"></script>
+    <script defer src="js/engine.js?v=2.9.1"></script>
+    <script defer src="js/anim.js?v=2.9.1"></script>
+    <script defer src="js/presets.js?v=2.9.1"></script>
+    <script defer src="js/media.js?v=2.9.1"></script>
+    <script defer src="js/export.js?v=2.9.1"></script>
+    <script defer src="js/icons.js?v=2.9.1"></script>
+    <script defer src="js/sample.js?v=2.9.1"></script>
+    <script defer src="js/ui.js?v=2.9.1"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
-        if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search)))
-            addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+        if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {
+            addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {}));
+            // versão nova ativada: recarrega uma única vez para usar o conjunto novo inteiro —
+            // só se a página era controlada por uma versão anterior e nenhuma mídia foi aberta ainda
+            const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (reloaded || !hadController || (window.Pixelar && window.Pixelar.media && window.Pixelar.media.el)) return;
+                reloaded = true; location.reload();
+            });
+        }
     </script>
 </body>
 </html>
