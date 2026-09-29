@@ -39,7 +39,7 @@ function toast(msg, action, ms = 3200) {
     const box = $('toasts');
     box.querySelectorAll('.toast').forEach(o => o.remove());          // um aviso por vez
     // fica dentro da área da imagem, logo abaixo da barra de botões (nunca por cima deles)
-    const r = $('stage').getBoundingClientRect(), sheetOpen = !$('sheet').hidden;
+    const r = $('viewport').getBoundingClientRect(), sheetOpen = !$('sheet').hidden;
     box.style.top = (sheetOpen ? 16 : Math.max(8, r.top + 10)) + 'px';
     box.style.left = (sheetOpen ? innerWidth / 2 : r.left + r.width / 2) + 'px';
     const t = h('div', 'toast'); t.append(h('span', '', '')); t.firstChild.textContent = msg;
@@ -168,7 +168,8 @@ const Accent = (() => {
 // ============================================================
 function fitView(resetZoom) {
     if (!lastRender) return;
-    const vw = viewport.clientWidth - 24, vh = viewport.clientHeight - 24;
+    const pad = innerWidth < 600 ? 12 : 24;   // no celular a imagem vai quase até a borda
+    const vw = viewport.clientWidth - pad, vh = viewport.clientHeight - pad;
     const k = Math.min(vw / lastRender.W, vh / lastRender.H);
     view.fitW = Math.max(1, Math.floor(lastRender.W * k)); view.fitH = Math.max(1, Math.floor(lastRender.H * k));
     outCanvas.style.width = view.fitW + 'px'; outCanvas.style.height = view.fitH + 'px';
@@ -350,7 +351,7 @@ function randomOnly(groups, label) {
 const TABS = [
     { id: 'estilos', label: 'Estilos', icon: 'styles', groups: [
         { id: 'receitas', label: 'Receitas', controls: () => [X('presets', 'Receitas', 'styles', editPresets)] },
-        { id: 'surpresa', label: 'Surpresa', controls: () => [X('surprise', 'Surpresa', 'dice', editSurprise)] },
+        { id: 'surpresa', label: 'Variações', controls: () => [X('surprise', 'Variações', 'dice', editSurprise)] },
         { id: 'meus', label: 'Meus', controls: () => [X('mine', 'Meus', 'heart', editMine)] }
     ] },
     // Ajustar: luz, cor, grão, degradê, fundo e corte
@@ -364,8 +365,10 @@ const TABS = [
         ] },
         { id: 'grao', label: 'Grão', controls: () => [
             randomOnly(['grain'], 'Granulado sorteado'),
-            R('grain.amount', 'Intensidade', 'grain', 0, 100), R('grain.size', 'Tamanho', 'size', 10, 400, { step: 5 }), R('grain.rough', 'Aspereza', 'rough', 0, 100),
-            R('grain.bias', 'Sombras ↔ luzes', 'bias', -100, 100), R('grain.speckle', 'Manchas', 'speckle', 0, 100), T('grain.mono', 'Monocromático', 'mono'),
+            R('grain.amount', 'Intensidade', 'grain', 0, 100),
+            // o resto só aparece quando há grão (sem grão, nada disso muda a imagem)
+            ...(st.grain.amount > 0 ? [R('grain.size', 'Tamanho', 'size', 10, 400, { step: 5 }), R('grain.rough', 'Aspereza', 'rough', 0, 100),
+                R('grain.bias', 'Sombras ↔ luzes', 'bias', -100, 100), R('grain.speckle', 'Manchas', 'speckle', 0, 100), T('grain.mono', 'Monocromático', 'mono')] : []),
         ] },
 
         { id: 'paleta', label: 'Cor', controls: () => {
@@ -490,20 +493,44 @@ function currentTab() { return TABS.find(t => t.id === ui.tab); }
 function currentGroup() { const t = currentTab(); const gid = ui.group[t.id] || t.groups[0].id; return t.groups.find(g => g.id === gid) || t.groups[0]; }
 let dialEls = [];
 
+// Lente de vidro que desliza até o item escolhido (abas e seções), com mola.
+// Guardamos a última posição no próprio contêiner: se ele for refeito, a lente nasce onde estava e desliza.
+function placeLens(box, sel, instant) {
+    if (!box) return;
+    const on = box.querySelector(sel);
+    let lens = box.querySelector(':scope > .lens');
+    if (!on) { if (lens) lens.remove(); return; }
+    // posição relativa ao contêiner somando offsets (ignora animações em andamento e já inclui a rolagem)
+    let l = 0, t = 0, n = on;
+    while (n && n !== box) { l += n.offsetLeft; t += n.offsetTop; n = n.offsetParent; }
+    if (n !== box) return;
+    const to = { l, t, w: on.offsetWidth, h: on.offsetHeight };
+    if (!to.w) return;
+    const fresh = !lens;
+    if (fresh) { lens = h('span', 'lens'); box.prepend(lens); }
+    const from = box._lens;
+    const set = (r) => { lens.style.left = r.l + 'px'; lens.style.top = r.t + 'px'; lens.style.width = r.w + 'px'; lens.style.height = r.h + 'px'; };
+    if ((fresh && from) && !instant) { lens.style.transition = 'none'; set(from); void lens.offsetWidth; lens.style.transition = ''; }
+    else if (fresh || instant) { lens.style.transition = 'none'; set(to); void lens.offsetWidth; lens.style.transition = ''; }
+    set(to); box._lens = to;
+}
 function buildTabbar() {
     const bar = $('tabbar'); bar.innerHTML = '';
     TABS.forEach((t, i) => {
         const b = h('button', 'tab' + (t.id === ui.tab ? ' on' : ''), icon(t.icon) + `<span>${t.label}</span>`);
         b.type = 'button'; b.dataset.tab = t.id; b.title = `${t.label} (${i + 1})`;
-        b.onclick = () => selectTab(t.id);
+        b.onclick = () => { if (panelCollapsed) setPanelCollapsed(false); selectTab(t.id); };
         bar.append(b);
     });
     markTabs();
+    requestAnimationFrame(() => placeLens(bar, '.tab.on', true));
+    new ResizeObserver(() => placeLens(bar, '.tab.on', true)).observe(bar);
 }
 function selectTab(id) {
     if (!TABS.some(t => t.id === id)) id = TABS[0].id;
     ui.tab = id;
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
+    placeLens($('tabbar'), '.tab.on');
     $('toolTitle').textContent = M.el ? currentTab().label : '';
     buildPanel(); updateSubbarCenter();
     const on = document.querySelector('.tab.on'); if (on) on.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
@@ -547,7 +574,10 @@ function buildPanel() {
     const single = controls.length === 1 && controls[0].kind === 'custom';
     dials.hidden = single;
     $('panel').classList.toggle('single', single);   // sem fileira de botões: o editor usa esse espaço
-    if (!single) controls.forEach(c => { const d = makeDial(c, c === active); dials.append(d); dialEls.push({ c, el: d }); });
+    if (!single) controls.forEach((c, i) => { const d = makeDial(c, c === active); d.style.setProperty('--i', Math.min(i, 10)); dials.append(d); dialEls.push({ c, el: d }); });
+    placeLens(seg, '.seg.on');
+    if (!single) placeLens(dials, '.dial.active .face', !same);
+    if (!same) enterAnim(dials, $('editor'));
     ui.keepScroll = !!(keep && keep.ctrl === ui.active[aKey]);
     buildEditor(active);
     ui.keepScroll = false;
@@ -561,6 +591,10 @@ function buildPanel() {
 }
 // Refaz só a fileira de botões (ex.: escolher um filme com parâmetros próprios), sem
 // tocar no editor — a faixa que o usuário está rolando continua exatamente onde está.
+// conteúdo novo entra com um leve deslizar (só quando muda de seção ou de controle)
+function enterAnim(...els) {
+    els.forEach(el => { if (!el) return; el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); clearTimeout(el._et); el._et = setTimeout(() => el.classList.remove('enter'), 700); });
+}
 function rebuildDials() {
     const tab = currentTab(), grp = currentGroup(), aKey = tab.id + '/' + grp.id;
     const dials = $('dials'); if (dials.hidden) { refreshDials(); return; }
@@ -568,6 +602,7 @@ function rebuildDials() {
     const controls = grp.controls().filter(c => !c.hidden);
     dials.innerHTML = ''; dialEls = [];
     controls.forEach(c => { const d = makeDial(c, ctrlId(c) === ui.active[aKey]); dials.append(d); dialEls.push({ c, el: d }); });
+    placeLens(dials, '.dial.active .face', true);
     dials.scrollLeft = x;
 }
 // centraliza um item dentro da sua fileira sem rolar a página inteira
@@ -638,14 +673,17 @@ function onDialClick(c, d) {
         return;
     }
     if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); if (final && c.ensure) refreshDials(); else updateDial(d, c); }, c.label); return; }
+    const changed = ui.active[aKey] !== ctrlId(c);
     ui.active[aKey] = ctrlId(c);
     dialEls.forEach(({ el }) => el.classList.toggle('active', el === d));
+    placeLens($('dials'), '.dial.active .face');
     refreshDials();
     buildEditor(c);
+    if (changed) enterAnim($('editor'));
     flashLabel(c.label);
 }
 // controles cujo valor muda quais outros controles aparecem
-function grpDependsOn(key) { return ['grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'anim.dStyle', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot'].includes(key); }
+function grpDependsOn(key) { return ['grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'anim.dStyle', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot', 'grain.amount'].includes(key); }
 // mover o recorte só faz sentido no eixo em que sobra imagem
 function cropMoveControls() {
     const out = [];
@@ -684,31 +722,35 @@ function choiceNote(c) {
 }
 
 // ---------- régua (estilo Apple) ----------
+// Slider de vidro (iOS 27): trilho fino com preenchimento na cor de destaque; ao arrastar, o botão
+// vira uma lente de vidro. Arrasto relativo (o valor não salta ao tocar no botão), toque no trilho
+// leva o botão até ali com mola, detente no valor padrão e precisão fina ao afastar o dedo na vertical.
 function makeRuler(c) {
-    const box = h('div'), el = h('div', 'ruler'); el.tabIndex = 0; el.setAttribute('role', 'slider'); el.setAttribute('aria-label', c.label);
+    const box = h('div', 'gs-wrap'), head = h('div', 'gs-head');
+    const nameEl = h('span', 'gs-name', ''), valEl = h('span', 'gs-val', '');
+    nameEl.textContent = c.label; head.append(nameEl, valEl);
+    const el = h('div', 'gslider'); el.tabIndex = 0; el.setAttribute('role', 'slider'); el.setAttribute('aria-label', c.label);
     el.setAttribute('aria-valuemin', c.min); el.setAttribute('aria-valuemax', c.max);
-    const ticks = h('div', 'ticks'), needle = h('div', 'needle');
-    const range = c.max - c.min, nSteps = range / c.step;
-    const totalW = clampN(nSteps * 8, 280, 1800), ppu = totalW / range;
-    let tu = c.step; for (const m of [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]) { tu = c.step * m; if (tu * ppu >= 7.5) break; }
-    const spacing = tu * ppu, n = Math.floor(range / tu + 1e-6), def = defP(c.key);
-    let html = '';
-    for (let i = 0; i <= n; i++) {
-        const v = c.min + i * tu;
-        const isDef = typeof def === 'number' && Math.abs(v - def) < tu / 2;
-        const cls = isDef ? 'zero' : (i % 5 === 0 ? 'major' : '');
-        html += `<i class="${cls}" style="margin-right:${i === n ? 0 : spacing - (isDef ? 2 : 1.5)}px"></i>`;
-    }
-    ticks.innerHTML = html;
-    el.append(ticks, needle);
+    const track = h('div', 'gs-track'), fill = h('div', 'gs-fill'), thumb = h('div', 'gs-thumb');
+    track.append(fill); el.append(track);
+    const def = defP(c.key), range = c.max - c.min;
+    const hasMark = typeof def === 'number' && def > c.min && def < c.max;
+    let mark = null; if (hasMark) { mark = h('div', 'gs-mark'); el.append(mark); }
+    el.append(thumb);
     let v = ctrlValue(c);
     const q = (x) => { const s = Math.round((x - c.min) / c.step) * c.step + c.min; return clampN(+s.toFixed(6), c.min, c.max); };
-    const valEl = h('div', 'ruler-val');
     const centered = c.min < 0 && c.max > 0;
     const fmtShow = (x) => { const f = fmtVal(c, x); return centered && x > 0 ? '+' + f : String(f); };
-    const place = () => { ticks.style.transform = `translateX(${-(v - c.min) * ppu - 0.75}px)`; el.setAttribute('aria-valuenow', q(v)); valEl.textContent = fmtShow(q(v)); };
-    place();
-    let last = null, vel = 0, lastT = 0, inertia = 0, startV = 0, snapped = false;
+    const T = 38;
+    const geo = () => { const W = el.clientWidth || 300; return { W, u: Math.max(1, W - T) }; };
+    const xOf = (val) => { const { u } = geo(); return T / 2 + (val - c.min) / range * u; };
+    const place = () => {
+        const x = xOf(v), from = hasMark ? xOf(def) : 0;
+        thumb.style.left = x + 'px';
+        fill.style.left = Math.min(from, x) + 'px'; fill.style.width = Math.abs(x - from) + 'px';
+        if (mark) mark.style.left = xOf(def) + 'px';
+        el.setAttribute('aria-valuenow', q(v)); valEl.textContent = fmtShow(q(v));
+    };
     const emit = (final) => {
         const qv = q(v);
         if (qv !== getP(c.key)) { setP(c.key, qv); requestRender(); Thumbs.stateChanged(); markTabs(); }
@@ -716,43 +758,49 @@ function makeRuler(c) {
         $('paramLabel').textContent = c.label + '  ' + fmtShow(qv);
         if (final) { commit(); if (grpDependsOn(c.key)) rebuildDials(); }
     };
+    let snapped = false;
     const setV = (nv) => {
         // detente no valor padrão (como o zero da régua da Apple)
-        if (typeof def === 'number' && def > c.min && def < c.max) {
-            const nearDef = Math.abs(nv - def) * ppu < 7;
-            if (nearDef && !snapped) { snapped = true; if (navigator.vibrate) navigator.vibrate(4); }
-            if (!nearDef) snapped = false;
-            if (nearDef && Math.abs(startV - def) * ppu > 7) nv = def;
+        if (hasMark) {
+            const near = Math.abs(xOf(nv) - xOf(def)) < 7;
+            if (near) { if (!snapped && navigator.vibrate) navigator.vibrate(4); snapped = true; nv = def; } else snapped = false;
         }
         v = clampN(nv, c.min, c.max); place(); emit(false);
     };
+    const anim = (on) => { el.classList.toggle('anim', on); if (on) { clearTimeout(el._at); el._at = setTimeout(() => el.classList.remove('anim'), 480); } };
+    let drag = null;
     el.addEventListener('pointerdown', (e) => {
-        cancelAnimationFrame(inertia); el.setPointerCapture(e.pointerId); last = e.clientX; lastT = performance.now(); vel = 0; startV = v;
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        const r = el.getBoundingClientRect(), x = e.clientX - r.left, onThumb = Math.abs(x - xOf(v)) <= T / 2 + 8;
+        if (!onThumb) { anim(true); snapped = false; setV(c.min + clampN((x - T / 2) / geo().u, 0, 1) * range); }
+        drag = { x: e.clientX, y: e.clientY };
+        el.classList.add('drag'); box.classList.add('drag');
         flashLabel(c.label + '  ' + fmtShow(q(v)), 100000);
     });
     el.addEventListener('pointermove', (e) => {
-        if (last === null) return;
-        const dx = e.clientX - last, now = performance.now();
-        vel = 0.8 * vel + 0.2 * (dx / Math.max(1, now - lastT)); last = e.clientX; lastT = now;
-        setV(v - dx / ppu);
+        if (!drag) return;
+        const dx = e.clientX - drag.x, dy = Math.abs(e.clientY - drag.y);
+        drag.x = e.clientX;
+        const fine = dy > 120 ? 0.1 : dy > 60 ? 0.25 : 1;   // afastar o dedo na vertical = ajuste fino
+        if (dx) { el.classList.remove('anim'); setV(v + dx / geo().u * range * fine); }
     });
     const up = () => {
-        if (last === null) return; last = null;
+        if (!drag) return; drag = null;
+        el.classList.remove('drag'); box.classList.remove('drag');
         flashLabel(c.label + '  ' + fmtShow(q(v)));
-        let sp = vel * 16;
-        if (Math.abs(sp) < 0.6) { emit(true); return; }
-        const step = () => { sp *= 0.92; setV(v - sp / ppu); if (Math.abs(sp) > 0.3 && v > c.min && v < c.max) inertia = requestAnimationFrame(step); else emit(true); };
-        inertia = requestAnimationFrame(step);
+        v = q(v); place(); emit(true);
     };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-    el.addEventListener('wheel', (e) => { e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; startV = v; setV(v + d / ppu * 0.5); clearTimeout(el._wt); el._wt = setTimeout(() => emit(true), 250); }, { passive: false });
+    el.addEventListener('wheel', (e) => { e.preventDefault(); const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : -e.deltaY; setV(v + d / geo().u * range * 0.3); clearTimeout(el._wt); el._wt = setTimeout(() => emit(true), 250); }, { passive: false });
     el.addEventListener('keydown', (e) => {
         const big = e.shiftKey ? 10 : 1;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); startV = v; v = clampN(q(v) + c.step * big, c.min, c.max); place(); emit(true); }
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); startV = v; v = clampN(q(v) - c.step * big, c.min, c.max); place(); emit(true); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); anim(true); v = clampN(q(v) + c.step * big, c.min, c.max); place(); emit(true); }
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); anim(true); v = clampN(q(v) - c.step * big, c.min, c.max); place(); emit(true); }
     });
-    el.addEventListener('dblclick', () => { v = def; place(); emit(true); flashLabel(c.label + ' · padrão'); });
-    box.append(valEl, el, h('div', 'ruler-hint', 'arraste · toque duplo volta ao padrão · segure o botão para travar'));
+    el.addEventListener('dblclick', () => { anim(true); v = def; place(); emit(true); flashLabel(c.label + ' · padrão'); });
+    new ResizeObserver(() => place()).observe(el);
+    box.append(head, el, h('div', 'gs-hint', 'toque duplo volta ao padrão · afaste o dedo para ajuste fino'));
+    requestAnimationFrame(place);
     return box;
 }
 
@@ -824,6 +872,9 @@ const Thumbs = (() => {
             const d = sctx.getImageData(0, 0, src.width, src.height).data, px = [];
             for (let i = 0; i < d.length; i += 4 * 37) px.push({ r: d[i], g: d[i + 1], b: d[i + 2] });
             dominant = getMedianCut(px, 3).map(rgbHex);
+            // o vidro da interface reflete as cores da foto
+            const vivid = getMedianCut(px, 6).map(c => ({ c, s: Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b) })).sort((a, b) => b.s - a.s);
+            ['--tint-1', '--tint-2', '--tint-3'].forEach((k, i) => { const v = vivid[i] || vivid[0]; if (v) document.documentElement.style.setProperty(k, rgbHex(v.c)); });
         } catch (e) {}
         if (force) refreshAll();
     }
@@ -942,23 +993,45 @@ function editPresets(ed) {
     });
     ed.append(chips, strip);
 }
-function makeSurprises() {
-    ui.surprise = Array.from({ length: 12 }, () => { const s = deepClone(st); const g = new Set(prefs.groups); g.delete('anim'); g.add('palette'); randomize(s, M.analysis, g, prefs.locks, null, true); return s; });
+// ---------- Variações (Muse): feitas para esta foto, evoluem com as escolhas ----------
+let museCache = { serial: -1, A: null };
+function museAnalysis() {
+    if (museCache.serial !== M.serial || !museCache.A) museCache = { serial: M.serial, A: Muse.analyze(Thumbs.src) };
+    return museCache.A;
+}
+function museLong() { const { W, H } = mediaSize(M.el); return Math.min(Math.max(W, H), Engine.workCap || 2048); }
+function makeSurprises(parent) {
+    const A = museAnalysis(); if (!A) { ui.surprise = []; return; }
+    ui.surprise = Muse.generate(A, st, { n: 12, parent: parent || null, long: museLong(), locks: prefs.locks });
+    ui.museParent = parent || null;
 }
 function editSurprise(ed) {
     if (!ui.surprise.length) makeSurprises();
     const strip = h('div', 'strip');
-    const roll = h('button', 'thumb add'); roll.type = 'button'; roll.innerHTML = `<span class="pic">${icon('dice')}</span><span class="t">Sortear de novo</span>`;
-    roll.onclick = () => { makeSurprises(); buildEditor({ kind: 'custom', editor: editSurprise }); };
+    const roll = h('button', 'thumb add'); roll.type = 'button'; roll.innerHTML = `<span class="pic">${icon('dice')}</span><span class="t">Novas</span>`;
+    roll.onclick = () => { makeSurprises(); buildEditor({ kind: 'custom', editor: editSurprise }); enterAnim($('editor')); };
     strip.append(roll);
-    ui.surprise.forEach((s, i) => {
-        const t = h('button', 'thumb'); t.type = 'button';
-        const pic = h('span', 'pic'); t.append(pic, h('span', 't', 'Variação ' + (i + 1)));
-        Thumbs.attach(pic, 'surprise:' + i, () => s, false);
-        t.onclick = () => { const before = snapshot(); st = normalizeState(deepClone(s)); Engine.invalidate(); afterExternalChange({ keepEditor: true }); commit(true); strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t)); toast('Variação aplicada', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); };
+    if (ui.musePick) {
+        const more = h('button', 'thumb add'); more.type = 'button'; more.innerHTML = `<span class="pic">${icon('sparkle')}</span><span class="t">Parecidas</span>`;
+        more.onclick = () => { makeSurprises(ui.musePick); buildEditor({ kind: 'custom', editor: editSurprise }); enterAnim($('editor')); };
+        strip.append(more);
+    }
+    ui.surprise.forEach((v, i) => {
+        const t = h('button', 'thumb' + (ui.musePick === v.genome ? ' on' : '')); t.type = 'button';
+        const pic = h('span', 'pic'), lab = h('span', 't'); lab.textContent = v.name;
+        t.append(pic, lab); t.title = v.name;
+        Thumbs.attach(pic, 'muse:' + i + ':' + v.name, () => v.state, false);
+        t.onclick = () => {
+            const before = snapshot();
+            st = normalizeState(deepClone(v.state)); Engine.invalidate(); afterExternalChange({ keepEditor: true }); commit(true);
+            Muse.learn(v.genome, ui.surprise.map(x => x.genome)); ui.musePick = v.genome;
+            strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t));
+            if (!strip.querySelector('.thumb.add + .thumb.add')) buildEditor({ kind: 'custom', editor: editSurprise });   // mostra “Parecidas”
+            toast(v.name, { label: 'Desfazer', run: () => { restore(before); commit(true); } });
+        };
         strip.append(t);
     });
-    ed.append(strip, h('div', 'editor-note', 'Doze combinações novas a partir da sua foto. Segure qualquer botão nas outras abas para travá-lo.'));
+    ed.append(strip, h('div', 'editor-note', ui.museParent ? 'Explorando a partir da que você escolheu.' : 'Feitas para esta foto. Escolha uma e toque em “Parecidas” para explorar.'));
 }
 function editMine(ed) {
     const strip = h('div', 'strip');
@@ -1216,10 +1289,13 @@ function openMore() {
         item('reset', 'Restaurar tudo', () => { const before = snapshot(); st = freshState(); Engine.invalidate(); afterExternalChange(); commit(true); toast('Tudo restaurado', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); });
         const th = document.documentElement.dataset.theme || 'auto';
         item(th === 'dark' ? 'moon' : 'sun', 'Tema', () => { const next = th === 'auto' ? 'light' : th === 'light' ? 'dark' : 'auto'; setTheme(next); toast('Tema: ' + { auto: 'automático', light: 'claro', dark: 'escuro' }[next]); }, { auto: 'Automático', light: 'Claro', dark: 'Escuro' }[th]);
+        const gl = document.documentElement.dataset.glass || 'default', GL = { default: 'Padrão', clear: 'Transparente', tinted: 'Tingido' };
+        item('sparkle', 'Vidro', () => { const next = gl === 'default' ? 'clear' : gl === 'clear' ? 'tinted' : 'default'; setGlass(next); toast('Vidro: ' + GL[next].toLowerCase()); }, GL[gl]);
         item('keyboard', 'Atalhos de teclado', openShortcuts);
         sh.append(list, h('p', 'note', 'Pixelar Studio · tudo roda no seu navegador, nenhuma foto sai do aparelho.'));
     });
 }
+function setGlass(g) { if (g === 'default') delete document.documentElement.dataset.glass; else document.documentElement.dataset.glass = g; try { localStorage.setItem('pixelar.glass', g); } catch (e) {} }
 function setTheme(t) { if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t; store.set('theme', t); try { localStorage.setItem('pixelar.theme', t); } catch (e) {} }
 function openRandomSettings() {
     openSheet((sh) => {
@@ -1235,7 +1311,7 @@ function openShortcuts() {
     openSheet((sh) => {
         sheetHead(sh, 'Atalhos');
         const g = h('div', 'shortcuts');
-        [['R', 'Aleatório'], ['Espaço', 'Tocar / parar animação ou vídeo'], ['O (segurar)', 'Ver o original'], ['C', 'Comparar lado a lado'], ['⌘Z / ⇧⌘Z', 'Desfazer / refazer'], ['⌘E', 'Exportar'], ['⌘O', 'Abrir arquivo'], ['1 – 4', 'Trocar de aba'], ['← →', 'Ajustar a régua ativa (⇧ = 10×)'], ['+ / − / 0', 'Zoom / encaixar']].forEach(([k, d]) => { g.append(h('kbd', '', k), h('span', '', d)); });
+        [['R', 'Aleatório'], ['Espaço', 'Tocar / parar animação ou vídeo'], ['O (segurar)', 'Ver o original'], ['C', 'Comparar lado a lado'], ['⌘Z / ⇧⌘Z', 'Desfazer / refazer'], ['⌘E', 'Exportar'], ['⌘O', 'Abrir arquivo'], ['1 – 4', 'Trocar de aba'], ['← →', 'Ajustar a régua ativa (⇧ = 10×)'], ['+ / − / 0', 'Zoom / encaixar'], ['P', 'Mostrar / esconder os controles']].forEach(([k, d]) => { g.append(h('kbd', '', k), h('span', '', d)); });
         sh.append(g);
     });
 }
@@ -1398,7 +1474,7 @@ function setMedia(type, el, name) {
     app.classList.remove('is-welcome'); $('btnExport').disabled = false;
     M.analysis = analyzeMedia(el);
     Thumbs.setSource(el, true);
-    ui.surprise = [];
+    ui.surprise = []; ui.musePick = null; ui.museParent = null;
     lastRender = null; view.zoom = 1; view.x = view.y = 0;
     hist.stack = []; hist.i = -1;
     stage.classList.remove('developing'); void stage.offsetWidth; stage.classList.add('developing');
@@ -1554,7 +1630,7 @@ function updateSubbarCenter() {
     const c = $('subbarCenter'); c.innerHTML = '';
     if (!M.el) return;
     if (M.type === 'image') {
-        const g = h('div', 'glass-group'); const b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(anim.playing ? 'pause' : 'play')); b.type = 'button';
+        const g = h('div', 'glass-group glass'); const b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(anim.playing ? 'pause' : 'play')); b.type = 'button';
         b.title = anim.playing ? 'Parar animação (espaço)' : 'Ver animação (espaço)'; b.setAttribute('aria-label', b.title);
         b.onclick = togglePlay; g.append(b); c.append(g);
     }
@@ -1570,9 +1646,19 @@ function rollDiceUnsafe() {
     if (!M.el) return;
     const before = snapshot();
     const dice = $('btnDice'); dice.classList.remove('rolling'); void dice.offsetWidth; dice.classList.add('rolling');
-    const touched = randomize(st, M.analysis, prefs.groups, prefs.locks);
+    // o dado usa o Muse: a melhor de um lote pensado para esta foto (e diferente das últimas)
+    const A = museAnalysis(); let label = 'Nova combinação';
+    if (A) {
+        const [v] = Muse.generate(A, st, { n: 1, pool: 36, long: museLong(), locks: prefs.locks });
+        const next = normalizeState(deepClone(v.state));
+        // o que a pessoa desligou em “O que o aleatório muda” continua como estava
+        const KEEP = { luz: ['adj'], pixel: ['pixel'], dither: ['dither'], palette: ['color'], edge: ['edge'], fx: ['fx', 'fxParams'], grain: ['grain'], film: ['film'], grad: ['grad'] };
+        Object.keys(KEEP).forEach(g => { if (!prefs.groups.has(g)) KEEP[g].forEach(k => { next[k] = deepClone(st[k]); }); });
+        if (prefs.groups.has('anim')) randAnim(next.anim);
+        st = next; Engine.invalidate(); label = v.name;
+    } else randomize(st, M.analysis, prefs.groups, prefs.locks);
     afterExternalChange(); commit(true);
-    toast(touched.length ? touched.slice(0, 4).join(' · ') : 'Nova combinação', { label: 'Desfazer', run: () => { restore(before); commit(true); } });
+    toast(label, { label: 'Desfazer', run: () => { restore(before); commit(true); } });
     if (M.type === 'image' && prefs.groups.has('anim') && anim.playing && !animOn()) stopAnim();
 }
 
@@ -1585,7 +1671,69 @@ function openSample() { const c = makeSampleImage(); setMedia('image', c, 'Exemp
 // ============================================================
 // ENTRADAS: botões, arquivo, arrastar, colar, teclado
 // ============================================================
+if (typeof LiquidGlass !== 'undefined') LiquidGlass.init();
 $('btnUndo').innerHTML = icon('undo'); $('btnRedo').innerHTML = icon('redo');
+$('btnOpen').insertAdjacentHTML('afterbegin', icon('photo')); $('btnExport').insertAdjacentHTML('afterbegin', icon('share')); $('btnPanel').innerHTML = icon('sidebar');
+// ---------- controles recolhíveis (mais espaço para a imagem) ----------
+let panelCollapsed = false;
+// ---------- área livre para a imagem ----------
+// A imagem ocupa a tela toda por baixo do vidro; ela é encaixada no espaço que sobra entre
+// a barra do topo e a base (celular) ou o cartão lateral (computador). Medido, nunca estimado.
+function updateInsets() {
+    const cs = getComputedStyle(app), m = parseFloat(cs.getPropertyValue('--m')) || 8;
+    const W = app.clientWidth, H = app.clientHeight;
+    const tb = $('topbar'), top = tb.offsetTop + tb.offsetHeight + m;   // offsets ignoram animações (transform)
+    let r = m, b = m, l = m;
+    const side = matchMedia('(min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px)').matches;
+    const vb = $('videoBar'), vbOn = !vb.hidden && !app.classList.contains('is-welcome');
+    if (side) {
+        if (!panelCollapsed) r = W - $('dock').offsetLeft + m;
+        if (vbOn) b = H - vb.getBoundingClientRect().top + m;
+    } else {
+        b = H - (panelCollapsed ? $('btnRestore').offsetTop : $('dock').offsetTop) + m;
+    }
+    const st = app.style;
+    st.setProperty('--vp-t', Math.round(top) + 'px'); st.setProperty('--vp-r', Math.round(r) + 'px');
+    st.setProperty('--vp-b', Math.round(b) + 'px'); st.setProperty('--vp-l', Math.round(l) + 'px');
+}
+{
+    const ro = new ResizeObserver(() => updateInsets());
+    ['topbar', 'dock', 'videoBar'].forEach(id => ro.observe($(id)));
+    addEventListener('resize', updateInsets);
+    new MutationObserver(updateInsets).observe($('videoBar'), { attributes: true, attributeFilter: ['hidden'] });
+}
+function setPanelCollapsed(on, save = true) {
+    panelCollapsed = !!on;
+    app.classList.toggle('panel-collapsed', panelCollapsed);
+    const hd = $('panelHandle'); hd.setAttribute('aria-expanded', String(!panelCollapsed)); hd.setAttribute('aria-label', panelCollapsed ? 'Mostrar controles' : 'Recolher controles');
+    $('btnPanel').classList.toggle('on', !panelCollapsed);
+    if (save) store.set('panelCollapsed', panelCollapsed);
+    // no computador o cartão desliza para fora: a imagem acompanha com a mesma curva
+    app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 600);
+    updateInsets();
+}
+(() => {
+    const hd = $('panelHandle'); let y0 = null, moved = false;
+    hd.addEventListener('pointerdown', (e) => { y0 = e.clientY; moved = false; try { hd.setPointerCapture(e.pointerId); } catch (_) {} });
+    hd.addEventListener('pointermove', (e) => {
+        if (y0 === null) return; const dy = e.clientY - y0;
+        if (Math.abs(dy) > 18) { moved = true; setPanelCollapsed(dy > 0); y0 = null; }
+    });
+    hd.addEventListener('pointerup', () => { if (y0 !== null && !moved) setPanelCollapsed(!panelCollapsed); y0 = null; });
+    hd.addEventListener('pointercancel', () => { y0 = null; });
+    hd.addEventListener('click', (e) => { if (e.detail === 0) setPanelCollapsed(!panelCollapsed); });   // teclado (Enter/Espaço)
+    $('btnPanel').onclick = () => setPanelCollapsed(!panelCollapsed);
+    // puxador que sobra ao recolher: toque ou deslize para cima traz os controles de volta
+    const rs = $('btnRestore'); let ry = null;
+    rs.insertAdjacentHTML('afterbegin', icon('chevron'));
+    rs.querySelector('.ic').style.transform = 'rotate(-90deg)';
+    rs.addEventListener('pointerdown', (e) => { ry = e.clientY; try { rs.setPointerCapture(e.pointerId); } catch (_) {} });
+    rs.addEventListener('pointermove', (e) => { if (ry !== null && ry - e.clientY > 14) { ry = null; setPanelCollapsed(false); } });
+    rs.addEventListener('pointerup', () => { if (ry !== null) setPanelCollapsed(false); ry = null; });
+    rs.addEventListener('pointercancel', () => { ry = null; });
+    rs.addEventListener('click', (e) => { if (e.detail === 0) setPanelCollapsed(false); });
+    setPanelCollapsed(store.get('panelCollapsed', false), false);
+})();
 $('btnCompare').innerHTML = icon('compare'); $('btnDice').innerHTML = icon('dice'); $('btnMore').innerHTML = icon('more');
 $('btnOpen').onclick = () => $('fileInput').click();
 $('btnWelcomeOpen').onclick = () => $('fileInput').click();
@@ -1620,15 +1768,16 @@ document.addEventListener('keydown', (e) => {
     if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
     if (mod && (e.key.toLowerCase() === 'e' || e.key.toLowerCase() === 's')) { e.preventDefault(); openExport(); return; }
     if (mod) return;
-    if (e.code === 'Space' && !(t && (t.tagName === 'BUTTON' || (t.classList && t.classList.contains('ruler'))))) { e.preventDefault(); togglePlay(); return; }
+    if (e.code === 'Space' && !(t && (t.tagName === 'BUTTON' || (t.classList && t.classList.contains('gslider'))))) { e.preventDefault(); togglePlay(); return; }
     if (e.key === 'r' || e.key === 'R') { rollDice(); return; }
+    if ((e.key === 'p' || e.key === 'P') && !e.metaKey && !e.ctrlKey) { setPanelCollapsed(!panelCollapsed); return; }
     if ((e.key === 'o' || e.key === 'O') && !e.repeat) { compare.hold = true; showOriginal(true); return; }
     if (e.key === 'c' || e.key === 'C') { toggleSplit(); return; }
     if (e.key === '+' || e.key === '=') { zoomAt(1.25); return; }
     if (e.key === '-') { zoomAt(0.8); return; }
     if (e.key === '0') { view.zoom = 1; view.x = view.y = 0; applyView(); return; }
     const n = parseInt(e.key, 10); if (n >= 1 && n <= TABS.length) { selectTab(TABS[n - 1].id); return; }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { const r = document.querySelector('.ruler'); if (r) { r.focus(); r.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, shiftKey: e.shiftKey })); e.preventDefault(); } }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { const r = document.querySelector('.gslider'); if (r) { r.focus(); r.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, shiftKey: e.shiftKey })); e.preventDefault(); } }
 });
 document.addEventListener('keyup', (e) => { if ((e.key === 'o' || e.key === 'O') && compare.hold) { compare.hold = false; showOriginal(false); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { stopAnim(); pauseVideo(); } });
@@ -1643,6 +1792,8 @@ if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o proc
 if (/[?&]demo=1/.test(location.search)) { window.__diagErrs = []; addEventListener('error', (e) => window.__diagErrs.push(e.message)); }
 if (/[?&]demo=1/.test(location.search)) setTimeout(() => {
     openSample(); const m = location.search.match(/[?&]tab=(\w+)/); if (m) selectTab(m[1]);
+    const gq = location.search.match(/[?&]grp=(\w+)/); if (gq) { ui.group[ui.tab] = gq[1]; buildPanel(); }
+    if (/[?&]nodiag=1/.test(location.search)) return;
     setTimeout(() => {
         const all = document.querySelectorAll('.thumb canvas'), ok = document.querySelectorAll('.thumb canvas.ready');
         const d = document.createElement('div'); d.id = 'diag';

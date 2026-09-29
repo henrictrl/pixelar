@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,33 +13,33 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="css/app.css?v=2.9.4">
+    <link rel="stylesheet" href="css/app.css?v=3.0.0">
     <script>
-        window.PIXELAR_V = '2.9.4';
+        window.PIXELAR_V = '3.0.0';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+        try { const g = localStorage.getItem('pixelar.glass'); if (g === 'clear' || g === 'tinted') document.documentElement.dataset.glass = g; } catch (e) {}
     </script>
 </head>
 <body>
     <div id="app" class="is-welcome">
-        <header class="topbar">
-            <button class="pill" id="btnOpen" type="button">Abrir</button>
-            <div class="title" id="toolTitle"></div>
-            <button class="pill primary" id="btnExport" type="button" disabled>Exportar</button>
-        </header>
-
-        <div class="subbar">
-            <div class="glass-group">
+        <!-- barra única: no celular vira uma fileira de ícones, liberando espaço para a imagem -->
+        <header class="topbar" id="topbar">
+            <button class="pill glass" id="btnOpen" type="button" aria-label="Abrir"><span class="lbl">Abrir</span></button>
+            <div class="glass-group glass">
                 <button class="icon-btn" id="btnUndo" type="button" title="Desfazer (⌘Z)" aria-label="Desfazer" disabled></button>
                 <button class="icon-btn" id="btnRedo" type="button" title="Refazer (⇧⌘Z)" aria-label="Refazer" disabled></button>
             </div>
+            <div class="title" id="toolTitle"></div>
             <div class="subbar-center" id="subbarCenter"></div>
-            <div class="glass-group">
+            <div class="glass-group glass">
                 <button class="icon-btn" id="btnCompare" type="button" title="Comparar com o original (segure a imagem ou tecla O)" aria-label="Comparar"></button>
                 <button class="icon-btn dice" id="btnDice" type="button" title="Aleatório (R)" aria-label="Aleatório"></button>
                 <button class="icon-btn" id="btnMore" type="button" title="Mais opções" aria-label="Mais opções"></button>
+                <button class="icon-btn only-wide" id="btnPanel" type="button" title="Mostrar ou esconder os controles (P)" aria-label="Mostrar ou esconder os controles"></button>
             </div>
-        </div>
+            <button class="pill primary glass" id="btnExport" type="button" aria-label="Exportar" disabled><span class="lbl">Exportar</span></button>
+        </header>
 
         <main class="stage" id="stage">
             <div class="viewport" id="viewport">
@@ -58,23 +58,31 @@
             <div class="drop-hint" id="dropHint">Solte para abrir</div>
         </main>
 
-        <div class="videobar" id="videoBar" hidden>
-            <button class="icon-btn round" id="btnVideoPlay" type="button" aria-label="Tocar vídeo"></button>
-            <div class="filmstrip" id="filmstrip">
-                <div class="strip-frames" id="stripFrames"></div>
-                <div class="trim" id="trimBox"><span class="handle l" id="trimL"></span><span class="handle r" id="trimR"></span></div>
-                <div class="playhead" id="playhead"></div>
+        <button class="restore glass" id="btnRestore" type="button" aria-label="Mostrar controles"><span class="lbl">Controles</span></button>
+
+        <!-- base flutuante de vidro: vídeo, controles e abas -->
+        <div class="dock" id="dock">
+            <div class="videobar glass" id="videoBar" hidden>
+                <button class="icon-btn" id="btnVideoPlay" type="button" aria-label="Tocar vídeo"></button>
+                <div class="filmstrip" id="filmstrip">
+                    <div class="strip-frames" id="stripFrames"></div>
+                    <div class="trim" id="trimBox"><span class="handle l" id="trimL"></span><span class="handle r" id="trimR"></span></div>
+                    <div class="playhead" id="playhead"></div>
+                </div>
+                <button class="icon-btn" id="btnVideoMute" type="button" aria-label="Som"></button>
             </div>
-            <button class="icon-btn round" id="btnVideoMute" type="button" aria-label="Som"></button>
+
+            <section class="panel glass" id="panel">
+                <button class="panel-handle" id="panelHandle" type="button" aria-label="Recolher controles" aria-expanded="true"><span></span></button>
+                <div class="panel-body"><div class="panel-inner" id="panelInner">
+                    <div class="seg-row" id="segRow"></div>
+                    <div class="dials" id="dials"></div>
+                    <div class="editor" id="editor"></div>
+                </div></div>
+            </section>
+
+            <nav class="tabbar glass" id="tabbar" aria-label="Ferramentas"></nav>
         </div>
-
-        <section class="panel" id="panel">
-            <div class="seg-row" id="segRow"></div>
-            <div class="dials" id="dials"></div>
-            <div class="editor" id="editor"></div>
-        </section>
-
-        <nav class="tabbar" id="tabbar" aria-label="Ferramentas"></nav>
     </div>
 
     <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
@@ -85,15 +93,17 @@
     <input type="file" id="configInput" accept="image/png,text/plain,.txt" hidden>
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js?v=2.9.4"></script>
-    <script defer src="js/engine.js?v=2.9.4"></script>
-    <script defer src="js/anim.js?v=2.9.4"></script>
-    <script defer src="js/presets.js?v=2.9.4"></script>
-    <script defer src="js/media.js?v=2.9.4"></script>
-    <script defer src="js/export.js?v=2.9.4"></script>
-    <script defer src="js/icons.js?v=2.9.4"></script>
-    <script defer src="js/sample.js?v=2.9.4"></script>
-    <script defer src="js/ui.js?v=2.9.4"></script>
+    <script defer src="js/gpu.js?v=3.0.0"></script>
+    <script defer src="js/engine.js?v=3.0.0"></script>
+    <script defer src="js/anim.js?v=3.0.0"></script>
+    <script defer src="js/presets.js?v=3.0.0"></script>
+    <script defer src="js/media.js?v=3.0.0"></script>
+    <script defer src="js/export.js?v=3.0.0"></script>
+    <script defer src="js/icons.js?v=3.0.0"></script>
+    <script defer src="js/sample.js?v=3.0.0"></script>
+    <script defer src="js/muse.js?v=3.0.0"></script>
+    <script defer src="js/glass.js?v=3.0.0"></script>
+    <script defer src="js/ui.js?v=3.0.0"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
         if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {
