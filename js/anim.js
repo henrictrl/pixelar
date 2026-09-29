@@ -239,7 +239,7 @@ const FX_COLOR_LABELS = { uColor: 'Cor', uColorA: 'Cor A', uColorB: 'Cor B', uFg
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // ============================================================
-// PALETAS VIVAS (aleatório e Surpresa)
+// PALETAS VIVAS (sorteio por seção)
 // Combinações que se complementam: esquemas harmônicos com saturação alta,
 // sempre com uma rampa de luz do escuro ao claro (a imagem não fica "chapada").
 // ============================================================
