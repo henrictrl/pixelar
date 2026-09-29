@@ -4,7 +4,9 @@ Editor de pixel art, dither, filmes analógicos e animações para **fotos e ví
 
 Interface na linguagem do iOS 27 (Liquid Glass): a imagem ocupa a tela toda e os controles flutuam por cima em vidro, que é tingido pelas cores da foto e, no Chrome/Android, refrata o fundo nas bordas. São 4 abas (Estilos · Ajustar · Efeitos · Animar), cada uma com suas seções, sliders de vidro e um cartão de controles que pode ser recolhido (puxador no celular, botão ou tecla `P` no computador). A cor de destaque vem da cor dominante da imagem.
 
-**Variações (Muse):** em Estilos → Variações, o app lê a foto (luz, cores, textura, pele, céu, noite, arte gráfica) e monta sugestões pensadas para ela, com paletas harmônicas e de obras de arte. Os critérios pesam legibilidade, harmonia, pele e detalhe, e cada lote é variado. “Parecidas” explora a partir da escolhida, e cada escolha ensina o gosto da pessoa, que fica salvo no aparelho. O dado do topo usa o mesmo motor.
+**Variações (Muse):** em Estilos → Variações, o app lê a foto (luz, cores, textura, pele, céu, noite, arte gráfica) e monta sugestões pensadas para ela, com paletas harmônicas e de obras de arte. Os critérios pesam legibilidade, harmonia, pele e detalhe, e cada lote é variado. “Parecidas” explora a partir da escolhida, e cada escolha ensina o gosto da pessoa, que fica salvo no aparelho. O dado do topo usa o mesmo motor no modo ousado: mais cor, mais texturas, sorteio de verdade entre as boas opções e sem repetir a família das últimas jogadas.
+
+**Texturas:** além das clássicas, há ASCII, monitor CRT, miçangas, tricô, pastilhas, holograma, topografia, estrelas, pontilhado, xilogravura, pulsar, papel, vidro canelado, meio-tom CMYK e duplo, água, térmico, relevo, bitmap, nanquim, limiar de cor, lente fantasma, ácido, traçado néon e pincelada. Todas têm ajustes próprios e estilos prontos no grupo “Texturas”.
 
 ## Como usar localmente
 

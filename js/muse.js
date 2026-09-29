@@ -256,7 +256,38 @@ const Muse = (() => {
         sonho: { nome: 'Sonho', w: (c) => 0.7 + c.clara * 1.4 + c.retrato * 0.5 + c.paisagem * 0.4 - c.escura * 0.5 },
         mono: { nome: 'Monocromo', w: (c) => 0.5 + c.mono * 1.8 + c.apagado * 0.6 + c.detalhada * 0.3 },
         cor: { nome: 'Cor', w: (c) => 0.9 + c.vivo * 0.8 + c.retrato * 0.8 + c.paisagem * 0.5 },
+        cores: { nome: 'Cor viva', w: (c) => 0.7 + c.apagado * 0.7 + c.mono * 0.6 + c.vivo * 0.3 - c.retrato * 0.2 },
+        textura: { nome: 'Textura', w: (c) => 0.7 + c.grafico * 0.5 + (1 - c.detalhada) * 0.3 },
     };
+    let WILD = false;   // modo ousado (dado): mais cor, mais acaso, mais efeitos
+    // filtros novos, com faixas de parâmetros que sempre dão um resultado bonito
+    const NEW_FX = {
+        ascii: () => ({ uCell: 7 + Math.random() * 7, uContrast: 1.2 + Math.random() * 0.6, uColorMode: Math.random() < 0.6 ? 1 : 0 }),
+        crt: () => ({ uPitch: 2.5 + Math.random() * 2.5, uMask: 0.4 + Math.random() * 0.4, uScan: 0.3 + Math.random() * 0.4, uCurve: Math.random() * 0.2, uGlow: 0.3 + Math.random() * 0.4 }),
+        beads: () => ({ uCell: 10 + Math.random() * 14, uHole: 0.2 + Math.random() * 0.2, uShine: 0.4 + Math.random() * 0.4 }),
+        knit: () => ({ uCell: 9 + Math.random() * 10, uDepth: 0.5 + Math.random() * 0.4, uFuzz: 0.3 + Math.random() * 0.4 }),
+        mosaic_tiles: () => ({ uCell: 10 + Math.random() * 20, uGrout: 0.08 + Math.random() * 0.12, uBrick: Math.random() < 0.4 ? 1 : 0, uBevel: 0.3 + Math.random() * 0.5 }),
+        hologram: () => ({ uAmount: 0.5 + Math.random() * 0.4, uBands: 1 + Math.random() * 4, uShift: 0.5 + Math.random() * 1.5, uLines: Math.random() * 0.4 }),
+        contour: () => ({ uLevels: 8 + Math.random() * 12, uThickness: 1 + Math.random(), uFill: Math.random() * 0.6 }),
+        stipple: () => ({ uCell: 4 + Math.random() * 4, uJitter: 0.6 + Math.random() * 0.4, uGamma: 1 + Math.random() * 0.6 }),
+        woodcut: () => ({ uSpacing: 5 + Math.random() * 5, uWarp: 0.8 + Math.random() * 1.2, uContrast: 1.2 + Math.random() * 0.6 }),
+        mesh_lines: () => ({ uSpacing: 10 + Math.random() * 10, uHeight: 50 + Math.random() * 60, uThickness: 1.2 + Math.random() }),
+        cmyk_halftone: () => ({ uCell: 5 + Math.random() * 6, uDot: 0.9 + Math.random() * 0.4 }),
+        duo_halftone: () => { const a = hexToRgb(lch2hex(0.3, 0.14, Math.random() * 360)), b = hexToRgb(lch2hex(0.7, 0.18, Math.random() * 360)); return { uCell: 6 + Math.random() * 5, uColorA_r: a.r / 255, uColorA_g: a.g / 255, uColorA_b: a.b / 255, uColorB_r: b.r / 255, uColorB_g: b.g / 255, uColorB_b: b.b / 255 }; },
+        thermal: () => ({ uContrast: 1 + Math.random() * 0.6, uShift: (Math.random() - 0.5) * 0.3, uBlur: Math.random() }),
+        edge_ink: () => ({ uThickness: 1 + Math.random(), uThreshold: 0.07 + Math.random() * 0.08, uWash: Math.random() * 0.5 }),
+        color_threshold: () => ({ uThreshold: 0.4 + Math.random() * 0.2, uSoft: Math.random() * 0.08, uSplit: 0.05 + Math.random() * 0.2 }),
+        acid: () => ({ uAmount: 0.5 + Math.random() * 0.4, uWarp: Math.random(), uSat: 1.3 + Math.random() * 0.8 }),
+        neon_trace: () => ({ uThickness: 1 + Math.random(), uGlow: 0.8 + Math.random() * 0.8, uThreshold: 0.06 + Math.random() * 0.06, uBg: Math.random() * 0.2 }),
+        fluted_glass: () => ({ uRib: 14 + Math.random() * 24, uStrength: 0.6 + Math.random() * 0.8, uAngle: Math.random() < 0.7 ? 0 : 1.5708, uShade: 0.2 + Math.random() * 0.3 }),
+        water: () => ({ uAmount: 0.5 + Math.random() * 0.8, uScale: 0.6 + Math.random() * 1.2, uCaustics: Math.random() * 0.7 }),
+        starlight: () => ({ uThreshold: 0.6 + Math.random() * 0.15, uLength: 25 + Math.random() * 30, uIntensity: 1.2 + Math.random(), uDiagonal: Math.random() < 0.4 ? 0.6 : 0 }),
+        ghost_lens: () => ({ uIntensity: 0.8 + Math.random() * 0.6, uThreshold: 0.62 + Math.random() * 0.15, uSpread: 0.5 + Math.random() * 0.5, uHalo: Math.random() * 0.6 }),
+        paper: () => ({ uFiber: 0.4 + Math.random() * 0.5, uGrain: 0.2 + Math.random() * 0.4, uWarmth: Math.random() * 0.6, uFade: 0.05 + Math.random() * 0.15 }),
+        smudge: () => ({ uLength: 18 + Math.random() * 30, uAngle: Math.random() * 6.28, uFlow: 0.3 + Math.random() * 0.8 }),
+        emboss: () => ({ uStrength: 1.2 + Math.random() * 1.5, uAngle: Math.random() * 6.28, uColorMix: 0.1 + Math.random() * 0.5 }),
+    };
+    const fxParamsOf = (id) => NEW_FX[id] ? NEW_FX[id]() : (typeof randFxParams === 'function' ? randFxParams(id) : {});
     const TEXTURES = ['pattern_refraction', 'pixelate_fx', 'slice_shift', 'vhs', 'channel_mixer', 'warp', 'hatching', 'photocopy', 'bloom'];
 
     function choosePalette(R, A, fam, prefer) {
@@ -272,8 +303,12 @@ const Muse = (() => {
             mono: [['duo', 3], ['tri', 1]],
             filme: [['none', 3], ['img', 1]],
             cor: [['img', 2], ['harm', 1.5], ['none', 1]],
+            cores: [['rainbow', 2], ['neon', 1.5], ['duo', 1.5], ['harm', 1.5], ['lib', 1]],
+            textura: [['none', 2], ['lib', 1.5], ['harm', 1.2], ['duo', 0.8]],
         }[fam];
-        const kind = prefer || pickW(R, opts.map(o => o[0]), opts.map(o => o[1]));
+        const kind = prefer || pickW(R, opts.map(o => o[0]), opts.map(o => o[1]).map((w, i) => WILD && ['rainbow', 'neon', 'duo', 'harm'].includes(opts[i][0]) ? w * 1.8 : w));
+        // no modo ousado, metade das vezes a paleta nem parte das cores da foto
+        const anchorW = WILD && R() < 0.5 ? R() * 360 : anchor;
         const n = pickW(R, [3, 4, 5, 6, 8, 12], fam === 'pixel' ? [1, 3, 3, 2, 2, 0.5] : fam === 'grafico' ? [2, 3, 3, 2, 1, 0] : [0.5, 1, 2, 3, 3, 2]);
         if (kind === 'none') return { kind, colors: [], name: null };
         if (kind === 'lib') {
@@ -286,14 +321,20 @@ const Muse = (() => {
         }
         if (kind === 'harm') {
             const scheme = pickW(R, Object.keys(SCHEMES), [3, 2, 1, 1.5, 0.6, 1.2].map((x, i) => i === 0 ? x + c.paisagem : i === 1 ? x + c.vivo : x));
-            const cols = harmony(R, anchor + (R() < 0.25 ? pick(R, [30, -30, 180]) : 0), scheme, n, A);
+            const cols = harmony(R, anchorW + (R() < 0.25 ? pick(R, [30, -30, 180]) : 0), scheme, n, A, WILD ? { cMax: lerp(0.18, 0.27, R()) } : {});
             return { kind, colors: cols, name: null, scheme };
         }
         if (kind === 'img') return { kind, colors: fromImage(A, Math.max(4, n), lerp(1.3, 2.2, R())), name: null };
         if (kind === 'pastel') return { kind, colors: harmony(R, anchor + pick(R, [0, 30, 150, 180]), pick(R, ['analogas', 'dividida', 'complementar']), Math.max(4, n), A, { lo: 0.42, hi: 0.97, cMax: 0.1 }), name: null };
+        if (kind === 'rainbow') {
+            // arco de matizes (parcial ou completo) sobre a escada de luz: cor que brinca de verdade
+            const span = pick(R, [120, 180, 270, 360]), dir = R() < 0.5 ? 1 : -1, m = Math.max(5, n);
+            const cols = []; for (let i = 0; i < m; i++) { const t = i / (m - 1); cols.push(lch2hex(lerp(0.2, 0.92, t), lerp(0.14, 0.24, R()) * (0.6 + 0.4 * Math.sin(Math.PI * t)), (anchorW + dir * span * t + 360) % 360)); }
+            return { kind: 'rainbow', colors: cols, name: null };
+        }
         if (kind === 'neon') return { kind, colors: harmony(R, pick(R, [300, 330, 200, 180, 270]), pick(R, ['complementar', 'dividida', 'tríade']), Math.max(4, n), A, { lo: 0.1, hi: 0.9, cMax: 0.28, curve: 1.4 }), name: null };
         // duo/tri: sombras frias ou profundas, luzes quentes/claras (ou o inverso), sempre com luz bem separada
-        const h1 = (anchor + pick(R, [180, 150, 210, 0])) % 360, h2 = anchor;
+        const h1 = (anchorW + pick(R, [180, 150, 210, 0])) % 360, h2 = anchorW;
         const dark = lch2hex(lerp(0.12, 0.22, R()), lerp(0.04, 0.12, R()), h1), light = lch2hex(lerp(0.9, 0.97, R()), lerp(0.02, 0.08, R()), h2);
         if (kind === 'tri' || (kind === 'duo' && R() < 0.35)) return { kind: 'tri', colors: [dark, lch2hex(lerp(0.5, 0.64, R()), lerp(0.12, 0.2, R()), (h1 + h2) / 2 + pick(R, [0, 90])), light], name: null };
         return { kind: 'duo', colors: [dark, light], name: null };
@@ -316,6 +357,8 @@ const Muse = (() => {
             sonho: [['none', 3], ['noise', 1]],
             mono: [['floyd_approx', 2], ['halftone', 1.5], ['bayer8', 1.5], ['none', 1.5]],
             filme: [['none', 1]], cor: [['none', 1]],
+            cores: [['none', 3], ['halftone', 1], ['bayer8', 1], ['scanlines', 0.6]],
+            textura: [['none', 5], ['bayer8', 0.5]],
         }[fam];
         const dm = pickW(R, dith.map(x => x[0]), dith.map(x => x[1]));
         g.dither = dm === 'none' ? null : { mode: dm, scale: dm === 'halftone' ? pick(R, [2, 3, 4, 5]) : pick(R, [1, 1, 2]), intensity: Math.round(lerp(60, dm === 'halftone' ? 140 : 120, R())) };
@@ -337,17 +380,27 @@ const Muse = (() => {
         const grainP = { pintura: 0.65, filme: 0.55, impressao: 0.6, mono: 0.5, sonho: 0.3, grafico: 0.2, neon: 0.25, pixel: 0.05, cor: 0.3 }[fam];
         g.grain = R() < grainP ? { amount: Math.round(lerp(8, fam === 'pintura' || fam === 'impressao' ? 26 : 18, R())), size: Math.round(lerp(100, 220, R())), rough: Math.round(lerp(40, 90, R())), mono: fam !== 'pintura' || R() < 0.5 } : null;
         // textura
-        const texP = { pintura: 0.3, grafico: 0.2, neon: 0.3, impressao: 0.35, mono: 0.15, sonho: 0.15, pixel: 0.05, filme: 0.05, cor: 0.1 }[fam];
-        if (R() < texP * (c.retrato > 0.4 ? 0.5 : 1)) {
-            const pool = { pintura: ['warp', 'pattern_refraction', 'hatching'], grafico: ['pixelate_fx', 'pattern_refraction', 'slice_shift'], neon: ['bloom', 'vhs', 'channel_mixer', 'slice_shift'], impressao: ['photocopy', 'hatching'], mono: ['photocopy', 'hatching'], sonho: ['bloom', 'pattern_refraction'], pixel: ['pixelate_fx'], filme: ['vhs'], cor: ['channel_mixer', 'bloom'] }[fam];
+        const texP = ({ pintura: 0.35, grafico: 0.35, neon: 0.45, impressao: 0.55, mono: 0.35, sonho: 0.25, pixel: 0.12, filme: 0.05, cor: 0.12, cores: 0.55, textura: 1 }[fam]) * (WILD ? 1.5 : 1);
+        if (R() < texP * (c.retrato > 0.4 && fam !== 'textura' ? 0.5 : 1)) {
+            const pool = {
+                pintura: ['warp', 'pattern_refraction', 'hatching', 'smudge', 'paper', 'woodcut'],
+                grafico: ['pixelate_fx', 'pattern_refraction', 'slice_shift', 'color_threshold', 'mosaic_tiles', 'cmyk_halftone'],
+                neon: ['bloom', 'vhs', 'channel_mixer', 'slice_shift', 'neon_trace', 'crt', 'hologram', 'ghost_lens', 'starlight'],
+                impressao: ['photocopy', 'hatching', 'cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'paper', 'edge_ink'],
+                mono: ['photocopy', 'hatching', 'stipple', 'woodcut', 'edge_ink', 'mesh_lines', 'contour'],
+                sonho: ['bloom', 'pattern_refraction', 'fluted_glass', 'water', 'ghost_lens', 'starlight'],
+                pixel: ['pixelate_fx', 'crt', 'beads', 'ascii'], filme: ['vhs'], cor: ['channel_mixer', 'bloom', 'fluted_glass'],
+                cores: ['hologram', 'acid', 'thermal', 'color_threshold', 'channel_mixer', 'neon_trace', 'fluted_glass'],
+                textura: ['ascii', 'crt', 'beads', 'knit', 'mosaic_tiles', 'hologram', 'contour', 'stipple', 'woodcut', 'mesh_lines', 'cmyk_halftone', 'duo_halftone', 'thermal', 'edge_ink', 'fluted_glass', 'neon_trace', 'water', 'emboss'],
+            }[fam];
             const id = pick(R, pool);
-            if (PixelarFX.getEffectDef(id)) g.fx = { id, mix: Math.round(lerp(35, 80, R())), params: typeof randFxParams === 'function' ? randFxParams(id) : {} };
+            if (PixelarFX.getEffectDef(id)) g.fx = { id, mix: Math.round(fam === 'textura' || NEW_FX[id] ? lerp(80, 100, R()) : lerp(35, 80, R())), params: fxParamsOf(id) };
         }
         // contorno
         const edgeP = { grafico: 0.45, pixel: 0.2, impressao: 0.15, pintura: 0.1 }[fam] || 0;
         if (R() < edgeP * (c.detalhada > 0.6 ? 0.4 : 1)) g.edge = { size: pick(R, [1, 1, 2]), opacity: Math.round(lerp(55, 100, R())) };
         // degradê de luz (colorir sem perder a foto)
-        const gradP = { sonho: 0.4, neon: 0.35, cor: 0.3, pintura: 0.12 }[fam] || 0;
+        const gradP = ({ sonho: 0.4, neon: 0.35, cor: 0.3, pintura: 0.12, cores: 0.6 }[fam] || 0) + (WILD ? 0.15 : 0);
         if (R() < gradP && g.pal.kind !== 'duo' && g.pal.kind !== 'tri') {
             const hA = A.peaks.length ? A.peaks[0].h : 40, hB = (hA + pick(R, [150, 180, 210, 60])) % 360;
             g.grad = { type: pick(R, ['linear', 'radial', 'diamond', 'mirror']), angle: pick(R, [90, 135, 180, 45]), colors: [lch2hex(0.7, 0.16, hA), lch2hex(0.55, 0.18, hB)], blend: pick(R, ['softlight', 'overlay', 'color', 'screen']), opacity: Math.round(lerp(25, 55, R())) };
@@ -450,9 +503,11 @@ const Muse = (() => {
         pixel: ['8 bits', 'Mosaico', 'Cartucho', 'Fliperama'], impressao: ['Riso', 'Offset', 'Tipografia', 'Xilo'],
         neon: ['Néon', 'Letreiro', 'Madrugada', 'Fliperama'], sonho: ['Névoa', 'Sonho', 'Aurora', 'Veludo'],
         mono: ['Nanquim', 'Carvão', 'Prata', 'Grafite'], cor: ['Luz', 'Cor', 'Tarde'], filme: ['Filme'],
+        cores: ['Prisma', 'Caleidoscópio', 'Arco-íris', 'Neon pop', 'Tinta viva'], textura: ['Textura'],
     };
     function title(g) {
         const fam = (NOUNS[g.fam] || [FAMILIES[g.fam].nome])[(g.pal.colors.join('').length + g.px + (g.dither ? g.dither.intensity : 0)) % (NOUNS[g.fam] || [0]).length];
+        if (g.fam === 'textura' && g.fx) { const fxn = (PixelarFX.getEffectDef(g.fx.id) || {}).nome || 'Textura'; return g.pal.colors.length ? fxn + ' · ' + paletteTitle(g.pal.colors).toLowerCase() : fxn; }
         if (g.pal.name) return g.pal.name;
         if (g.film && !g.pal.colors.length) return (FILM_LOOKS[g.film.look] || {}).nome || fam;
         if (g.pal.colors.length) return fam + ' · ' + paletteTitle(g.pal.colors).toLowerCase();
@@ -473,21 +528,30 @@ const Muse = (() => {
     }
 
     // n variações para a foto atual
+    const WILD_W = { filme: 0.12, cor: 0.18, mono: 0.6, sonho: 0.9, pintura: 1, impressao: 1.1, grafico: 1.3, pixel: 1.2, neon: 1.3, cores: 2.2, textura: 2 };
     function generate(A, cur, opts = {}) {
         const n = opts.n || 12, pool = opts.pool || 60;
         const R = rng(opts.seed || (++seedN * 2654435761));
+        WILD = !!opts.wild;
         const ctx = { long: opts.long || 1600, taste: mem.taste, recent: mem.recent };
-        const fams = Object.keys(FAMILIES), fw = fams.map(f => Math.max(0.05, FAMILIES[f].w(A.c)) * (1 + clamp(mem.taste['fam:' + f] || 0, -0.8, 1.5)));
+        const lastF = mem.lastDice || [];
+        const fams = Object.keys(FAMILIES), fw = fams.map(f => Math.max(0.05, FAMILIES[f].w(A.c)) * (1 + clamp(mem.taste['fam:' + f] || 0, -0.8, 1.5)) * (WILD ? WILD_W[f] || 1 : 1) * (WILD && lastF.includes(f) ? 0.15 : 1));
         const cands = [];
         for (let i = 0; i < pool; i++) {
             const fam = opts.parent ? (R() < 0.8 ? opts.parent.fam : pickW(R, fams, fw)) : pickW(R, fams, fw);
             const g = opts.parent ? mutate(R, opts.parent, A, ctx) : genome(R, A, ctx, fam);
-            const sc = score(g, A, ctx); sc.s += (R() - 0.5) * 0.35;          // um pouco de acaso: infinitas boas opções
+            const sc = score(g, A, ctx); sc.s += (R() - 0.5) * (WILD ? 1.6 : 0.35);          // acaso: infinitas boas opções (bem mais no modo ousado)
             cands.push({ g, sc });
         }
         cands.sort((a, b) => b.sc.s - a.sc.s);
-        const top = cands.slice(0, Math.max(n * 3, 20));
-        const chosen = mmr(top, n);
+        let chosen;
+        if (WILD && n <= 2) {
+            // sorteio de verdade entre as boas: probabilidade proporcional à nota (softmax), não sempre a primeira
+            const top = cands.slice(0, 16), mx = top[0].sc.s, ws = top.map(c => Math.exp((c.sc.s - mx) / 0.55));
+            chosen = []; for (let k = 0; k < n; k++) chosen.push(pickW(R, top, ws));
+            mem.lastDice = [chosen[0].g.fam, ...lastF].slice(0, 2);
+        } else chosen = mmr(cands.slice(0, Math.max(n * 3, 20)), n);
+        WILD = false;
         chosen.forEach(c => mem.recent.push(c.sc.f)); saveMem(mem);
         const seen = {};
         return chosen.map(c => {
