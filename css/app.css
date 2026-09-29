@@ -10,6 +10,9 @@
 @property --acc { syntax: '<color>'; inherits: true; initial-value: #ffcc00; }
 @property --acc-text-l { syntax: '<color>'; inherits: true; initial-value: #b38600; }
 @property --acc-text-d { syntax: '<color>'; inherits: true; initial-value: #ffd60a; }
+@property --tint-1 { syntax: '<color>'; inherits: true; initial-value: #ffcc00; }
+@property --tint-2 { syntax: '<color>'; inherits: true; initial-value: #ff9f0a; }
+@property --tint-3 { syntax: '<color>'; inherits: true; initial-value: #ffe066; }
 @font-face { font-family: 'Departure Mono'; src: url('../DepartureMono-Regular.otf') format('opentype'); font-display: swap; }
 
 /* ============================================================
@@ -61,7 +64,6 @@
     --glass-strong: rgba(250, 250, 252, .82);
     --glass-blur: 7px;
     /* cores da imagem (o JS atualiza): o vidro reflete a foto que está sendo editada */
-    --tint-1: #ff7a59; --tint-2: #6a5cff; --tint-3: #22c3a6;
     --tint-k: 20%;
     --glass-sheen: rgba(255, 255, 255, .5);
     --glass-hi: rgba(255, 255, 255, .95);
@@ -71,7 +73,7 @@
     --lens-tint: color-mix(in srgb, var(--tint-1) 8%, rgba(255, 255, 255, .5));
 
     color-scheme: light;
-    transition: --acc .7s ease, --acc-text-l .7s ease, --acc-text-d .7s ease;
+    transition: --acc .7s ease, --acc-text-l .7s ease, --acc-text-d .7s ease, --tint-1 .9s ease, --tint-2 .9s ease, --tint-3 .9s ease;
 }
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
