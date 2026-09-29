@@ -157,6 +157,9 @@ const Accent = (() => {
         root.setProperty('--acc-ink', lum > 0.55 ? '#111111' : '#FFFFFF');
         root.setProperty('--acc-text-d', rgbHex(txtD));
         root.setProperty('--acc-text-l', rgbHex(txtL));
+        // reflexo do vidro acompanha o destaque: o próprio matiz e dois vizinhos (análogos), sempre juntos
+        const t1 = hslToRgb(hsl.h, s, chroma ? 0.55 : 0.7), t2 = hslToRgb((hsl.h + 0.09) % 1, s * 0.9, chroma ? 0.45 : 0.6), t3 = hslToRgb((hsl.h + 0.93) % 1, s * 0.85, chroma ? 0.65 : 0.8);
+        root.setProperty('--tint-1', rgbHex(t1)); root.setProperty('--tint-2', rgbHex(t2)); root.setProperty('--tint-3', rgbHex(t3));
     }
     // chamado depois de cada render; mede com calma (a cor segue a imagem, não cada quadro)
     function schedule(src, delay = 250) { clearTimeout(timer); timer = setTimeout(() => { try { apply(pickFrom(src)); } catch (e) {} }, delay); }
@@ -872,9 +875,6 @@ const Thumbs = (() => {
             const d = sctx.getImageData(0, 0, src.width, src.height).data, px = [];
             for (let i = 0; i < d.length; i += 4 * 37) px.push({ r: d[i], g: d[i + 1], b: d[i + 2] });
             dominant = getMedianCut(px, 3).map(rgbHex);
-            // o vidro da interface reflete as cores da foto
-            const vivid = getMedianCut(px, 6).map(c => ({ c, s: Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b) })).sort((a, b) => b.s - a.s);
-            ['--tint-1', '--tint-2', '--tint-3'].forEach((k, i) => { const v = vivid[i] || vivid[0]; if (v) document.documentElement.style.setProperty(k, rgbHex(v.c)); });
         } catch (e) {}
         if (force) refreshAll();
     }
