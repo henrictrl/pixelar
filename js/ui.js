@@ -575,6 +575,7 @@ function buildPanel() {
     const pKey = tab.id + '/' + grp.id;
     const same = pKey === lastPanelKey;
     const keep = same ? { dials: $('dials').scrollLeft, ed: scrollOf(editorScroller()), panel: $('panel').scrollTop, seg: $('segRow').scrollLeft, ctrl: ui.active[pKey] } : null;
+    const sameTab = lastPanelKey && lastPanelKey.split('/')[0] === tab.id, segX = $('segRow').scrollLeft;
     lastPanelKey = pKey;
     const seg = $('segRow'); seg.innerHTML = '';
     if (tab.groups.length > 1) tab.groups.forEach(g => {
@@ -604,7 +605,8 @@ function buildPanel() {
         const sc = editorScroller(); if (sc && keep.ctrl === ui.active[aKey]) sc.scrollLeft = keep.ed;
     } else {
         const a = dials.querySelector('.dial.active'); if (a && !single) requestAnimationFrame(() => centerIn(dials, a));
-        const on = seg.querySelector('.seg.on'); if (on) centerIn(seg, on);
+        // trocar de seção na mesma aba: a fileira fica onde estava (só centraliza ao entrar numa aba)
+        const on = seg.querySelector('.seg.on'); if (sameTab) seg.scrollLeft = segX; else if (on) centerIn(seg, on);
     }
 }
 // Refaz só a fileira de botões (ex.: escolher um filme com parâmetros próprios), sem
@@ -734,7 +736,7 @@ let lastEditorKey = null;
 function buildEditor(c) {
     const ed = $('editor');
     // refazer o MESMO editor nunca volta a faixa para o começo: guarda e devolve a rolagem
-    const key = c ? (c.key || c.id || (c.editor && c.editor.name) || c.label) + '|' + ui.tab + '|' + (ui.presetFilter || '') : null;
+    const key = c ? (c.key || c.id || (c.editor && c.editor.name) || c.label) + '|' + ui.tab : null;
     const prev = key && key === lastEditorKey ? [...ed.querySelectorAll('.strip, .chips, .palettes, .swatches')].map(x => x.scrollLeft) : null;
     lastEditorKey = key;
     ed.innerHTML = '';
@@ -1007,19 +1009,35 @@ function applyPreset(name, ps) {
 function editPresets(ed) {
     const groups = ['Todos', ...PRESET_GROUPS.map(g => g[0])];
     const chips = h('div', 'chips');
-    groups.forEach(g => { const b = h('button', 'chip' + (ui.presetFilter === g ? ' on' : ''), g); b.type = 'button'; b.onclick = () => { ui.presetFilter = g; buildEditor({ kind: 'custom', editor: editPresets }); }; chips.append(b); });
-    const strip = h('div', 'strip');
-    const addThumb = (name, stateFn) => {
-        const t = h('button', 'thumb' + (ui.lastPreset === name ? ' on' : '')); t.type = 'button';
-        const pic = h('span', 'pic'); t.append(pic, h('span', 't', name));
-        Thumbs.attach(pic, 'preset:' + name, () => presetApplyState(stateFn()), false);
-        t.onclick = () => { applyPreset(name, stateFn()); strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t)); };
-        strip.append(t);
+    // trocar de categoria troca SÓ a faixa de estilos: a fileira de categorias fica exatamente onde está
+    const makeStrip = () => {
+        const strip = h('div', 'strip');
+        const addThumb = (name, stateFn) => {
+            const t = h('button', 'thumb' + (ui.lastPreset === name ? ' on' : '')); t.type = 'button';
+            const pic = h('span', 'pic'); t.append(pic, h('span', 't', name));
+            Thumbs.attach(pic, 'preset:' + name, () => presetApplyState(stateFn()), false);
+            t.onclick = () => { applyPreset(name, stateFn()); strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t)); };
+            strip.append(t);
+        };
+        PRESET_GROUPS.forEach(([g, names]) => {
+            if (ui.presetFilter !== 'Todos' && ui.presetFilter !== g) return;
+            if (ui.presetFilter === 'Todos') strip.append(h('span', 'strip-group', g));
+            names.forEach(n => addThumb(n, () => presetState(n)));
+        });
+        return strip;
     };
-    PRESET_GROUPS.forEach(([g, names]) => {
-        if (ui.presetFilter !== 'Todos' && ui.presetFilter !== g) return;
-        if (ui.presetFilter === 'Todos') strip.append(h('span', 'strip-group', g));
-        names.forEach(n => addThumb(n, () => presetState(n)));
+    let strip = makeStrip();
+    groups.forEach(g => {
+        const b = h('button', 'chip' + (ui.presetFilter === g ? ' on' : ''), g); b.type = 'button';
+        b.onclick = () => {
+            if (ui.presetFilter === g) return;
+            ui.presetFilter = g;
+            chips.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+            const next = makeStrip(); strip.replaceWith(next); strip = next;
+            enterAnim(next);
+            requestAnimationFrame(() => centerIn(chips, b));   // a categoria tocada fica à vista, sem pular para o começo
+        };
+        chips.append(b);
     });
     ed.append(chips, strip);
 }
