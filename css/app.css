@@ -25,7 +25,7 @@
     --r-card: 28px;           /* cartão de controles, folhas */
     --r-inner: 12px;          /* miniaturas (28 − 16) */
     --bar-h: 44px;            /* altura dos botões do topo (alvo de toque mínimo) */
-    --tab-h: 56px;
+    --tab-h: 68px;
     --thumb: 60px; --thumb-big: 80px; --thumb-label: 24px;
     --editor-h: 124px;
     --dial-size: 48px;
@@ -71,6 +71,7 @@
     --glass-edge: rgba(0, 0, 0, .07);
     --lens: rgba(255, 255, 255, .55);
     --lens-tint: color-mix(in srgb, var(--tint-1) 8%, rgba(255, 255, 255, .5));
+    --tab-lens: color-mix(in srgb, var(--tint-1) 6%, rgba(120, 120, 128, .14));
 
     color-scheme: light;
     transition: --acc .7s ease, --acc-text-l .7s ease, --acc-text-d .7s ease, --tint-1 .9s ease, --tint-2 .9s ease, --tint-3 .9s ease;
@@ -83,7 +84,7 @@
         --checker-a: #111; --checker-b: #1b1b1b; --label-bg: rgba(90, 90, 96, .5);
         --glass-fill: rgba(22, 22, 26, var(--glass-a)); --glass-strong: rgba(26, 26, 30, .8);
         --glass-sheen: rgba(255, 255, 255, .1); --glass-hi: rgba(255, 255, 255, .34); --glass-rim: rgba(255, 255, 255, .14); --glass-edge: rgba(0, 0, 0, .45);
-        --lens: rgba(255, 255, 255, .1); --lens-tint: color-mix(in srgb, var(--tint-1) 12%, rgba(255, 255, 255, .07)); --tint-k: 26%;
+        --lens: rgba(255, 255, 255, .1); --tab-lens: color-mix(in srgb, var(--tint-1) 8%, rgba(255, 255, 255, .13)); --lens-tint: color-mix(in srgb, var(--tint-1) 12%, rgba(255, 255, 255, .07)); --tint-k: 26%;
         color-scheme: dark;
     }
 }
@@ -94,7 +95,7 @@
     --checker-a: #111; --checker-b: #1b1b1b; --label-bg: rgba(90, 90, 96, .5);
     --glass-fill: rgba(22, 22, 26, var(--glass-a)); --glass-strong: rgba(26, 26, 30, .8);
     --glass-sheen: rgba(255, 255, 255, .1); --glass-hi: rgba(255, 255, 255, .34); --glass-rim: rgba(255, 255, 255, .14); --glass-edge: rgba(0, 0, 0, .45);
-    --lens: rgba(255, 255, 255, .1); --lens-tint: color-mix(in srgb, var(--tint-1) 12%, rgba(255, 255, 255, .07)); --tint-k: 26%;
+    --lens: rgba(255, 255, 255, .1); --tab-lens: color-mix(in srgb, var(--tint-1) 8%, rgba(255, 255, 255, .13)); --lens-tint: color-mix(in srgb, var(--tint-1) 12%, rgba(255, 255, 255, .07)); --tint-k: 26%;
     color-scheme: dark;
 }
 /* ajuste de transparência do vidro (como o controle do iOS 27) */
@@ -109,11 +110,16 @@
 html, body { height: 100%; background: var(--bg); color: var(--text); overflow: hidden; overscroll-behavior: none; }
 body { font: 15px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.005em; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; touch-action: manipulation; }
+/* segurar (para travar um controle) nunca seleciona texto nem abre o menu do sistema */
+#app, .sheet, .toasts { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#app input, .sheet input, .sheet textarea { -webkit-user-select: text; user-select: text; }
+img, canvas, svg { -webkit-user-drag: none; }
 button:disabled { opacity: .32; cursor: default; }
 button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .visually-hidden { position: fixed; left: -100px; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 [hidden] { display: none !important; }
 .ic { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.15; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ic.filled { fill: currentColor; stroke: none; }
 kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 3px 6px; border-radius: 6px; background: var(--fill-1); }
 
 /* material de vidro: fundo desfocado + reflexo no alto + aro claro + borda escurecida (tudo interno) */
@@ -336,16 +342,16 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 3px 6px; border-
 .pal .bar i { flex: 1; }
 .pal .t { font-size: 10px; color: var(--text-2); max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ---------- abas: cápsula de vidro com lente deslizante ---------- */
-.tabbar { position: relative; align-self: center; display: flex; padding: 4px; border-radius: calc(var(--tab-h) / 2); max-width: 100%; }
-.tab { position: relative; z-index: 1; flex: none; width: 82px; height: calc(var(--tab-h) - 8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: calc(var(--tab-h) / 2 - 4px); color: var(--text-2); transition: color .3s, transform .45s var(--spring); }
+/* ---------- abas: barra larga e alta (como a do Apple Music), ícones cheios, aba ativa na cor de destaque ---------- */
+.tabbar { position: relative; align-self: stretch; display: grid; grid-template-columns: repeat(4, 1fr); padding: 5px; border-radius: calc(var(--tab-h) / 2); }
+.tab { position: relative; z-index: 1; min-width: 0; height: calc(var(--tab-h) - 10px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: calc(var(--tab-h) / 2 - 5px); color: var(--text); transition: color .3s, transform .45s var(--spring); }
 .tab:active { transform: scale(.94); transition-duration: .12s; }
-.tab .ic { width: 23px; height: 23px; transition: transform .5s var(--spring); }
-.tab span { font-size: 10px; font-weight: 600; letter-spacing: .01em; }
-.tab.on { color: var(--text); }
-.tab.on .ic { color: var(--accent-text); transform: scale(1.06); }
-.tabbar .lens { border-radius: calc(var(--tab-h) / 2 - 4px); background: var(--lens); box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 .5px var(--glass-rim); }
-@media (max-width: 400px) { .tab { width: calc((100vw - 2 * var(--m) - 8px) / 4); } }
+.tab .ic { width: 27px; height: 27px; transition: transform .5s var(--spring); }
+.tab span { font-size: 11px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+.tab.on { color: var(--accent-text); }
+.tab.on .ic { transform: scale(1.04); }
+/* lente da aba ativa: clara e macia, sem aro (como no Apple Music) */
+.tabbar .lens { border-radius: calc(var(--tab-h) / 2 - 5px); background: var(--tab-lens); box-shadow: inset 0 1px 0 var(--glass-hi); }
 
 /* ============================================================
    FOLHAS, MENUS, AVISOS
@@ -424,7 +430,7 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 3px 6px; border-
    TELAS BAIXAS (celular com as barras do navegador)
    ============================================================ */
 @media (max-height: 760px) and (max-width: 899px) {
-    :root { --thumb: 54px; --thumb-big: 70px; --editor-h: 96px; --dial-size: 42px; --tab-h: 48px; }
+    :root { --thumb: 54px; --thumb-big: 70px; --editor-h: 96px; --dial-size: 42px; --tab-h: 62px; }
     .panel-handle { height: 16px; }
     .editor { gap: 6px; }
     .chip { height: 30px; }
@@ -437,9 +443,9 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 3px 6px; border-
     .seg { height: 26px; }
 }
 @media (max-height: 640px) and (max-width: 899px) {
-    :root { --thumb: 48px; --thumb-big: 58px; --editor-h: 86px; --dial-size: 38px; --tab-h: 46px; }
+    :root { --thumb: 48px; --thumb-big: 58px; --editor-h: 86px; --dial-size: 38px; --tab-h: 56px; }
     .editor-note { display: none; }
-    .tab span { font-size: 9.5px; }
+    .tab span { font-size: 10px; } .tab .ic { width: 24px; height: 24px; }
 }
 
 /* ============================================================
@@ -481,7 +487,7 @@ kbd { font: 12px/1 ui-monospace, "SF Mono", monospace; padding: 3px 6px; border-
     .sheet .grabber { display: none; }
 }
 @media (orientation: landscape) and (max-height: 540px) and (min-width: 560px) and (max-width: 1100px) {
-    :root { --m: 8px; --side: 300px; --thumb: 52px; --thumb-label: 13px; --dial-size: 40px; --bar-h: 38px; --tab-h: 46px; }
+    :root { --m: 8px; --side: 300px; --thumb: 52px; --thumb-label: 13px; --dial-size: 40px; --bar-h: 38px; --tab-h: 56px; }
     .panel-inner { padding: 10px 0 14px; gap: 10px; }
     .dial .name { font-size: 10px; }
     .gs-hint { display: none; }

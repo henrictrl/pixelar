@@ -108,6 +108,11 @@ const ICONS = {
     chevron: '<path d="M9 6l6 6-6 6"/>',
     eyedropper: '<path d="M14.5 5.5l4 4"/><path d="M16.2 3.8a1.9 1.9 0 0 1 2.7 0l1.3 1.3a1.9 1.9 0 0 1 0 2.7L17.8 10.2l-4-4z"/><path d="M15.5 8.5L7 17l-3 1 1-3 8.5-8.5"/>',
     sidebar: '<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M14.5 4.5v15"/>',
+    // abas: ícones preenchidos (estilo da barra do Apple Music)
+    'tab-styles': '<rect x="3" y="3" width="8" height="8" rx="2.4"/><rect x="13" y="3" width="8" height="8" rx="2.4"/><rect x="3" y="13" width="8" height="8" rx="2.4"/><circle cx="17" cy="17" r="4.2"/>',
+    'tab-adjust': '<path fill-rule="evenodd" d="M12 2.2a9.8 9.8 0 1 1 0 19.6 9.8 9.8 0 0 1 0-19.6Zm-1.15 3.6a1.15 1.15 0 0 1 2.3 0v5.1a1.15 1.15 0 0 1-2.3 0Z"/>',
+    'tab-fx': '<path d="M10 2.2c.55 4.6 2.85 6.95 7.45 7.5-4.6.55-6.9 2.85-7.45 7.45-.55-4.6-2.85-6.9-7.45-7.45 4.6-.55 6.9-2.9 7.45-7.5Z"/><path d="M18.2 13.2c.3 2.3 1.45 3.45 3.75 3.75-2.3.3-3.45 1.45-3.75 3.75-.3-2.3-1.45-3.45-3.75-3.75 2.3-.3 3.45-1.45 3.75-3.75Z"/>',
+    'tab-motion': '<rect x="2" y="9" width="3" height="6" rx="1.5"/><rect x="6.5" y="5.5" width="3" height="13" rx="1.5"/><rect x="11" y="2.5" width="3" height="19" rx="1.5"/><rect x="15.5" y="6.5" width="3" height="11" rx="1.5"/><rect x="20" y="9.5" width="2.5" height="5" rx="1.25"/>',
     trim: '<path d="M6 4v16M18 4v16"/><path d="M6 12h12" opacity=".4"/>',
 };
 function icon(name, cls = '') {
