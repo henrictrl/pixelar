@@ -16,6 +16,11 @@ function rotateMixer(p, T, a) {
 }
 // Só movimentos contínuos (nada de pulsar, piscar ou "respirar"): o loop parece infinito.
 const FX_ANIM = {
+    crt: { nome: 'varredura do tubo', shader: true },
+    hologram: { nome: 'arco-íris correndo', shader: true },
+    water: { nome: 'água ondulando', shader: true },
+    acid: { nome: 'cores derretendo', shader: true },
+    starlight: { nome: 'estrelas cintilando', shader: true },
     channel_mixer: { nome: 'canais girando', fn: (p, T, a) => rotateMixer(p, T, Math.min(1, a)) },
     hatching: { nome: 'anéis se expandindo', shader: true },
     outlines: { nome: 'contornos marchando', shader: true },
@@ -226,16 +231,47 @@ const FX_RANGES = {
     uFade: [0, 1], uSatShift: [0, 1.5], uBlackPoint: [0, 0.3], uWhitePoint: [0.7, 1], uWarmth: [0, 1], uMicroGrain: [0, 0.3], uSpread: [0.1, 1.5], uSoftness: [0.01, 1],
     uRR: [-1, 2], uRG: [-1, 2], uRB: [-1, 2], uGR: [-1, 2], uGG: [-1, 2], uGB: [-1, 2], uBR: [-1, 2], uBG: [-1, 2], uBB: [-1, 2],
 };
-const FX_RANGES_BY_EFFECT = { vignette: { uRadius: [0, 1.5], uSoftness: [0.01, 1.5], uIntensity: [0, 1.5] } };
+const FX_RANGES_BY_EFFECT = {
+    vignette: { uRadius: [0, 1.5], uSoftness: [0.01, 1.5], uIntensity: [0, 1.5] },
+    ascii: { uCell: [5, 28], uContrast: [0.5, 2.5], uColorMode: [0, 1] },
+    crt: { uPitch: [2, 8], uMask: [0, 1], uScan: [0, 1], uCurve: [0, 0.5], uGlow: [0, 1] },
+    beads: { uCell: [6, 40], uHole: [0, 0.6], uShine: [0, 1] },
+    knit: { uCell: [6, 32], uDepth: [0, 1], uFuzz: [0, 1] },
+    mosaic_tiles: { uCell: [6, 48], uGrout: [0, 0.4], uBrick: [0, 1], uBevel: [0, 1] },
+    hologram: { uAmount: [0, 1], uBands: [0.5, 8], uShift: [0, 3], uLines: [0, 1] },
+    contour: { uLevels: [3, 30], uThickness: [0.5, 4], uFill: [0, 1] },
+    starlight: { uThreshold: [0.4, 0.98], uLength: [5, 80], uIntensity: [0, 3], uDiagonal: [0, 1] },
+    stipple: { uCell: [3, 16], uJitter: [0, 1], uGamma: [0.5, 2.5] },
+    woodcut: { uSpacing: [3, 16], uWarp: [0, 3], uContrast: [0.5, 2.5] },
+    mesh_lines: { uSpacing: [6, 40], uHeight: [0, 160], uThickness: [0.6, 4] },
+    paper: { uFiber: [0, 1], uGrain: [0, 1], uWarmth: [0, 1], uFade: [0, 0.6] },
+    fluted_glass: { uRib: [6, 60], uStrength: [0, 2], uAngle: [0, 3.1416], uShade: [0, 1] },
+    cmyk_halftone: { uCell: [3, 20], uDot: [0.5, 1.6] },
+    water: { uAmount: [0, 2], uScale: [0.3, 3], uCaustics: [0, 1] },
+    thermal: { uContrast: [0.5, 2.5], uShift: [-0.5, 0.5], uBlur: [0, 2] },
+    emboss: { uStrength: [0.2, 4], uAngle: [0, 6.2832], uColorMix: [0, 1] },
+    bitmap: { uThreshold: [0.1, 0.9], uNoise: [0, 1] },
+    duo_halftone: { uCell: [3, 20] },
+    edge_ink: { uThickness: [0.5, 4], uThreshold: [0.02, 0.4], uWash: [0, 1] },
+    color_threshold: { uThreshold: [0.1, 0.9], uSoft: [0, 0.3], uSplit: [0, 0.4] },
+    ghost_lens: { uIntensity: [0, 2], uThreshold: [0.4, 0.95], uSpread: [0.1, 1.5], uHalo: [0, 1] },
+    acid: { uAmount: [0, 1], uWarp: [0, 2], uSat: [0.5, 3] },
+    neon_trace: { uThickness: [0.5, 4], uGlow: [0, 2], uThreshold: [0.02, 0.4], uBg: [0, 0.6] },
+    smudge: { uLength: [4, 80], uAngle: [0, 6.2832], uFlow: [0, 1.5] },
+};
 const FX_LABELS = {
     uThreshold: 'Limiar', uIntensity: 'Intensidade', uRadius: 'Raio', uBoost: 'Realce', uScale: 'Escala', uGrain: 'Granulado', uContrast: 'Contraste', uShadowLift: 'Sombras',
     uSatMid: 'Saturação', uAngle: 'Ângulo', uSmooth: 'Suavidade', uFreq: 'Frequência', uThickness: 'Espessura', uAmount: 'Quantidade', uChroma: 'Aberração', uZoom: 'Zoom',
     uSpacing: 'Espaçamento', uBands: 'Faixas', uShift: 'Deslocamento', uSizeX: 'Largura', uSizeY: 'Altura', uSlices: 'Fatias', uSeed: 'Semente', uDuo: 'Duotone', uPhase: 'Fase',
     uToneAmount: 'Tom', uStreaks: 'Riscos', uJitter: 'Trepidação', uBleed: 'Sangria', uScanline: 'Linhas', uNoise: 'Ruído', uFade: 'Desbotado', uSatShift: 'Saturação',
+    uCell: 'Tamanho', uColorMode: 'Cor original', uPitch: 'Grade', uMask: 'Máscara RGB', uScan: 'Linhas', uCurve: 'Curvatura', uGlow: 'Brilho', uHole: 'Furo', uShine: 'Reflexo',
+    uDepth: 'Relevo', uFuzz: 'Fiapos', uGrout: 'Rejunte', uBrick: 'Tijolos', uBevel: 'Chanfro', uLines: 'Linhas', uLevels: 'Níveis', uFill: 'Foto por baixo', uLength: 'Comprimento',
+    uDiagonal: 'Diagonais', uGamma: 'Densidade', uWarp: 'Ondulação', uHeight: 'Altura', uFiber: 'Fibras', uRib: 'Canelura', uStrength: 'Força', uShade: 'Sombra', uDot: 'Ponto',
+    uCaustics: 'Cáusticas', uBlur: 'Suavizar', uColorMix: 'Cor', uWash: 'Aguada', uSplit: 'Separação', uSoft: 'Suavidade', uHalo: 'Halo', uSat: 'Saturação', uFlow: 'Fluxo', uBg: 'Fundo',
     uBlackPoint: 'Preto', uWhitePoint: 'Branco', uWarmth: 'Calor', uMicroGrain: 'Micro-grão', uSpread: 'Alcance', uSoftness: 'Suavidade',
     uRR: 'R ← R', uRG: 'R ← G', uRB: 'R ← B', uGR: 'G ← R', uGG: 'G ← G', uGB: 'G ← B', uBR: 'B ← R', uBG: 'B ← G', uBB: 'B ← B',
 };
-const FX_COLOR_LABELS = { uColor: 'Cor', uColorA: 'Cor A', uColorB: 'Cor B', uFg: 'Traço', uBg: 'Fundo', uShadowTone: 'Sombras', uHighTone: 'Luzes', uInk: 'Tinta', uPaper: 'Papel', uLeak: 'Vazamento' };
+const FX_COLOR_LABELS = { uGrout: 'Rejunte', uColor: 'Cor', uColorA: 'Cor A', uColorB: 'Cor B', uFg: 'Traço', uBg: 'Fundo', uShadowTone: 'Sombras', uHighTone: 'Luzes', uInk: 'Tinta', uPaper: 'Papel', uLeak: 'Vazamento' };
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // ============================================================

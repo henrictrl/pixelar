@@ -324,6 +324,20 @@ const GRAD_TYPE_OPTS = [['linear', 'Linear'], ['mirror', 'Espelhado'], ['radial'
 const BLEND_OPTS = [['source-atop', 'Substituir'], ['multiply', 'Multiplicar'], ['screen', 'Clarear'], ['overlay', 'Sobrepor'], ['softlight', 'Luz suave'], ['color', 'Só cor'], ['darken', 'Escurecer'], ['lighten', 'Iluminar'], ['difference', 'Diferença']];
 const FILM_OPTS = [['none', 'Nenhum'], ...Object.values(FILM_LOOKS).map(l => [l.id, l.nome])];
 const FX_OPTS = () => [['none', 'Nenhum'], ...PixelarFX.listEffects().map(f => [f.id, f.nome])];
+// texturas agrupadas (miniaturas com títulos de grupo, como os filmes)
+const FX_GROUP_DEFS = [
+    ['Gráficos', ['ascii', 'crt', 'bitmap', 'color_threshold', 'pixelate_fx', 'beads', 'knit', 'mosaic_tiles']],
+    ['Impressão', ['cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'hatching', 'photocopy', 'edge_ink', 'paper']],
+    ['Luz e vidro', ['hologram', 'starlight', 'ghost_lens', 'fluted_glass', 'water', 'bloom', 'bokeh_blur']],
+    ['Arte', ['contour', 'mesh_lines', 'neon_trace', 'emboss', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'outlines']],
+    ['Cor e vídeo', ['thermal', 'acid', 'channel_mixer', 'vhs', 'slice_shift']],
+];
+function FX_GROUPS() {
+    const all = PixelarFX.listEffects(), byId = Object.fromEntries(all.map(f => [f.id, f.nome])), used = new Set();
+    const out = FX_GROUP_DEFS.map(([g, ids]) => [g, ids.filter(id => byId[id]).map(id => { used.add(id); return [id, byId[id]]; })]).filter(([, l]) => l.length);
+    const rest = all.filter(f => !used.has(f.id)).map(f => [f.id, f.nome]); if (rest.length) out.push(['Outros', rest]);
+    return out;
+}
 const PALETTE_LIBRARY = {
     'Game Boy': ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'],
     'PICO-8': ['#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8', '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'],
@@ -441,7 +455,7 @@ const TABS = [
         ] },
 
         { id: 'fx', label: 'Texturas', controls: () => {
-            const list = [randomOnly(['fx'], 'Textura sorteada'), C('fx.id', 'Textura', 'fx', FX_OPTS(), { view: 'thumbs', variant: (s, v) => { s.fx.id = v; if (s.fx.mix < 30) s.fx.mix = 100; } }), R('fx.mix', 'Intensidade', 'intensity', 0, 100)];
+            const list = [randomOnly(['fx'], 'Textura sorteada'), C('fx.id', 'Textura', 'fx', FX_OPTS(), { view: 'thumbs', groupsOf: FX_GROUPS(), variant: (s, v) => { s.fx.id = v; if (s.fx.mix < 30) s.fx.mix = 100; } }), R('fx.mix', 'Intensidade', 'intensity', 0, 100)];
             if (st.fx.id !== 'none') list.push(...fxParamControls(st.fx.id, []));
             return list;
         } }
@@ -520,7 +534,8 @@ function placeLens(box, sel, instant) {
 function buildTabbar() {
     const bar = $('tabbar'); bar.innerHTML = '';
     TABS.forEach((t, i) => {
-        const b = h('button', 'tab' + (t.id === ui.tab ? ' on' : ''), icon(t.icon) + `<span>${t.label}</span>`);
+        const TAB_IC = { estilos: 'tab-styles', ajustar: 'tab-adjust', efeitos: 'tab-fx', movimento: 'tab-motion' };
+        const b = h('button', 'tab' + (t.id === ui.tab ? ' on' : ''), icon(TAB_IC[t.id] || t.icon, 'filled') + `<span>${t.label}</span>`);
         b.type = 'button'; b.dataset.tab = t.id; b.title = `${t.label} (${i + 1})`;
         b.onclick = () => { if (panelCollapsed) setPanelCollapsed(false); selectTab(t.id); };
         bar.append(b);
@@ -633,8 +648,13 @@ function makeDial(c, active) {
     const lockKey = c.lockKey || c.key;
     // segurar trava o controle para o aleatório
     let lp = 0, longPressed = false;
-    d.addEventListener('pointerdown', () => { longPressed = false; if (!lockKey || c.kind === 'action') return; lp = setTimeout(() => { longPressed = true; toggleLock(lockKey); }, 550); });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => d.addEventListener(ev, () => clearTimeout(lp)));
+    let downAt = null;
+    d.addEventListener('pointerdown', (e) => { longPressed = false; downAt = { x: e.clientX, y: e.clientY }; if (!lockKey || c.kind === 'action') return; lp = setTimeout(() => { longPressed = true; toggleLock(lockKey); }, 500); });
+    // arrastar a fileira não conta como segurar
+    d.addEventListener('pointermove', (e) => { if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 8) clearTimeout(lp); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => d.addEventListener(ev, () => { clearTimeout(lp); downAt = null; }));
+    // depois de travar, o soltar do dedo não seleciona o botão
+    d.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); e.preventDefault(); longPressed = false; } }, true);
     d.addEventListener('contextmenu', (e) => { e.preventDefault(); });
     d.addEventListener('click', () => {
         if (longPressed) return;
@@ -710,9 +730,19 @@ function flashLabel(text, ms = 1100) {
 // ============================================================
 // EDITORES
 // ============================================================
+let lastEditorKey = null;
 function buildEditor(c) {
-    const ed = $('editor'); ed.innerHTML = '';
+    const ed = $('editor');
+    // refazer o MESMO editor nunca volta a faixa para o começo: guarda e devolve a rolagem
+    const key = c ? (c.key || c.id || (c.editor && c.editor.name) || c.label) + '|' + ui.tab + '|' + (ui.presetFilter || '') : null;
+    const prev = key && key === lastEditorKey ? [...ed.querySelectorAll('.strip, .chips, .palettes, .swatches')].map(x => x.scrollLeft) : null;
+    lastEditorKey = key;
+    ed.innerHTML = '';
     if (!c) return;
+    if (prev) { const keep = ui.keepScroll; ui.keepScroll = true; buildEditorInner(ed, c); ui.keepScroll = keep; [...ed.querySelectorAll('.strip, .chips, .palettes, .swatches')].forEach((x, i) => { if (prev[i] !== undefined) x.scrollLeft = prev[i]; }); return; }
+    buildEditorInner(ed, c);
+}
+function buildEditorInner(ed, c) {
     if (c.kind === 'range') { ed.append(makeRuler(c)); return; }
     if (c.kind === 'choice') { ed.append(c.view === 'thumbs' ? makeThumbChoice(c) : makeChips(c)); const n = choiceNote(c); if (n) ed.append(h('div', 'editor-note', n)); return; }
     if (c.kind === 'custom') { c.editor(ed, c); return; }
@@ -1002,20 +1032,23 @@ function museAnalysis() {
 function museLong() { const { W, H } = mediaSize(M.el); return Math.min(Math.max(W, H), Engine.workCap || 2048); }
 function makeSurprises(parent) {
     const A = museAnalysis(); if (!A) { ui.surprise = []; return; }
-    ui.surprise = Muse.generate(A, st, { n: 12, parent: parent || null, long: museLong(), locks: prefs.locks });
+    // 8 pensadas para a foto + 4 ousadas (cores e texturas fora da caixa), intercaladas
+    const calm = Muse.generate(A, st, { n: parent ? 12 : 8, parent: parent || null, long: museLong(), locks: prefs.locks });
+    const wild = parent ? [] : Muse.generate(A, st, { n: 4, pool: 48, wild: true, long: museLong(), locks: prefs.locks });
+    ui.surprise = []; calm.forEach((v, i) => { ui.surprise.push(v); if (i % 2 === 1 && wild.length) ui.surprise.push(wild.shift()); }); ui.surprise.push(...wild);
     ui.museParent = parent || null;
 }
 function editSurprise(ed) {
     if (!ui.surprise.length) makeSurprises();
     const strip = h('div', 'strip');
     const roll = h('button', 'thumb add'); roll.type = 'button'; roll.innerHTML = `<span class="pic">${icon('dice')}</span><span class="t">Novas</span>`;
-    roll.onclick = () => { makeSurprises(); buildEditor({ kind: 'custom', editor: editSurprise }); enterAnim($('editor')); };
+    roll.onclick = () => { makeSurprises(); lastEditorKey = null; buildEditor({ kind: 'custom', editor: editSurprise }); enterAnim($('editor')); };
     strip.append(roll);
-    if (ui.musePick) {
-        const more = h('button', 'thumb add'); more.type = 'button'; more.innerHTML = `<span class="pic">${icon('sparkle')}</span><span class="t">Parecidas</span>`;
-        more.onclick = () => { makeSurprises(ui.musePick); buildEditor({ kind: 'custom', editor: editSurprise }); enterAnim($('editor')); };
-        strip.append(more);
-    }
+    // sempre no mesmo lugar (apagado até escolher uma): nada se desloca quando ele passa a valer
+    const more = h('button', 'thumb add more'); more.type = 'button'; more.innerHTML = `<span class="pic">${icon('sparkle')}</span><span class="t">Parecidas</span>`;
+    more.disabled = !ui.musePick;
+    more.onclick = () => { if (!ui.musePick) return; makeSurprises(ui.musePick); lastEditorKey = null; buildEditor({ kind: 'custom', editor: editSurprise }); enterAnim($('editor')); };
+    strip.append(more);
     ui.surprise.forEach((v, i) => {
         const t = h('button', 'thumb' + (ui.musePick === v.genome ? ' on' : '')); t.type = 'button';
         const pic = h('span', 'pic'), lab = h('span', 't'); lab.textContent = v.name;
@@ -1026,7 +1059,7 @@ function editSurprise(ed) {
             st = normalizeState(deepClone(v.state)); Engine.invalidate(); afterExternalChange({ keepEditor: true }); commit(true);
             Muse.learn(v.genome, ui.surprise.map(x => x.genome)); ui.musePick = v.genome;
             strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t));
-            if (!strip.querySelector('.thumb.add + .thumb.add')) buildEditor({ kind: 'custom', editor: editSurprise });   // mostra “Parecidas”
+            more.disabled = false;
             toast(v.name, { label: 'Desfazer', run: () => { restore(before); commit(true); } });
         };
         strip.append(t);
@@ -1649,7 +1682,7 @@ function rollDiceUnsafe() {
     // o dado usa o Muse: a melhor de um lote pensado para esta foto (e diferente das últimas)
     const A = museAnalysis(); let label = 'Nova combinação';
     if (A) {
-        const [v] = Muse.generate(A, st, { n: 1, pool: 36, long: museLong(), locks: prefs.locks });
+        const [v] = Muse.generate(A, st, { n: 1, pool: 48, wild: true, long: museLong(), locks: prefs.locks });
         const next = normalizeState(deepClone(v.state));
         // o que a pessoa desligou em “O que o aleatório muda” continua como estava
         const KEEP = { luz: ['adj'], pixel: ['pixel'], dither: ['dither'], palette: ['color'], edge: ['edge'], fx: ['fx', 'fxParams'], grain: ['grain'], film: ['film'], grad: ['grad'] };
