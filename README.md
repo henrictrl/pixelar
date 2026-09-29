@@ -2,7 +2,9 @@
 
 Editor de pixel art, dither, filmes analógicos e animações para **fotos e vídeos**, direto no navegador. Nada é enviado para servidor: tudo roda no aparelho (WebGL2 + WebCodecs).
 
-Interface inspirada no editor do app Fotos da Apple: 4 abas (Estilos · Ajustar · Efeitos · Animar), cada uma com suas seções; botões redondos e régua deslizante no celular; barra lateral no computador. A cor de destaque dos botões vem da cor dominante da imagem que está sendo editada.
+Interface na linguagem do iOS 27 (Liquid Glass): a imagem ocupa a tela toda e os controles flutuam por cima em vidro, que é tingido pelas cores da foto e, no Chrome/Android, refrata o fundo nas bordas. São 4 abas (Estilos · Ajustar · Efeitos · Animar), cada uma com suas seções, sliders de vidro e um cartão de controles que pode ser recolhido (puxador no celular, botão ou tecla `P` no computador). A cor de destaque vem da cor dominante da imagem.
+
+**Variações (Muse):** em Estilos → Variações, o app lê a foto (luz, cores, textura, pele, céu, noite, arte gráfica) e monta sugestões pensadas para ela, com paletas harmônicas e de obras de arte. Os critérios pesam legibilidade, harmonia, pele e detalhe, e cada lote é variado. “Parecidas” explora a partir da escolhida, e cada escolha ensina o gosto da pessoa, que fica salvo no aparelho. O dado do topo usa o mesmo motor.
 
 ## Como usar localmente
 
@@ -22,7 +24,9 @@ Depois abra `http://localhost:8000`. Para publicar, qualquer hospedagem estátic
 | `css/app.css` | Todo o visual (tema claro/escuro, celular e desktop) |
 | `js/gpu.js` | Motor WebGL2 e os shaders dos efeitos e filmes |
 | `js/engine.js` | **Estado** (`DEFAULT_STATE`) e o render: recorte → pixel → GPU → contorno. Também o fallback em CPU |
-| `js/anim.js` | Animação em loop e o modo aleatório |
+| `js/anim.js` | Animação em loop e o sorteio por seção |
+| `js/muse.js` | Variações inteligentes: análise da foto, famílias de estilo, paletas (OKLCH), pontuação e evolução |
+| `js/glass.js` | Vidro líquido: mapas de refração gerados para cada peça (Chrome/Android) |
 | `js/presets.js` | Estilos prontos e conversão de configurações da versão antiga |
 | `js/media.js` | Abertura de vídeos (MP4/MOV/WebM, AVI de câmera, demais via FFmpeg) |
 | `js/export.js` | PNG/JPEG/WebP/SVG, animação e vídeo (MP4/WebM/GIF) |
@@ -37,9 +41,9 @@ Tudo o que a imagem precisa está num único objeto de estado (`st`). O motor (`
 - Para **mudar o layout**, mexa só em `ui.js`/`app.css`. O processamento não é afetado.
 - Para **criar um controle**, adicione uma linha na lista `TABS` em `ui.js` apontando para um campo do estado, por exemplo `R('adj.exposure', 'Exposição', 'exposure', -100, 100)`.
 - Para **criar um filme**, adicione uma linha em `FILM_LOOK_DEFS` (`engine.js`).
-- Para **criar um estilo pronto**, adicione em `MODERN_PRESETS` e em `PRESET_GROUPS` (`presets.js`).
+- Para **criar um estilo pronto**, adicione em `MODERN_PRESETS` e em `PRESET_GROUPS` (`presets.js`). Use `tone([...])` para a paleta se espalhar pela luz da foto (funciona em qualquer imagem); `pal([...])` troca cada cor pela mais próxima (bom para paletas de console).
 - **Ao publicar mudanças, rode `python3 tools/versao.py X.Y.Z`** (ex.: `2.9.2`). Isso carimba a versão nos endereços de todos os arquivos e no `sw.js`. Sem isso, o navegador pode misturar arquivos novos e antigos (o servidor deixa cada arquivo em cache por 10 min) e o app quebra.
 
 ## Atalhos
 
-`R` aleatório · `Espaço` tocar/parar · segurar `O` mostra o original · `C` comparar lado a lado · `⌘Z`/`⇧⌘Z` desfazer/refazer · `⌘E` exportar · `⌘O` abrir · `1`–`4` abas · `←`/`→` ajustam a régua ativa · `+`/`−`/`0` zoom.
+`R` aleatório · `P` mostra/esconde os controles · `Espaço` tocar/parar · segurar `O` mostra o original · `C` comparar lado a lado · `⌘Z`/`⇧⌘Z` desfazer/refazer · `⌘E` exportar · `⌘O` abrir · `1`–`4` abas · `←`/`→` ajustam a régua ativa · `+`/`−`/`0` zoom.
