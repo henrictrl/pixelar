@@ -262,7 +262,41 @@ const Exporter = (() => {
 
     // ---------- vídeo ----------
     // job: { format: mp4|webm|gif, fps, res, progress, cancelled, withAnim }
+    // Áudio em camadas: o decodificador do WebCodecs do Safari falha com alguns arquivos
+    // ("internal audio decoder error"), e isso derrubava a exportação inteira.
+    // 1) WebCodecs (rápido, em fluxo) → 2) Web Audio (outro motor; decodifica o arquivo inteiro) → 3) sem som, com aviso.
+    async function decodeWithWebAudio(blob) {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+        const ctx = new AC();
+        try {
+            const data = await blob.arrayBuffer();
+            return await new Promise((res, rej) => { const p = ctx.decodeAudioData(data, res, rej); if (p && p.then) p.then(res, rej); });
+        } catch (e) { console.warn('[Pixelar] Web Audio também não leu o áudio:', e); return null; }
+        finally { try { ctx.close(); } catch (e) {} }
+    }
+    // pedaço [from, to) segundos de um AudioBuffer, em blocos de 1 s (memória baixa no encoder)
+    async function feedAudioBuffer(asrc, ab, from, to, job) {
+        const sr = ab.sampleRate, ch = ab.numberOfChannels, a = Math.max(0, Math.floor(from * sr)), b = Math.min(ab.length, Math.floor(to * sr));
+        for (let off = a; off < b; off += sr) {
+            if (job.cancelled) return;
+            const len = Math.min(sr, b - off), piece = new AudioBuffer({ length: len, numberOfChannels: ch, sampleRate: sr });
+            for (let c = 0; c < ch; c++) piece.copyToChannel(ab.getChannelData(c).subarray(off, off + len), c);
+            await asrc.add(piece);
+        }
+    }
     async function video(st, videoBlob, job) {
+        try { return await videoInner(st, videoBlob, job); }
+        catch (e) {
+            // erro ligado ao áudio no meio do caminho: refaz sem som em vez de perder a exportação
+            if (!job.mute && !job.cancelled && /audio|áudio|decod|AudioDecoder|AudioEncoder/i.test(String(e && (e.message || e)))) {
+                console.warn('[Pixelar] exportando sem som depois de falha no áudio:', e);
+                job.audioDropped = true;
+                return await videoInner(st, videoBlob, Object.assign(job, { mute: true }));
+            }
+            throw e;
+        }
+    }
+    async function videoInner(st, videoBlob, job) {
         const MB = await Media.loadMediabunny().catch(() => null);
         if (!MB) throw new Error('Exportar vídeo precisa de WebCodecs (Chrome, Edge ou Safari 17+)');
         const input = new MB.Input({ source: new MB.BlobSource(videoBlob), formats: [MB.MP4, MB.QTFF, MB.MATROSKA, MB.WEBM] });
@@ -294,16 +328,41 @@ const Exporter = (() => {
         const output = new MB.Output({ format: outFmt, target: new MB.BufferTarget() });
         const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 }, Media.encExtra()));
         output.addVideoTrack(vsrc, { frameRate: fps });
-        let asrc = null, at = null, audioTask = null;
+        let asrc = null, at = null, audioTask = null, plan = null, waBuffer = null, aFirst = 0;
         if (!job.mute) try {
             at = await input.getPrimaryAudioTrack();
-            if (at && await at.canDecode()) {
-                const ch = Math.min(2, await at.getNumberOfChannels()), ac = await Media.pickAudioCodec(MB, outFmt, ch, await at.getSampleRate());
-                if (ac) { const aStart = Math.max(0, (await at.getFirstTimestamp()) - tStart); asrc = new MB.AudioBufferSource({ codec: ac.codec, quality: new MB.Quality({ bitrate: 192000 }), transform: Object.assign({ numberOfChannels: ch }, ac.transform) }, { startTimestamp: aStart }); output.addAudioTrack(asrc); }
+            if (at) {
+                aFirst = await at.getFirstTimestamp().catch(() => 0);
+                // 1) o WebCodecs consegue decodificar? (testa meio segundo antes de começar)
+                if (await at.canDecode().catch(() => false)) {
+                    try { if (window.__pixelarAudioFail === 'start') throw new DOMException('Internal audio decoder error (teste)', 'EncodingError'); for await (const wb of new MB.AudioBufferSink(at).buffers(tStart, Math.min(tEnd, tStart + 0.5))) { wb && 0; } plan = 'webcodecs'; }
+                    catch (e) { console.warn('[Pixelar] WebCodecs não decodifica este áudio:', e); }
+                }
+                // 2) senão, Web Audio
+                if (!plan) { waBuffer = await decodeWithWebAudio(videoBlob); if (waBuffer) plan = 'webaudio'; }
+                if (plan) {
+                    const srcCh = plan === 'webaudio' ? waBuffer.numberOfChannels : await at.getNumberOfChannels(), srcRate = plan === 'webaudio' ? waBuffer.sampleRate : await at.getSampleRate();
+                    const ch = Math.min(2, srcCh), ac = await Media.pickAudioCodec(MB, outFmt, ch, srcRate);
+                    if (ac) { const aStart = Math.max(0, aFirst - tStart); asrc = new MB.AudioBufferSource({ codec: ac.codec, quality: new MB.Quality({ bitrate: 192000 }), transform: Object.assign({ numberOfChannels: ch }, ac.transform) }, { startTimestamp: aStart }); output.addAudioTrack(asrc); }
+                }
+                if (!asrc) job.audioDropped = true;   // 3) sem som, mas o vídeo sai
             }
-        } catch (e) { console.warn('Áudio ignorado:', e); asrc = null; }
+        } catch (e) { console.warn('[Pixelar] áudio ignorado:', e); asrc = null; job.audioDropped = true; }
         await output.start();
-        if (asrc) audioTask = (async () => { for await (const wb of new MB.AudioBufferSink(at).buffers(tStart, tEnd)) { if (job.cancelled) break; await asrc.add(wb.buffer); } })();
+        if (asrc) audioTask = (async () => {
+            const from = Math.max(tStart, aFirst);
+            if (plan === 'webaudio') return feedAudioBuffer(asrc, waBuffer, from - aFirst, tEnd - aFirst, job);   // o buffer do Web Audio começa no 1º som
+            let added = 0;
+            try {
+                for await (const wb of new MB.AudioBufferSink(at).buffers(tStart, tEnd)) { if (job.cancelled) break; await asrc.add(wb.buffer); added += wb.buffer.duration; if (window.__pixelarAudioFail === 'mid' && added > 1) throw new DOMException('Internal audio decoder error (teste)', 'EncodingError'); }
+            } catch (e) {
+                // o decodificador caiu no meio: continua do ponto em que parou pelo Web Audio
+                console.warn('[Pixelar] WebCodecs falhou no meio do áudio; seguindo pelo Web Audio:', e);
+                const ab = waBuffer || await decodeWithWebAudio(videoBlob);
+                if (!ab) throw new Error('áudio: não foi possível decodificar');
+                await feedAudioBuffer(asrc, ab, from + added - aFirst, tEnd - aFirst, job);
+            }
+        })();
         const times = function* () { for (let i = 0; i < N; i++) yield tStart + (i + 0.5) / fps; };
         let i = 0;
         for await (const wc of sink.canvasesAtTimestamps(times())) {
@@ -320,7 +379,7 @@ const Exporter = (() => {
         await output.finalize();
         const blob = new Blob([output.target.buffer], { type: outFmt.mimeType });
         download(blob, `pixelar_video_${stamp()}${outFmt.fileExtension}`);
-        return { blob, hasAudio: !!asrc };
+        return { blob, hasAudio: !!asrc, audioDropped: !!job.audioDropped };
     }
 
     return { image, svg, config, animation, video, download };
