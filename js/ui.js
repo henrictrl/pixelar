@@ -1478,7 +1478,7 @@ function runExport(title, fn, ext) {
         ui.busy = false; closeSheet();
         const blob = res && res.blob ? res.blob : res;
         doneToast(blob, ext);
-        if (res && res.blob && !res.hasAudio && exp.audio) setTimeout(() => toast('Este vídeo foi exportado sem som (o original não tinha áudio ou o codec não é suportado).'), 1200);
+        if (res && res.blob && !res.hasAudio && exp.audio) setTimeout(() => toast(res.audioDropped ? 'Vídeo exportado sem som: este navegador não conseguiu ler o áudio do arquivo.' : 'Este vídeo foi exportado sem som (o original não tem áudio).'), 1200);
     }).catch((e) => {
         ui.busy = false; closeSheet();
         if (e && e.message === 'cancelado') toast('Exportação cancelada'); else { console.error(e); toast((e && e.message) || 'Falha na exportação'); }
