@@ -44,6 +44,9 @@ const DEFAULT_STATE = {
         vigColor: '#000000', leakColor: '#ff7319', vencido: 0, lumiereHue: 280,
     },
     bg: { fill: false, color: '#F0F0F0' },
+    mix: 100,                           // intensidade do estilo (mistura com a foto original)
+    // camadas sobre a imagem (Paleta e Pixel vêm sempre antes): ordem, mesclagem e opacidade
+    layers: { order: ['grad', 'fx', 'film', 'lens', 'grain', 'edge'], blend: {}, op: {} },
     crop: { aspect: 'original', rot: 0, flipH: false, flipV: false, zoom: 100, x: 0, y: 0 },
     anim: Object.assign({}, ANIM_DEFAULTS),
 };
@@ -59,10 +62,22 @@ function normalizeState(p) {
         if (p[k] === undefined) continue;
         if (out[k] && typeof out[k] === 'object' && !Array.isArray(out[k])) {
             if (k === 'fxParams') out[k] = deepClone(p[k] || {});
+            else if (k === 'layers') out[k] = normalizeLayers(p[k]);
             else Object.assign(out[k], deepClone(p[k]));
         } else out[k] = deepClone(p[k]);
     }
     out.v = 2;
+    return out;
+}
+
+// camadas: garante as seis, sem repetir, na ordem guardada
+const LAYER_IDS = ['grad', 'fx', 'film', 'lens', 'grain', 'edge'];
+function normalizeLayers(l) {
+    const out = { order: [], blend: {}, op: {} };
+    if (l && Array.isArray(l.order)) l.order.forEach(id => { if (LAYER_IDS.includes(id) && !out.order.includes(id)) out.order.push(id); });
+    LAYER_IDS.forEach(id => { if (!out.order.includes(id)) out.order.push(id); });
+    if (l && l.blend) Object.keys(l.blend).forEach(k => { if (LAYER_IDS.includes(k) && typeof l.blend[k] === 'string') out.blend[k] = l.blend[k]; });
+    if (l && l.op) Object.keys(l.op).forEach(k => { if (LAYER_IDS.includes(k) && isFinite(l.op[k])) out.op[k] = Math.max(0, Math.min(100, +l.op[k])); });
     return out;
 }
 
@@ -438,12 +453,13 @@ function fxParamsFor(st, effectId) {
     return p;
 }
 
-function readFilm(st) {
-    const f = st.film, look = FILM_LOOKS[f.look] || null;
-    const mix = f.mix / 100, temp = +f.temp || 0, grainK = f.grainAmt / 100;
+function readFilm(st, part = 'all') {
+    const f = st.film, look = part === 'lens' ? null : (FILM_LOOKS[f.look] || null);
+    const mix = f.mix / 100, temp = part === 'lens' ? 0 : (+f.temp || 0), grainK = f.grainAmt / 100;
     const frame = 0, stamp = false;   // molduras e data carimbada foram removidas do app
     const lens = {}; let lensOn = false;
-    LENS_KEYS.forEach(k => { lens[k] = (+f[k] || 0) / 100; if (lens[k]) lensOn = true; });
+    if (part !== 'look') LENS_KEYS.forEach(k => { lens[k] = (+f[k] || 0) / 100; if (lens[k]) lensOn = true; });
+    else LENS_KEYS.forEach(k => { lens[k] = 0; });
     if (!look && !lensOn && !frame && !stamp && !temp) return null;
     const chem = look && !look.fx;
     const u = Object.assign({}, FILM_NEUTRAL, chem ? look.u : {});
@@ -488,10 +504,50 @@ function readSettings(st) {
         fx: st.fx.id !== 'none' ? { id: st.fx.id, mix: st.fx.mix / 100, params: fxParamsFor(st, st.fx.id) } : null,
         grain: g.amount ? { strength: (g.amount / 100) * 60, cell: Math.max(1, g.size / 100), rough: g.rough / 100, bias: g.bias / 100, speckle: g.speckle / 100, mono: !!g.mono } : null,
         edge: { size: +st.edge.size, color: st.edge.color, opacity: st.edge.opacity / 100 },
-        fillBg: st.bg.fill ? st.bg.color : null,
+        fillBg: null,   // o preenchimento de fundo saiu do app (a transparência é mantida)
         grad: !!st.grad.on,
         film: readFilm(st),
+        filmLook: readFilm(st, 'look'), filmLens: readFilm(st, 'lens'),
+        mix: st.mix === undefined ? 1 : Math.max(0, Math.min(100, +st.mix)) / 100,
+        layers: st.layers ? normalizeLayers(st.layers) : normalizeLayers(null),
     };
+}
+
+// a animação do filme vale para as duas partes (filme e lente)
+function animFilm(film, af) {
+    if (!film || !af) return film;
+    const out = Object.assign({}, film);
+    if (out.u) out.u = Object.assign({}, out.u, { uAnim: af.T, uAnimFrame: af.frame, uWeave: af.weave, uFlicker: af.flicker, uLeakDrift: af.leak, uBurnAnim: af.burn });
+    if (out.fx) out.fx = Object.assign({}, out.fx, { params: af.fxParams || out.fx.params, animT: af.fxT, animFrame: af.frame });
+    return out;
+}
+// monta a cadeia de camadas na ordem escolhida (só as que estão ligadas)
+const COMP_OPS = { multiply: 'multiply', screen: 'screen', overlay: 'overlay', softlight: 'soft-light', color: 'color', darken: 'darken', lighten: 'lighten', difference: 'difference' };
+function buildChain(st, s, fx, grain, an) {
+    const L = s.layers, chain = [], af = an && an.film;
+    const op = (id) => (L.op[id] === undefined ? 100 : L.op[id]) / 100;
+    const look = animFilm(s.filmLook, af), lensF = animFilm(s.filmLens, af);
+    L.order.forEach(id => {
+        const blend = L.blend[id] || 'normal';
+        if (id === 'grad' && st.grad.on) chain.push({ id, kind: 'grad', blend: st.grad.blend, op: st.grad.opacity / 100 });
+        else if (id === 'fx' && fx) chain.push({ id, kind: 'fx', fx, blend, op: 1 });
+        else if (id === 'film' && look && (look.u || look.fx)) chain.push({ id, kind: 'film', film: look, blend, op: 1 });
+        else if (id === 'lens' && lensF && lensF.u) chain.push({ id, kind: 'film', film: lensF, blend, op: op('lens') });
+        else if (id === 'grain' && grain) chain.push({ id, kind: 'grain', grain, blend, op: op('grain') });
+        else if (id === 'edge' && s.edge.size > 0) chain.push({ id, kind: 'edge', blend, op: s.edge.opacity });
+    });
+    // filme seguido da lente, sem mesclagem: uma passada só (igual ao que sempre foi)
+    for (let i = 0; i < chain.length - 1; i++) {
+        const a = chain[i], b = chain[i + 1];
+        if (a.id === 'film' && b.id === 'lens' && a.blend === 'normal' && b.blend === 'normal' && b.op >= 1) {
+            chain.splice(i, 2, { id: 'film', kind: 'film', film: animFilm(s.film, af), blend: 'normal', op: 1 });
+            break;
+        }
+    }
+    // o contorno, quando é a última camada, é desenhado na resolução final (linhas finas e nítidas)
+    let edgeLast = null;
+    if (chain.length && chain[chain.length - 1].kind === 'edge') edgeLast = chain.pop();
+    return { chain, edgeLast };
 }
 
 const palHash = (p) => p.map(c => c.r + ',' + c.g + ',' + c.b).join('|');
@@ -599,6 +655,13 @@ const Engine = (() => {
         // resolução de trabalho: fotos enormes (12–48 MP do celular) são processadas numa
         // cópia de até `cap` px — a mesma na prévia e na exportação, então o que se vê é o que sai
         let cap = o.maxWork !== undefined ? o.maxWork : workCap;
+        // exportação: sem pixel grande, a imagem é processada já no tamanho final (efeitos nítidos,
+        // nada ampliado depois); com pixel grande, a arte é ampliada sem suavizar (pixels perfeitos)
+        if (o.workRes && px === 1 && PixelarGPU.isAvailable()) {
+            const lim = Math.min(PixelarGPU.maxTex || 4096, 8192), long = Math.max(w, h);
+            const target = Math.min(lim, Math.round(o.workRes * long / h));
+            const k = target / long; w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k)); cap = 0;
+        }
         // sem GPU (ou contexto perdido no celular): processa numa base menor para não travar a tela
         if (!PixelarGPU.isAvailable()) cap = Math.min(cap || 1024, 1024);
         if (cap && Math.max(w, h) > cap) { const k = cap / Math.max(w, h); w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k)); }
@@ -634,19 +697,17 @@ const Engine = (() => {
         const mm = (needMinMax || !gpuReady) ? cpuAdjust(getSmallData(w, h), null, s.adj) : { minL: 0, maxL: 255 };
         const an = o.anim || null;
         const fx = s.fx ? { id: s.fx.id, mix: (an && an.fxMix != null) ? an.fxMix : s.fx.mix, params: (an && an.fxParams) || s.fx.params } : null;
-        let film = s.film;
-        if (film && an && an.film) {
-            const af = an.film;
-            if (film.u) film.u = Object.assign({}, film.u, { uAnim: af.T, uAnimFrame: af.frame, uWeave: af.weave, uFlicker: af.flicker, uLeakDrift: af.leak, uBurnAnim: af.burn });
-            if (film.fx) film.fx = Object.assign({}, film.fx, { params: af.fxParams || film.fx.params, animT: af.fxT, animFrame: af.frame });
-        }
+        let film = animFilm(s.film, an && an.film);
         const grain = s.grain ? Object.assign({}, s.grain, { seed: o.grainSeed || 0, strength: s.grain.strength * (o.grainScale !== undefined ? o.grainScale : 1), cell: Math.max(1, s.grain.cell * (o.grainCell || 1)) }) : null;
 
         let d = null;
+        const { chain, edgeLast } = buildChain(st, s, fx, grain, an);
+        // contorno dentro da cadeia: espessura em pixels da arte
+        chain.forEach(c => { if (c.kind === 'edge') { c.half = Math.max(0.35, s.edge.size / (2 * px)); c.color = rgbArr(s.edge.color); } });
         const usedGPU = gpuReady && PixelarGPU.render({
             w, h, srcCanvas: small, srcKey: key, adj: s.adj, dither: s.dither, anim: an,
             minL: mm.minL, maxL: mm.maxL, shadowsInverted: s.shadowsInverted, midDither: s.midDither,
-            grad, color, rgbShift: s.rgbShift, fx, film, grain,
+            grad, color, rgbShift: s.rgbShift, chain, mix: s.mix, edgeBase: s.edge.size > 0,
         });
         if (!usedGPU) {
             d = renderCPU(getSmallData(w, h), w, h, s, color, grad, an, grain, mm);
@@ -659,11 +720,14 @@ const Engine = (() => {
         if (usedGPU) { const g = PixelarGPU.region(); octx.drawImage(PixelarGPU.canvas, g.x, g.y, w, h, 0, 0, W, H); }
         else octx.drawImage(cpuCanvas, 0, 0, w, h, 0, 0, W, H);
         // contorno medido em pixels da arte: mesma espessura relativa na tela, nas miniaturas e em qualquer tamanho exportado
-        if (s.edge.size > 0) {
+        if (s.edge.size > 0 && (edgeLast || !usedGPU)) {
             const thick = s.edge.size * displayScale * (o.edgeScale || 1);
+            const comp = COMP_OPS[(edgeLast && edgeLast.blend) || 'normal'];
+            if (comp) octx.globalCompositeOperation = comp;
             const rg = usedGPU && typeof PixelarGPU.edges === 'function' && PixelarGPU.edges({ W, H, scale: W / w, half: thick / 2, color: rgbArr(s.edge.color), opacity: s.edge.opacity });
             if (rg) { octx.imageSmoothingEnabled = false; octx.drawImage(PixelarGPU.canvas, rg.x, rg.y, W, H, 0, 0, W, H); }
             else { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, Object.assign({}, s.edge, { size: thick })); }
+            octx.globalCompositeOperation = 'source-over';
         }
         return { w, h, W, H, usedGPU, settings: s };
     }

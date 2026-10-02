@@ -1068,7 +1068,7 @@ const PixelarGPU = (function () {
     let srcTex, gradTex, palTex, refPalTex;
     let srcKey = null, gradKey = null, palKey = null, refPalKey = null, palCount = 0;
     const targets = [];        // 2 alvos de ping-pong (textura + framebuffer)
-    let tw = 0, th = 0, lastTarget = -1;
+    let tw = 0, th = 0, lastTarget = -1, edgeBase = false;
 
     const VS = `#version 300 es
     layout(location = 0) in vec2 aPos;
@@ -1800,6 +1800,48 @@ const PixelarGPU = (function () {
         outColor = col;
     }`;
 
+    // MESCLAGEM DE CAMADA: base (o que veio antes) + camada (resultado do efeito),
+    // com modo de mesclagem e opacidade. uUseAlpha: a camada traz a própria cobertura no alfa (contorno).
+    const BLEND_FS = `#version 300 es
+    precision highp float; precision highp int;
+    out vec4 outColor;
+    uniform sampler2D uBase, uLayer;
+    uniform int uMode, uUseAlpha;
+    uniform float uOp;
+    vec3 rgb2hsl_(vec3 c) {
+        float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b)), l = (mx + mn) * 0.5, d = mx - mn;
+        if (d < 1e-5) return vec3(0.0, 0.0, l);
+        float s = l > 0.5 ? d / (2.0 - mx - mn) : d / (mx + mn), h;
+        if (mx == c.r) h = (c.g - c.b) / d + (c.g < c.b ? 6.0 : 0.0); else if (mx == c.g) h = (c.b - c.r) / d + 2.0; else h = (c.r - c.g) / d + 4.0;
+        return vec3(h / 6.0, s, l);
+    }
+    vec3 hsl2rgb_(vec3 h) { vec3 k = clamp(abs(mod(h.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0); return h.z + h.y * (k - 0.5) * (1.0 - abs(2.0 * h.z - 1.0)); }
+    void main() {
+        ivec2 p = ivec2(gl_FragCoord.xy);
+        vec4 b = texelFetch(uBase, p, 0), l = texelFetch(uLayer, p, 0);
+        vec3 a = b.rgb, c = l.rgb, r = c;
+        if (uMode == 1) r = a * c;
+        else if (uMode == 2) r = 1.0 - (1.0 - a) * (1.0 - c);
+        else if (uMode == 3) r = mix(2.0 * a * c, 1.0 - 2.0 * (1.0 - a) * (1.0 - c), step(0.5, a));
+        else if (uMode == 4) { vec3 ho = rgb2hsl_(a), hc = rgb2hsl_(c); r = hsl2rgb_(vec3(hc.x, hc.y, ho.z)); }
+        else if (uMode == 5) r = min(a, c);
+        else if (uMode == 6) r = max(a, c);
+        else if (uMode == 7) r = abs(a - c);
+        else if (uMode == 8) r = mix(2.0 * a * c + a * a * (1.0 - 2.0 * c), sqrt(a) * (2.0 * c - 1.0) + 2.0 * a * (1.0 - c), step(0.5, c));
+        float k = uOp * (uUseAlpha == 1 ? l.a : 1.0);
+        outColor = vec4(clamp(mix(a, r, k), 0.0, 1.0), uUseAlpha == 1 ? b.a : l.a);
+    }`;
+
+    // DEGRADÊ como camada: só a cor do degradê (a mesclagem é feita pela passada BLEND)
+    const GRADL_FS = `#version 300 es
+    precision highp float; precision highp int;
+    out vec4 outColor;
+    uniform sampler2D uTex, uGrad; uniform vec2 uImgSize;
+    void main() {
+        ivec2 ip = ivec2(gl_FragCoord.xy);
+        outColor = vec4(texture(uGrad, (vec2(ip) + 0.5) / uImgSize).rgb, texelFetch(uTex, ip, 0).a);
+    }`;
+
     // CONTORNO: desenhado direto na resolução de saída, a partir da imagem final da GPU.
     // Para cada pixel de saída, verifica se está a menos de meia espessura de uma divisa
     // entre dois pixels da arte com cores diferentes (mesmo critério do antigo desenho em CPU).
@@ -1807,7 +1849,7 @@ const PixelarGPU = (function () {
     precision highp float; precision highp int;
     out vec4 outColor;
     uniform sampler2D uTex;
-    uniform vec2 uOut; uniform float uScale, uHalf; uniform vec4 uColor;
+    uniform vec2 uOut; uniform float uScale, uHalf; uniform vec4 uColor; uniform int uFlip;
     bool differs(ivec2 p, ivec2 q) {
         ivec2 sz = textureSize(uTex, 0);
         if (p.x < 0 || p.y < 0 || q.x >= sz.x || q.y >= sz.y) return false;
@@ -1816,7 +1858,7 @@ const PixelarGPU = (function () {
         return d.r + d.g + d.b > 40.0;
     }
     void main() {
-        vec2 q = vec2(gl_FragCoord.x, uOut.y - gl_FragCoord.y);   // centro do pixel de saída
+        vec2 q = uFlip == 1 ? vec2(gl_FragCoord.x, uOut.y - gl_FragCoord.y) : gl_FragCoord.xy;   // centro do pixel de saída
         ivec2 a = ivec2(floor(q / uScale));
         float xr = float(a.x + 1) * uScale - q.x, xl = q.x - float(a.x) * uScale;
         float yb = float(a.y + 1) * uScale - q.y, yt = q.y - float(a.y) * uScale;
@@ -1870,6 +1912,7 @@ const PixelarGPU = (function () {
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
         progs.MAIN = link(MAIN_FS); progs.SHIFT = link(SHIFT_FS);
         progs.GRAIN = link(GRAIN_FS); progs.BLIT = link(BLIT_FS); progs.FILM = link(FILM_FS); progs.EDGE = link(EDGE_FS);
+        progs.BLEND = link(BLEND_FS); progs.GRADL = link(GRADL_FS);
         srcTex = newTex(gl.NEAREST); gradTex = newTex(gl.LINEAR);
         palTex = newTex(gl.NEAREST); refPalTex = newTex(gl.NEAREST);
         gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
@@ -1899,10 +1942,10 @@ const PixelarGPU = (function () {
     function fits(w, h) { return w <= maxTex && h <= maxTex; }
 
     function ensureTargets(w, h) {
-        if (tw === w && th === h && targets.length === 2) return;
+        if (tw === w && th === h && targets.length === 4) return;
         for (const t of targets) { gl.deleteTexture(t.tex); gl.deleteFramebuffer(t.fbo); }
         targets.length = 0;
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 4; i++) {   // 0–2: rodízio das camadas; 3: cópia da base (contorno)
             const tex = newTex(gl.LINEAR); // LINEAR: efeitos FX amostram coordenadas fracionárias
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
             const fbo = gl.createFramebuffer();
@@ -2002,7 +2045,7 @@ const PixelarGPU = (function () {
                 gl.uniform2f(L.uImgSize, w, h);
                 gl.uniform1f(L.uMinL, o.minL); gl.uniform1f(L.uMaxL, o.maxL);
                 gl.uniform1i(L.uShadowsInverted, o.shadowsInverted ? 1 : 0); gl.uniform1i(L.uMidDither, o.midDither ? 1 : 0);
-                gl.uniform1i(L.uUseGrad, o.grad ? 1 : 0);
+                gl.uniform1i(L.uUseGrad, 0);
                 gl.uniform1i(L.uGradBlend, GRAD_BLEND_IDS[o.grad ? o.grad.b : 'normal'] || 0);
                 gl.uniform1f(L.uGradAlpha, o.grad && o.grad.a !== undefined ? o.grad.a : 1);
                 gl.uniform1i(L.uColorMode, cm.mode);
@@ -2013,66 +2056,92 @@ const PixelarGPU = (function () {
                 gl.uniform1i(L.uDuoCount, duo.length);
             });
             let cur = 0;
-            const next = () => 1 - cur;
-
+            const next = () => (cur + 1) % 3;
             if (o.rgbShift > 0) {
                 pass(progs.SHIFT, targets[cur].tex, next(), (L) => gl.uniform1i(L.uShift, o.rgbShift));
                 cur = next();
             }
-            if (o.fx) {
-                const fp = getFx(o.fx.id);
-                if (fp) {
-                    const params = Object.assign({}, fp.def.uniforms, o.fx.params || {});
-                    pass(fp, targets[cur].tex, next(), (L) => {
-                        gl.uniform2f(L.uResolution, w, h);
-                        if (L.uTime) gl.uniform1f(L.uTime, an.T);
-                        if (L.uAnim) gl.uniform1f(L.uAnim, an.fxT || 0);
-                        if (L.uAnimFrame) gl.uniform1f(L.uAnimFrame, an.fxFrame || 0);
-                        gl.uniform1f(L.uFxMix, o.fx.mix);
-                        for (const k in params) if (L[k]) gl.uniform1f(L[k], params[k]);
-                    });
-                    cur = next();
-                }
+            // contorno: sempre medido na base (foto + paleta + pixel), não nas texturas por cima
+            edgeBase = false;
+            if (o.edgeBase) {
+                bindTex(1, targets[cur].tex);
+                pass(progs.BLEND, targets[cur].tex, 3, (L) => { gl.uniform1i(L.uBase, 0); gl.uniform1i(L.uLayer, 1); gl.uniform1i(L.uMode, 0); gl.uniform1f(L.uOp, 1); gl.uniform1i(L.uUseAlpha, 0); });
+                edgeBase = true;
             }
-            // filme / câmera: efeito legado (Kodak, Lumiere...) e/ou o shader FILM
-            if (o.film) {
-                const fl = o.film;
-                if (fl.fx) {
-                    const fp = getFx(fl.fx.id);
-                    if (fp) {
-                        const params = Object.assign({}, fp.def.uniforms, fl.fx.params || {});
-                        pass(fp, targets[cur].tex, next(), (L) => {
-                            gl.uniform2f(L.uResolution, w, h);
-                            if (L.uAnim) gl.uniform1f(L.uAnim, fl.fx.animT || 0);
-                            if (L.uAnimFrame) gl.uniform1f(L.uAnimFrame, fl.fx.animFrame || 0);
-                            gl.uniform1f(L.uFxMix, fl.fx.mix);
-                            for (const k in params) if (L[k]) gl.uniform1f(L[k], params[k]);
-                        });
-                        cur = next();
-                    }
-                }
-                if (fl.u) {
-                    pass(progs.FILM, targets[cur].tex, next(), (L) => {
-                        gl.uniform2f(L.uSize, w, h);
-                        for (const k in fl.u) {
-                            const loc = L[k], v = fl.u[k];
-                            if (!loc) continue;
-                            if (Array.isArray(v)) { if (v.length === 3) gl.uniform3fv(loc, v); else if (v.length === 4) gl.uniform4fv(loc, v); else gl.uniform2fv(loc, v); }
-                            else if (FILM_INT_UNIFORMS.has(k)) gl.uniform1i(loc, v | 0);
-                            else gl.uniform1f(loc, v);
-                        }
-                    });
-                    cur = next();
-                }
-            }
-            if (o.grain) {
-                const g = o.grain;
-                pass(progs.GRAIN, targets[cur].tex, next(), (L) => {
-                    gl.uniform1f(L.uStrength, g.strength); gl.uniform1f(L.uCell, g.cell); gl.uniform1f(L.uRough, g.rough);
-                    gl.uniform1f(L.uBias, g.bias); gl.uniform1f(L.uSpeckle, g.speckle); gl.uniform1f(L.uSeed, g.seed || 0);
-                    gl.uniform1i(L.uMono, g.mono ? 1 : 0);
+            // cada camada: suas passadas alternam entre os dois alvos livres; depois, se a camada tiver
+            // modo de mesclagem ou opacidade, a passada BLEND junta base + camada no alvo que sobrou
+            const BLEND_IDS = { normal: 0, 'source-atop': 0, multiply: 1, screen: 2, overlay: 3, color: 4, darken: 5, lighten: 6, difference: 7, softlight: 8, 'soft-light': 8 };
+            const runFx = (fx, from, to, animT, animFrame) => {
+                const fp = getFx(fx.id); if (!fp) return false;
+                const params = Object.assign({}, fp.def.uniforms, fx.params || {});
+                pass(fp, targets[from].tex, to, (L) => {
+                    gl.uniform2f(L.uResolution, w, h);
+                    if (L.uTime) gl.uniform1f(L.uTime, an.T);
+                    if (L.uAnim) gl.uniform1f(L.uAnim, animT || 0);
+                    if (L.uAnimFrame) gl.uniform1f(L.uAnimFrame, animFrame || 0);
+                    gl.uniform1f(L.uFxMix, fx.mix);
+                    for (const k in params) if (L[k]) gl.uniform1f(L[k], params[k]);
                 });
-                cur = next();
+                return true;
+            };
+            const runFilm = (u, from, to) => pass(progs.FILM, targets[from].tex, to, (L) => {
+                gl.uniform2f(L.uSize, w, h);
+                for (const k in u) {
+                    const loc = L[k], v = u[k];
+                    if (!loc) continue;
+                    if (Array.isArray(v)) { if (v.length === 3) gl.uniform3fv(loc, v); else if (v.length === 4) gl.uniform4fv(loc, v); else gl.uniform2fv(loc, v); }
+                    else if (FILM_INT_UNIFORMS.has(k)) gl.uniform1i(loc, v | 0);
+                    else gl.uniform1f(loc, v);
+                }
+            });
+            for (const ly of (o.chain || [])) {
+                const base = cur, f1 = (base + 1) % 3, f2 = (base + 2) % 3;
+                const steps = [];   // cada passo: (de, para) => bool
+                let useAlpha = 0;
+                if (ly.kind === 'fx') steps.push((a, b) => runFx(ly.fx, a, b, an.fxT, an.fxFrame));
+                else if (ly.kind === 'film') {
+                    const fl = ly.film;
+                    if (fl.fx) steps.push((a, b) => runFx(fl.fx, a, b, fl.fx.animT, fl.fx.animFrame));
+                    if (fl.u) steps.push((a, b) => { runFilm(fl.u, a, b); return true; });
+                } else if (ly.kind === 'grain') {
+                    const g = ly.grain;
+                    steps.push((a, b) => { pass(progs.GRAIN, targets[a].tex, b, (L) => {
+                        gl.uniform1f(L.uStrength, g.strength); gl.uniform1f(L.uCell, g.cell); gl.uniform1f(L.uRough, g.rough);
+                        gl.uniform1f(L.uBias, g.bias); gl.uniform1f(L.uSpeckle, g.speckle); gl.uniform1f(L.uSeed, g.seed || 0);
+                        gl.uniform1i(L.uMono, g.mono ? 1 : 0);
+                    }); return true; });
+                } else if (ly.kind === 'grad' && o.grad) {
+                    bindTex(1, gradTex);
+                    steps.push((a, b) => { pass(progs.GRADL, targets[a].tex, b, (L) => { gl.uniform1i(L.uGrad, 1); gl.uniform2f(L.uImgSize, w, h); }); return true; });
+                } else if (ly.kind === 'edge') {
+                    useAlpha = 1;
+                    steps.push((a, b) => { pass(progs.EDGE, targets[edgeBase ? 3 : a].tex, b, (L) => {
+                        gl.uniform2f(L.uOut, w, h); gl.uniform1f(L.uScale, 1); gl.uniform1f(L.uHalf, ly.half); gl.uniform1i(L.uFlip, 0);
+                        gl.uniform4f(L.uColor, ly.color[0], ly.color[1], ly.color[2], 1);
+                    }); return true; });
+                }
+                let src = base, dst = f1, ran = 0;
+                for (const st of steps) { if (st(src, dst)) { ran++; src = dst; dst = dst === f1 ? f2 : f1; } }
+                if (!ran) continue;
+                const mode = BLEND_IDS[ly.blend] || 0, op = ly.op === undefined ? 1 : ly.op;
+                if (mode === 0 && op >= 1 && !useAlpha) { cur = src; continue; }
+                const out = src === f1 ? f2 : f1;
+                bindTex(1, targets[src].tex);
+                pass(progs.BLEND, targets[base].tex, out, (L) => {
+                    gl.uniform1i(L.uBase, 0); gl.uniform1i(L.uLayer, 1);
+                    gl.uniform1i(L.uMode, mode); gl.uniform1f(L.uOp, Math.max(0, Math.min(1, op))); gl.uniform1i(L.uUseAlpha, useAlpha);
+                });
+                cur = out;
+            }
+            // intensidade do estilo: mistura o resultado com a foto original (mesma resolução)
+            if (o.mix !== undefined && o.mix < 1) {
+                const out = next();
+                bindTex(1, targets[cur].tex);
+                pass(progs.BLEND, srcTex, out, (L) => {
+                    gl.uniform1i(L.uBase, 0); gl.uniform1i(L.uLayer, 1);
+                    gl.uniform1i(L.uMode, 0); gl.uniform1f(L.uOp, Math.max(0, o.mix)); gl.uniform1i(L.uUseAlpha, 0);
+                });
+                cur = out;
             }
             lastTarget = cur;
             pass(progs.BLIT, targets[cur].tex, -1, (L) => {
@@ -2112,9 +2181,9 @@ const PixelarGPU = (function () {
             gl.viewport(0, 0, glCanvas.width, glCanvas.height); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
             gl.viewport(0, 0, W, H);
             gl.bindVertexArray(vao); gl.useProgram(progs.EDGE.p);
-            bindTex(0, targets[lastTarget].tex);
+            bindTex(0, targets[edgeBase ? 3 : lastTarget].tex);
             const L = progs.EDGE.loc;
-            gl.uniform1i(L.uTex, 0); gl.uniform2f(L.uOut, W, H); gl.uniform1f(L.uScale, o.scale); gl.uniform1f(L.uHalf, o.half);
+            gl.uniform1i(L.uTex, 0); gl.uniform2f(L.uOut, W, H); gl.uniform1f(L.uScale, o.scale); gl.uniform1f(L.uHalf, o.half); gl.uniform1i(L.uFlip, 1);
             gl.uniform4f(L.uColor, o.color[0], o.color[1], o.color[2], o.opacity);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
             return { x: 0, y: glCanvas.height - H, w: W, h: H };
@@ -2122,7 +2191,7 @@ const PixelarGPU = (function () {
     }
     // retângulo do último resultado dentro do canvas WebGL (coordenadas de imagem, origem no topo)
     function region() { return { x: 0, y: glCanvas.height - th, w: tw, h: th }; }
-    return { init, isAvailable, fits, render, readPixels, region, edges, get canvas() { return glCanvas; } };
+    return { init, isAvailable, fits, render, readPixels, region, edges, get canvas() { return glCanvas; }, get maxTex() { if (!initialized) init(); return maxTex || 4096; } };
 })();
 
 // Catálogo de efeitos (usado pela UI): mesmo contrato do antigo PixelarFX

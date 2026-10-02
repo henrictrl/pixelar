@@ -2,9 +2,9 @@
 
 Editor de pixel art, dither, filmes analógicos e animações para **fotos e vídeos**, direto no navegador. Nada é enviado para servidor: tudo roda no aparelho (WebGL2 + WebCodecs).
 
-Interface na linguagem do iOS 27 (Liquid Glass): a imagem ocupa a tela toda e os controles flutuam por cima em vidro, que é tingido pelas cores da foto e, no Chrome/Android, refrata o fundo nas bordas. São 4 abas (Estilos · Ajustar · Efeitos · Animar), cada uma com suas seções, sliders de vidro e um cartão de controles que pode ser recolhido (puxador no celular, botão ou tecla `P` no computador). A cor de destaque vem da cor dominante da imagem.
+Interface em vidro transparente com ícones em pixel e a fonte Departure Mono. São 3 abas: **Estilos** (Para você, Favoritos com estrela, Presets salvos e as coleções prontas, com intensidade do estilo), **Editar** (Luz e cor, Pixel, Textura, Filme e lente, Contorno, Movimento, Cortar) e **Exportar** (Imagem, GIF e Vídeo, em Tela, Alta ou Máxima). Os ajustes usam uma régua como a do Fotos da Apple (arrasto 1:1, inércia, sem prender no zero). O botão **Camadas** no topo mostra os efeitos sobre a foto: dá para reordenar (arrastando), trocar a mesclagem e a opacidade de cada um. Tema Diurno ou Noturno; a cor de destaque vem da imagem. Em aparelhos modestos o app entra em modo leve (prévia mais leve, sem desfoque); a exportação sempre sai na qualidade máxima, processada direto na resolução final.
 
-**Variações (Muse):** em Estilos → Variações, o app lê a foto (luz, cores, textura, pele, céu, noite, arte gráfica) e monta sugestões pensadas para ela, com paletas harmônicas e de obras de arte. Os critérios pesam legibilidade, harmonia, pele e detalhe, e cada lote é variado. “Parecidas” explora a partir da escolhida, e cada escolha ensina o gosto da pessoa, que fica salvo no aparelho. O dado do topo usa o mesmo motor no modo ousado: mais cor, mais texturas, sorteio de verdade entre as boas opções e sem repetir a família das últimas jogadas.
+**Para você (Muse):** o app lê a foto (luz, cores, textura, pele, céu, noite, arte gráfica) e monta sugestões pensadas para ela, com paletas harmônicas e de obras de arte. “Novas sugestões” parte da última escolhida, e cada escolha ensina o gosto da pessoa (salvo no aparelho). O dado do topo usa o mesmo motor no modo ousado; cada categoria tem o próprio dado, e segurar um ajuste o trava.
 
 **Texturas:** além das clássicas, há ASCII, monitor CRT, miçangas, tricô, pastilhas, holograma, topografia, estrelas, pontilhado, xilogravura, pulsar, papel, vidro canelado, meio-tom CMYK e duplo, água, térmico, relevo, bitmap, nanquim, limiar de cor, lente fantasma, ácido, traçado néon e pincelada. Todas têm ajustes próprios e estilos prontos no grupo “Texturas”.
 
@@ -25,14 +25,14 @@ Depois abra `http://localhost:8000`. Para publicar, qualquer hospedagem estátic
 | `index.html` | Esqueleto da página |
 | `css/app.css` | Todo o visual (tema claro/escuro, celular e desktop) |
 | `js/gpu.js` | Motor WebGL2 e os shaders dos efeitos e filmes |
-| `js/engine.js` | **Estado** (`DEFAULT_STATE`) e o render: recorte → pixel → GPU → contorno. Também o fallback em CPU |
+| `js/engine.js` | **Estado** (`DEFAULT_STATE`) e o render: recorte → pixel/paleta → camadas na ordem escolhida (`st.layers`) → intensidade. Também o fallback em CPU |
 | `js/anim.js` | Animação em loop e o sorteio por seção |
 | `js/muse.js` | Variações inteligentes: análise da foto, famílias de estilo, paletas (OKLCH), pontuação e evolução |
-| `js/glass.js` | Vidro líquido: mapas de refração gerados para cada peça (Chrome/Android) |
 | `js/presets.js` | Estilos prontos e conversão de configurações da versão antiga |
 | `js/media.js` | Abertura de vídeos (MP4/MOV/WebM, AVI de câmera, demais via FFmpeg) |
 | `js/export.js` | PNG/JPEG/WebP/SVG, animação e vídeo (MP4/WebM/GIF) |
-| `js/ui.js` | Interface: abas, régua, miniaturas, linha do tempo, exportação |
+| `js/icons.js` | Ícones em pixel (desenhos de 12 × 12 em texto) |
+| `js/ui.js` | Interface: abas, régua, miniaturas, camadas, linha do tempo, exportação |
 | `vendor/` | mediabunny (MPL-2.0) e o worker do FFmpeg, carregados só quando necessário |
 | `sw.js` | Cache offline (abre instantâneo nas próximas visitas) |
 
@@ -48,4 +48,4 @@ Tudo o que a imagem precisa está num único objeto de estado (`st`). O motor (`
 
 ## Atalhos
 
-`R` aleatório · `P` mostra/esconde os controles · `Espaço` tocar/parar · segurar `O` mostra o original · `C` comparar lado a lado · `⌘Z`/`⇧⌘Z` desfazer/refazer · `⌘E` exportar · `⌘O` abrir · `1`–`4` abas · `←`/`→` ajustam a régua ativa · `+`/`−`/`0` zoom.
+`R` aleatório · `L` camadas · `P` mostra/esconde os controles · `Espaço` tocar/parar · segurar a foto (ou `O`) mostra o original · `C` comparar lado a lado · `⌘Z`/`⇧⌘Z` desfazer/refazer · `⌘E` exportar · `⌘O` abrir · `1`–`3` abas · `←`/`→` ajustam a régua ativa · `+`/`−`/`0` zoom.
