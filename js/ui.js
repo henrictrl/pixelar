@@ -497,6 +497,14 @@ const TABS = [
 function groupControls(g) { if (!g.parts) return g.controls(); return currentPart(g).controls(); }
 function currentPart(g) { if (!g.parts) return null; const id = ui.part[g.id]; return g.parts.find(p => p.id === id) || g.parts[0]; }
 
+// ícone de um parâmetro de textura, pelo nome
+function fxIcon(k) {
+    const n = k.toLowerCase(), m = [[/angle|rot|dir/, 'angle'], [/speed|time|anim/, 'speed'], [/size|scale|cell|zoom|freq|spacing|density|count|grid|lines/, 'scale'], [/contrast|thresh|level|cut/, 'contrast'],
+        [/bright|light|glow|bloom|exposure/, 'brightness'], [/sat|hue|color|tint/, 'palette'], [/noise|grain|rand|jitter/, 'noise'], [/blur|soft|smooth/, 'soft'], [/wave|amp|warp|distort|bend/, 'wave'],
+        [/thick|width|edge|outline|line/, 'edge'], [/mix|amount|strength|intens|opac/, 'intensity'], [/x$|y$|pos|offset|center/, 'position']];
+    for (const [re, ic] of m) if (re.test(n)) return ic;
+    return 'fx';
+}
 function fxParamControls(id, hidden) {
     const def = PixelarFX.getEffectDef(id); if (!def) return [];
     const list = [], groups = {};
@@ -507,7 +515,7 @@ function fxParamControls(id, hidden) {
         const dv = def.uniforms[k];
         const r = (FX_RANGES_BY_EFFECT[id] || {})[k] || FX_RANGES[k] || (dv < 0 ? [-Math.abs(dv * 3 + 1), Math.abs(dv * 3 + 1)] : [0, Math.max(dv * 3, dv + 1, 1)]);
         const span = r[1] - r[0];
-        list.push(R('fxParams.' + id + '.' + k, FX_LABELS[k] || k.replace(/^u/, ''), 'sparkle', r[0], r[1], { step: span / 200, fmt: (v) => Math.round((v - r[0]) / span * 100) }));
+        list.push(R('fxParams.' + id + '.' + k, FX_LABELS[k] || k.replace(/^u/, ''), fxIcon(k), r[0], r[1], { step: span / 200, fmt: (v) => Math.round((v - r[0]) / span * 100) }));
     });
     Object.keys(groups).forEach(p => list.push(K('fxcolor.' + id + '.' + p, FX_COLOR_LABELS[p] || p.replace(/^u/, ''))));
     return list;
@@ -516,6 +524,9 @@ function fxParamControls(id, hidden) {
 // ============================================================
 // PAINEL
 // ============================================================
+// ícones pequenos das categorias e partes
+const GROUP_ICONS = { foryou: 'fx', favs: 'star', mine: 'save', luzcor: 'brightness', pixel: 'pixel', textura: 'pattern', filme: 'film', contorno: 'edge', movimento: 'wave', crop: 'crop', ximage: 'image', xgif: 'repeat', xanim: 'video', xvideo: 'video' };
+const PART_ICONS = { luz: 'brightness', paleta: 'palette', degrade: 'gradient', fx: 'pattern', grao: 'grain', filmes: 'film', lente: 'vignette', geral: 'speed', apadrao: 'pixel', afx: 'pattern', agrao: 'grain', afilme: 'film' };
 function tabGroups(t) { return typeof t.groups === 'function' ? t.groups() : t.groups; }
 function currentTab() { return TABS.find(t => t.id === ui.tab); }
 function currentGroup() { const gs = tabGroups(currentTab()); const gid = ui.group[ui.tab]; return gs.find(g => g.id === gid) || gs[0]; }
@@ -582,7 +593,8 @@ function buildPanel() {
     // categorias (embaixo, logo acima das abas)
     const seg = $('segRow'); seg.innerHTML = '';
     tabGroups(tab).forEach(g => {
-        const b = h('button', 'seg' + (g.id === grp.id ? ' on' : '')); b.type = 'button'; b.textContent = g.label;
+        const b = h('button', 'seg' + (g.id === grp.id ? ' on' : '')); b.type = 'button';
+        b.innerHTML = smallIcon(GROUP_ICONS[g.id]) + '<span></span>'; b.lastChild.textContent = g.label;
         b.onclick = () => { if (ui.group[tab.id] === g.id && g.id === grp.id) return; ui.group[tab.id] = g.id; buildPanel(); };
         seg.append(b);
     });
@@ -618,7 +630,8 @@ function buildPanel() {
 function makeParts(grp, part) {
     const box = h('div', 'parts');
     grp.parts.forEach(p => {
-        const b = h('button', 'part' + (p === part ? ' on' : '')); b.type = 'button'; b.textContent = p.label;
+        const b = h('button', 'part' + (p === part ? ' on' : '')); b.type = 'button';
+        b.innerHTML = smallIcon(p.icon || PART_ICONS[p.id]) + '<span></span>'; b.lastChild.textContent = p.label;
         b.onclick = () => { if (p === part) return; ui.part[grp.id] = p.id; buildPanel(); };
         box.append(b);
     });
@@ -659,6 +672,7 @@ function makeDial(c, active) {
     if (isDice) { d.innerHTML = icon('dice'); d.title = c.label + ' (segure: o que o dado muda)'; d.setAttribute('aria-label', c.label); }
     else {
         if (c.kind === 'color') d.append(h('span', 'swatch'));
+        else if (c.icon) d.insertAdjacentHTML('beforeend', smallIcon(c.icon));
         const nm = h('span', 'name'); nm.textContent = c.label; d.append(nm);
         if (c.kind === 'toggle') d.append(h('span', 'tog'));
         d.title = c.label;

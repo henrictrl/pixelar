@@ -111,6 +111,7 @@ button:disabled { opacity: .3; cursor: default; }
 button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 [hidden] { display: none !important; }
 .ic { width: 24px; height: 24px; fill: currentColor; flex: none; display: block; }
+.ic.sm { width: 12px; height: 12px; opacity: .85; }
 kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fill-1); }
 
 /* vidro: transparente, desfoque leve, fio de luz no alto e borda escurecida embaixo (tudo interno) */
@@ -214,13 +215,13 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .seg-row { position: relative; display: flex; overflow-x: auto; scrollbar-width: none; flex: none; padding: 0 8px; }
 .seg-row:empty { display: none; }
 .seg-row::-webkit-scrollbar, .dials::-webkit-scrollbar, .strip::-webkit-scrollbar, .chips::-webkit-scrollbar, .swatches::-webkit-scrollbar, .palettes::-webkit-scrollbar { display: none; }
-.seg { position: relative; z-index: 1; height: 30px; padding: 0 12px; border-radius: 15px; color: var(--text-2); white-space: nowrap; flex: none; transition: color .3s; }
+.seg { position: relative; z-index: 1; height: 30px; padding: 0 12px; border-radius: 15px; color: var(--text-2); white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 6px; transition: color .3s; }
 .seg.on { color: var(--text); }
 .lens { position: absolute; z-index: 0; pointer-events: none; border-radius: 15px; background: var(--fill-1); transition: left .5s var(--spring), width .5s var(--spring), top .5s var(--spring), height .5s var(--spring); }
 
 /* nomes dos ajustes (texto; o escolhido na cor de destaque) */
 .dials { position: relative; display: flex; align-items: center; gap: 2px; padding: 0 8px; overflow-x: auto; scrollbar-width: none; flex: none; height: 32px; }
-.dial { position: relative; flex: none; height: 30px; padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); white-space: nowrap; transition: color .25s; }
+.dial { position: relative; flex: none; height: 30px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); white-space: nowrap; transition: color .25s; }
 .dial .name { position: relative; }
 .dial.active { color: var(--accent-text); }
 .dial.active .name::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 2px; background: currentColor; }
@@ -236,7 +237,7 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .dial:active { transform: scale(.95); }
 /* partes da categoria (Luz | Paleta | Degradê) */
 .parts { flex: none; display: flex; padding: 2px; margin-right: 6px; border-radius: 12px; background: var(--fill-1); }
-.part { height: 26px; padding: 0 10px; border-radius: 10px; color: var(--text-2); white-space: nowrap; transition: background .3s, color .3s; }
+.part { height: 26px; padding: 0 10px; border-radius: 10px; color: var(--text-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; transition: background .3s, color .3s; }
 .part.on { background: var(--lens); color: var(--text); box-shadow: inset 0 1px 0 var(--glass-hi); }
 
 /* editor: altura fixa por aba, para trocar de ajuste nunca mexer no tamanho da imagem */
