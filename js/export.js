@@ -19,7 +19,7 @@ const Exporter = (() => {
     // renderiza a imagem na resolução pedida (null = tela) e recorta a área transparente
     function renderStill(st, media, res, key) {
         const c = document.createElement('canvas'), out = { canvas: c, ctx: c.getContext('2d') };
-        const r = Engine.render(st, { media, key, out, targetRes: res || null, maxDim: res ? null : 4096 });
+        const r = Engine.render(st, { media, key, out, targetRes: res || null, maxDim: res ? null : 4096, workRes: res || null, maxWork: Math.min(PixelarGPU.maxTex || 4096, 8192) });
         if (!r) return null;
         if (st.pixel.scale >= 100) return c;
         const t = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, c.width, c.height).data;
@@ -68,7 +68,7 @@ const Exporter = (() => {
         if (!describeAnimation(s, cfg).length) throw new Error('Nada para animar: ligue um padrão, filme, grão ou movimento.');
         const repeat = job.format === 'gif' ? 1 : (job.repeat || 1);
         const frameCanvas = document.createElement('canvas'), out = { canvas: frameCanvas, ctx: frameCanvas.getContext('2d', { willReadFrequently: job.format === 'gif' }) };
-        const renderAt = (i) => { const o = animFrameOptions(i, cfg, s); return Engine.render(st, Object.assign({ media, key: job.key, out, targetRes: job.res || null, maxDim: job.res ? null : 1600 }, o)); };
+        const renderAt = (i) => { const o = animFrameOptions(i, cfg, s); return Engine.render(st, Object.assign({ media, key: job.key, out, targetRes: job.res || null, maxDim: job.res ? null : 1600, workRes: job.res || null, maxWork: Math.min(PixelarGPU.maxTex || 4096, 8192) }, o)); };
         if (job.format === 'gif') return gifFrom(st, cfg.frames, cfg.fps, renderAt, frameCanvas, job, 'pixelar_loop');
         return encodeFrames(cfg.frames * repeat, cfg.fps, (k) => renderAt(k % cfg.frames), frameCanvas, job, 'pixelar_loop', null, (k) => k % cfg.frames === 0, st);
     }
@@ -312,7 +312,7 @@ const Exporter = (() => {
         const s = Engine.readSettings(st), cfg = readAnim(st), animOn = job.withAnim && describeAnimation(s, cfg).length > 0;
         const frameCanvas = document.createElement('canvas'), out = { canvas: frameCanvas, ctx: frameCanvas.getContext('2d', { willReadFrequently: job.format === 'gif' }) };
         let last = null;
-        const renderWith = (media, i) => Engine.render(st, Object.assign({ media, key: null, out, targetRes: job.res, grainSeed: i / fps }, animOn ? animFrameOptions(i, cfg, s) : {}));
+        const renderWith = (media, i) => Engine.render(st, Object.assign({ media, key: null, out, targetRes: job.res, workRes: job.res, maxWork: Math.min(PixelarGPU.maxTex || 4096, 8192), grainSeed: i / fps }, animOn ? animFrameOptions(i, cfg, s) : {}));
         if (job.format === 'gif') {
             const times = Array.from({ length: N }, (_, i) => tStart + (i + 0.5) / fps);
             const renderAt = async (i) => { const wc = await sink.getCanvas(times[i]); if (wc) last = wc.canvas; return last ? renderWith(last, i) : null; };
