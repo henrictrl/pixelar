@@ -211,17 +211,11 @@ const MODERN_PRESETS = {
 };
 
 const PRESET_GROUPS = [
-    ['Obras', ['Noite Estrelada', 'A Grande Onda', 'O Grito', 'Girassóis', 'Moça com Brinco de Pérola', 'Nighthawks', 'O Beijo', 'Tarde de Domingo', 'Guernica', 'Abaporu', 'Operários', 'A Boba']],
-    ['Texturas', ['Terminal', 'Arcade', 'Hama beads', 'Tricô da vó', 'Curvas de nível', 'Noite de estrelas', 'Pontilhista', 'Papel de arroz', 'Gibi CMYK', 'Riso duplo', 'Riso verde e laranja']],
-    ['Movimentos', ['Impressionismo', 'Pontilhismo', 'Expressionismo', 'Cubismo', 'Suprematismo', 'Construtivismo', 'Bauhaus', 'Dadá', 'Pop Art', 'Minimalismo']],
+    ['Obras', ['Noite Estrelada', 'A Grande Onda', 'O Grito', 'Girassóis', 'Moça com Brinco de Pérola', 'Nighthawks', 'O Beijo', 'Tarde de Domingo', 'Guernica', 'Abaporu', 'Operários', 'A Boba', 'Tarsila', 'Oiticica', 'Neoconcreto', 'Azulejo']],
     ['Artistas', ['Van Gogh', 'Monet', 'Seurat', 'Vermeer', 'Turner', 'Munch', 'Matisse', 'Hilma af Klint', 'Mondrian', 'Kandinsky', 'Magritte', 'Lichtenstein', 'Warhol', 'Rothko', 'Kusama']],
-    ['Paletas', ['Technicolor', 'Tóquio Neon', 'Aurora Boreal', 'Lavanda', 'ZX Spectrum', 'Macintosh 1-bit', 'Teletexto']],
-    ['Brasil', ['Tarsila', 'Oiticica', 'Neoconcreto', 'Azulejo']],
-    ['Filme', ['Portra', 'Cianotipo']],
-    ['Estéticas', ['Vaporwave', 'Synthwave', 'Cyberpunk', 'Y2K', 'Glitch art', 'Brutalismo', 'Estilo Suíço', 'Stencil', 'Sumi-e', 'LSD', 'Néon Noturno', 'Datamosh', 'Matrix']],
-    ['Retrô', ['GameBoy', 'CGA 4-Color', 'Câmera de Segurança', 'KGB']],
-    ['Impressão', ['Manga', 'Jornal Impresso', 'CMYK', 'Serigrafia', 'Propaganda', 'Comunismo', 'Duotone']],
-    ['Digital', ['Termovisão', 'Bloom', 'Negativo']],
+    ['Movimentos e impressão', ['Impressionismo', 'Pontilhismo', 'Expressionismo', 'Cubismo', 'Suprematismo', 'Construtivismo', 'Bauhaus', 'Dadá', 'Pop Art', 'Minimalismo', 'Manga', 'Jornal Impresso', 'CMYK', 'Serigrafia', 'Propaganda', 'Comunismo', 'Duotone', 'Cianotipo']],
+    ['Texturas e retrô', ['Terminal', 'Arcade', 'Hama beads', 'Tricô da vó', 'Curvas de nível', 'Noite de estrelas', 'Pontilhista', 'Papel de arroz', 'Gibi CMYK', 'Riso duplo', 'Riso verde e laranja', 'GameBoy', 'CGA 4-Color', 'Câmera de Segurança', 'KGB', 'ZX Spectrum', 'Macintosh 1-bit', 'Teletexto', 'Termovisão', 'Negativo']],
+    ['Estéticas e cor', ['Vaporwave', 'Synthwave', 'Cyberpunk', 'Y2K', 'Glitch art', 'Brutalismo', 'Estilo Suíço', 'Stencil', 'Sumi-e', 'LSD', 'Néon Noturno', 'Datamosh', 'Matrix', 'Technicolor', 'Tóquio Neon', 'Aurora Boreal', 'Lavanda', 'Portra', 'Bloom']],
 ];
 
 
