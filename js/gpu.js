@@ -819,6 +819,287 @@ const PIXELAR_FX_LIST = [
     }`
   },
 
+  // ===================== NOVOS 3.3: POP, COR E OFÍCIOS =====================
+  {
+    id: 'warhol', nome: 'Pop Warhol',
+    uniforms: { uHue: 0.0, uSat: 0.85, uSplit: 0.36, uGap: 0.0 },
+    src: `
+    uniform float uHue, uSat, uSplit, uGap;
+    void main() {
+        vec2 t = floor(vUv * 2.0), uv = fract(vUv * 2.0);
+        float g = uGap * 0.02;
+        if (uv.x < g || uv.y < g || uv.x > 1.0 - g || uv.y > 1.0 - g) { outColor = vec4(vec3(0.97), 1.0); return; }
+        float l = luma(texture(uSource, uv).rgb);
+        float k = t.x + t.y * 2.0, h = fract(uHue + k * 0.27 + 0.05 * k * k);
+        vec3 dark = hsl2rgb(vec3(fract(h + 0.5), uSat, 0.2));
+        vec3 mid = hsl2rgb(vec3(fract(h + 0.12), uSat, 0.52));
+        vec3 light = hsl2rgb(vec3(h, uSat, 0.8));
+        vec3 col = l < uSplit ? dark : (l < 1.0 - uSplit * 0.6 ? mid : light);
+        outColor = vec4(col, 1.0);
+    }`
+  },
+  {
+    id: 'riso', nome: 'Risografia',
+    uniforms: { uOffset: 4.0, uGrain: 0.35, uInkA_r: 1.0, uInkA_g: 0.28, uInkA_b: 0.55, uInkB_r: 0.0, uInkB_g: 0.47, uInkB_b: 0.75, uPaper_r: 0.98, uPaper_g: 0.96, uPaper_b: 0.9 },
+    src: `
+    uniform float uOffset, uGrain, uInkA_r, uInkA_g, uInkA_b, uInkB_r, uInkB_g, uInkB_b, uPaper_r, uPaper_g, uPaper_b;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0;
+        vec2 p = vUv * uResolution, o = vec2(uOffset * S, uOffset * S * 0.6) / uResolution;
+        float la = luma(texture(uSource, vUv).rgb), lb = luma(texture(uSource, vUv + o).rgb);
+        float n1 = hash(floor(p / max(1.0, S)) + 3.1), n2 = hash(floor(p / max(1.0, S)) + 9.7);
+        float a = clamp(smoothstep(0.62, 0.05, la) + (n1 - 0.5) * uGrain, 0.0, 1.0);
+        float b = clamp(smoothstep(0.98, 0.3, lb) * 0.85 + (n2 - 0.5) * uGrain, 0.0, 1.0);
+        vec3 col = vec3(uPaper_r, uPaper_g, uPaper_b);
+        col *= mix(vec3(1.0), vec3(uInkB_r, uInkB_g, uInkB_b), b);
+        col *= mix(vec3(1.0), vec3(uInkA_r, uInkA_g, uInkA_b), a);
+        outColor = vec4(col, 1.0);
+    }`
+  },
+  {
+    id: 'glitch_blocks', nome: 'Glitch',
+    uniforms: { uAmount: 0.5, uBlock: 24.0, uShift: 0.06, uColor: 0.6 },
+    src: `
+    uniform float uAmount, uBlock, uShift, uColor;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, bs = max(4.0, uBlock * S);
+        vec2 p = vUv * uResolution;
+        float seed = floor(uAnimFrame) * 0.37 + 1.0;
+        vec2 cell = floor(vec2(p.x / (bs * 4.0), p.y / bs));
+        float r = hash(cell + seed), r2 = hash(cell.yx + seed * 1.7);
+        vec2 uv = vUv;
+        float on = step(1.0 - uAmount * 0.6, r);
+        uv.x += on * (r2 - 0.5) * uShift * 2.0;
+        float row = hash(vec2(floor(p.y / (bs * 0.5)), seed));
+        uv.x += step(1.0 - uAmount * 0.15, row) * (row - 0.5) * uShift;
+        float ca = uColor * 0.012 * (0.4 + on);
+        vec3 col = vec3(texture(uSource, uv + vec2(ca, 0.0)).r, texture(uSource, uv).g, texture(uSource, uv - vec2(ca, 0.0)).b);
+        if (on > 0.5 && r2 > 0.8) col = col.gbr;
+        if (on > 0.5 && r2 < 0.12) col = 1.0 - col;
+        outColor = vec4(col, 1.0);
+    }`
+  },
+  {
+    id: 'kaleido', nome: 'Caleidoscópio',
+    uniforms: { uSegments: 8.0, uZoom: 1.0, uRotate: 0.0 },
+    src: `
+    uniform float uSegments, uZoom, uRotate;
+    void main() {
+        float asp = uResolution.x / uResolution.y;
+        vec2 q = (vUv - 0.5) * vec2(asp, 1.0);
+        float r = length(q) / max(0.2, uZoom), a = atan(q.y, q.x) + uRotate + uAnim * 6.2831853;
+        float seg = 6.2831853 / max(2.0, floor(uSegments));
+        a = mod(a, seg); a = abs(a - seg * 0.5);
+        vec2 uv = vec2(cos(a), sin(a)) * r; uv.x /= asp; uv += 0.5;
+        uv = abs(fract(uv * 0.5 + 0.5) * 2.0 - 1.0);
+        outColor = vec4(texture(uSource, uv).rgb, 1.0);
+    }`
+  },
+  {
+    id: 'pixel_sort', nome: 'Pixel sort',
+    uniforms: { uThreshold: 0.45, uLength: 120.0, uVertical: 1.0 },
+    src: `
+    uniform float uThreshold, uLength, uVertical;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0;
+        vec2 dir = uVertical > 0.5 ? vec2(0.0, -1.0) : vec2(-1.0, 0.0);
+        vec2 st = dir * uLength * S / 40.0 / uResolution;
+        vec3 best = texture(uSource, vUv).rgb; float bl = luma(best);
+        if (bl < uThreshold) { outColor = vec4(best, 1.0); return; }
+        for (int i = 1; i <= 40; i++) {
+            vec3 c = texture(uSource, clamp(vUv + st * float(i), 0.0, 1.0)).rgb; float l = luma(c);
+            if (l < uThreshold) break;
+            if (l > bl) { bl = l; best = c; }
+        }
+        outColor = vec4(best, 1.0);
+    }`
+  },
+  {
+    id: 'lego', nome: 'Blocos de montar',
+    uniforms: { uCell: 16.0, uLevels: 5.0, uStud: 0.6 },
+    src: `
+    uniform float uCell, uLevels, uStud;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(5.0, uCell * S);
+        vec2 p = vUv * uResolution, id = floor(p / cs), f = fract(p / cs) - 0.5;
+        vec3 c = texture(uSource, (id + 0.5) * cs / uResolution).rgb;
+        c = floor(c * uLevels + 0.5) / uLevels;
+        vec3 hsl = rgb2hsl(c); hsl.y = min(1.0, hsl.y * 1.35); c = hsl2rgb(hsl);
+        float edge = max(abs(f.x), abs(f.y));
+        vec3 col = c * (1.0 - 0.25 * smoothstep(0.42, 0.5, edge)) * (1.0 + 0.12 * (-f.x - f.y));
+        float r = length(f), aa = 1.5 / cs;
+        float stud = smoothstep(0.3, 0.3 - aa, r);
+        float lit = clamp(0.5 - dot(normalize(f + 1e-4), vec2(0.7, 0.7)) * 0.5, 0.0, 1.0);
+        col = mix(col, c * (0.85 + 0.35 * lit), stud * uStud);
+        col = mix(col, c * 0.7, uStud * smoothstep(0.31, 0.29, r) * smoothstep(0.26, 0.3, r));
+        outColor = vec4(col, 1.0);
+    }`
+  },
+  {
+    id: 'cross_stitch', nome: 'Ponto-cruz',
+    uniforms: { uCell: 10.0, uThread: 0.22, uLinen_r: 0.95, uLinen_g: 0.92, uLinen_b: 0.85 },
+    src: `
+    uniform float uCell, uThread, uLinen_r, uLinen_g, uLinen_b;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(4.0, uCell * S);
+        vec2 p = vUv * uResolution, id = floor(p / cs), f = fract(p / cs);
+        vec3 c = texture(uSource, (id + 0.5) * cs / uResolution).rgb;
+        float d1 = abs(f.x - f.y), d2 = abs(f.x + f.y - 1.0), w = uThread, aa = 1.2 / cs;
+        float x1 = smoothstep(w, w - aa, d1), x2 = smoothstep(w, w - aa, d2);
+        float m = clamp(max(x1 * 0.85, x2), 0.0, 1.0) * smoothstep(0.02, 0.1, min(min(f.x, f.y), min(1.0 - f.x, 1.0 - f.y)) + 0.06);
+        vec3 linen = vec3(uLinen_r, uLinen_g, uLinen_b) * (0.94 + 0.06 * hash(floor(p / max(1.0, S * 2.0))));
+        vec3 thread = c * (0.8 + 0.3 * (x2 > x1 ? 1.0 - abs(f.x - 0.5) : 0.8));
+        outColor = vec4(mix(linen, thread, m), 1.0);
+    }`
+  },
+  {
+    id: 'lcd', nome: 'Tela de bolso',
+    uniforms: { uCell: 6.0, uGap: 0.18, uLevels: 4.0, uTint_r: 0.6, uTint_g: 0.72, uTint_b: 0.2 },
+    src: `
+    uniform float uCell, uGap, uLevels, uTint_r, uTint_g, uTint_b;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(2.0, uCell * S);
+        vec2 p = vUv * uResolution, id = floor(p / cs), f = fract(p / cs);
+        float l = luma(texture(uSource, (id + 0.5) * cs / uResolution).rgb);
+        l = floor(clamp(l, 0.0, 0.999) * uLevels) / max(1.0, uLevels - 1.0);
+        vec3 tint = vec3(uTint_r, uTint_g, uTint_b);
+        vec3 dark = tint * 0.18, light = mix(tint, vec3(1.0), 0.45);
+        vec3 col = mix(dark, light, l);
+        float gap = step(f.x, uGap) + step(f.y, uGap);
+        col = mix(col, light * 0.96, clamp(gap, 0.0, 1.0) * 0.6);
+        outColor = vec4(col, 1.0);
+    }`
+  },
+  {
+    id: 'led', nome: 'Painel de LED',
+    uniforms: { uCell: 10.0, uSize: 0.8, uGlow: 0.6, uBoost: 1.4 },
+    src: `
+    uniform float uCell, uSize, uGlow, uBoost;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(4.0, uCell * S);
+        vec2 p = vUv * uResolution, id = floor(p / cs), f = fract(p / cs) - 0.5;
+        vec3 c = texture(uSource, (id + 0.5) * cs / uResolution).rgb;
+        vec3 hsl = rgb2hsl(c); hsl.y = min(1.0, hsl.y * uBoost); c = hsl2rgb(hsl);
+        float r = length(f), rad = 0.5 * uSize, aa = 1.5 / cs;
+        float led = smoothstep(rad, rad - aa, r);
+        float glow = exp(-r * r * 14.0) * uGlow;
+        vec3 col = c * (led * (0.75 + 0.5 * smoothstep(rad, 0.0, r)) + glow * 0.5);
+        col += vec3(0.015);
+        outColor = vec4(col, 1.0);
+    }`
+  },
+  {
+    id: 'sunburst', nome: 'Raios de sol',
+    uniforms: { uRays: 18.0, uCx: 0.5, uCy: 0.45, uMix: 0.45, uColorA_r: 1.0, uColorA_g: 0.82, uColorA_b: 0.2, uColorB_r: 1.0, uColorB_g: 0.3, uColorB_b: 0.5 },
+    src: `
+    uniform float uRays, uCx, uCy, uMix, uColorA_r, uColorA_g, uColorA_b, uColorB_r, uColorB_g, uColorB_b;
+    void main() {
+        vec3 src = texture(uSource, vUv).rgb;
+        vec2 q = (vUv - vec2(uCx, uCy)) * vec2(uResolution.x / uResolution.y, 1.0);
+        float a = atan(q.y, q.x) / 6.2831853 + uAnim / max(2.0, uRays);
+        float ray = step(0.5, fract(a * uRays));
+        vec3 rc = mix(vec3(uColorA_r, uColorA_g, uColorA_b), vec3(uColorB_r, uColorB_g, uColorB_b), ray);
+        vec3 ov = mix(2.0 * src * rc, 1.0 - 2.0 * (1.0 - src) * (1.0 - rc), step(0.5, src));
+        float fade = smoothstep(0.0, 0.25, length(q));
+        outColor = vec4(mix(src, ov, uMix * fade), 1.0);
+    }`
+  },
+  {
+    id: 'tie_dye', nome: 'Tie-dye',
+    uniforms: { uTwist: 3.0, uRings: 6.0, uAmount: 0.75, uKeep: 0.5 },
+    src: `
+    uniform float uTwist, uRings, uAmount, uKeep;
+    void main() {
+        vec3 src = texture(uSource, vUv).rgb;
+        vec2 q = (vUv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+        float r = length(q), a = atan(q.y, q.x);
+        float n = fbm(vUv * 6.0) * 0.6;
+        float h = fract(a / 6.2831853 + r * uTwist + sin(r * uRings * 6.2831853 + n * 3.0) * 0.08 + uAnim);
+        float l = luma(src);
+        vec3 dye = hsl2rgb(vec3(h, 0.9, mix(0.5, l, uKeep)));
+        outColor = vec4(mix(src, dye, uAmount), 1.0);
+    }`
+  },
+  {
+    id: 'stained_glass', nome: 'Vitral',
+    uniforms: { uCell: 40.0, uLead: 0.12, uSat: 1.5 },
+    src: `
+    uniform float uCell, uLead, uSat;
+    vec2 h2(vec2 p) { return vec2(hash(p), hash(p + 17.3)); }
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(8.0, uCell * S);
+        vec2 p = vUv * uResolution / cs, ip = floor(p), fp = fract(p);
+        float d1 = 9.0, d2 = 9.0; vec2 best = vec2(0.0);
+        for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+            vec2 g = vec2(float(x), float(y)), o = h2(ip + g) * 0.85 + 0.075;
+            float d = length(g + o - fp);
+            if (d < d1) { d2 = d1; d1 = d; best = ip + g + o; } else if (d < d2) d2 = d;
+        }
+        vec3 c = texture(uSource, clamp(best * cs / uResolution, 0.0, 1.0)).rgb;
+        vec3 hsl = rgb2hsl(c); hsl.y = min(1.0, hsl.y * uSat); hsl.z = clamp(hsl.z * 1.05, 0.12, 0.85); c = hsl2rgb(hsl);
+        float edge = smoothstep(uLead, uLead + 0.04, d2 - d1);
+        c *= 0.85 + 0.25 * (1.0 - d1);
+        outColor = vec4(mix(vec3(0.06, 0.05, 0.05), c, edge), 1.0);
+    }`
+  },
+  {
+    id: 'prism_map', nome: 'Mapa arco-íris',
+    uniforms: { uCycles: 1.5, uShift: 0.0, uSat: 0.95, uMix: 1.0 },
+    src: `
+    uniform float uCycles, uShift, uSat, uMix;
+    void main() {
+        vec3 src = texture(uSource, vUv).rgb;
+        float l = luma(src);
+        vec3 c = hsl2rgb(vec3(fract(l * uCycles + uShift + uAnim), uSat, 0.25 + l * 0.5));
+        outColor = vec4(mix(src, c, uMix), 1.0);
+    }`
+  },
+  {
+    id: 'blueprint', nome: 'Planta azul',
+    uniforms: { uGrid: 40.0, uLines: 0.12, uFill: 0.35 },
+    src: `
+    uniform float uGrid, uLines, uFill;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0;
+        vec2 p = vUv * uResolution, px = 1.0 / uResolution;
+        float l = luma(texture(uSource, vUv).rgb);
+        float gx = luma(texture(uSource, vUv + vec2(px.x * S, 0.0)).rgb) - luma(texture(uSource, vUv - vec2(px.x * S, 0.0)).rgb);
+        float gy = luma(texture(uSource, vUv + vec2(0.0, px.y * S)).rgb) - luma(texture(uSource, vUv - vec2(0.0, px.y * S)).rgb);
+        float e = smoothstep(uLines, uLines * 2.5, length(vec2(gx, gy)));
+        vec3 blue = vec3(0.05, 0.25, 0.55);
+        float gs = max(6.0, uGrid * S);
+        vec2 g = abs(fract(p / gs) - 0.5);
+        float grid = smoothstep(0.48, 0.5, max(g.x, g.y));
+        vec3 col = blue * (0.85 + 0.25 * fbm(vUv * 8.0));
+        col = mix(col, vec3(0.75, 0.88, 1.0), grid * 0.25);
+        col = mix(col, vec3(0.95, 0.98, 1.0), l * uFill);
+        col = mix(col, vec3(1.0), e);
+        outColor = vec4(col, 1.0);
+    }`
+  },
+  {
+    id: 'comic', nome: 'Gibi',
+    uniforms: { uLevels: 4.0, uDot: 7.0, uInk: 0.12, uSat: 1.6 },
+    src: `
+    uniform float uLevels, uDot, uInk, uSat;
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, px = S / uResolution.x, py = S / uResolution.y;
+        vec2 p = vUv * uResolution;
+        vec3 c = texture(uSource, vUv).rgb;
+        vec3 hsl = rgb2hsl(c); hsl.y = min(1.0, hsl.y * uSat);
+        float lq = floor(hsl.z * uLevels + 0.5) / uLevels; hsl.z = mix(lq, hsl.z, 0.15);
+        vec3 fc = hsl2rgb(hsl);
+        float cs = max(3.0, uDot * S); mat2 R = mat2(0.707, -0.707, 0.707, 0.707);
+        vec2 q = R * p / cs; float d = length(fract(q) - 0.5);
+        float dots = smoothstep(0.32, 0.28, d) * smoothstep(0.75, 0.35, hsl.z) * step(0.2, hsl.z);
+        fc *= 1.0 - dots * 0.35;
+        float e = 0.0;
+        for (int i = 0; i < 4; i++) { vec2 o = vec2(i == 0 ? px : i == 1 ? -px : 0.0, i == 2 ? py : i == 3 ? -py : 0.0); e += abs(luma(texture(uSource, vUv + o * 1.5).rgb) - luma(c)); }
+        float ink = smoothstep(uInk, uInk * 2.0, e);
+        outColor = vec4(mix(fc, vec3(0.05), ink), 1.0);
+    }`
+  },
+
   // ===================== FILMES =====================
 
   {
@@ -1059,6 +1340,8 @@ float phash(ivec2 p, float s) { return float(pcg3d(uvec3(uvec2(p), floatBitsToUi
 const FILM_INT_UNIFORMS = new Set(['uSwap', 'uFrame', 'uStamp']);
 const FILM_FX_IDS = ['kodak_verde', 'kodak_pb', 'lumiere', 'vencido'];
 const LENS_FX_IDS = ['vignette', 'bloom', 'bokeh_blur', 'lens_distortion']; // viraram controles da Lente (Filtros)
+// repetiam outra parte do app (Pixel, Contorno, Luz): continuam funcionando em estilos antigos, mas não aparecem na lista
+const DUP_FX_IDS = ['pixelate_fx', 'outlines', 'color_adjustment'];
 const PixelarGPU = (function () {
     let gl = null, glCanvas = null;
     let initialized = false, ok = false, contextLost = false;
@@ -2197,7 +2480,7 @@ const PixelarGPU = (function () {
 // Catálogo de efeitos (usado pela UI): mesmo contrato do antigo PixelarFX
 const PixelarFX = {
     // texturas artísticas (filmes e lentes ficam em Filtros)
-    listEffects: () => PIXELAR_FX_LIST.filter(fx => !FILM_FX_IDS.includes(fx.id) && !LENS_FX_IDS.includes(fx.id)).map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
+    listEffects: () => PIXELAR_FX_LIST.filter(fx => !FILM_FX_IDS.includes(fx.id) && !LENS_FX_IDS.includes(fx.id) && !DUP_FX_IDS.includes(fx.id)).map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
     getEffectDef: (id) => PIXELAR_FX_LIST.find(fx => fx.id === id) || null,
     isAvailable: () => PixelarGPU.isAvailable(),
 };

@@ -66,6 +66,8 @@ function normalizeState(p) {
             else Object.assign(out[k], deepClone(p[k]));
         } else out[k] = deepClone(p[k]);
     }
+    // temperatura só existe em Luz agora: a do filme (versões antigas e estilos) é somada lá
+    if (out.film.temp) { out.adj.temperature = Math.max(-100, Math.min(100, Math.round((+out.adj.temperature || 0) + out.film.temp * 0.8))); out.film.temp = 0; }
     out.v = 2;
     return out;
 }
