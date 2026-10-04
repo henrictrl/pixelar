@@ -437,15 +437,14 @@ function randomize(st, A, groups, locks, only, vivid) {
         st.film = Object.assign(deepClone(DEFAULT_STATE.film), keep);
         if (force || Math.random() < (vivid ? 0.3 : 0.5)) {
             const bw = ['noir', 'hp5', 'nitrato', 'kodak_pb', 'lumiere'];
-            const ids = Object.keys(FILM_LOOKS).filter(k => !(st.color.sel !== 'all' && bw.includes(k)));
+            const ids = visibleLooks().filter(k => !(st.color.sel !== 'all' && bw.includes(k)));
             const id = pick(ids); st.film.look = id; st.film.mix = vivid ? 35 + Math.floor(Math.random() * 3) * 10 : 50 + Math.floor(Math.random() * 4) * 10;
             if (id === 'vencido') st.film.vencido = Math.floor(Math.random() * 4);
             if (id === 'lumiere') st.film.lumiereHue = Math.floor(Math.random() * 360);
             touched.push(FILM_LOOKS[id].nome);
         }
         if (Math.random() < (vivid ? 0.2 : 0.35)) {
-            st.film.vignette = Math.floor(Math.random() * (vivid ? 25 : 50));
-            if (Math.random() < 0.3) st.film.halation = Math.floor(Math.random() * 40);
+            st.film.vignette = 0; st.film.halation = 0;   // vinheta e halação saíram da Lente
             if (Math.random() < 0.25) st.film.soft = Math.floor(Math.random() * 30);
             if (Math.random() < 0.2) st.film.leak = Math.floor(Math.random() * 50);
         }

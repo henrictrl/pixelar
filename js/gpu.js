@@ -1342,6 +1342,8 @@ const FILM_FX_IDS = ['kodak_verde', 'kodak_pb', 'lumiere', 'vencido'];
 const LENS_FX_IDS = ['vignette', 'bloom', 'bokeh_blur', 'lens_distortion']; // viraram controles da Lente (Filtros)
 // repetiam outra parte do app (Pixel, Contorno, Luz): continuam funcionando em estilos antigos, mas não aparecem na lista
 const DUP_FX_IDS = ['pixelate_fx', 'outlines', 'color_adjustment'];
+// curadoria (out/2026): texturas que saíram da lista (continuam funcionando em estilos antigos)
+const HIDDEN_FX_IDS = ["acid", "beads", "comic", "contour", "cross_stitch", "hatching", "hologram", "kaleido", "mesh_lines", "sunburst", "tie_dye", "water"];
 const PixelarGPU = (function () {
     let gl = null, glCanvas = null;
     let initialized = false, ok = false, contextLost = false;
@@ -2480,7 +2482,7 @@ const PixelarGPU = (function () {
 // Catálogo de efeitos (usado pela UI): mesmo contrato do antigo PixelarFX
 const PixelarFX = {
     // texturas artísticas (filmes e lentes ficam em Filtros)
-    listEffects: () => PIXELAR_FX_LIST.filter(fx => !FILM_FX_IDS.includes(fx.id) && !LENS_FX_IDS.includes(fx.id) && !DUP_FX_IDS.includes(fx.id)).map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
+    listEffects: () => PIXELAR_FX_LIST.filter(fx => !FILM_FX_IDS.includes(fx.id) && !LENS_FX_IDS.includes(fx.id) && !DUP_FX_IDS.includes(fx.id) && !HIDDEN_FX_IDS.includes(fx.id)).map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
     getEffectDef: (id) => PIXELAR_FX_LIST.find(fx => fx.id === id) || null,
     isAvailable: () => PixelarGPU.isAvailable(),
 };

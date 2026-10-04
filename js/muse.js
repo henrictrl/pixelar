@@ -244,8 +244,8 @@ const Muse = (() => {
     }
 
     // ---------------- 3. famílias e genomas ----------------
-    const BW_LOOKS = () => Object.keys(FILM_LOOKS).filter(k => FILM_LOOKS[k].u && FILM_LOOKS[k].u.uBW);
-    const COLOR_LOOKS = () => Object.keys(FILM_LOOKS).filter(k => !(FILM_LOOKS[k].u && FILM_LOOKS[k].u.uBW) && !FILM_LOOKS[k].fx);
+    const BW_LOOKS = () => visibleLooks().filter(k => FILM_LOOKS[k].u && FILM_LOOKS[k].u.uBW);
+    const COLOR_LOOKS = () => visibleLooks().filter(k => !(FILM_LOOKS[k].u && FILM_LOOKS[k].u.uBW) && !FILM_LOOKS[k].fx);
     const FAMILIES = {
         pintura: { nome: 'Pintura', w: (c) => 1 + c.paisagem * 1.2 + c.retrato * 0.6 + c.apagado * 0.4 - c.grafico * 0.5 },
         grafico: { nome: 'Pôster', w: (c) => 0.8 + c.grafico * 1.5 + c.vivo * 0.5 - c.retrato * 0.5 },
@@ -406,9 +406,8 @@ const Muse = (() => {
         } else if (fam === 'mono' && R() < 0.45) g.film = { look: pick(R, BW_LOOKS()), mix: 100 };
         // lente e luz
         g.lens = {};
-        if (fam === 'sonho') { g.lens.soft = Math.round(lerp(15, 40, R())); g.lens.bloom = Math.round(lerp(15, 45, R())); if (R() < 0.4) g.lens.halation = Math.round(lerp(10, 30, R())); }
-        if (fam === 'neon') { g.lens.bloom = Math.round(lerp(25, 55, R())); g.lens.halation = Math.round(lerp(10, 35, R())); }
-        if (fam === 'filme' && R() < 0.4) g.lens.vignette = Math.round(lerp(10, 35, R()));
+        if (fam === 'sonho') { g.lens.soft = Math.round(lerp(15, 40, R())); g.lens.bloom = Math.round(lerp(15, 45, R())); }
+        if (fam === 'neon') { g.lens.bloom = Math.round(lerp(25, 55, R())); }
         if (fam === 'pintura' && R() < 0.35) g.lens.soft = Math.round(lerp(8, 25, R()));
         // grão
         const grainP = { pintura: 0.65, filme: 0.55, impressao: 0.6, mono: 0.5, sonho: 0.3, grafico: 0.2, neon: 0.25, pixel: 0.05, cor: 0.3 }[fam];
@@ -428,8 +427,9 @@ const Muse = (() => {
                 pop: ['warhol', 'comic', 'riso', 'prism_map', 'sunburst', 'glitch_blocks', 'cmyk_halftone', 'duo_halftone', 'color_threshold', 'lcd'],
                 textura: ['warhol', 'comic', 'riso', 'prism_map', 'tie_dye', 'kaleido', 'lego', 'cross_stitch', 'led', 'stained_glass', 'pixel_sort', 'glitch_blocks', 'lcd', 'blueprint', 'ascii', 'crt', 'beads', 'knit', 'mosaic_tiles', 'hologram', 'contour', 'stipple', 'woodcut', 'mesh_lines', 'cmyk_halftone', 'duo_halftone', 'thermal', 'edge_ink', 'fluted_glass', 'neon_trace', 'water', 'emboss'],
             }[fam];
-            const id = pick(R, pool);
-            if (PixelarFX.getEffectDef(id)) g.fx = { id, mix: Math.round(fam === 'textura' || NEW_FX[id] ? lerp(80, 100, R()) : lerp(35, 80, R())), params: fxParamsOf(id) };
+            const vis = new Set(PixelarFX.listEffects().map(f => f.id)), ok = pool.filter(i => vis.has(i));   // só texturas que estão no app
+            const id = ok.length ? pick(R, ok) : null;
+            if (id) g.fx = { id, mix: Math.round(fam === 'textura' || NEW_FX[id] ? lerp(80, 100, R()) : lerp(35, 80, R())), params: fxParamsOf(id) };
         }
         // contorno
         const edgeP = { grafico: 0.45, pixel: 0.2, impressao: 0.15, pintura: 0.1 }[fam] || 0;
@@ -544,7 +544,7 @@ const Muse = (() => {
         pixel: ['8 bits', 'Mosaico', 'Cartucho', 'Fliperama'], impressao: ['Riso', 'Offset', 'Tipografia', 'Xilo'],
         neon: ['Néon', 'Letreiro', 'Madrugada', 'Fliperama'], sonho: ['Névoa', 'Sonho', 'Aurora', 'Veludo'],
         mono: ['Nanquim', 'Carvão', 'Prata', 'Grafite'], cor: ['Luz', 'Cor', 'Tarde'], filme: ['Filme'],
-        cores: ['Prisma', 'Caleidoscópio', 'Arco-íris', 'Neon pop', 'Tinta viva'], textura: ['Textura'],
+        cores: ['Prisma', 'Cor viva', 'Arco-íris', 'Neon pop', 'Tinta viva'], textura: ['Textura'],
         pop: ['Pop', 'Serigrafia', 'Pôster', 'Tinta chapada', 'Cartaz', 'Lambe'],
     };
     function title(g) {
