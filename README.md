@@ -2,7 +2,7 @@
 
 Editor de pixel art, dither, filmes analógicos e animações para **fotos e vídeos**, direto no navegador. Nada é enviado para servidor: tudo roda no aparelho (WebGL2 + WebCodecs).
 
-Interface em vidro transparente com ícones em pixel e a fonte Departure Mono. São 3 abas: **Estilos** (Para você, Favoritos com estrela, Presets salvos e as coleções prontas, com intensidade do estilo), **Editar** (Luz e cor, Pixel, Textura, Filme e lente, Contorno, Movimento, Cortar) e **Exportar** (Imagem, GIF e Vídeo, em Tela, Alta ou Máxima). Os ajustes usam uma régua como a do Fotos da Apple (arrasto 1:1, inércia, sem prender no zero). O botão **Camadas** no topo mostra os efeitos sobre a foto: dá para reordenar (arrastando), trocar a mesclagem e a opacidade de cada um. Tema Diurno ou Noturno; a cor de destaque vem da imagem. Em aparelhos modestos o app entra em modo leve (prévia mais leve, sem desfoque); a exportação sempre sai na qualidade máxima, processada direto na resolução final.
+Interface em vidro transparente com ícones em pixel e a fonte Departure Mono. São 3 abas: **Estilos** (Favoritos com estrela, Presets salvos e 5 coleções equilibradas, com intensidade do estilo), **Editar** (Luz e cor, Pixel com Agrupar e Contorno, Textura, Filme e lente, Dupla exposição, Movimento, Cortar) e **Exportar** (Imagem, GIF e Vídeo, em Tela ou Máxima). **Dupla exposição**: uma segunda foto (ou a mesma foto, nuvens, estrelas, ondas de luz, folhagem) com 11 misturas, máscaras pelas luzes/sombras, posição, giro e tom. **Agrupar pixels**: vizinhos de cor parecida viram manchas chapadas. Os ajustes usam uma régua como a do Fotos da Apple. O botão **Camadas** reordena os efeitos sobre a foto, com mesclagem e opacidade. Tema Diurno ou Noturno; em aparelhos modestos, modo leve. A exportação sai sempre na qualidade máxima.
 
 **Para você (Muse):** o app lê a foto (luz, cores, textura, pele, céu, noite, arte gráfica) e monta sugestões pensadas para ela, com paletas harmônicas e de obras de arte. “Novas sugestões” parte da última escolhida, e cada escolha ensina o gosto da pessoa (salvo no aparelho). O dado do topo usa o mesmo motor no modo ousado; cada categoria tem o próprio dado, e segurar um ajuste o trava.
 
@@ -48,4 +48,4 @@ Tudo o que a imagem precisa está num único objeto de estado (`st`). O motor (`
 
 ## Atalhos
 
-`R` aleatório · `L` camadas · `P` mostra/esconde os controles · `Espaço` tocar/parar · segurar a foto (ou `O`) mostra o original · `C` comparar lado a lado · `⌘Z`/`⇧⌘Z` desfazer/refazer · `⌘E` exportar · `⌘O` abrir · `1`–`3` abas · `←`/`→` ajustam a régua ativa · `+`/`−`/`0` zoom.
+Sem atalhos de teclado (saíram na curadoria): `Esc` fecha janelas. Segurar a foto mostra o original; pinça faz zoom.

@@ -31,7 +31,7 @@ const DEFAULT_STATE = {
     v: 2,
     adj: { exposure: 0, brightness: 0, contrast: 0, shadows: 0, temperature: 0, saturation: 0, posterize: 0, rgbShift: 0, shadowsInverted: false },
     grain: { amount: 0, size: 100, rough: 45, bias: 20, speckle: 0, mono: true },
-    pixel: { size: 1, scale: 100 },
+    pixel: { size: 1, scale: 100, group: 0, groupRadius: 1, groupTol: 35 },   // group: agrupar pixels (0 = desligado)
     dither: { mode: 'none', scale: 1, intensity: 100, opacity: 100, midOnly: false },
     edge: { size: 0, color: '#1A1A1A', opacity: 100 },
     fx: { id: 'none', mix: 100 },
@@ -45,8 +45,11 @@ const DEFAULT_STATE = {
     },
     bg: { fill: false, color: '#F0F0F0' },
     mix: 100,                           // intensidade do estilo (mistura com a foto original)
+    // dupla exposição: segunda imagem (ou fonte gerada) misturada à foto
+    dbl: { on: false, src: 'image', blend: 'screen', op: 85, pre: true, scale: 100, x: 0, y: 0, rot: 0, flip: false,
+        mask: 'none', maskLo: 50, maskSoft: 20, maskInv: false, tone: 'color', tint: '#ff7a59', contrast: 0, bright: 0, sat: 0, seed: 1 },
     // camadas sobre a imagem (Paleta e Pixel vêm sempre antes): ordem, mesclagem e opacidade
-    layers: { order: ['grad', 'fx', 'film', 'lens', 'grain', 'edge'], blend: {}, op: {} },
+    layers: { order: ['dbl', 'grad', 'fx', 'film', 'lens', 'grain', 'edge'], blend: {}, op: {} },
     crop: { aspect: 'original', rot: 0, flipH: false, flipV: false, zoom: 100, x: 0, y: 0 },
     anim: Object.assign({}, ANIM_DEFAULTS),
 };
@@ -73,7 +76,7 @@ function normalizeState(p) {
 }
 
 // camadas: garante as seis, sem repetir, na ordem guardada
-const LAYER_IDS = ['grad', 'fx', 'film', 'lens', 'grain', 'edge'];
+const LAYER_IDS = ['dbl', 'grad', 'fx', 'film', 'lens', 'grain', 'edge'];
 function normalizeLayers(l) {
     const out = { order: [], blend: {}, op: {} };
     if (l && Array.isArray(l.order)) l.order.forEach(id => { if (LAYER_IDS.includes(id) && !out.order.includes(id)) out.order.push(id); });
@@ -444,8 +447,18 @@ FILM_LOOK_DEFS.forEach(([group, list]) => list.forEach(([id, nome, desc, u, x]) 
 // curadoria (out/2026): filmes que saíram da lista ou repetiam outro quase igual. Continuam
 // definidos para estilos antigos e arquivos salvos funcionarem, mas não aparecem nem são sorteados.
 const HIDDEN_LOOKS = new Set(["acros", "agfaapx", "agfavista", "astia", "bleach", "c200", "cinestill50", "colorplus", "compacta", "contaxt2", "delta3200", "ektar", "hasselblad", "hi8", "hp5", "instax", "kodachrome25", "kodachrome64", "lomo800", "mju2", "natura", "polaroid", "portra", "portra160", "portra800", "pro400h", "provia", "superia", "tmax", "ultramax", "velvia", "vhscam", "vision250d", "vision500t", "xp2"]);
-FILM_LOOK_DEFS.forEach(g => { g[1] = g[1].filter(d => !HIDDEN_LOOKS.has(d[0])); });
-for (let i = FILM_LOOK_DEFS.length - 1; i >= 0; i--) if (!FILM_LOOK_DEFS[i][1].length) FILM_LOOK_DEFS.splice(i, 1);
+// grupos equilibrados (5 filmes em cada)
+{
+    const byId = {}; FILM_LOOK_DEFS.forEach(([, list]) => list.forEach(d => { byId[d[0]] = d; }));
+    const GROUPS = [
+        ['Cor natural', ['ektachrome', 'gold200', 'ae1', 'leica', 'descartavel']],
+        ['Cinema e P&B', ['trix', 'noir', 'kodak_pb', 'cinestill', 'techni3']],
+        ['Cores loucas', ['cross', 'lomopurple', 'aerochrome', 'lomo', 'holga']],
+        ['Vintage e vídeo', ['super8', 'ccd', 'kodak_verde', 'lumiere', 'vencido']],
+    ];
+    FILM_LOOK_DEFS.length = 0;
+    GROUPS.forEach(([g, ids]) => FILM_LOOK_DEFS.push([g, ids.filter(id => byId[id] && !HIDDEN_LOOKS.has(id)).map(id => byId[id])]));
+}
 const visibleLooks = () => Object.keys(FILM_LOOKS).filter(k => !HIDDEN_LOOKS.has(k));
 const LENS_KEYS = ['vignette', 'halation', 'bloom', 'soft', 'distort', 'chroma', 'leak', 'dust', 'flash'];
 
@@ -517,7 +530,25 @@ function readSettings(st) {
         film: readFilm(st),
         filmLook: readFilm(st, 'look'), filmLens: readFilm(st, 'lens'),
         mix: st.mix === undefined ? 1 : Math.max(0, Math.min(100, +st.mix)) / 100,
+        cluster: st.pixel.group > 0 ? { passes: Math.min(4, Math.ceil(st.pixel.group / 25)), radius: st.pixel.groupRadius >= 2 ? 2 : 1, tol: 0.04 + (st.pixel.groupTol / 100) * 0.55 } : null,
+        dbl: readDbl(st),
         layers: st.layers ? normalizeLayers(st.layers) : normalizeLayers(null),
+    };
+}
+
+// dupla exposição: a imagem escolhida fica guardada no motor (não cabe no estado)
+const DBL_SRC = { image: 0, self: 1, clouds: 2, stars: 3, light: 4, leaves: 5 };
+const DBL_MASK = { none: 0, 'base-light': 1, 'base-dark': 2, 'img-light': 3, center: 4, bottom: 5, side: 6 };
+const DBL_TONE = { color: 0, mono: 1, tint: 2, invert: 3 };
+const DblImage = { img: null, key: 0, aspect: 1, name: '' };
+function readDbl(st) {
+    const d = st.dbl; if (!d || !d.on) return null;
+    if (d.src === 'image' && !DblImage.img) return null;          // sem imagem escolhida ainda
+    return {
+        src: DBL_SRC[d.src] || 0, img: d.src === 'image' ? DblImage.img : null, key: DblImage.key, aspect: DblImage.aspect,
+        blend: d.blend, op: d.op / 100, pre: !!d.pre, scale: d.scale / 100, x: d.x / 100, y: d.y / 100, rot: d.rot * Math.PI / 180, flip: !!d.flip,
+        mask: DBL_MASK[d.mask] || 0, maskLo: d.maskLo / 100, maskSoft: d.maskSoft / 100 * 0.5, maskInv: !!d.maskInv,
+        tone: DBL_TONE[d.tone] || 0, tint: rgbArr(d.tint), contrast: d.contrast / 100, bright: d.bright / 200, sat: d.sat / 100, seed: d.seed || 1,
     };
 }
 
@@ -537,7 +568,8 @@ function buildChain(st, s, fx, grain, an) {
     const look = animFilm(s.filmLook, af), lensF = animFilm(s.filmLens, af);
     L.order.forEach(id => {
         const blend = L.blend[id] || 'normal';
-        if (id === 'grad' && st.grad.on) chain.push({ id, kind: 'grad', blend: st.grad.blend, op: st.grad.opacity / 100 });
+        if (id === 'dbl' && s.dbl && !s.dbl.pre) chain.push({ id, kind: 'dbl', blend: 'normal', op: 1 });
+        else if (id === 'grad' && st.grad.on) chain.push({ id, kind: 'grad', blend: st.grad.blend, op: st.grad.opacity / 100 });
         else if (id === 'fx' && fx) chain.push({ id, kind: 'fx', fx, blend, op: 1 });
         else if (id === 'film' && look && (look.u || look.fx)) chain.push({ id, kind: 'film', film: look, blend, op: 1 });
         else if (id === 'lens' && lensF && lensF.u) chain.push({ id, kind: 'film', film: lensF, blend, op: op('lens') });
@@ -715,7 +747,8 @@ const Engine = (() => {
         const usedGPU = gpuReady && PixelarGPU.render({
             w, h, srcCanvas: small, srcKey: key, adj: s.adj, dither: s.dither, anim: an,
             minL: mm.minL, maxL: mm.maxL, shadowsInverted: s.shadowsInverted, midDither: s.midDither,
-            grad, color, rgbShift: s.rgbShift, chain, mix: s.mix, edgeBase: s.edge.size > 0,
+            grad, color, rgbShift: s.rgbShift, chain, mix: s.mix, edgeBase: s.edge.size > 0, cluster: s.cluster,
+            dbl: s.dbl ? Object.assign({}, s.dbl, { t: an && an.T ? an.T : 0 }) : null,
         });
         if (!usedGPU) {
             d = renderCPU(getSmallData(w, h), w, h, s, color, grad, an, grain, mm);

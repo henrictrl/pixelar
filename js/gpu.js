@@ -1350,7 +1350,7 @@ const PixelarGPU = (function () {
     let vao = null, maxTex = 4096;
     const progs = {};          // MAIN, SHIFT, GRAIN, BLIT
     const fxProgs = {};        // id do efeito -> programa
-    let srcTex, gradTex, palTex, refPalTex;
+    let srcTex, gradTex, palTex, refPalTex, dblTex, dblKey = null;
     let srcKey = null, gradKey = null, palKey = null, refPalKey = null, palCount = 0;
     const targets = [];        // 2 alvos de ping-pong (textura + framebuffer)
     let tw = 0, th = 0, lastTarget = -1, edgeBase = false;
@@ -2117,6 +2117,112 @@ const PixelarGPU = (function () {
         outColor = vec4(clamp(mix(a, r, k), 0.0, 1.0), uUseAlpha == 1 ? b.a : l.a);
     }`;
 
+    // AGRUPAR PIXELS: filtro de moda — cada pixel da arte vira a cor que mais aparece na vizinhança
+    // (entre as parecidas). Repetido algumas vezes, some o pixel solto e sobram manchas chapadas.
+    const CLUSTER_FS = `#version 300 es
+    precision highp float; precision highp int;
+    out vec4 outColor;
+    uniform sampler2D uTex;
+    uniform int uRadius;
+    uniform float uTol;
+    void main() {
+        ivec2 p = ivec2(gl_FragCoord.xy), sz = textureSize(uTex, 0);
+        vec4 me = texelFetch(uTex, p, 0);
+        if (me.a == 0.0) { outColor = me; return; }
+        vec3 best = me.rgb; float bestN = -1.0;
+        for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
+            if (abs(x) > uRadius || abs(y) > uRadius) continue;
+            vec3 c = texelFetch(uTex, clamp(p + ivec2(x, y), ivec2(0), sz - 1), 0).rgb;
+            float n = 0.0;
+            for (int v = -2; v <= 2; v++) for (int u = -2; u <= 2; u++) {
+                if (abs(u) > uRadius || abs(v) > uRadius) continue;
+                vec3 d = texelFetch(uTex, clamp(p + ivec2(u, v), ivec2(0), sz - 1), 0).rgb - c;
+                n += step(dot(d, d), uTol * uTol);
+            }
+            n += (x == 0 && y == 0) ? 0.5 : 0.0;   // empate: fica a cor do próprio pixel
+            if (n > bestN) { bestN = n; best = c; }
+        }
+        outColor = vec4(best, me.a);
+    }`;
+
+    // DUPLA EXPOSIÇÃO: junta uma segunda imagem (ou uma fonte gerada) com a foto,
+    // com mistura, máscara, posição e tom próprios. uBase = foto; uImg2 = segunda imagem.
+    const DBL_FS = `#version 300 es
+    precision highp float; precision highp int;
+    out vec4 outColor;
+    uniform sampler2D uBase, uImg2;
+    uniform vec2 uSize;
+    uniform int uSrc, uBlend, uMask, uTone, uFlip, uMaskInv;
+    uniform float uOp, uScale, uRot, uAspect2, uMaskLo, uMaskSoft, uContrast, uBright, uSat, uSeed, uAnimT;
+    uniform vec2 uOff;
+    uniform vec3 uTint;
+    ${GLSL_HASH}
+    float L(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+    float h21(vec2 q) { return phash(ivec2(floor(q)), uSeed); }
+    float vn(vec2 q) { vec2 i = floor(q), f = fract(q); f = f * f * (3.0 - 2.0 * f); return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
+    float fb(vec2 q) { float v = 0.0, a = 0.5; for (int i = 0; i < 6; i++) { v += a * vn(q); q = q * 2.03 + 7.1; a *= 0.5; } return v; }
+    vec3 rgb2hsl_(vec3 c) { float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b)), l = (mx + mn) * 0.5, d = mx - mn; if (d < 1e-5) return vec3(0.0, 0.0, l); float s = l > 0.5 ? d / (2.0 - mx - mn) : d / (mx + mn), h; if (mx == c.r) h = (c.g - c.b) / d + (c.g < c.b ? 6.0 : 0.0); else if (mx == c.g) h = (c.b - c.r) / d + 2.0; else h = (c.r - c.g) / d + 4.0; return vec3(h / 6.0, s, l); }
+    vec3 hsl2rgb_(vec3 h) { vec3 k = clamp(abs(mod(h.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0); return h.z + h.y * (k - 0.5) * (1.0 - abs(2.0 * h.z - 1.0)); }
+    void main() {
+        ivec2 ip = ivec2(gl_FragCoord.xy);
+        vec4 b4 = texelFetch(uBase, ip, 0); vec3 a = b4.rgb;
+        vec2 uv = (vec2(ip) + 0.5) / uSize;                       // y = 0 no topo
+        float asp = uSize.x / uSize.y;
+        vec2 q = (uv - 0.5) * vec2(asp, 1.0);
+        float cs = cos(-uRot), sn = sin(-uRot);
+        q = mat2(cs, sn, -sn, cs) * q;
+        q = q / max(0.05, uScale) - uOff * vec2(asp, 1.0);
+        if (uFlip == 1) q.x = -q.x;
+        vec3 c; float inside = 1.0;
+        if (uSrc == 0 || uSrc == 1) {
+            float B = uSrc == 1 ? asp : uAspect2, H = max(1.0, asp / B);
+            vec2 t = q / H; t.x /= B; t += 0.5;
+            inside = step(0.0, t.x) * step(t.x, 1.0) * step(0.0, t.y) * step(t.y, 1.0);
+            c = uSrc == 1 ? texture(uBase, clamp(t, 0.0, 1.0)).rgb : texture(uImg2, clamp(t, 0.0, 1.0)).rgb;
+        } else if (uSrc == 2) {                                    // nuvens / fumaça
+            float n = fb(q * 3.0 + vec2(uAnimT * 0.6, 0.0));
+            c = vec3(smoothstep(0.3, 0.85, n));
+        } else if (uSrc == 3) {                                    // céu de estrelas
+            vec2 g = q * 38.0; float st = 0.0;
+            for (int k = 0; k < 3; k++) { vec2 cell = floor(g), f = fract(g) - 0.5; float r = h21(cell + float(k) * 13.0); st += smoothstep(0.16, 0.0, length(f - (vec2(h21(cell + 3.0), h21(cell + 5.0)) - 0.5) * 0.6)) * step(0.86, r) * (0.6 + 0.4 * sin(uAnimT * 6.2831 + r * 40.0)); g *= 1.9; }
+            c = vec3(0.02, 0.03, 0.08) + vec3(st) + vec3(0.15, 0.1, 0.25) * fb(q * 2.0);
+        } else if (uSrc == 4) {                                    // ondas de luz
+            float w = sin(q.x * 9.0 + fb(q * 2.5) * 6.0 + uAnimT * 6.2831) * 0.5 + 0.5;
+            c = mix(vec3(0.05, 0.0, 0.15), vec3(1.0, 0.55, 0.25), pow(w, 3.0)) + vec3(0.2, 0.5, 1.0) * pow(1.0 - w, 6.0);
+        } else {                                                   // folhagem (manchas orgânicas)
+            float n = fb(q * 6.0), m = fb(q * 14.0 + 3.0);
+            c = mix(vec3(0.02, 0.08, 0.03), vec3(0.35, 0.65, 0.25), smoothstep(0.35, 0.7, n)) + vec3(0.6, 0.7, 0.3) * smoothstep(0.7, 0.9, m);
+        }
+        // tom da segunda imagem
+        c = clamp((c - 0.5) * (1.0 + uContrast) + 0.5 + uBright, 0.0, 1.0);
+        if (uTone == 1) c = vec3(L(c));
+        else if (uTone == 2) c = mix(vec3(0.02), uTint, L(c)) + vec3(smoothstep(0.75, 1.0, L(c))) * 0.3;
+        else if (uTone == 3) c = 1.0 - c;
+        if (uSat != 0.0) { vec3 h = rgb2hsl_(c); h.y = clamp(h.y * (1.0 + uSat), 0.0, 1.0); c = hsl2rgb_(h); }
+        // mistura
+        vec3 r = c;
+        if (uBlend == 1) r = a * c;
+        else if (uBlend == 2) r = 1.0 - (1.0 - a) * (1.0 - c);
+        else if (uBlend == 3) r = mix(2.0 * a * c, 1.0 - 2.0 * (1.0 - a) * (1.0 - c), step(0.5, a));
+        else if (uBlend == 4) { vec3 ho = rgb2hsl_(a), hc = rgb2hsl_(c); r = hsl2rgb_(vec3(hc.x, hc.y, ho.z)); }
+        else if (uBlend == 5) r = min(a, c);
+        else if (uBlend == 6) r = max(a, c);
+        else if (uBlend == 7) r = abs(a - c);
+        else if (uBlend == 8) r = mix(2.0 * a * c + a * a * (1.0 - 2.0 * c), sqrt(a) * (2.0 * c - 1.0) + 2.0 * a * (1.0 - c), step(0.5, c));
+        else if (uBlend == 9) r = min(vec3(1.0), a + c);
+        else if (uBlend == 10) r = clamp(a + c - 1.0, 0.0, 1.0);
+        // máscara: onde a segunda imagem aparece
+        float m = 1.0, k = max(0.01, uMaskSoft);
+        if (uMask == 1) m = smoothstep(uMaskLo - k, uMaskLo + k, L(a));            // luzes da foto
+        else if (uMask == 2) m = 1.0 - smoothstep(uMaskLo - k, uMaskLo + k, L(a));  // sombras da foto
+        else if (uMask == 3) m = smoothstep(uMaskLo - k, uMaskLo + k, L(c));        // luzes da 2ª imagem
+        else if (uMask == 4) m = 1.0 - smoothstep(uMaskLo - k, uMaskLo + k, length((uv - 0.5) * vec2(asp, 1.0)) * 1.4); // centro
+        else if (uMask == 5) m = smoothstep(uMaskLo - k, uMaskLo + k, 1.0 - uv.y);  // de baixo para cima
+        else if (uMask == 6) m = smoothstep(uMaskLo - k, uMaskLo + k, uv.x);        // da esquerda para a direita
+        if (uMaskInv == 1) m = 1.0 - m;
+        outColor = vec4(clamp(mix(a, r, uOp * m * inside), 0.0, 1.0), b4.a);
+    }`;
+
     // DEGRADÊ como camada: só a cor do degradê (a mesclagem é feita pela passada BLEND)
     const GRADL_FS = `#version 300 es
     precision highp float; precision highp int;
@@ -2197,7 +2303,8 @@ const PixelarGPU = (function () {
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
         progs.MAIN = link(MAIN_FS); progs.SHIFT = link(SHIFT_FS);
         progs.GRAIN = link(GRAIN_FS); progs.BLIT = link(BLIT_FS); progs.FILM = link(FILM_FS); progs.EDGE = link(EDGE_FS);
-        progs.BLEND = link(BLEND_FS); progs.GRADL = link(GRADL_FS);
+        progs.BLEND = link(BLEND_FS); progs.GRADL = link(GRADL_FS); progs.CLUSTER = link(CLUSTER_FS); progs.DBL = link(DBL_FS);
+        dblTex = newTex(gl.LINEAR); dblKey = null;
         srcTex = newTex(gl.NEAREST); gradTex = newTex(gl.LINEAR);
         palTex = newTex(gl.NEAREST); refPalTex = newTex(gl.NEAREST);
         gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
@@ -2315,7 +2422,23 @@ const PixelarGPU = (function () {
             const a = o.adj, dt = o.dither, an = o.anim || { T: 0, amt: 0, frame: 0 };
             // MAIN → alvo 0
             bindTex(1, gradTex); bindTex(2, palTex); bindTex(3, refPalTex);
-            pass(progs.MAIN, srcTex, 0, (L) => {
+            const DBL_BLEND = { normal: 0, multiply: 1, screen: 2, overlay: 3, color: 4, darken: 5, lighten: 6, difference: 7, softlight: 8, add: 9, subtract: 10 };
+            const runDbl = (d, baseTex, out) => {
+                if (d.img && d.key !== dblKey) { bindTex(1, dblTex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, d.img); dblKey = d.key; }
+                bindTex(1, dblTex);
+                pass(progs.DBL, baseTex, out, (L) => {
+                    gl.uniform1i(L.uBase, 0); gl.uniform1i(L.uImg2, 1); gl.uniform2f(L.uSize, w, h);
+                    gl.uniform1i(L.uSrc, d.src); gl.uniform1i(L.uBlend, DBL_BLEND[d.blend] || 0); gl.uniform1i(L.uMask, d.mask); gl.uniform1i(L.uTone, d.tone);
+                    gl.uniform1i(L.uFlip, d.flip ? 1 : 0); gl.uniform1i(L.uMaskInv, d.maskInv ? 1 : 0);
+                    gl.uniform1f(L.uOp, d.op); gl.uniform1f(L.uScale, d.scale); gl.uniform1f(L.uRot, d.rot); gl.uniform1f(L.uAspect2, d.aspect || 1);
+                    gl.uniform1f(L.uMaskLo, d.maskLo); gl.uniform1f(L.uMaskSoft, d.maskSoft); gl.uniform1f(L.uContrast, d.contrast); gl.uniform1f(L.uBright, d.bright); gl.uniform1f(L.uSat, d.sat);
+                    gl.uniform1f(L.uSeed, d.seed || 1); gl.uniform1f(L.uAnimT, d.t || 0);
+                    gl.uniform2f(L.uOff, d.x, d.y); gl.uniform3fv(L.uTint, d.tint);
+                });
+            };
+            let mainSrc = srcTex;
+            if (o.dbl && o.dbl.pre) { runDbl(o.dbl, srcTex, 2); mainSrc = targets[2].tex; }
+            pass(progs.MAIN, mainSrc, 0, (L) => {
                 gl.uniform1i(L.uGrad, 1); gl.uniform1i(L.uPalette, 2); gl.uniform1i(L.uRefPalette, 3);
                 gl.uniform1f(L.uExp, a.exp); gl.uniform1f(L.uBr, a.br); gl.uniform1f(L.uSh, a.sh);
                 gl.uniform1f(L.uSat, a.sat); gl.uniform1f(L.uCont, a.cont); gl.uniform1f(L.uContFactor, a.contFactor);
@@ -2342,6 +2465,12 @@ const PixelarGPU = (function () {
             });
             let cur = 0;
             const next = () => (cur + 1) % 3;
+            if (o.cluster && o.cluster.passes > 0) {
+                for (let i = 0; i < o.cluster.passes; i++) {
+                    pass(progs.CLUSTER, targets[cur].tex, next(), (L) => { gl.uniform1i(L.uRadius, o.cluster.radius); gl.uniform1f(L.uTol, o.cluster.tol); });
+                    cur = next();
+                }
+            }
             if (o.rgbShift > 0) {
                 pass(progs.SHIFT, targets[cur].tex, next(), (L) => gl.uniform1i(L.uShift, o.rgbShift));
                 cur = next();
@@ -2398,6 +2527,8 @@ const PixelarGPU = (function () {
                 } else if (ly.kind === 'grad' && o.grad) {
                     bindTex(1, gradTex);
                     steps.push((a, b) => { pass(progs.GRADL, targets[a].tex, b, (L) => { gl.uniform1i(L.uGrad, 1); gl.uniform2f(L.uImgSize, w, h); }); return true; });
+                } else if (ly.kind === 'dbl' && o.dbl) {
+                    steps.push((a, b) => { runDbl(Object.assign({}, o.dbl, { blend: o.dbl.blend, op: o.dbl.op }), targets[a].tex, b); return true; });
                 } else if (ly.kind === 'edge') {
                     useAlpha = 1;
                     steps.push((a, b) => { pass(progs.EDGE, targets[edgeBase ? 3 : a].tex, b, (L) => {
