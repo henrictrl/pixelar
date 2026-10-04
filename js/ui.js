@@ -228,10 +228,6 @@ new ResizeObserver(() => fitView()).observe(viewport);
         if (pts.size < 2) pinch = null;
         if (compare.hold) { compare.hold = false; showOriginal(false); }
         if (cropDragState) { cropDragState = null; commit(); }
-        if (!moved && !dragSplit && pts.size === 0 && e.type === 'pointerup') {
-            const now = performance.now();
-            if (now - lastTap < 300) { zoomAt(view.zoom > 1 ? 1 / view.zoom : 2.5, e.clientX, e.clientY); lastTap = 0; } else lastTap = now;
-        }
         dragSplit = false; start = null;
     };
     viewport.addEventListener('pointerup', end); viewport.addEventListener('pointercancel', end);
@@ -326,13 +322,10 @@ const FILM_OPTS = [['none', 'Nenhum'], ...Object.values(FILM_LOOKS).map(l => [l.
 const FX_OPTS = () => [['none', 'Nenhum'], ...PixelarFX.listEffects().map(f => [f.id, f.nome])];
 // texturas agrupadas (miniaturas com títulos de grupo, como os filmes)
 const FX_GROUP_DEFS = [
-    ['Pop', ['warhol', 'comic', 'riso', 'prism_map', 'tie_dye', 'sunburst', 'kaleido']],
-    ['Gráficos', ['ascii', 'crt', 'lcd', 'led', 'bitmap', 'color_threshold', 'blueprint']],
-    ['Ofícios', ['beads', 'lego', 'cross_stitch', 'knit', 'mosaic_tiles', 'stained_glass']],
-    ['Impressão', ['cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'hatching', 'photocopy', 'edge_ink', 'paper']],
-    ['Luz e vidro', ['hologram', 'starlight', 'ghost_lens', 'fluted_glass', 'water']],
-    ['Arte', ['contour', 'mesh_lines', 'neon_trace', 'emboss', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction']],
-    ['Cor e vídeo', ['thermal', 'acid', 'channel_mixer', 'glitch_blocks', 'pixel_sort', 'vhs', 'slice_shift']],
+    ['Cor e luz', ['warhol', 'prism_map', 'thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'ghost_lens', 'fluted_glass']],
+    ['Tela e glitch', ['ascii', 'crt', 'lcd', 'led', 'bitmap', 'blueprint', 'glitch_blocks', 'vhs', 'slice_shift']],
+    ['Impressão', ['riso', 'cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'photocopy', 'edge_ink', 'paper', 'emboss']],
+    ['Arte e matéria', ['lego', 'knit', 'mosaic_tiles', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort']],
 ];
 function FX_GROUPS() {
     const all = PixelarFX.listEffects(), byId = Object.fromEntries(all.map(f => [f.id, f.nome])), used = new Set();
@@ -372,13 +365,12 @@ const LUZ_PART = { id: 'luz', label: 'Luz', controls: () => [
     randomOnly(['luz'], 'Luz sorteada'),
     R('adj.exposure', 'Exposição', 'exposure', -100, 100), R('adj.brightness', 'Brilho', 'brightness', -100, 100), R('adj.contrast', 'Contraste', 'contrast', -100, 100),
     R('adj.shadows', 'Sombras', 'shadows', -100, 100), R('adj.temperature', 'Temperatura', 'temp', -100, 100), R('adj.saturation', 'Saturação', 'saturation', -100, 100),
-    R('adj.posterize', 'Posterizar', 'posterize', 0, 100),
     T('adj.shadowsInverted', 'Inverter sombras', 'invert'),
 ] };
 const PALETA_PART = { id: 'paleta', label: 'Paleta', controls: () => {
     const duo = st.color.sel === 'duotone' || st.color.sel === 'tritone';
     const list = [randomOnly(['palette'], 'Paleta sorteada'), C('color.sel', 'Cores', 'palette', COLOR_OPTS, { onPick: pickColorCount }), X('palette', 'Editar cores', 'color', editPalette, { hidden: duo || st.color.sel === 'all', lockKey: 'color.palette' })];
-    if (duo) { list.push(K('color.duo.0', 'Sombras'), K('color.duo.1', st.color.sel === 'tritone' ? 'Meios-tons' : 'Luzes')); if (st.color.sel === 'tritone') list.push(K('color.duo.2', 'Luzes')); list.push(X('duolib', 'Prontos', 'styles', editDuoLibrary)); }
+    if (duo) { list.push(K('color.duo.0', 'Sombras'), K('color.duo.1', st.color.sel === 'tritone' ? 'Meios-tons' : 'Luzes')); if (st.color.sel === 'tritone') list.push(K('color.duo.2', 'Luzes')); }
     else list.push(X('library', 'Prontas', 'styles', editPaletteLibrary));
     if (!duo && st.color.sel !== 'all') list.push(R('color.hue', 'Girar cores', 'hue', -180, 180), R('color.sat', 'Cores vivas', 'saturation', -100, 100), R('color.light', 'Clarear cores', 'light', -100, 100),
         A('Embaralhar', 'swap', paletteShuffleOrder), A('Da foto', 'photo', paletteFromPhoto), A('Salvar paleta', 'save', savePalette));
@@ -395,7 +387,7 @@ const DEGRADE_PART = { id: 'degrade', label: 'Degradê', controls: () => {
         R('grad.steps', 'Faixas', 'steps', 0, 30), R('grad.pos', 'Posição', 'position', 0, 100), R('grad.smooth', 'Suavidade', 'smooth', 0, 100), R('grad.noise', 'Ruído', 'noise', 0, 100));
     return list;
 } };
-const PIXEL_GROUP = { id: 'pixel', label: 'Pixel', controls: () => [
+const PIXEL_PART = { id: 'pix', label: 'Pixel', controls: () => [
     randomOnly(['pixel', 'dither'], 'Pixel sorteado'),
     C('dither.mode', 'Padrão', 'pattern', DITHER_OPTS, { view: 'thumbs', variant: (s, v) => { s.dither.mode = v; if (v !== 'none' && s.dither.intensity < 40) s.dither.intensity = 100; }, detail: true }),
     R('pixel.size', 'Tamanho do pixel', 'pixel', 1, 64),
@@ -413,7 +405,7 @@ const GRAO_PART = { id: 'grao', label: 'Grão', controls: () => [
     R('grain.amount', 'Intensidade', 'grain', 0, 100),
     // o resto só aparece quando há grão (sem grão, nada disso muda a imagem)
     ...(st.grain.amount > 0 ? [R('grain.size', 'Tamanho', 'size', 10, 400, { step: 5 }), R('grain.rough', 'Aspereza', 'rough', 0, 100),
-        R('grain.bias', 'Sombras ↔ luzes', 'bias', -100, 100), R('grain.speckle', 'Manchas', 'speckle', 0, 100), T('grain.mono', 'Monocromático', 'mono')] : []),
+        R('grain.bias', 'Sombras ↔ luzes', 'bias', -100, 100), T('grain.mono', 'Monocromático', 'mono')] : []),
 ] };
 const FILME_PART = { id: 'filmes', label: 'Filme', controls: () => {
     const look = FILM_LOOKS[st.film.look];
@@ -433,10 +425,63 @@ const LENTE_PART = { id: 'lente', label: 'Lente', controls: () => [
     R('film.bloom', 'Brilho difuso', 'bloom', 0, 100),
     R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100), R('adj.rgbShift', 'Deslocamento RGB', 'rgb', 0, 15),
     R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }), ] };
-const CONTORNO_GROUP = { id: 'contorno', label: 'Contorno', controls: () => [
+const CONTORNO_PART = { id: 'contorno', label: 'Contorno', controls: () => [
     randomOnly(['edge'], 'Contorno sorteado'),
     R('edge.size', 'Espessura', 'edge', 0, 10), R('edge.opacity', 'Opacidade', 'opacity', 0, 100), K('edge.color', 'Cor', { ensure: () => { if (!st.edge.size) st.edge.size = 2; if (!st.edge.opacity) st.edge.opacity = 100; } }),
 ] };
+// agrupar pixels: manchas chapadas (vizinhos de cor parecida viram uma cor só)
+const AGRUPAR_PART = { id: 'agrupar', label: 'Agrupar', controls: () => [
+    R('pixel.group', 'Agrupar', 'styles', 0, 100, { step: 25, fmt: (v) => v ? Math.round(v / 25) + '×' : '0' }),
+    C('pixel.groupRadius', 'Alcance', 'scale', [[1, 'Perto'], [2, 'Longe']]),
+    R('pixel.groupTol', 'Semelhança', 'contrast', 0, 100),
+] };
+const PIXEL_GROUP = { id: 'pixel', label: 'Pixel', parts: [PIXEL_PART, AGRUPAR_PART, CONTORNO_PART] };
+// dupla exposição: segunda imagem (ou fonte gerada) com mistura, máscara, posição e cor
+const DBL_SRC_OPTS = [['image', 'Foto escolhida'], ['self', 'A mesma foto'], ['clouds', 'Nuvens'], ['stars', 'Estrelas'], ['light', 'Ondas de luz'], ['leaves', 'Folhagem']];
+const DBL_BLEND_OPTS = [['screen', 'Clarear'], ['lighten', 'Iluminar'], ['add', 'Somar luz'], ['multiply', 'Multiplicar'], ['overlay', 'Sobrepor'], ['softlight', 'Luz suave'], ['darken', 'Escurecer'], ['difference', 'Diferença'], ['subtract', 'Subtrair'], ['color', 'Só cor'], ['normal', 'Normal']];
+const DBL_MASK_OPTS = [['none', 'Sem máscara'], ['base-light', 'Luzes da foto'], ['base-dark', 'Sombras da foto'], ['img-light', 'Luzes da 2ª imagem'], ['center', 'Centro'], ['bottom', 'De baixo'], ['side', 'Da esquerda']];
+const DBL_TONE_OPTS = [['color', 'Cores'], ['mono', 'Preto e branco'], ['tint', 'Tingido'], ['invert', 'Negativo']];
+const dblOn = () => { if (!st.dbl.on) st.dbl.on = true; };
+const DBL_GROUP = { id: 'dupla', label: 'Dupla exposição', parts: [
+    { id: 'dimg', label: 'Imagem', controls: () => [
+        A('Sortear', 'dice', randomDbl, { accent: true }),
+        A('Escolher foto', 'upload', () => $('dblInput').click()),
+        T('dbl.on', 'Ligado', 'layers'),
+        C('dbl.src', 'Fonte', 'image', DBL_SRC_OPTS, { onPick: (v) => { st.dbl.on = true; if (v === 'image' && !DblImage.img) setTimeout(() => $('dblInput').click(), 50); } }),
+        C('dbl.blend', 'Mistura', 'layers', DBL_BLEND_OPTS, { onPick: dblOn }),
+        R('dbl.op', 'Opacidade', 'opacity', 0, 100),
+        T('dbl.pre', 'Antes da paleta', 'palette'),
+        ...(['clouds', 'stars', 'light', 'leaves'].includes(st.dbl.src) ? [A('Outra variação', 'reset', () => { st.dbl.seed = 1 + Math.floor(Math.random() * 999); dblOn(); change(null, null); })] : []),
+    ] },
+    { id: 'dpos', label: 'Posição', controls: () => [
+        R('dbl.scale', 'Tamanho', 'scale', 20, 400, { step: 5 }), R('dbl.x', 'Horizontal', 'move', -100, 100), R('dbl.y', 'Vertical', 'move', -100, 100),
+        R('dbl.rot', 'Girar', 'rotate', -180, 180), T('dbl.flip', 'Espelhar', 'flipH'),
+        A('Centralizar', 'reset', () => { Object.assign(st.dbl, { scale: 100, x: 0, y: 0, rot: 0, flip: false }); afterExternalChange({ keepEditor: true }); commit(true); }),
+    ] },
+    { id: 'dmask', label: 'Máscara', controls: () => [
+        C('dbl.mask', 'Máscara', 'contrast', DBL_MASK_OPTS, { onPick: dblOn }),
+        ...(st.dbl.mask === 'none' ? [] : [R('dbl.maskLo', 'Limite', 'mid', 0, 100), R('dbl.maskSoft', 'Suavidade', 'soft', 0, 100), T('dbl.maskInv', 'Inverter máscara', 'invert')]),
+    ] },
+    { id: 'dcor', label: 'Cor', controls: () => [
+        C('dbl.tone', 'Tom', 'palette', DBL_TONE_OPTS, { onPick: dblOn }),
+        ...(st.dbl.tone === 'tint' ? [K('dbl.tint', 'Cor do tom', { ensure: dblOn })] : []),
+        R('dbl.contrast', 'Contraste', 'contrast', -100, 100), R('dbl.bright', 'Brilho', 'brightness', -100, 100), R('dbl.sat', 'Saturação', 'saturation', -100, 100),
+    ] },
+] };
+function randomDbl() {
+    const before = snapshot(), pick = (a) => a[Math.floor(Math.random() * a.length)], d = st.dbl;
+    d.on = true;
+    if (!DblImage.img || Math.random() < 0.4) d.src = pick(['self', 'clouds', 'stars', 'light', 'leaves']); else d.src = 'image';
+    d.blend = pick(['screen', 'screen', 'lighten', 'add', 'multiply', 'overlay', 'softlight', 'difference']);
+    d.mask = pick(['none', 'base-light', 'base-dark', 'img-light', 'center', 'bottom']); d.maskLo = 30 + Math.floor(Math.random() * 40); d.maskSoft = 10 + Math.floor(Math.random() * 40); d.maskInv = Math.random() < 0.25;
+    d.tone = pick(['color', 'color', 'mono', 'tint', 'invert']); d.tint = rgbToHex(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+    d.scale = d.src === 'self' ? pick([60, 130, 160, 220]) : 100 + Math.floor(Math.random() * 60); d.x = Math.round((Math.random() - 0.5) * 40); d.y = Math.round((Math.random() - 0.5) * 30);
+    d.rot = d.src === 'self' && Math.random() < 0.4 ? pick([-12, 8, 180]) : 0; d.flip = d.src === 'self' ? Math.random() < 0.7 : Math.random() < 0.2;
+    d.op = 60 + Math.floor(Math.random() * 40); d.contrast = Math.round((Math.random() - 0.3) * 60); d.seed = 1 + Math.floor(Math.random() * 999);
+    afterExternalChange({ keepEditor: true }); commit(true);
+    toast('Dupla exposição sorteada', { label: 'Desfazer', run: () => { restore(before); commit(true); } });
+}
+
 // Movimento: os mesmos controles de antes (em estudo), agora como partes de uma categoria
 const MOV_PARTS = [
     { id: 'geral', label: 'Geral', controls: () => {
@@ -475,7 +520,6 @@ const CORTAR_GROUP = { id: 'crop', label: 'Cortar', controls: () => [
 const styleGroup = (id, label, editor) => ({ id, label, styles: true, controls: () => [X(id, label, 'styles', editor)] });
 const TABS = [
     { id: 'estilos', label: 'Estilos', icon: 'tab-styles', groups: () => [
-        styleGroup('foryou', 'Para você', editSurprise),
         styleGroup('favs', 'Favoritos', editFavorites),
         styleGroup('mine', 'Presets', editMine),
         ...PRESET_GROUPS.map(([g]) => styleGroup('pg:' + g, g, (ed) => editPresetGroup(ed, g))),
@@ -485,7 +529,7 @@ const TABS = [
         PIXEL_GROUP,
         { id: 'textura', label: 'Textura', parts: [TEXTURA_PART, GRAO_PART] },
         { id: 'filme', label: 'Filme e lente', parts: [FILME_PART, LENTE_PART] },
-        CONTORNO_GROUP,
+        DBL_GROUP,
         { id: 'movimento', label: 'Movimento', parts: MOV_PARTS },
         CORTAR_GROUP,
     ] },
@@ -525,8 +569,8 @@ function fxParamControls(id, hidden) {
 // PAINEL
 // ============================================================
 // ícones pequenos das categorias e partes
-const GROUP_ICONS = { foryou: 'fx', favs: 'star', mine: 'save', luzcor: 'brightness', pixel: 'pixel', textura: 'pattern', filme: 'film', contorno: 'edge', movimento: 'wave', crop: 'crop', ximage: 'image', xgif: 'repeat', xanim: 'video', xvideo: 'video' };
-const PART_ICONS = { luz: 'brightness', paleta: 'palette', degrade: 'gradient', fx: 'pattern', grao: 'grain', filmes: 'film', lente: 'vignette', geral: 'speed', apadrao: 'pixel', afx: 'pattern', agrao: 'grain', afilme: 'film' };
+const GROUP_ICONS = { favs: 'star', mine: 'save', dupla: 'layers', luzcor: 'brightness', pixel: 'pixel', textura: 'pattern', filme: 'film', contorno: 'edge', movimento: 'wave', crop: 'crop', ximage: 'image', xgif: 'repeat', xanim: 'video', xvideo: 'video' };
+const PART_ICONS = { pix: 'pixel', agrupar: 'styles', contorno: 'edge', dimg: 'image', dpos: 'move', dmask: 'contrast', dcor: 'palette', luz: 'brightness', paleta: 'palette', degrade: 'gradient', fx: 'pattern', grao: 'grain', filmes: 'film', lente: 'vignette', geral: 'speed', apadrao: 'pixel', afx: 'pattern', agrao: 'grain', afilme: 'film' };
 function tabGroups(t) { return typeof t.groups === 'function' ? t.groups() : t.groups; }
 function currentTab() { return TABS.find(t => t.id === ui.tab); }
 function currentGroup() { const gs = tabGroups(currentTab()); const gid = ui.group[ui.tab]; return gs.find(g => g.id === gid) || gs[0]; }
@@ -557,7 +601,7 @@ function buildTabbar() {
     const bar = $('tabbar'); bar.innerHTML = '';
     TABS.forEach((t, i) => {
         const b = h('button', 'tab' + (t.id === ui.tab ? ' on' : ''), icon(t.icon) + `<span>${t.label}</span>`);
-        b.type = 'button'; b.dataset.tab = t.id; b.title = `${t.label} (${i + 1})`;
+        b.type = 'button'; b.dataset.tab = t.id; b.title = t.label;
         b.onclick = () => { if (panelCollapsed) setPanelCollapsed(false); selectTab(t.id); };
         bar.append(b);
     });
@@ -737,7 +781,7 @@ function onDialClick(c, d) {
     if (r.left < rr.left + 24 || r.right > rr.right - 24) $('dials').scrollTo({ left: d.offsetLeft - $('dials').clientWidth / 2 + d.offsetWidth / 2, behavior: 'smooth' });
 }
 // controles cujo valor muda quais outros controles aparecem
-function grpDependsOn(key) { return ['grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'anim.dStyle', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot', 'grain.amount'].includes(key); }
+function grpDependsOn(key) { return ['dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'anim.dStyle', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot', 'grain.amount'].includes(key); }
 // mover o recorte só faz sentido no eixo em que sobra imagem
 function cropMoveControls() {
     const out = [];
@@ -1425,7 +1469,6 @@ function openMore() {
     openSheet((sh) => {
         const list = h('div', 'menu-list');
         const item = (ic, label, fn, sub) => { const b = h('button', 'menu-item', icon(ic) + `<span>${label}</span>` + (sub ? `<span class="sub">${sub}</span>` : '')); b.type = 'button'; b.onclick = () => { closeSheet(); setTimeout(fn, 200); }; list.append(b); };
-        item('upload', 'Abrir outra foto ou vídeo', () => $('fileInput').click());
         item('plus', 'Salvar nos presets', saveUserPreset);
         item('file', 'Importar configurações', () => $('configInput').click(), 'PNG ou TXT');
         item('dice', 'O que o dado muda', openRandomSettings);
@@ -1459,6 +1502,8 @@ function openRandomSettings() {
 const LAYER_BLENDS = [['normal', 'Normal'], ['multiply', 'Multiplicar'], ['screen', 'Clarear'], ['overlay', 'Sobrepor'], ['softlight', 'Luz suave'], ['color', 'Só cor'], ['darken', 'Escurecer'], ['lighten', 'Iluminar'], ['difference', 'Diferença']];
 // de onde vem cada camada, onde ela é editada, e onde ficam a mesclagem e a opacidade
 const LAYER_DEFS = {
+    dbl: { label: 'Dupla exposição', on: () => st.dbl.on && !st.dbl.pre && (st.dbl.src !== 'image' || !!DblImage.img), sub: () => (DBL_SRC_OPTS.find(o => o[0] === st.dbl.src) || [, ''])[1], go: ['editar', 'dupla', 'dimg'],
+        getB: () => st.dbl.blend, setB: (v) => { st.dbl.blend = v; }, getO: () => st.dbl.op, setO: (v) => { st.dbl.op = v; } },
     grad: { label: 'Degradê', on: () => st.grad.on, sub: () => (GRAD_TYPE_OPTS.find(o => o[0] === st.grad.type) || [, ''])[1], go: ['editar', 'luzcor', 'degrade'],
         getB: () => st.grad.blend === 'source-atop' ? 'normal' : st.grad.blend, setB: (v) => { st.grad.blend = v === 'normal' ? 'source-atop' : v; }, getO: () => st.grad.opacity, setO: (v) => { st.grad.opacity = v; } },
     fx: { label: 'Textura', on: () => st.fx.id !== 'none', sub: () => (PixelarFX.getEffectDef(st.fx.id) || {}).nome || '', go: ['editar', 'textura', 'fx'],
@@ -1552,7 +1597,7 @@ function openLayers() {
 // ============================================================
 // EXPORTAR (aba): tudo no painel; a folha só aparece durante a exportação
 // ============================================================
-const exp = Object.assign({ format: 'png', size: 'high', gifSize: 480, aFormat: 'mp4', aSize: 'high', aRepeat: 1, vFormat: 'mp4', vSize: 'high', vFps: 30, audio: true, vAnim: true }, store.get('export', {}));
+const exp = Object.assign({ format: 'png', size: 'max', gifSize: 480, aFormat: 'mp4', aSize: 'high', aRepeat: 1, vFormat: 'mp4', vSize: 'high', vFps: 30, audio: true, vAnim: true }, store.get('export', {}));
 const saveExp = () => store.set('export', exp);
 // a imagem é toda redesenhada (pixel, paleta, padrão, textura)? então pode crescer além do original sem perder nada
 const reRendered = () => st.pixel.size > 1 || st.color.sel !== 'all' || st.dither.mode !== 'none' || st.fx.id !== 'none';
@@ -1563,10 +1608,10 @@ function exportSizes() {
     const long = Math.max(cw, ch), ar = ch / long;   // altura = lado maior × ar
     const maxArea = IS_IOS ? 16.7e6 : 64e6, lim = Math.min(PixelarGPU.maxTex || 4096, 8192, Math.floor(Math.sqrt(maxArea * long / Math.min(cw, ch))));
     const hOf = (L) => Math.max(1, Math.round(Math.min(L, lim) * ar));
-    const out = [{ id: 'screen', label: 'Tela', res: lastRender ? lastRender.H : hOf(Math.min(long, 2000)) }, { id: 'high', label: 'Alta', res: hOf(long) }, { id: 'max', label: 'Máxima', res: hOf(long * 2) }];
+    const out = [{ id: 'screen', label: 'Tela', res: lastRender ? lastRender.H : hOf(Math.min(long, 2000)) }, { id: 'max', label: 'Máxima', res: hOf(long * 2) }];
     if (reRendered()) [['4k', '4K', 3840], ['8k', '8K', 7680]].forEach(([id, label, L]) => { if (L > long * 2 && L <= lim) out.push({ id, label, res: hOf(L) }); });
     // sem repetidos (fotos pequenas ou aparelho no limite): fica o de nome mais forte
-    const list = out.filter(o => !(o.id === 'screen' && o.res >= out[1].res));
+    const list = out.filter(o => !(o.id === 'screen' && o.res >= out[1].res));   // foto pequena: Tela = Máxima
     return list.filter((o, i) => !list.slice(i + 1).some(p => p.res === o.res));
 }
 function exportRow(ed, rows, mainLabel, run, links = []) {
@@ -1588,13 +1633,13 @@ function chipGroupInline(options, cur, onPick) {
     return frag;
 }
 function exportImagePanel(ed) {
-    const sizes = exportSizes(); if (!sizes.some(s => s.id === exp.size)) exp.size = 'high';
+    const sizes = exportSizes(); if (!sizes.some(s => s.id === exp.size)) exp.size = 'max';
     const fmt = chipGroupInline([['png', 'PNG'], ['jpeg', 'JPEG'], ['webp', 'WebP'], ['svg', 'SVG']], exp.format, (v) => { exp.format = v; saveExp(); });
     const sz = chipGroupInline(sizes.map(s => [s.id, s.label]), exp.size, (v) => { exp.size = v; saveExp(); const s = sizes.find(x => x.id === v); flashLabel(sizeText(s.res)); });
     const links = [['Config.', () => { Exporter.config(st); toast('Configurações salvas num arquivo .txt'); }]];
     links.unshift(navigator.clipboard && window.ClipboardItem ? ['Copiar', copyImage] : ['', null]);
     exportRow(ed, [fmt, sz], 'Salvar imagem', async () => {
-        const s = exportSizes().find(x => x.id === exp.size) || sizes[1];
+        const s = exportSizes().find(x => x.id === exp.size) || sizes[sizes.length - 1];
         try {
             ui.busy = true; flashLabel('Salvando…', 4000);
             await new Promise(r => setTimeout(r, 30));
@@ -1630,7 +1675,8 @@ function exportGifPanel(ed) {
 function exportAnimPanel(ed) {
     ensureAnimPreview();
     const fmt = chipGroupInline([['mp4', 'MP4'], ['webm', 'WebM']], exp.aFormat, (v) => { exp.aFormat = v; saveExp(); });
-    const sz = chipGroupInline([['screen', 'Tela'], ['high', 'Alta'], ['max', 'Máxima']], exp.aSize, (v) => { exp.aSize = v; saveExp(); });
+    if (exp.aSize === 'high') exp.aSize = 'max';
+    const sz = chipGroupInline([['screen', 'Tela'], ['max', 'Máxima']], exp.aSize, (v) => { exp.aSize = v; saveExp(); });
     const rp = chipGroupInline([[1, '1×'], [3, '3×'], [5, '5×'], [10, '10×']], exp.aRepeat, (v) => { exp.aRepeat = +v; saveExp(); });
     exportRow(ed, [fmt, sz, rp], 'Salvar vídeo', () => {
         if (!needAnim()) return;
@@ -1641,8 +1687,9 @@ function exportAnimPanel(ed) {
 function exportVideoPanel(ed) {
     const H = video.videoHeight || 1080;
     const sizes = { screen: Math.min(720, H), high: H, max: Math.min(2160, H * 2) };
+    if (exp.vSize === 'high') exp.vSize = 'max';
     const fmt = chipGroupInline([['mp4', 'MP4'], ['webm', 'WebM']], exp.vFormat, (v) => { exp.vFormat = v; saveExp(); });
-    const sz = chipGroupInline([['screen', 'Tela'], ['high', 'Alta'], ['max', 'Máxima']], exp.vSize, (v) => { exp.vSize = v; saveExp(); });
+    const sz = chipGroupInline([['screen', 'Tela'], ['max', 'Máxima']], exp.vSize, (v) => { exp.vSize = v; saveExp(); });
     const fps = chipGroupInline([[24, '24 q/s'], [30, '30 q/s'], [60, '60 q/s']], exp.vFps, (v) => { exp.vFps = +v; saveExp(); });
     const snd = chipGroupInline([['on', 'Com som'], ['off', 'Sem som']], exp.audio ? 'on' : 'off', (v) => { exp.audio = v === 'on'; saveExp(); });
     exportRow(ed, [fmt, sz, fps, snd], 'Salvar vídeo', () => {
@@ -1882,7 +1929,7 @@ function updateSubbarCenter() {
     if (!M.el) return;
     if (M.type === 'image') {
         const g = h('div', 'glass-group glass'); const b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(anim.playing ? 'pause' : 'play')); b.type = 'button';
-        b.title = anim.playing ? 'Parar animação (espaço)' : 'Ver animação (espaço)'; b.setAttribute('aria-label', b.title);
+        b.title = anim.playing ? 'Parar animação' : 'Ver animação'; b.setAttribute('aria-label', b.title);
         b.onclick = togglePlay; g.append(b); c.append(g);
     }
 }
@@ -1991,6 +2038,19 @@ $('btnUndo').onclick = undo; $('btnRedo').onclick = redo;
 $('btnDice').onclick = rollDice;
 $('btnMore').onclick = openMore;
 $('fileInput').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; openFile(f); };
+// dupla exposição: a segunda foto é reduzida (até 2048 px) e fica no motor, não no estado
+$('dblInput').onchange = async (e) => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    let img; try { img = await loadImage(f); } catch (err) { toast('Não foi possível abrir esta imagem'); return; }
+    const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height, k = Math.min(1, 2048 / Math.max(W, H));
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(W * k)); c.height = Math.max(1, Math.round(H * k));
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+    DblImage.img = c; DblImage.key++; DblImage.aspect = c.width / c.height; DblImage.name = f.name;
+    st.dbl.on = true; st.dbl.src = 'image';
+    if (M.el) { ui.group.editar = 'dupla'; ui.part.dupla = 'dimg'; if (ui.tab !== 'editar') selectTab('editar'); }
+    afterExternalChange(); commit(true); Thumbs.refreshAll();
+    toast('Segunda foto na dupla exposição');
+};
 $('configInput').onchange = async (e) => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     const s = parseMeta(await f.slice(Math.max(0, f.size - 60000)).text().catch(() => ''));
@@ -2005,30 +2065,8 @@ window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth -
 window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; app.classList.remove('dragging'); const f = e.dataTransfer.files[0]; if (f) openFile(f); });
 window.addEventListener('paste', (e) => { const it = [...(e.clipboardData.items || [])].find(i => i.kind === 'file'); if (it) { e.preventDefault(); openFile(it.getAsFile()); } });
-document.addEventListener('keydown', (e) => {
-    const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-    const mod = e.metaKey || e.ctrlKey;
-    if (e.key === 'Escape') { closeSheet(); return; }
-    if (!$('sheet').hidden) return;
-    if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); $('fileInput').click(); return; }
-    if (!M.el) return;
-    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
-    if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
-    if (mod && (e.key.toLowerCase() === 'e' || e.key.toLowerCase() === 's')) { e.preventDefault(); selectTab('exportar'); return; }
-    if (mod) return;
-    if (e.code === 'Space' && !(t && (t.tagName === 'BUTTON' || (t.classList && t.classList.contains('gslider'))))) { e.preventDefault(); togglePlay(); return; }
-    if (e.key === 'r' || e.key === 'R') { rollDice(); return; }
-    if ((e.key === 'p' || e.key === 'P') && !e.metaKey && !e.ctrlKey) { setPanelCollapsed(!panelCollapsed); return; }
-    if ((e.key === 'o' || e.key === 'O') && !e.repeat) { compare.hold = true; showOriginal(true); return; }
-    if (e.key === 'c' || e.key === 'C') { toggleSplit(); return; }
-    if (e.key === 'l' || e.key === 'L') { openLayers(); return; }
-    if (e.key === '+' || e.key === '=') { zoomAt(1.25); return; }
-    if (e.key === '-') { zoomAt(0.8); return; }
-    if (e.key === '0') { view.zoom = 1; view.x = view.y = 0; applyView(); return; }
-    const n = parseInt(e.key, 10); if (n >= 1 && n <= TABS.length) { selectTab(TABS[n - 1].id); return; }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { const r = document.querySelector('.gslider'); if (r) { r.focus(); r.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, shiftKey: e.shiftKey })); e.preventDefault(); } }
-});
-document.addEventListener('keyup', (e) => { if ((e.key === 'o' || e.key === 'O') && compare.hold) { compare.hold = false; showOriginal(false); } });
+// atalhos de teclado saíram do app (curadoria): só o Esc, que fecha folhas e janelas
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { stopAnim(); pauseVideo(); } });
 
 // ============================================================
@@ -2036,6 +2074,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 // ============================================================
 // modo leve: prévia processada numa base menor (a exportação sempre usa a resolução cheia)
 if (document.documentElement.dataset.lite) Engine.workCap = 1280;
+ui.group.estilos = Object.keys(prefs.favs).length ? 'favs' : 'pg:Obras';
 buildTabbar(); selectTab('estilos'); updateHistoryButtons();
 $('btnWelcomeOpen').innerHTML = icon('upload') + '<span>Carregar imagem ou vídeo</span>';
 if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
