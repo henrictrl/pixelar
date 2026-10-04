@@ -211,18 +211,17 @@ const MODERN_PRESETS = {
 };
 
 const PRESET_GROUPS = [
-    ['Obras', ['Noite Estrelada', 'A Grande Onda', 'O Grito', 'Girassóis', 'Moça com Brinco de Pérola', 'Nighthawks', 'O Beijo', 'Impressão, Nascer do Sol', 'Ninfeias', 'Tarde de Domingo', 'Nascimento de Vênus', 'Ronda Noturna', 'Guernica', 'Abaporu', 'Operários', 'Retirantes', 'A Boba']],
-    ['Texturas', ['Terminal', 'ASCII colorido', 'Monitor CRT', 'Arcade', 'Hama beads', 'Tricô da vó', 'Pastilhas', 'Tijolinhos', 'Holograma', 'Mapa topográfico', 'Curvas de nível', 'Noite de estrelas', 'Pontilhista', 'Xilo nordestina', 'Pulsar', 'Papel de arroz', 'Vidro canelado', 'Gibi CMYK', 'Riso duplo', 'Riso verde e laranja', 'Ondas', 'Câmera térmica', 'Baixo-relevo', 'Bitmap 1-bit', 'Nanquim', 'Limiar pop', 'Lente fantasma', 'Ácido', 'Néon traçado', 'Pincelada']],
-    ['Movimentos', ['Impressionismo', 'Pontilhismo', 'Fauvismo', 'Expressionismo', 'Cubismo', 'Futurismo', 'Suprematismo', 'Construtivismo', 'Bauhaus', 'Art Nouveau', 'Art Déco', 'Surrealismo', 'Dadá', 'Pop Art', 'Op Art', 'Minimalismo', 'Psicodelia', 'Memphis']],
-    ['Artistas', ['Van Gogh', 'Monet', 'Seurat', 'Vermeer', 'Rembrandt', 'Caravaggio', 'Turner', 'Klimt', 'Hokusai', 'Munch', 'Matisse', 'Hilma af Klint', 'Mondrian', 'Kandinsky', 'Magritte', 'Frida', 'Lichtenstein', 'Warhol', 'Rothko', 'Hopper', 'Kusama', 'Haring']],
-    ['Paletas', ['Technicolor', 'Miami 86', 'Tóquio Neon', 'Aurora Boreal', 'Deserto', 'Pêssego', 'Lavanda', 'Menta e Cereja', 'Commodore 64', 'ZX Spectrum', 'Macintosh 1-bit', 'Teletexto']],
-    ['Brasil', ['Tarsila', 'Portinari', 'Di Cavalcanti', 'Tropicália', 'Cordel', 'Oiticica', 'Neoconcreto', 'Azulejo']],
-    ['Filme', ['Kodachrome', 'Kodachrome 25', 'Ektachrome', 'Portra 160', 'Portra', 'Portra 800', 'Gold 200', 'Ultramax', 'ColorPlus', 'Ektar', 'Velvia', 'Provia', 'Pro 400H', 'Superia', 'CineStill 50D', 'CineStill', 'Vision3 500T', 'Tri-X', 'HP5', 'Acros', 'Noir', 'Polaroid', 'Instax', 'Super 8', 'Aerochrome', 'Vinheta Noir', 'Cianotipo']],
-    ['Câmeras', ['Contax T2', 'Olympus mju', 'Hasselblad', 'Filmadora 85', 'Cyber-shot 2004']],
+    ['Obras', ['Noite Estrelada', 'A Grande Onda', 'O Grito', 'Girassóis', 'Moça com Brinco de Pérola', 'Nighthawks', 'O Beijo', 'Tarde de Domingo', 'Guernica', 'Abaporu', 'Operários', 'A Boba']],
+    ['Texturas', ['Terminal', 'Arcade', 'Hama beads', 'Tricô da vó', 'Curvas de nível', 'Noite de estrelas', 'Pontilhista', 'Papel de arroz', 'Gibi CMYK', 'Riso duplo', 'Riso verde e laranja']],
+    ['Movimentos', ['Impressionismo', 'Pontilhismo', 'Expressionismo', 'Cubismo', 'Suprematismo', 'Construtivismo', 'Bauhaus', 'Dadá', 'Pop Art', 'Minimalismo']],
+    ['Artistas', ['Van Gogh', 'Monet', 'Seurat', 'Vermeer', 'Turner', 'Munch', 'Matisse', 'Hilma af Klint', 'Mondrian', 'Kandinsky', 'Magritte', 'Lichtenstein', 'Warhol', 'Rothko', 'Kusama']],
+    ['Paletas', ['Technicolor', 'Tóquio Neon', 'Aurora Boreal', 'Lavanda', 'ZX Spectrum', 'Macintosh 1-bit', 'Teletexto']],
+    ['Brasil', ['Tarsila', 'Oiticica', 'Neoconcreto', 'Azulejo']],
+    ['Filme', ['Portra', 'Cianotipo']],
     ['Estéticas', ['Vaporwave', 'Synthwave', 'Cyberpunk', 'Y2K', 'Glitch art', 'Brutalismo', 'Estilo Suíço', 'Stencil', 'Sumi-e', 'LSD', 'Néon Noturno', 'Datamosh', 'Matrix']],
-    ['Retrô', ['GameBoy', 'NES', 'PICO-8', 'Nintendo DS', 'CGA 4-Color', 'Bayer Fino', 'Pixel Pastel', 'Câmera de Segurança', 'KGB']],
-    ['Impressão', ['Manga', 'Jornal Impresso', 'CMYK', 'Risografia', 'Serigrafia', 'Blueprint', 'Recibo', 'Propaganda', 'Comunismo', 'Duotone', 'Degrade Linear', 'Degrade Radial']],
-    ['Digital', ['Termovisão', 'Raio-X', 'Bloom', 'Negativo']],
+    ['Retrô', ['GameBoy', 'CGA 4-Color', 'Câmera de Segurança', 'KGB']],
+    ['Impressão', ['Manga', 'Jornal Impresso', 'CMYK', 'Serigrafia', 'Propaganda', 'Comunismo', 'Duotone']],
+    ['Digital', ['Termovisão', 'Bloom', 'Negativo']],
 ];
 
 
