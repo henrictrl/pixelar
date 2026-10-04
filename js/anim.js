@@ -21,6 +21,11 @@ const FX_ANIM = {
     water: { nome: 'água ondulando', shader: true },
     acid: { nome: 'cores derretendo', shader: true },
     starlight: { nome: 'estrelas cintilando', shader: true },
+    kaleido: { nome: 'caleidoscópio girando', shader: true },
+    sunburst: { nome: 'raios girando', shader: true },
+    tie_dye: { nome: 'tinta girando', shader: true },
+    prism_map: { nome: 'arco-íris correndo', shader: true },
+    glitch_blocks: { nome: 'glitch pulando', shader: true },
     channel_mixer: { nome: 'canais girando', fn: (p, T, a) => rotateMixer(p, T, Math.min(1, a)) },
     hatching: { nome: 'anéis se expandindo', shader: true },
     outlines: { nome: 'contornos marchando', shader: true },
@@ -258,6 +263,21 @@ const FX_RANGES_BY_EFFECT = {
     acid: { uAmount: [0, 1], uWarp: [0, 2], uSat: [0.5, 3] },
     neon_trace: { uThickness: [0.5, 4], uGlow: [0, 2], uThreshold: [0.02, 0.4], uBg: [0, 0.6] },
     smudge: { uLength: [4, 80], uAngle: [0, 6.2832], uFlow: [0, 1.5] },
+    warhol: { uHue: [0, 1], uSat: [0.3, 1], uSplit: [0.15, 0.5], uGap: [0, 1] },
+    riso: { uOffset: [0, 16], uGrain: [0, 1] },
+    glitch_blocks: { uAmount: [0, 1], uBlock: [6, 80], uShift: [0, 0.25], uColor: [0, 1.5] },
+    kaleido: { uSegments: [3, 16], uZoom: [0.4, 2], uRotate: [0, 6.2832] },
+    pixel_sort: { uThreshold: [0.1, 0.9], uLength: [10, 400], uVertical: [0, 1] },
+    lego: { uCell: [8, 48], uLevels: [2, 10], uStud: [0, 1] },
+    cross_stitch: { uCell: [5, 30], uThread: [0.08, 0.35] },
+    lcd: { uCell: [2, 16], uGap: [0, 0.4], uLevels: [2, 8] },
+    led: { uCell: [5, 30], uSize: [0.3, 1], uGlow: [0, 1.5], uBoost: [0.5, 2.5] },
+    sunburst: { uRays: [6, 48], uCx: [0, 1], uCy: [0, 1], uMix: [0, 1] },
+    tie_dye: { uTwist: [0, 10], uRings: [0, 16], uAmount: [0, 1], uKeep: [0, 1] },
+    stained_glass: { uCell: [15, 120], uLead: [0.02, 0.3], uSat: [0.5, 2.5] },
+    prism_map: { uCycles: [0.5, 5], uShift: [0, 1], uSat: [0.2, 1], uMix: [0, 1] },
+    blueprint: { uGrid: [10, 120], uLines: [0.03, 0.4], uFill: [0, 1] },
+    comic: { uLevels: [2, 8], uDot: [3, 16], uInk: [0.04, 0.4], uSat: [0.5, 2.5] },
 };
 const FX_LABELS = {
     uThreshold: 'Limiar', uIntensity: 'Intensidade', uRadius: 'Raio', uBoost: 'Realce', uScale: 'Escala', uGrain: 'Granulado', uContrast: 'Contraste', uShadowLift: 'Sombras',
@@ -269,9 +289,11 @@ const FX_LABELS = {
     uDiagonal: 'Diagonais', uGamma: 'Densidade', uWarp: 'Ondulação', uHeight: 'Altura', uFiber: 'Fibras', uRib: 'Canelura', uStrength: 'Força', uShade: 'Sombra', uDot: 'Ponto',
     uCaustics: 'Cáusticas', uBlur: 'Suavizar', uColorMix: 'Cor', uWash: 'Aguada', uSplit: 'Separação', uSoft: 'Suavidade', uHalo: 'Halo', uSat: 'Saturação', uFlow: 'Fluxo', uBg: 'Fundo',
     uBlackPoint: 'Preto', uWhitePoint: 'Branco', uWarmth: 'Calor', uMicroGrain: 'Micro-grão', uSpread: 'Alcance', uSoftness: 'Suavidade',
-    uRR: 'R ← R', uRG: 'R ← G', uRB: 'R ← B', uGR: 'G ← R', uGG: 'G ← G', uGB: 'G ← B', uBR: 'B ← R', uBG: 'B ← G', uBB: 'B ← B',
+    uHue: 'Matiz', uGap: 'Moldura', uOffset: 'Desencontro', uBlock: 'Blocos', uSegments: 'Gomos', uRotate: 'Giro', uVertical: 'Vertical', uStud: 'Pinos', uThread: 'Linha',
+    uSize: 'Tamanho', uRays: 'Raios', uCx: 'Centro X', uCy: 'Centro Y', uMix: 'Mistura', uTwist: 'Torção', uRings: 'Anéis', uKeep: 'Luz da foto', uLead: 'Chumbo', uCycles: 'Voltas', uGrid: 'Grade', uInk: 'Traço',
+        uRR: 'R ← R', uRG: 'R ← G', uRB: 'R ← B', uGR: 'G ← R', uGG: 'G ← G', uGB: 'G ← B', uBR: 'B ← R', uBG: 'B ← G', uBB: 'B ← B',
 };
-const FX_COLOR_LABELS = { uGrout: 'Rejunte', uColor: 'Cor', uColorA: 'Cor A', uColorB: 'Cor B', uFg: 'Traço', uBg: 'Fundo', uShadowTone: 'Sombras', uHighTone: 'Luzes', uInk: 'Tinta', uPaper: 'Papel', uLeak: 'Vazamento' };
+const FX_COLOR_LABELS = { uInkA: 'Tinta A', uInkB: 'Tinta B', uTint: 'Tela', uLinen: 'Tecido', uGrout: 'Rejunte', uColor: 'Cor', uColorA: 'Cor A', uColorB: 'Cor B', uFg: 'Traço', uBg: 'Fundo', uShadowTone: 'Sombras', uHighTone: 'Luzes', uInk: 'Tinta', uPaper: 'Papel', uLeak: 'Vazamento' };
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // ============================================================

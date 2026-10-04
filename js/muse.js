@@ -258,6 +258,8 @@ const Muse = (() => {
         cor: { nome: 'Cor', w: (c) => 0.9 + c.vivo * 0.8 + c.retrato * 0.8 + c.paisagem * 0.5 },
         cores: { nome: 'Cor viva', w: (c) => 0.7 + c.apagado * 0.7 + c.mono * 0.6 + c.vivo * 0.3 - c.retrato * 0.2 },
         textura: { nome: 'Textura', w: (c) => 0.7 + c.grafico * 0.5 + (1 - c.detalhada) * 0.3 },
+        // pop: 2 a 5 cores chapadas e vivas, às vezes fora da ordem de luz (o rosto fica verde, o céu magenta…)
+        pop: { nome: 'Pop', w: (c) => 0.8 + c.grafico * 0.6 + c.apagado * 0.4 + c.vivo * 0.3 },
     };
     let WILD = false;   // modo ousado (dado): mais cor, mais acaso, mais efeitos
     // filtros novos, com faixas de parâmetros que sempre dão um resultado bonito
@@ -286,9 +288,24 @@ const Muse = (() => {
         paper: () => ({ uFiber: 0.4 + Math.random() * 0.5, uGrain: 0.2 + Math.random() * 0.4, uWarmth: Math.random() * 0.6, uFade: 0.05 + Math.random() * 0.15 }),
         smudge: () => ({ uLength: 18 + Math.random() * 30, uAngle: Math.random() * 6.28, uFlow: 0.3 + Math.random() * 0.8 }),
         emboss: () => ({ uStrength: 1.2 + Math.random() * 1.5, uAngle: Math.random() * 6.28, uColorMix: 0.1 + Math.random() * 0.5 }),
+        warhol: () => ({ uHue: Math.random(), uSat: 0.75 + Math.random() * 0.25, uSplit: 0.28 + Math.random() * 0.14, uGap: Math.random() < 0.5 ? 0 : 1 }),
+        comic: () => ({ uLevels: 3 + Math.floor(Math.random() * 3), uDot: 5 + Math.random() * 5, uInk: 0.08 + Math.random() * 0.1, uSat: 1.3 + Math.random() * 0.8 }),
+        riso: () => { const a = hexToRgb(lch2hex(0.6, 0.2, Math.random() * 360)), b = hexToRgb(lch2hex(0.5, 0.15, Math.random() * 360)); return { uOffset: 2 + Math.random() * 7, uGrain: 0.2 + Math.random() * 0.4, uInkA_r: a.r / 255, uInkA_g: a.g / 255, uInkA_b: a.b / 255, uInkB_r: b.r / 255, uInkB_g: b.g / 255, uInkB_b: b.b / 255 }; },
+        prism_map: () => ({ uCycles: 0.8 + Math.random() * 2.2, uShift: Math.random(), uSat: 0.8 + Math.random() * 0.2, uMix: 0.6 + Math.random() * 0.4 }),
+        tie_dye: () => ({ uTwist: 1 + Math.random() * 5, uRings: 2 + Math.random() * 8, uAmount: 0.5 + Math.random() * 0.4, uKeep: 0.4 + Math.random() * 0.4 }),
+        sunburst: () => ({ uRays: 10 + Math.floor(Math.random() * 20), uCx: 0.3 + Math.random() * 0.4, uCy: 0.3 + Math.random() * 0.3, uMix: 0.3 + Math.random() * 0.3 }),
+        kaleido: () => ({ uSegments: 5 + Math.floor(Math.random() * 8), uZoom: 0.7 + Math.random() * 0.6, uRotate: Math.random() * 6.28 }),
+        glitch_blocks: () => ({ uAmount: 0.3 + Math.random() * 0.5, uBlock: 12 + Math.random() * 30, uShift: 0.03 + Math.random() * 0.08, uColor: 0.4 + Math.random() * 0.8 }),
+        pixel_sort: () => ({ uThreshold: 0.35 + Math.random() * 0.3, uLength: 60 + Math.random() * 200, uVertical: Math.random() < 0.7 ? 1 : 0 }),
+        lego: () => ({ uCell: 12 + Math.random() * 16, uLevels: 3 + Math.floor(Math.random() * 4), uStud: 0.5 + Math.random() * 0.5 }),
+        cross_stitch: () => ({ uCell: 7 + Math.random() * 8, uThread: 0.16 + Math.random() * 0.1 }),
+        lcd: () => { const t = hexToRgb(lch2hex(0.7, 0.14, Math.random() * 360)); return { uCell: 4 + Math.random() * 5, uGap: 0.1 + Math.random() * 0.15, uLevels: 4, uTint_r: t.r / 255, uTint_g: t.g / 255, uTint_b: t.b / 255 }; },
+        led: () => ({ uCell: 8 + Math.random() * 10, uSize: 0.6 + Math.random() * 0.3, uGlow: 0.4 + Math.random() * 0.6, uBoost: 1.3 + Math.random() * 0.6 }),
+        stained_glass: () => ({ uCell: 25 + Math.random() * 40, uLead: 0.08 + Math.random() * 0.08, uSat: 1.4 + Math.random() * 0.6 }),
+        blueprint: () => ({ uGrid: 25 + Math.random() * 40, uLines: 0.08 + Math.random() * 0.08, uFill: 0.2 + Math.random() * 0.3 }),
     };
     const fxParamsOf = (id) => NEW_FX[id] ? NEW_FX[id]() : (typeof randFxParams === 'function' ? randFxParams(id) : {});
-    const TEXTURES = ['pattern_refraction', 'pixelate_fx', 'slice_shift', 'vhs', 'channel_mixer', 'warp', 'hatching', 'photocopy', 'bloom'];
+    const TEXTURES = ['pattern_refraction', 'slice_shift', 'vhs', 'channel_mixer', 'warp', 'hatching', 'photocopy'];
 
     function choosePalette(R, A, fam, prefer) {
         const c = A.c, anchor = A.peaks.length ? A.peaks[0].h : (c.quente > 0 ? 55 : 240);
@@ -304,13 +321,29 @@ const Muse = (() => {
             filme: [['none', 3], ['img', 1]],
             cor: [['img', 2], ['harm', 1.5], ['none', 1]],
             cores: [['rainbow', 2], ['neon', 1.5], ['duo', 1.5], ['harm', 1.5], ['lib', 1]],
-            textura: [['none', 2], ['lib', 1.5], ['harm', 1.2], ['duo', 0.8]],
+            textura: [['none', 2], ['lib', 1.5], ['harm', 1.2], ['duo', 0.8], ['pop', 1]],
+            pop: [['pop', 4], ['vivid_duo', 2], ['neon', 1], ['rainbow', 0.8]],
         }[fam];
         const kind = prefer || pickW(R, opts.map(o => o[0]), opts.map(o => o[1]).map((w, i) => WILD && ['rainbow', 'neon', 'duo', 'harm'].includes(opts[i][0]) ? w * 1.8 : w));
         // no modo ousado, metade das vezes a paleta nem parte das cores da foto
         const anchorW = WILD && R() < 0.5 ? R() * 360 : anchor;
         const n = pickW(R, [3, 4, 5, 6, 8, 12], fam === 'pixel' ? [1, 3, 3, 2, 2, 0.5] : fam === 'grafico' ? [2, 3, 3, 2, 1, 0] : [0.5, 1, 2, 3, 3, 2]);
         if (kind === 'none') return { kind, colors: [], name: null };
+        if (kind === 'pop') {
+            // 2–5 cores vivas e bem separadas na luz; em metade das vezes, fora de ordem (cor nova onde menos se espera)
+            const m = pickW(R, [2, 3, 4, 5], [1.2, 3, 3, 1.5]), h0 = R() * 360, step = pick(R, [180, 120, 150, 90, 137.5]);
+            let cols = []; for (let i = 0; i < m; i++) cols.push({ L: lerp(0.18, 0.92, m === 1 ? 0.5 : i / (m - 1)) + (R() - 0.5) * 0.06, C: lerp(0.15, 0.29, R()), h: (h0 + i * step + (R() - 0.5) * 24 + 360) % 360 });
+            if (R() < 0.25) cols[0] = { L: 0.08, C: 0.02, h: h0 };                   // às vezes um preto de tinta
+            const shuffled = R() < 0.5;
+            if (shuffled) for (let i = cols.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [cols[i].h, cols[j].h] = [cols[j].h, cols[i].h]; }
+            return { kind: 'pop', colors: cols.map(c => lch2hex(c.L, c.C, c.h)), name: null, pop: true, shuffleTone: shuffled && R() < 0.6 };
+        }
+        if (kind === 'vivid_duo') {
+            const h1 = R() * 360, h2 = (h1 + pick(R, [180, 150, 120, 200])) % 360;
+            const cols = [lch2hex(lerp(0.2, 0.35, R()), lerp(0.14, 0.24, R()), h1), lch2hex(lerp(0.78, 0.92, R()), lerp(0.14, 0.24, R()), h2)];
+            if (R() < 0.5) return { kind: 'tri', colors: [cols[0], lch2hex(lerp(0.5, 0.62, R()), lerp(0.18, 0.28, R()), (h1 + h2) / 2 + pick(R, [0, 180])), cols[1]], name: null };
+            return { kind: 'duo', colors: cols, name: null };
+        }
         if (kind === 'lib') {
             // sorteio ponderado pela afinidade (70% combina com a foto, 30% contraste proposital)
             const want = R() < 0.72;
@@ -345,7 +378,7 @@ const Muse = (() => {
         g.pal = choosePalette(R, A, fam);
         // pixel: tamanho pensado em "blocos" no lado maior (retratos pedem mais blocos)
         const long = ctx.long;
-        const blocks = { pixel: lerp(64, 200, R()), grafico: lerp(160, 420, R()), impressao: lerp(260, 700, R()) }[fam];
+        const blocks = { pixel: lerp(64, 200, R()), grafico: lerp(160, 420, R()), impressao: lerp(260, 700, R()), pop: R() < 0.4 ? lerp(140, 420, R()) : 0 }[fam];
         g.px = blocks ? clamp(Math.round(long / Math.max(blocks, c.retrato > 0.4 ? 140 : 0)), 1, 64) : 1;
         // padrão (dither)
         const dith = {
@@ -359,6 +392,7 @@ const Muse = (() => {
             filme: [['none', 1]], cor: [['none', 1]],
             cores: [['none', 3], ['halftone', 1], ['bayer8', 1], ['scanlines', 0.6]],
             textura: [['none', 5], ['bayer8', 0.5]],
+            pop: [['none', 2], ['halftone', 2], ['scanlines', 1.4], ['bayer8', 1.4], ['checkerboard', 1], ['nintendo_ds', 1], ['noise', 0.6]],
         }[fam];
         const dm = pickW(R, dith.map(x => x[0]), dith.map(x => x[1]));
         g.dither = dm === 'none' ? null : { mode: dm, scale: dm === 'halftone' ? pick(R, [2, 3, 4, 5]) : pick(R, [1, 1, 2]), intensity: Math.round(lerp(60, dm === 'halftone' ? 140 : 120, R())) };
@@ -380,18 +414,19 @@ const Muse = (() => {
         const grainP = { pintura: 0.65, filme: 0.55, impressao: 0.6, mono: 0.5, sonho: 0.3, grafico: 0.2, neon: 0.25, pixel: 0.05, cor: 0.3 }[fam];
         g.grain = R() < grainP ? { amount: Math.round(lerp(8, fam === 'pintura' || fam === 'impressao' ? 26 : 18, R())), size: Math.round(lerp(100, 220, R())), rough: Math.round(lerp(40, 90, R())), mono: fam !== 'pintura' || R() < 0.5 } : null;
         // textura
-        const texP = ({ pintura: 0.35, grafico: 0.35, neon: 0.45, impressao: 0.55, mono: 0.35, sonho: 0.25, pixel: 0.12, filme: 0.05, cor: 0.12, cores: 0.55, textura: 1 }[fam]) * (WILD ? 1.5 : 1);
+        const texP = ({ pop: 0.3, pintura: 0.35, grafico: 0.35, neon: 0.45, impressao: 0.55, mono: 0.35, sonho: 0.25, pixel: 0.12, filme: 0.05, cor: 0.12, cores: 0.55, textura: 1 }[fam]) * (WILD ? 1.5 : 1);
         if (R() < texP * (c.retrato > 0.4 && fam !== 'textura' ? 0.5 : 1)) {
             const pool = {
                 pintura: ['warp', 'pattern_refraction', 'hatching', 'smudge', 'paper', 'woodcut'],
-                grafico: ['pixelate_fx', 'pattern_refraction', 'slice_shift', 'color_threshold', 'mosaic_tiles', 'cmyk_halftone'],
-                neon: ['bloom', 'vhs', 'channel_mixer', 'slice_shift', 'neon_trace', 'crt', 'hologram', 'ghost_lens', 'starlight'],
+                grafico: ['comic', 'pattern_refraction', 'slice_shift', 'color_threshold', 'mosaic_tiles', 'cmyk_halftone', 'riso', 'lcd'],
+                neon: ['led', 'vhs', 'channel_mixer', 'slice_shift', 'neon_trace', 'crt', 'hologram', 'ghost_lens', 'starlight', 'glitch_blocks', 'prism_map'],
                 impressao: ['photocopy', 'hatching', 'cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'paper', 'edge_ink'],
                 mono: ['photocopy', 'hatching', 'stipple', 'woodcut', 'edge_ink', 'mesh_lines', 'contour'],
-                sonho: ['bloom', 'pattern_refraction', 'fluted_glass', 'water', 'ghost_lens', 'starlight'],
-                pixel: ['pixelate_fx', 'crt', 'beads', 'ascii'], filme: ['vhs'], cor: ['channel_mixer', 'bloom', 'fluted_glass'],
-                cores: ['hologram', 'acid', 'thermal', 'color_threshold', 'channel_mixer', 'neon_trace', 'fluted_glass'],
-                textura: ['ascii', 'crt', 'beads', 'knit', 'mosaic_tiles', 'hologram', 'contour', 'stipple', 'woodcut', 'mesh_lines', 'cmyk_halftone', 'duo_halftone', 'thermal', 'edge_ink', 'fluted_glass', 'neon_trace', 'water', 'emboss'],
+                sonho: ['tie_dye', 'pattern_refraction', 'fluted_glass', 'water', 'ghost_lens', 'starlight'],
+                pixel: ['lcd', 'crt', 'beads', 'ascii', 'lego', 'cross_stitch', 'led'], filme: ['vhs'], cor: ['channel_mixer', 'sunburst', 'fluted_glass'],
+                cores: ['hologram', 'acid', 'thermal', 'color_threshold', 'channel_mixer', 'neon_trace', 'fluted_glass', 'prism_map', 'tie_dye', 'warhol', 'kaleido', 'stained_glass'],
+                pop: ['warhol', 'comic', 'riso', 'prism_map', 'sunburst', 'glitch_blocks', 'cmyk_halftone', 'duo_halftone', 'color_threshold', 'lcd'],
+                textura: ['warhol', 'comic', 'riso', 'prism_map', 'tie_dye', 'kaleido', 'lego', 'cross_stitch', 'led', 'stained_glass', 'pixel_sort', 'glitch_blocks', 'lcd', 'blueprint', 'ascii', 'crt', 'beads', 'knit', 'mosaic_tiles', 'hologram', 'contour', 'stipple', 'woodcut', 'mesh_lines', 'cmyk_halftone', 'duo_halftone', 'thermal', 'edge_ink', 'fluted_glass', 'neon_trace', 'water', 'emboss'],
             }[fam];
             const id = pick(R, pool);
             if (PixelarFX.getEffectDef(id)) g.fx = { id, mix: Math.round(fam === 'textura' || NEW_FX[id] ? lerp(80, 100, R()) : lerp(35, 80, R())), params: fxParamsOf(id) };
@@ -408,7 +443,7 @@ const Muse = (() => {
         // luz: corrige o que a foto pede e dá a pegada da família
         g.adj = {
             exposure: Math.round(clamp((0.5 - A.p50) * 40 * (c.escura > 0.5 ? 1 : 0.4), -25, 30)),
-            contrast: Math.round(clamp((0.22 - A.stdL) * 120, -20, 30) + ({ grafico: 12, impressao: 10, neon: 15, mono: 12, sonho: -10 }[fam] || 0)),
+            contrast: Math.round(clamp((0.22 - A.stdL) * 120, -20, 30) + ({ pop: 22, grafico: 12, impressao: 10, neon: 15, mono: 12, sonho: -10 }[fam] || 0)),
             saturation: Math.round(({ cor: lerp(5, 30, R()), pintura: lerp(5, 25, R()), sonho: lerp(-10, 10, R()), neon: 25, filme: 0 }[fam] || 0) + c.apagado * 15 - c.vivo * 10),
             temperature: Math.round(({ filme: lerp(-8, 12, R()), sonho: lerp(0, 12, R()), cor: lerp(-15, 15, R()) }[fam] || 0)),
         };
@@ -425,7 +460,10 @@ const Muse = (() => {
         if (g.dither) Object.assign(s.dither, g.dither);
         const p = g.pal;
         if (p.kind === 'duo' || p.kind === 'tri') { s.color.sel = p.kind === 'tri' ? 'tritone' : 'duotone'; s.color.mode = s.color.sel; s.color.duo = p.kind === 'tri' ? p.colors.slice(0, 3) : [p.colors[0], p.colors[1], p.colors[1]]; }
-        else if (p.colors.length) { s.color.sel = String(p.colors.length); s.color.mode = 'preset'; s.color.base = p.colors.slice(); s.color.ref = toneRef(p.colors, A); }
+        else if (p.colors.length) {
+            s.color.sel = String(p.colors.length); s.color.mode = 'preset'; s.color.base = p.colors.slice(); s.color.ref = toneRef(p.colors, A);
+            if (p.pop) { const sorted = p.colors.slice().sort((a, b) => hex2lch(a).L - hex2lch(b).L); s.color.ref = toneRef(sorted, A); if (!p.shuffleTone) s.color.base = sorted; }
+        }
         if (g.film) Object.assign(s.film, g.film);
         Object.assign(s.film, g.lens || {});
         if (g.grain) Object.assign(s.grain, g.grain);
@@ -486,7 +524,10 @@ const Muse = (() => {
         const f = features(g); let pref = 0; for (const k in f) pref += (ctx.taste[k] || 0);
         // novidade frente ao que já foi mostrado
         let rep = 0; for (const h of ctx.recent) rep = Math.max(rep, sim(f, h));
-        const W = { legivel: 1.2, degraus: 0.6, harmonia: 0.8, afinidade: 0.7, pele: 1.6, chave: 0.8, detalhe: 1.0, ruido: 0.8 };
+        // no dado (ousado) vale mais cor e mais mudança do que fidelidade à foto
+        if (WILD) why.vivo = cols.length ? clamp(cols.reduce((a, p) => a + p.C, 0) / cols.length / 0.17, 0, 1.3) : (g.fx ? 0.6 : 0.1);
+        const W = WILD ? { legivel: 0.9, degraus: 0.6, harmonia: 0.3, afinidade: 0.1, pele: 0.35, chave: 0.4, detalhe: 0.8, ruido: 0.5, vivo: 1.6 }
+            : { legivel: 1.2, degraus: 0.6, harmonia: 0.8, afinidade: 0.7, pele: 1.6, chave: 0.8, detalhe: 1.0, ruido: 0.8 };
         for (const k in why) s += (W[k] || 0.5) * why[k];
         s += clamp(pref, -1.5, 1.5) * 0.6 - rep * 0.5;
         return { s, why, f };
@@ -504,6 +545,7 @@ const Muse = (() => {
         neon: ['Néon', 'Letreiro', 'Madrugada', 'Fliperama'], sonho: ['Névoa', 'Sonho', 'Aurora', 'Veludo'],
         mono: ['Nanquim', 'Carvão', 'Prata', 'Grafite'], cor: ['Luz', 'Cor', 'Tarde'], filme: ['Filme'],
         cores: ['Prisma', 'Caleidoscópio', 'Arco-íris', 'Neon pop', 'Tinta viva'], textura: ['Textura'],
+        pop: ['Pop', 'Serigrafia', 'Pôster', 'Tinta chapada', 'Cartaz', 'Lambe'],
     };
     function title(g) {
         const fam = (NOUNS[g.fam] || [FAMILIES[g.fam].nome])[(g.pal.colors.join('').length + g.px + (g.dither ? g.dither.intensity : 0)) % (NOUNS[g.fam] || [0]).length];
@@ -528,7 +570,7 @@ const Muse = (() => {
     }
 
     // n variações para a foto atual
-    const WILD_W = { filme: 0.12, cor: 0.18, mono: 0.6, sonho: 0.9, pintura: 1, impressao: 1.1, grafico: 1.3, pixel: 1.2, neon: 1.3, cores: 2.2, textura: 2 };
+    const WILD_W = { filme: 0.06, cor: 0.06, mono: 0.35, sonho: 0.35, pintura: 0.45, impressao: 1, grafico: 1.4, pixel: 1.3, neon: 1.1, cores: 2.2, textura: 1.8, pop: 3.5 };
     function generate(A, cur, opts = {}) {
         const n = opts.n || 12, pool = opts.pool || 60;
         const R = rng(opts.seed || (++seedN * 2654435761));

@@ -13,9 +13,9 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="stylesheet" href="css/app.css?v=3.2.2">
+    <link rel="stylesheet" href="css/app.css?v=3.3.0">
     <script>
-        window.PIXELAR_V = '3.2.2';
+        window.PIXELAR_V = '3.3.0';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
         // aparelhos modestos: modo leve (sem desfoque de vidro, prévia mais leve; a exportação não muda)
@@ -93,16 +93,16 @@
     <input type="file" id="configInput" accept="image/png,text/plain,.txt" hidden>
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js?v=3.2.2"></script>
-    <script defer src="js/engine.js?v=3.2.2"></script>
-    <script defer src="js/anim.js?v=3.2.2"></script>
-    <script defer src="js/presets.js?v=3.2.2"></script>
-    <script defer src="js/media.js?v=3.2.2"></script>
-    <script defer src="js/export.js?v=3.2.2"></script>
-    <script defer src="js/icons.js?v=3.2.2"></script>
-    <script defer src="js/sample.js?v=3.2.2"></script>
-    <script defer src="js/muse.js?v=3.2.2"></script>
-    <script defer src="js/ui.js?v=3.2.2"></script>
+    <script defer src="js/gpu.js?v=3.3.0"></script>
+    <script defer src="js/engine.js?v=3.3.0"></script>
+    <script defer src="js/anim.js?v=3.3.0"></script>
+    <script defer src="js/presets.js?v=3.3.0"></script>
+    <script defer src="js/media.js?v=3.3.0"></script>
+    <script defer src="js/export.js?v=3.3.0"></script>
+    <script defer src="js/icons.js?v=3.3.0"></script>
+    <script defer src="js/sample.js?v=3.3.0"></script>
+    <script defer src="js/muse.js?v=3.3.0"></script>
+    <script defer src="js/ui.js?v=3.3.0"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
         if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {

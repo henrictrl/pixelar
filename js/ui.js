@@ -326,11 +326,13 @@ const FILM_OPTS = [['none', 'Nenhum'], ...Object.values(FILM_LOOKS).map(l => [l.
 const FX_OPTS = () => [['none', 'Nenhum'], ...PixelarFX.listEffects().map(f => [f.id, f.nome])];
 // texturas agrupadas (miniaturas com títulos de grupo, como os filmes)
 const FX_GROUP_DEFS = [
-    ['Gráficos', ['ascii', 'crt', 'bitmap', 'color_threshold', 'pixelate_fx', 'beads', 'knit', 'mosaic_tiles']],
+    ['Pop', ['warhol', 'comic', 'riso', 'prism_map', 'tie_dye', 'sunburst', 'kaleido']],
+    ['Gráficos', ['ascii', 'crt', 'lcd', 'led', 'bitmap', 'color_threshold', 'blueprint']],
+    ['Ofícios', ['beads', 'lego', 'cross_stitch', 'knit', 'mosaic_tiles', 'stained_glass']],
     ['Impressão', ['cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'hatching', 'photocopy', 'edge_ink', 'paper']],
-    ['Luz e vidro', ['hologram', 'starlight', 'ghost_lens', 'fluted_glass', 'water', 'bloom', 'bokeh_blur']],
-    ['Arte', ['contour', 'mesh_lines', 'neon_trace', 'emboss', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'outlines']],
-    ['Cor e vídeo', ['thermal', 'acid', 'channel_mixer', 'vhs', 'slice_shift']],
+    ['Luz e vidro', ['hologram', 'starlight', 'ghost_lens', 'fluted_glass', 'water']],
+    ['Arte', ['contour', 'mesh_lines', 'neon_trace', 'emboss', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction']],
+    ['Cor e vídeo', ['thermal', 'acid', 'channel_mixer', 'glitch_blocks', 'pixel_sort', 'vhs', 'slice_shift']],
 ];
 function FX_GROUPS() {
     const all = PixelarFX.listEffects(), byId = Object.fromEntries(all.map(f => [f.id, f.nome])), used = new Set();
@@ -370,7 +372,7 @@ const LUZ_PART = { id: 'luz', label: 'Luz', controls: () => [
     randomOnly(['luz'], 'Luz sorteada'),
     R('adj.exposure', 'Exposição', 'exposure', -100, 100), R('adj.brightness', 'Brilho', 'brightness', -100, 100), R('adj.contrast', 'Contraste', 'contrast', -100, 100),
     R('adj.shadows', 'Sombras', 'shadows', -100, 100), R('adj.temperature', 'Temperatura', 'temp', -100, 100), R('adj.saturation', 'Saturação', 'saturation', -100, 100),
-    R('adj.posterize', 'Posterizar', 'posterize', 0, 100), R('adj.rgbShift', 'Aberração RGB', 'rgb', 0, 15),
+    R('adj.posterize', 'Posterizar', 'posterize', 0, 100),
     T('adj.shadowsInverted', 'Inverter sombras', 'invert'),
 ] };
 const PALETA_PART = { id: 'paleta', label: 'Paleta', controls: () => {
@@ -378,7 +380,7 @@ const PALETA_PART = { id: 'paleta', label: 'Paleta', controls: () => {
     const list = [randomOnly(['palette'], 'Paleta sorteada'), C('color.sel', 'Cores', 'palette', COLOR_OPTS, { onPick: pickColorCount }), X('palette', 'Editar cores', 'color', editPalette, { hidden: duo || st.color.sel === 'all', lockKey: 'color.palette' })];
     if (duo) { list.push(K('color.duo.0', 'Sombras'), K('color.duo.1', st.color.sel === 'tritone' ? 'Meios-tons' : 'Luzes')); if (st.color.sel === 'tritone') list.push(K('color.duo.2', 'Luzes')); list.push(X('duolib', 'Prontos', 'styles', editDuoLibrary)); }
     else list.push(X('library', 'Prontas', 'styles', editPaletteLibrary));
-    if (!duo && st.color.sel !== 'all') list.push(R('color.hue', 'Matiz', 'hue', -180, 180), R('color.sat', 'Saturação', 'saturation', -100, 100), R('color.light', 'Luz', 'light', -100, 100),
+    if (!duo && st.color.sel !== 'all') list.push(R('color.hue', 'Girar cores', 'hue', -180, 180), R('color.sat', 'Cores vivas', 'saturation', -100, 100), R('color.light', 'Clarear cores', 'light', -100, 100),
         A('Embaralhar', 'swap', paletteShuffleOrder), A('Da foto', 'photo', paletteFromPhoto), A('Salvar paleta', 'save', savePalette));
     list.push(T('color.invert', 'Inverter', 'invert', { onPick: toggleInvert }));
     return list;
@@ -422,15 +424,14 @@ const FILME_PART = { id: 'filmes', label: 'Filme', controls: () => {
     // só mostra o que tem efeito: sem filme não há intensidade; grão só existe nos filmes químicos
     if (look) list.push(R('film.mix', 'Intensidade', 'intensity', 0, 100));
     if (look && !look.fx) list.push(R('film.grainAmt', 'Grão do filme', 'grain', 0, 200, { step: 5 }));
-    list.push(R('film.temp', 'Temperatura', 'temp', -100, 100));
     if (look && look.fx === 'lumiere') list.push(R('film.lumiereHue', 'Matiz', 'hue', 0, 360));
     if (look && look.fx === 'vencido') list.push(C('film.vencido', 'Variação', 'film', [[0, 'Quente'], [1, 'Névoa magenta'], [2, 'Frio'], [3, 'Desbotado']]));
     if (look && look.fx) list.push(...fxParamControls(look.fx, ['uVariant', 'uHue']));
     return list;
 } };
 const LENTE_PART = { id: 'lente', label: 'Lente', controls: () => [
-    R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta', { ensure: () => { if (!st.film.vignette) st.film.vignette = 50; } }), R('film.halation', 'Halação', 'halation', 0, 100), R('film.bloom', 'Brilho', 'bloom', 0, 100),
-    R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100),
+    R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta', { ensure: () => { if (!st.film.vignette) st.film.vignette = 50; } }), R('film.halation', 'Halação', 'halation', 0, 100), R('film.bloom', 'Brilho difuso', 'bloom', 0, 100),
+    R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100), R('adj.rgbShift', 'Deslocamento RGB', 'rgb', 0, 15),
     R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }), R('film.dust', 'Poeira', 'dust', 0, 100),
 ] };
 const CONTORNO_GROUP = { id: 'contorno', label: 'Contorno', controls: () => [
