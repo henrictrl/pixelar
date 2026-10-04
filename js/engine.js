@@ -441,6 +441,12 @@ const FILM_LOOK_DEFS = [
 ];
 const FILM_LOOKS = {};
 FILM_LOOK_DEFS.forEach(([group, list]) => list.forEach(([id, nome, desc, u, x]) => { FILM_LOOKS[id] = Object.assign({ id, nome, desc, group, u }, x || {}); }));
+// curadoria (out/2026): filmes que saíram da lista ou repetiam outro quase igual. Continuam
+// definidos para estilos antigos e arquivos salvos funcionarem, mas não aparecem nem são sorteados.
+const HIDDEN_LOOKS = new Set(["acros", "agfaapx", "agfavista", "astia", "bleach", "c200", "cinestill50", "colorplus", "compacta", "contaxt2", "delta3200", "ektar", "hasselblad", "hi8", "hp5", "instax", "kodachrome25", "kodachrome64", "lomo800", "mju2", "natura", "polaroid", "portra", "portra160", "portra800", "pro400h", "provia", "superia", "tmax", "ultramax", "velvia", "vhscam", "vision250d", "vision500t", "xp2"]);
+FILM_LOOK_DEFS.forEach(g => { g[1] = g[1].filter(d => !HIDDEN_LOOKS.has(d[0])); });
+for (let i = FILM_LOOK_DEFS.length - 1; i >= 0; i--) if (!FILM_LOOK_DEFS[i][1].length) FILM_LOOK_DEFS.splice(i, 1);
+const visibleLooks = () => Object.keys(FILM_LOOKS).filter(k => !HIDDEN_LOOKS.has(k));
 const LENS_KEYS = ['vignette', 'halation', 'bloom', 'soft', 'distort', 'chroma', 'leak', 'dust', 'flash'];
 
 function stampDigits(year) {

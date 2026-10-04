@@ -430,10 +430,9 @@ const FILME_PART = { id: 'filmes', label: 'Filme', controls: () => {
     return list;
 } };
 const LENTE_PART = { id: 'lente', label: 'Lente', controls: () => [
-    R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta', { ensure: () => { if (!st.film.vignette) st.film.vignette = 50; } }), R('film.halation', 'Halação', 'halation', 0, 100), R('film.bloom', 'Brilho difuso', 'bloom', 0, 100),
+    R('film.bloom', 'Brilho difuso', 'bloom', 0, 100),
     R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100), R('adj.rgbShift', 'Deslocamento RGB', 'rgb', 0, 15),
-    R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }), R('film.dust', 'Poeira', 'dust', 0, 100),
-] };
+    R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }), ] };
 const CONTORNO_GROUP = { id: 'contorno', label: 'Contorno', controls: () => [
     randomOnly(['edge'], 'Contorno sorteado'),
     R('edge.size', 'Espessura', 'edge', 0, 10), R('edge.opacity', 'Opacidade', 'opacity', 0, 100), K('edge.color', 'Cor', { ensure: () => { if (!st.edge.size) st.edge.size = 2; if (!st.edge.opacity) st.edge.opacity = 100; } }),
