@@ -170,65 +170,42 @@ def f10(c):  # Horizonte 5° com a faixa negativa (placa clara) ancorada na base
 # =====================================================================
 # VERSOS (espaço para escrever: áreas claras, sem verniz/laminação)
 # =====================================================================
-def pauta(c, x0, x1, ys, cor=NEVOA):
-    c.setStrokeColor(cor); c.setLineWidth(.5)       # ≥0,5 pt (regra de linha mínima)
-    for y in ys: c.line(x0 * mm, y * mm, x1 * mm, y * mm)
+def silhueta(c, x, y, w, cor=RINO):
+    logo(c, "faixa_positiva_transparente", x, y, w=w, parte="rino", solid=cor)
 
-def v01(c):  # Horizonte: topo off-white para escrever, base azul sólida + logo
+# Versos minimalistas: claros, sem linhas, poucos elementos (espaço livre para escrever)
+def v01(c):  # Off-white liso, silhueta azul pequena e centralizada
+    solido(c, OFF); silhueta(c, PW / 2 - 11, PH / 2 - 5, 22)
+
+def v02(c):  # Off-white liso, só o nome RINO no canto
+    solido(c, OFF); marca(c, R - 14, BOT, RINO, w=14)
+
+def v03(c):  # Off-white → Névoa bem suave embaixo, silhueta no canto
+    degrade(c, [OFF, OFF, NEVOA], [0, .6, 1]); silhueta(c, R - 20, BOT, 20)
+
+def v04(c):  # Horizonte (referência do cliente): topo livre, logo na ponta azul
     degrade(c, [OFF, OFF, NEVOA, RINO], [0, .3, .5, .66])
     logo(c, "faixa_positiva", L - 1.2, BOT - 1.3, w=R - L + 2.4)
 
-def v02(c):  # Off-white com pauta + faixa azul sólida na base
-    solido(c, OFF); solido(c, RINO, 0, 0, PW, 19)
-    pauta(c, L, R, [TOP - 7, TOP - 14, TOP - 21])
-    logo(c, "faixa_positiva", L - 1.2, BOT - 1.3, w=R - L + 2.4)
+def v05(c):  # Off-white com rinoceronte grande tom sobre tom (marca-d'água)
+    solido(c, OFF); silhueta(c, 38, -4, 70, TINTA)
 
-def v03(c):  # Névoa clara, rinoceronte azul pequeno no canto
-    degrade(c, [OFF, OFF, NEVOA], [0, .6, 1])
-    logo(c, "faixa_positiva_transparente", R - 20, BOT, w=20, parte="rino")
+def v06(c):  # Off-white, logo completo pequeno e centralizado na base
+    solido(c, OFF); logo(c, "faixa_positiva_transparente", PW / 2 - 21, BOT, w=42)
 
-def v04(c):  # Barra lateral azul com rinoceronte, resto livre
-    solido(c, OFF); solido(c, RINO, 0, 0, 28, PH)
-    logo(c, "faixa_positiva_transparente", L, PH / 2 - 4.5, w=18, parte="rino")
-    pauta(c, 33, R, [TOP - 8, TOP - 16, TOP - 24, TOP - 32])
+def v07(c):  # Névoa (off-white → névoa) com silhueta azul centralizada embaixo
+    degrade(c, [OFF, OFF, NEVOA], [0, .35, 1]); silhueta(c, PW / 2 - 12, BOT, 24)
 
-def v05(c):  # Horizonte 5°, rinoceronte + marca na ponta escura
+def v08(c):  # Off-white com faixa azul sólida fina na base e marca clara
+    solido(c, OFF); solido(c, RINO, 0, 0, PW, 13)
+    marca(c, L, BOT, OFF, w=14); logo(c, "faixa_positiva_transparente", R - 16, BOT - .3, w=16, parte="rino")
+
+def v09(c):  # Silhueta azul grande cortada no canto, resto liso
+    solido(c, OFF); silhueta(c, 52, -5, 56)
+
+def v10(c):  # Horizonte 5°: rinoceronte + marca só na ponta escura
     degrade(c, [OFF, OFF, NEVOA, RINO], [0, .3, .7, .95], graus=5)
-    logo(c, "faixa_positiva_transparente", R - 22, BOT, w=22, parte="rino")
-    marca(c, L, BOT, OFF, w=14)
-
-def v06(c):  # Faixa azul sólida no topo com o logo, resto 100% livre
-    solido(c, OFF); solido(c, RINO, 0, PH - 19, PW, 19)
-    logo(c, "faixa_positiva", L - 1.2, TOP - 12.3, w=R - L + 2.4)
-    pauta(c, L, R, [BOT + 22, BOT + 15, BOT + 8, BOT + 1])
-
-def v07(c):  # Quadriculado leve (rascunho/croqui) + marca discreta
-    solido(c, OFF)
-    c.setStrokeColor(TINTA); c.setLineWidth(.5)
-    x = L
-    while x <= R + .01: c.line(x * mm, BOT * mm, x * mm, TOP * mm); x += 5
-    y = BOT
-    while y <= TOP + .01: c.line(L * mm, y * mm, R * mm, y * mm); y += 5
-    solido(c, OFF, R - 22.5, BOT - .01, 23, 9.3)
-    logo(c, "faixa_positiva_transparente", R - 20.8, BOT + .3, w=20, parte="rino")
-
-def v08(c):  # Painel off-white para escrever sobre Profundidade, logo na base
-    degrade(c, [PROFUNDO, RINO], [0, .9])
-    c.setFillColor(OFF); c.roundRect(L * mm, (BOT + 11) * mm, (R - L) * mm, (TOP - BOT - 11) * mm, 2.5 * mm, stroke=0, fill=1)
-    pauta(c, L + 3, R - 3, [TOP - 9, TOP - 16, TOP - 23])
-    marca(c, L, BOT, OFF, w=15)
-    logo(c, "faixa_positiva_transparente", R - 16, BOT - .3, w=16, parte="rino")
-
-def v09(c):  # Névoa: off-white → névoa com logo claro-sobre-névoa em azul
-    degrade(c, [OFF, NEVOA], [.2, 1])
-    logo(c, "faixa_positiva_transparente", L, BOT + .2, w=R - L)
-
-def v10(c):  # Off-white, marca-d'água tom sobre tom + marca pequena
-    solido(c, OFF)
-    logo(c, "faixa_positiva_transparente", 38, -4, w=70, parte="rino", solid=TINTA)
-    pauta(c, L, R - 30, [TOP - 8, TOP - 16, TOP - 24, TOP - 32], cor=NEVOA)
-    marca(c, L, BOT, RINO, w=15)
-
+    logo(c, "faixa_positiva_transparente", R - 22, BOT, w=22, parte="rino"); marca(c, L, BOT, OFF, w=14)
 
 VERSOES = [("frente", i, f) for i, f in enumerate([f01, f02, f03, f04, f05, f06, f07, f08, f09, f10], 1)] + \
           [("verso", i, f) for i, f in enumerate([v01, v02, v03, v04, v05, v06, v07, v08, v09, v10], 1)]
