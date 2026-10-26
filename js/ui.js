@@ -101,11 +101,17 @@ function renderMain() {
         if (++renderFailures === 1) toast('Algo falhou ao desenhar. Tente de novo ou recarregue a página.');
     }
 }
+// durante o gesto, sem pixel grande e sem zoom: saída menor (a tela do celular não mostra a diferença)
+function previewDim() {
+    const lite = Interact.on && st.pixel.size <= 1 && view.zoom <= 1 && !anim.playing && M.type === 'image';
+    if (lite) Interact.lowRes = true;
+    return lite ? 1280 : 2000;
+}
 function renderMainUnsafe() {
     if (!M.el) return;
     if (M.type === 'video' && !video.videoWidth) return;
     const showOrig = compare.split || compare.hold;
-    const r = Engine.render(st, Object.assign({ media: M.el, key: M.type === 'image' ? 'main' + M.serial : null, out: { canvas: outCanvas, ctx: outCtx }, compare: showOrig ? { canvas: origCanvas, ctx: origCtx } : null, maxDim: 2000 }, mainFrameOptions()));
+    const r = Engine.render(st, Object.assign({ media: M.el, key: M.type === 'image' ? 'main' + M.serial : null, out: { canvas: outCanvas, ctx: outCtx }, compare: showOrig ? { canvas: origCanvas, ctx: origCtx } : null, maxDim: previewDim() }, mainFrameOptions()));
     if (!r) return;
     const sizeChanged = !lastRender || lastRender.W !== r.W || lastRender.H !== r.H;
     lastRender = r;
@@ -200,26 +206,70 @@ const Accent = (() => {
 })();
 
 // ============================================================
+// INTERAÇÃO E QUALIDADE ADAPTATIVA
+// Enquanto o dedo está na tela: prévia mais leve (saída ≤1280 px quando não há pixel grande)
+// e medição dos quadros. Se o aparelho engasga em gestos, a qualidade do vidro desce um degrau
+// (e fica salva): 1 = sem desfoque nas fileiras durante o toque; 2 = modo leve completo.
+// ?perf=0 zera a medição.
+// ============================================================
+const Interact = { on: false, lowRes: false };
+const Perf = (() => {
+    const root = document.documentElement;
+    if (/[?&]perf=0/.test(location.search)) store.set('perfTier', 0);
+    let tier = store.get('perfTier', 0), frames = [], last = 0, raf = 0, bad = 0;
+    function apply() {
+        root.dataset.perf = String(tier);
+        if (tier >= 2 && !root.dataset.lite) { root.dataset.lite = '1'; Engine.workCap = 1280; Engine.invalidate(); }
+    }
+    function loop(t) { if (last) frames.push(t - last); last = t; raf = requestAnimationFrame(loop); }
+    function start() { cancelAnimationFrame(raf); frames = []; last = 0; raf = requestAnimationFrame(loop); }
+    function stop() {
+        cancelAnimationFrame(raf); raf = 0;
+        if (frames.length < 24 || document.hidden) return;
+        frames.sort((a, b) => a - b);
+        const p75 = frames[Math.floor(frames.length * 0.75)];
+        if (p75 > 26) { if (++bad >= 3 && tier < 2) { tier++; bad = 0; store.set('perfTier', tier); apply(); } }   // < ~38 fps em 3 gestos
+        else bad = Math.max(0, bad - 1);
+    }
+    apply();
+    return { start, stop, get tier() { return tier; } };
+})();
+{
+    const down = (e) => { if (!e.isPrimary) return; Interact.on = true; document.documentElement.classList.add('touching'); Perf.start(); };
+    const up = (e) => {
+        if (!Interact.on || (e && e.isPrimary === false)) return;
+        Interact.on = false; document.documentElement.classList.remove('touching'); Perf.stop();
+        if (Interact.lowRes) { Interact.lowRes = false; requestRender(); }   // volta à resolução cheia
+    };
+    addEventListener('pointerdown', down, true);
+    addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true);
+    addEventListener('blur', up); document.addEventListener('visibilitychange', () => document.hidden && up());
+}
+
+// ============================================================
 // FUNDO ESTENDIDO: a própria imagem, ampliada e desfocada, preenche a tela atrás do vidro.
 // Canvas minúsculo (≤64 px) esticado pelo CSS; drawImage barato, limitado a ~8 vezes/s.
 // ============================================================
 const Ambient = (() => {
     const c = $('ambient'), x = c && c.getContext('2d');
-    let t = 0, last = 0;
+    const tiny = document.createElement('canvas'), tx = tiny.getContext('2d');
+    let t = 0;
+    // desfoque grátis: reduz a 10 px de largura e amplia para 40 px com suavização; o CSS estica o resto.
+    // Nada de filter: blur (caro no iOS) e só depois que a imagem para de mudar.
     function draw(src) {
         if (!x || !src || !src.width) return;
-        const W = innerWidth, H = innerHeight, cw = 64, ch = Math.max(8, Math.round(64 * H / W));
+        const W = innerWidth, H = innerHeight, cw = 40, ch = Math.max(8, Math.round(40 * H / W));
+        const sw = 10, sh = Math.max(3, Math.round(10 * H / W));
+        if (tiny.width !== sw || tiny.height !== sh) { tiny.width = sw; tiny.height = sh; }
         if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-        const k = Math.max(cw / src.width, ch / src.height), w = src.width * k, hh = src.height * k;   // cobrir
-        x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'low';
-        x.drawImage(src, (cw - w) / 2, (ch - hh) / 2, w, hh);
-        last = performance.now(); c.classList.add('on');
+        const k = Math.max(sw / src.width, sh / src.height), w = src.width * k, hh = src.height * k;   // cobrir
+        tx.imageSmoothingEnabled = true; tx.drawImage(src, (sw - w) / 2, (sh - hh) / 2, w, hh);
+        x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+        x.globalAlpha = 1; x.drawImage(tiny, 0, 0, cw, ch);
+        x.fillStyle = 'rgba(0,0,0,.12)'; x.fillRect(0, 0, cw, ch);    // leve escurecida: a imagem principal se destaca
+        c.classList.add('on');
     }
-    function update(src) {
-        clearTimeout(t);
-        const wait = 120 - (performance.now() - last);
-        if (wait <= 0) draw(src); else t = setTimeout(() => draw(src), wait);
-    }
+    function update(src) { clearTimeout(t); t = setTimeout(() => draw(src), Interact.on ? 400 : 180); }
     return { update };
 })();
 
