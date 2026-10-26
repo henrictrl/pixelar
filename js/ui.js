@@ -39,9 +39,9 @@ function toast(msg, action, ms = 3200) {
     const box = $('toasts');
     box.querySelectorAll('.toast').forEach(o => o.remove());          // um aviso por vez
     // fica dentro da área da imagem, logo abaixo da barra de botões (nunca por cima deles)
-    const r = $('viewport').getBoundingClientRect(), sheetOpen = !$('sheet').hidden;
-    box.style.top = (sheetOpen ? 16 : Math.max(8, r.top + 10)) + 'px';
-    box.style.left = (sheetOpen ? innerWidth / 2 : r.left + r.width / 2) + 'px';
+    const u = uiInsets, sheetOpen = !$('sheet').hidden;
+    box.style.top = (sheetOpen ? 16 : Math.max(8, u.t + 10)) + 'px';
+    box.style.left = (sheetOpen ? innerWidth / 2 : u.l + (innerWidth - u.l - u.r) / 2) + 'px';
     const t = h('div', 'toast'); t.append(h('span', '', '')); t.firstChild.textContent = msg;
     if (action) { const b = h('button', '', action.label); b.type = 'button'; b.onclick = () => { action.run(); t.remove(); }; t.append(b); }
     box.append(t); void t.offsetWidth; t.classList.add('show');
@@ -111,6 +111,7 @@ function renderMainUnsafe() {
     lastRender = r;
     if (sizeChanged) fitView();
     outCanvas.classList.toggle('smooth', st.pixel.size <= 1 && r.W < view.fitW * devicePixelRatio);
+    Ambient.update(outCanvas);
     if (!anim.playing && (M.type !== 'video' || video.paused)) Accent.schedule(outCanvas);
 }
 let gpuLost = false;
@@ -151,7 +152,7 @@ const Accent = (() => {
         const s = chroma ? Math.max(0.55, Math.min(1, hsl.s * 1.15)) : 0;
         const fill = hslToRgb(hsl.h, s, chroma ? 0.58 : 0.82);
         const lum = (0.2126 * fill.r + 0.7152 * fill.g + 0.0722 * fill.b) / 255;
-        const txtD = hslToRgb(hsl.h, s, chroma ? 0.7 : 0.85), txtL = hslToRgb(hsl.h, Math.min(1, s * 1.05), chroma ? 0.38 : 0.3);
+        const txtD = hslToRgb(hsl.h, s, chroma ? 0.78 : 0.88), txtL = hslToRgb(hsl.h, Math.min(1, s * 1.05), chroma ? 0.38 : 0.3);
         const key = rgbHex(fill); if (key === last) return; last = key;
         root.setProperty('--acc', rgbHex(fill));
         root.setProperty('--acc-ink', lum > 0.55 ? '#111111' : '#FFFFFF');
@@ -162,20 +163,84 @@ const Accent = (() => {
         root.setProperty('--tint-1', rgbHex(t1)); root.setProperty('--tint-2', rgbHex(t2)); root.setProperty('--tint-3', rgbHex(t3));
     }
     // chamado depois de cada render; mede com calma (a cor segue a imagem, não cada quadro)
-    function schedule(src, delay = 250) { clearTimeout(timer); timer = setTimeout(() => { try { apply(pickFrom(src)); } catch (e) {} }, delay); }
+    function schedule(src, delay = 250) { clearTimeout(timer); timer = setTimeout(() => { try { apply(pickFrom(src)); tone(src); } catch (e) {} }, delay); }
+
+    // CONTRASTE AUTOMÁTICO: mede a luz da imagem atrás do topo e da base e escolhe vidro claro ou escuro.
+    // Usa a mesma amostra 40×40 (já desenhada por pickFrom): nada de readPixels no WebGL.
+    const toneState = new Map();
+    function lumIn(d, rc, box) {
+        let s = 0, n = 0, g = 0, gn = 0;
+        for (let j = 0; j < 40; j++) for (let i = 0; i < 40; i++) {
+            const o = (j * 40 + i) * 4; if (d[o + 3] < 128) continue;
+            const y = (0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]) / 255; g += y; gn++;
+            const X = rc.left + (i + 0.5) / 40 * rc.width, Y = rc.top + (j + 0.5) / 40 * rc.height;
+            if (X >= box.left && X <= box.right && Y >= box.top && Y <= box.bottom) { s += y; n++; }
+        }
+        const glob = gn ? g / gn : 0.5;            // fora da imagem: o fundo é a própria imagem desfocada
+        if (!n) return glob;
+        const cover = Math.min(1, n / 40);          // pouca sobreposição: mistura com a média geral
+        return (s / n) * cover + glob * (1 - cover);
+    }
+    function setTone(els, l, key) {
+        const prev = toneState.get(key);
+        // histerese: só troca se passar com folga, para não piscar
+        const light = prev === undefined ? l > 0.56 : prev ? l > 0.5 : l > 0.62;
+        toneState.set(key, light);
+        els.forEach(e => { if (!e) return; e.classList.toggle('tone-light', light); e.classList.toggle('tone-dark', !light); });
+    }
+    function tone(src) {
+        if (!src || !src.width || app.classList.contains('is-welcome')) return;
+        const d = x.getImageData(0, 0, 40, 40).data, rc = src.getBoundingClientRect();
+        if (!rc.width) return;
+        const tb = $('topbar').getBoundingClientRect(), dk = $('dock').getBoundingClientRect();
+        setTone([$('topbar')], lumIn(d, rc, tb), 't');
+        setTone([$('dock'), $('btnRestore')], lumIn(d, rc, dk.height ? dk : $('btnRestore').getBoundingClientRect()), 'b');
+    }
     return { schedule, apply, pickFrom };
+})();
+
+// ============================================================
+// FUNDO ESTENDIDO: a própria imagem, ampliada e desfocada, preenche a tela atrás do vidro.
+// Canvas minúsculo (≤64 px) esticado pelo CSS; drawImage barato, limitado a ~8 vezes/s.
+// ============================================================
+const Ambient = (() => {
+    const c = $('ambient'), x = c && c.getContext('2d');
+    let t = 0, last = 0;
+    function draw(src) {
+        if (!x || !src || !src.width) return;
+        const W = innerWidth, H = innerHeight, cw = 64, ch = Math.max(8, Math.round(64 * H / W));
+        if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+        const k = Math.max(cw / src.width, ch / src.height), w = src.width * k, hh = src.height * k;   // cobrir
+        x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'low';
+        x.drawImage(src, (cw - w) / 2, (ch - hh) / 2, w, hh);
+        last = performance.now(); c.classList.add('on');
+    }
+    function update(src) {
+        clearTimeout(t);
+        const wait = 120 - (performance.now() - last);
+        if (wait <= 0) draw(src); else t = setTimeout(() => draw(src), wait);
+    }
+    return { update };
 })();
 
 // ============================================================
 // VISUALIZAÇÃO: encaixe, zoom e deslocamento
 // ============================================================
+let uiInsets = { t: 60, r: 8, b: 300, l: 8 };
 function fitView(resetZoom) {
     if (!lastRender) return;
-    const pad = innerWidth < 600 ? 12 : 24;   // no celular a imagem vai quase até a borda
-    const vw = viewport.clientWidth - pad, vh = viewport.clientHeight - pad;
+    const vw0 = viewport.clientWidth, vh0 = viewport.clientHeight;
+    const full = vw0 >= innerWidth - 1;          // celular: viewport = tela toda
+    const pad = full ? 0 : 24;
+    const vw = vw0 - pad, vh = vh0 - pad;
     const k = Math.min(vw / lastRender.W, vh / lastRender.H);
     view.fitW = Math.max(1, Math.floor(lastRender.W * k)); view.fitH = Math.max(1, Math.floor(lastRender.H * k));
     outCanvas.style.width = view.fitW + 'px'; outCanvas.style.height = view.fitH + 'px';
+    // tela toda: centra no espaço livre entre topo e base, sem sair da tela (sem zoom extra)
+    if (full) {
+        const cy = (uiInsets.t + (vh0 - uiInsets.b)) / 2 - vh0 / 2, my = Math.max(0, (vh0 - view.fitH) / 2);
+        view.bx = 0; view.by = Math.round(clampN(cy, -my, my));
+    } else { view.bx = 0; view.by = 0; }
     if (resetZoom) { view.zoom = 1; view.x = 0; view.y = 0; }
     applyView();
 }
@@ -185,12 +250,15 @@ function applyView() {
     // mantém a imagem cobrindo o centro quando ampliada
     const maxX = Math.max(0, (w - vw) / 2 + 40), maxY = Math.max(0, (hh - vh) / 2 + 40);
     view.x = clampN(view.x, -maxX, maxX); view.y = clampN(view.y, -maxY, maxY);
-    wrap.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`;
+    wrap.style.transform = `translate(${view.x + (view.bx || 0)}px, ${view.y + (view.by || 0)}px) scale(${view.zoom})`;
     wrap.style.transformOrigin = 'center center';
+    if (lastRender) Accent.schedule(outCanvas, 300);   // a imagem mudou de lugar: recalcula o contraste
 }
 function zoomAt(factor, cx, cy) {
     const r = viewport.getBoundingClientRect();
-    const px = (cx !== undefined ? cx - r.left : r.width / 2) - r.width / 2, py = (cy !== undefined ? cy - r.top : r.height / 2) - r.height / 2;
+    // relativo ao centro da imagem em repouso (desconta o deslocamento de encaixe)
+    const bx = view.bx || 0, by = view.by || 0;
+    const px = cx !== undefined ? cx - r.left - r.width / 2 - bx : 0, py = cy !== undefined ? cy - r.top - r.height / 2 - by : 0;
     const nz = clampN(view.zoom * factor, 1, 12), f = nz / view.zoom;
     view.x = px - (px - view.x) * f; view.y = py - (py - view.y) * f; view.zoom = nz;
     if (nz === 1) { view.x = 0; view.y = 0; }
@@ -1989,9 +2057,15 @@ function updateInsets() {
     } else {
         b = H - (panelCollapsed ? $('btnRestore').offsetTop : $('dock').offsetTop) + m;
     }
-    const st = app.style;
-    st.setProperty('--vp-t', Math.round(top) + 'px'); st.setProperty('--vp-r', Math.round(r) + 'px');
-    st.setProperty('--vp-b', Math.round(b) + 'px'); st.setProperty('--vp-l', Math.round(l) + 'px');
+    const st = app.style, px = (v) => Math.round(v) + 'px';
+    uiInsets = { t: top, r, b, l };
+    // --ui-*: área livre entre os controles (avisos, rótulos, boas-vindas)
+    st.setProperty('--ui-t', px(top)); st.setProperty('--ui-r', px(r)); st.setProperty('--ui-b', px(b)); st.setProperty('--ui-l', px(l));
+    // --vp-*: onde a imagem pode ir. Celular: tela toda, por baixo do vidro (fitView centra na área livre)
+    const full = !side;
+    st.setProperty('--vp-t', full ? '0px' : px(top)); st.setProperty('--vp-r', full ? '0px' : px(r));
+    st.setProperty('--vp-b', full ? '0px' : px(b)); st.setProperty('--vp-l', full ? '0px' : px(l));
+    fitView(); Accent.schedule(outCanvas, 300);
 }
 {
     const ro = new ResizeObserver(() => updateInsets());
