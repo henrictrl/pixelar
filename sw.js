@@ -4,10 +4,10 @@
  *   então nunca se mistura um arquivo novo com um antigo.
  * - Ao instalar, baixa tudo ignorando o cache HTTP (cache: 'reload').
  * Para publicar: python3 tools/versao.py X.Y.Z */
-const VERSION = 'pixelar-3.6.1';
+const VERSION = 'pixelar-3.7.0';
 const V = VERSION.replace('pixelar-', '');
-const CORE = ['css/app.css', 'js/gpu.js', 'js/engine.js', 'js/anim.js', 'js/presets.js', 'js/media.js', 'js/export.js', 'js/icons.js', 'js/sample.js', 'js/muse.js', 'js/ui.js'].map(f => f + '?v=' + V)
-    .concat(['./', 'DepartureMono-Regular.otf', 'manifest.webmanifest', 'icons/icon-192.png']);
+const CORE = ['css/app.css', 'js/gpu.js', 'js/engine.js', 'js/anim.js', 'js/config.js', 'js/media.js', 'js/export.js', 'js/icons.js', 'js/ui.js'].map(f => f + '?v=' + V)
+    .concat(['./', 'DepartureMono-Regular.woff2', 'manifest.webmanifest', 'icons/icon-192.png']);
 self.addEventListener('install', (e) => {
     e.waitUntil(caches.open(VERSION).then(c => Promise.all(CORE.map(u => fetch(new Request(u, { cache: 'reload' })).then(r => { if (r.ok) return c.put(u, r); })))).then(() => self.skipWaiting()));
 });

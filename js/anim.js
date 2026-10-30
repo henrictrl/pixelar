@@ -4,8 +4,6 @@
  */
 'use strict';
 
-const DITHER_ANIM = { halftone: 'retícula pulsando', nintendo_ds: 'pontilhismo cintilante', bayer8: 'Bayer cintilante', floyd_approx: 'difusão deslizando', checkerboard: 'onda no xadrez', scanlines: 'linhas de TV rolando', noise: 'ruído vivo' };
-const sinT = (T, ph = 0) => Math.sin(TAU * T + ph);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 function rotateMixer(p, T, a) {
     const names = [['uRR', 'uRG', 'uRB'], ['uGR', 'uGG', 'uGB'], ['uBR', 'uBG', 'uBB']];
@@ -17,18 +15,10 @@ function rotateMixer(p, T, a) {
 // Só movimentos contínuos (nada de pulsar, piscar ou "respirar"): o loop parece infinito.
 const FX_ANIM = {
     crt: { nome: 'varredura do tubo', shader: true },
-    hologram: { nome: 'arco-íris correndo', shader: true },
-    water: { nome: 'água ondulando', shader: true },
-    acid: { nome: 'cores derretendo', shader: true },
     starlight: { nome: 'estrelas cintilando', shader: true },
-    kaleido: { nome: 'caleidoscópio girando', shader: true },
-    sunburst: { nome: 'raios girando', shader: true },
-    tie_dye: { nome: 'tinta girando', shader: true },
     prism_map: { nome: 'arco-íris correndo', shader: true },
     glitch_blocks: { nome: 'glitch pulando', shader: true },
     channel_mixer: { nome: 'canais girando', fn: (p, T, a) => rotateMixer(p, T, Math.min(1, a)) },
-    hatching: { nome: 'anéis se expandindo', shader: true },
-    outlines: { nome: 'contornos marchando', shader: true },
     pattern_refraction: { nome: 'faixas correndo', shader: true },
     warp: { nome: 'ondas correndo', fn: (p, T) => ({ uPhase: p.uPhase + TAU * T }) },
     photocopy: { nome: 'scanner vivo', shader: true },
@@ -46,44 +36,20 @@ const DITHER_STYLES = {
 // períodos por volta (o último quadro emenda no primeiro sem salto).
 const DITHER_SIGNATURE = {
     halftone: { style: 'drift', angle: 45, nome: 'retícula fluindo na diagonal' },
-    nintendo_ds: { style: 'rain', angle: 90, nome: 'pontilhismo escorrendo' },
     bayer8: { style: 'drift', angle: 315, nome: 'Bayer deslizando' },
-    floyd_approx: { style: 'drift', angle: 135, nome: 'difusão correndo' },
     checkerboard: { style: 'wave', angle: 0, nome: 'xadrez ondulando' },   // casas de 2 px não "andam": uma onda contínua passa por elas
     scanlines: { style: 'auto', angle: 0, nome: 'linhas de TV rolando' },
     noise: { style: 'auto', angle: 0, nome: 'ruído vivo' },
 };
 // estilos alternativos permitidos (todos contínuos)
 const DITHER_STYLE_OPTS = ['auto', 'drift', 'rain', 'wave', 'ripple', 'spiral', 'rotate', 'sweep'];
-const CAM_STYLES = { none: 0, shake: 1, zoom: 2, orbit: 3, sway: 4, tape: 5, bumps: 6, beat: 7, pan: 8 };
-const CAM_NAMES = { none: 'Parada', shake: 'Tremor na mão', zoom: 'Zoom respirando', beat: 'Zoom na batida', orbit: 'Órbita', sway: 'Balanço', pan: 'Deriva lateral', tape: 'Fita ondulando', bumps: 'Solavancos' };
-const COL_STYLES = { none: 0, hue: 1, bright: 2, sat: 3, flash: 4, daynight: 5, contrast: 6, rainbow: 7, temp: 8, tint: 9, duo: 10, poster: 11, solar: 12, channels: 13, neon: 14, wash: 15, vig: 16, split: 17, blocks: 18, sepia: 19, gamma: 20 };
-const COL_NAMES = { none: 'Nenhuma', bright: 'Brilho pulsando', contrast: 'Contraste pulsando', gamma: 'Gama respirando', daynight: 'Dia e noite', flash: 'Piscar negativo', hue: 'Girar matiz', rainbow: 'Arco-íris', sat: 'Saturação pulsando', temp: 'Temperatura', split: 'Sombras e luzes', channels: 'Trocar canais', sepia: 'Sépia e volta', tint: 'Tingir', duo: 'Duotone pulsando', neon: 'Neon nas luzes', wash: 'Desbotar', vig: 'Vinheta colorida', poster: 'Posterizar', solar: 'Solarização', blocks: 'Blocos cintilando' };
-const COL_COLOR_STYLES = new Set(['tint', 'duo', 'neon', 'wash', 'vig']);
 const COL_WAVES = { sine: 0, tri: 1, saw: 2, square: 3, beat: 4 };
-const COL_WAVE_NAMES = { sine: 'Suave', tri: 'Vai e volta', saw: 'Rampa', square: 'Liga/desliga', beat: 'Batida' };
 const COL_TARGETS = { all: 0, shadows: 1, mids: 2, highs: 3 };
-const COL_TARGET_NAMES = { all: 'Imagem toda', shadows: 'Sombras', mids: 'Meios-tons', highs: 'Luzes' };
 const COL_SWEEPS = { none: 0, vertical: 1, horizontal: 2, radial: 3, diagonal: 4 };
-const COL_SWEEP_NAMES = { none: 'Sem varredura', vertical: 'Vertical', horizontal: 'Horizontal', radial: 'Do centro', diagonal: 'Diagonal' };
 const FX_STYLE_NAMES = { auto: 'Próprio', colors: 'Girar cores' };
 const FILM_ANIM_NAMES = { live: 'Grão e poeira vivos', leak: 'Luz vazando', burn: 'Película queimando' };
 const GRAIN_ANIM_NAMES = { live: 'Vivo', boil: 'Fervendo', frozen: 'Parado' };
 
-const ANIM_PRESETS = {
-    calmo: { nome: 'Calmo', amount: 70, cycles: 1, ease: 'smooth', dStyle: 'breathe', fxStyle: 'breathe', grainStyle: 'boil', camStyle: 'zoom', camAmt: 60, colStyle: 'none' },
-    hipnose: { nome: 'Hipnose', amount: 120, cycles: 2, ease: 'linear', dStyle: 'spiral', dWave: 120, fxStyle: 'colors', camStyle: 'none', colStyle: 'hue', colAmt: 50 },
-    glitch: { nome: 'Glitch', amount: 180, cycles: 3, ease: 'steps', dStyle: 'glitch', fxStyle: 'glitch', grainStyle: 'live', camStyle: 'bumps', camAmt: 120, colStyle: 'flash', colAmt: 40 },
-    festa: { nome: 'Festa', amount: 160, cycles: 4, ease: 'pulse', dStyle: 'pulse', fxStyle: 'pulse', grainStyle: 'pulse', camStyle: 'beat', camAmt: 150, colStyle: 'rainbow', colAmt: 80 },
-    vhs: { nome: 'Fita VHS', amount: 130, cycles: 2, ease: 'linear', dStyle: 'rain', fxStyle: 'auto', grainStyle: 'live', camStyle: 'tape', camAmt: 120, colStyle: 'contrast', colAmt: 50 },
-    oceano: { nome: 'Oceano', amount: 120, cycles: 1, ease: 'linear', dStyle: 'wave', dAngle: 90, dWave: 90, fxStyle: 'drift', grainStyle: 'boil', camStyle: 'sway', camAmt: 80, colStyle: 'daynight', colAmt: 60 },
-    estrelas: { nome: 'Estrelas', amount: 140, cycles: 2, ease: 'linear', dStyle: 'sparkle', fxStyle: 'breathe', grainStyle: 'live', camStyle: 'orbit', camAmt: 60, colStyle: 'bright', colAmt: 40 },
-    neon: { nome: 'Neon', amount: 140, cycles: 2, ease: 'linear', dStyle: 'sparkle', fxStyle: 'breathe', grainStyle: 'live', colStyle: 'neon', colAmt: 120, colTarget: 'highs', colColor: '#00e5ff', camStyle: 'none' },
-    polaroid: { nome: 'Sol de tarde', amount: 90, cycles: 1, ease: 'smooth', dStyle: 'breathe', fxStyle: 'breathe', grainStyle: 'boil', filmStyle: 'auto', colStyle: 'wash', colAmt: 80, colColor: '#ffb27a', camStyle: 'zoom', camAmt: 50 },
-    aurora: { nome: 'Aurora', amount: 120, cycles: 1, ease: 'linear', dStyle: 'wave', fxStyle: 'drift', colStyle: 'split', colAmt: 110, colSweep: 'vertical', colSweepScale: 150, camStyle: 'sway', camAmt: 60 },
-    projetor: { nome: 'Projetor', amount: 130, cycles: 2, ease: 'linear', dStyle: 'jitter', fxStyle: 'auto', grainStyle: 'live', filmStyle: 'auto', filmAmt: 150, camStyle: 'shake', camAmt: 40, colStyle: 'bright', colAmt: 30 },
-    radar: { nome: 'Radar', amount: 150, cycles: 2, ease: 'linear', dStyle: 'sweep', dAngle: 45, dWave: 160, fxStyle: 'fade', grainStyle: 'frozen', camStyle: 'none', colStyle: 'none' },
-};
 
 // configuração da animação a partir do estado
 // Passo de movimento dos padrões em pixel: sempre um número inteiro de pixels por quadro
@@ -92,7 +58,7 @@ const ANIM_PRESETS = {
 const PX_SPEED = { 1: 0.5, 2: 1, 3: 2, 4: 3 };
 function patternUnit(mode, sc, style) {
     // deslocamento (px) por unidade de fase T, igual ao shader (patPeriod × ceil(8/P))
-    const P = { nintendo_ds: 4 * sc, floyd_approx: 4 * sc, bayer8: 8 * sc, checkerboard: 2 * sc, scanlines: 3 * sc }[mode];
+    const P = { bayer8: 8 * sc, checkerboard: 2 * sc, scanlines: 3 * sc }[mode];
     if (!P) return 0;
     if (style === 'auto') return mode === 'scanlines' ? 3 * sc : 0;         // linhas de TV nativas
     if (style === 'drift' || style === 'rain') return P * Math.ceil(8 / P);
@@ -237,47 +203,34 @@ const FX_RANGES = {
     uRR: [-1, 2], uRG: [-1, 2], uRB: [-1, 2], uGR: [-1, 2], uGG: [-1, 2], uGB: [-1, 2], uBR: [-1, 2], uBG: [-1, 2], uBB: [-1, 2],
 };
 const FX_RANGES_BY_EFFECT = {
-    vignette: { uRadius: [0, 1.5], uSoftness: [0.01, 1.5], uIntensity: [0, 1.5] },
     ascii: { uCell: [5, 28], uContrast: [0.5, 2.5], uColorMode: [0, 1] },
     crt: { uPitch: [2, 8], uMask: [0, 1], uScan: [0, 1], uCurve: [0, 0.5], uGlow: [0, 1] },
-    beads: { uCell: [6, 40], uHole: [0, 0.6], uShine: [0, 1] },
     knit: { uCell: [6, 32], uDepth: [0, 1], uFuzz: [0, 1] },
     mosaic_tiles: { uCell: [6, 48], uGrout: [0, 0.4], uBrick: [0, 1], uBevel: [0, 1] },
-    hologram: { uAmount: [0, 1], uBands: [0.5, 8], uShift: [0, 3], uLines: [0, 1] },
-    contour: { uLevels: [3, 30], uThickness: [0.5, 4], uFill: [0, 1] },
     starlight: { uThreshold: [0.4, 0.98], uLength: [5, 80], uIntensity: [0, 3], uDiagonal: [0, 1] },
     stipple: { uCell: [3, 16], uJitter: [0, 1], uGamma: [0.5, 2.5] },
     woodcut: { uSpacing: [3, 16], uWarp: [0, 3], uContrast: [0.5, 2.5] },
-    mesh_lines: { uSpacing: [6, 40], uHeight: [0, 160], uThickness: [0.6, 4] },
     paper: { uFiber: [0, 1], uGrain: [0, 1], uWarmth: [0, 1], uFade: [0, 0.6] },
     fluted_glass: { uRib: [6, 60], uStrength: [0, 2], uAngle: [0, 3.1416], uShade: [0, 1] },
     cmyk_halftone: { uCell: [3, 20], uDot: [0.5, 1.6] },
-    water: { uAmount: [0, 2], uScale: [0.3, 3], uCaustics: [0, 1] },
     thermal: { uContrast: [0.5, 2.5], uShift: [-0.5, 0.5], uBlur: [0, 2] },
     emboss: { uStrength: [0.2, 4], uAngle: [0, 6.2832], uColorMix: [0, 1] },
     bitmap: { uThreshold: [0.1, 0.9], uNoise: [0, 1] },
     duo_halftone: { uCell: [3, 20] },
     edge_ink: { uThickness: [0.5, 4], uThreshold: [0.02, 0.4], uWash: [0, 1] },
     color_threshold: { uThreshold: [0.1, 0.9], uSoft: [0, 0.3], uSplit: [0, 0.4] },
-    ghost_lens: { uIntensity: [0, 2], uThreshold: [0.4, 0.95], uSpread: [0.1, 1.5], uHalo: [0, 1] },
-    acid: { uAmount: [0, 1], uWarp: [0, 2], uSat: [0.5, 3] },
     neon_trace: { uThickness: [0.5, 4], uGlow: [0, 2], uThreshold: [0.02, 0.4], uBg: [0, 0.6] },
     smudge: { uLength: [4, 80], uAngle: [0, 6.2832], uFlow: [0, 1.5] },
     warhol: { uHue: [0, 1], uSat: [0.3, 1], uSplit: [0.15, 0.5], uGap: [0, 1] },
     riso: { uOffset: [0, 16], uGrain: [0, 1] },
     glitch_blocks: { uAmount: [0, 1], uBlock: [6, 80], uShift: [0, 0.25], uColor: [0, 1.5] },
-    kaleido: { uSegments: [3, 16], uZoom: [0.4, 2], uRotate: [0, 6.2832] },
     pixel_sort: { uThreshold: [0.1, 0.9], uLength: [10, 400], uVertical: [0, 1] },
     lego: { uCell: [8, 48], uLevels: [2, 10], uStud: [0, 1] },
-    cross_stitch: { uCell: [5, 30], uThread: [0.08, 0.35] },
     lcd: { uCell: [2, 16], uGap: [0, 0.4], uLevels: [2, 8] },
     led: { uCell: [5, 30], uSize: [0.3, 1], uGlow: [0, 1.5], uBoost: [0.5, 2.5] },
-    sunburst: { uRays: [6, 48], uCx: [0, 1], uCy: [0, 1], uMix: [0, 1] },
-    tie_dye: { uTwist: [0, 10], uRings: [0, 16], uAmount: [0, 1], uKeep: [0, 1] },
     stained_glass: { uCell: [15, 120], uLead: [0.02, 0.3], uSat: [0.5, 2.5] },
     prism_map: { uCycles: [0.5, 5], uShift: [0, 1], uSat: [0.2, 1], uMix: [0, 1] },
     blueprint: { uGrid: [10, 120], uLines: [0.03, 0.4], uFill: [0, 1] },
-    comic: { uLevels: [2, 8], uDot: [3, 16], uInk: [0.04, 0.4], uSat: [0.5, 2.5] },
 };
 const FX_LABELS = {
     uThreshold: 'Limiar', uIntensity: 'Intensidade', uRadius: 'Raio', uBoost: 'Realce', uScale: 'Escala', uGrain: 'Granulado', uContrast: 'Contraste', uShadowLift: 'Sombras',
@@ -369,18 +322,17 @@ function randFxParams(id) {
     return params;
 }
 
+// grupos do dado (o que ele pode mudar); a pessoa liga e desliga em “O que o dado muda”
 const RANDOM_GROUPS = {
-    luz: 'Luz e cor', pixel: 'Tamanho do pixel', dither: 'Padrão', palette: 'Paleta', edge: 'Contorno', fx: 'Efeito', grain: 'Granulado', film: 'Filme', grad: 'Degradê', anim: 'Movimento',
+    luz: 'Luz', palette: 'Paleta', grad: 'Degradê', pixel: 'Tamanho do pixel', dither: 'Padrão', edge: 'Contorno',
+    fx: 'Textura', grain: 'Grão', film: 'Filme', lens: 'Lente', anim: 'Movimento',
 };
-// muta st; locks = Set de caminhos travados ('adj.exposure'...); groups = Set de grupos ligados
-function randomize(st, A, groups, locks, only, vivid) {
-    // modo vivo (Surpresa): sempre uma paleta, filmes mais raros e leves, luz puxando para cor e contraste
-    if (vivid && groups.has('palette')) { groups = new Set(groups); }
-    const on = (g) => (only ? only === g || (Array.isArray(only) && only.includes(g)) : groups.has(g));
-    const L = (p) => locks.has(p);
-    // sorteio de uma seção específica: sempre produz algo visível (nunca sorteia "desligado")
-    const force = !!only;
+// Sorteia os controles manuais. Muta st. groups: grupos ligados; locks: caminhos travados ('adj.exposure'…).
+// A = análise da foto (analyzeMedia): puxa a luz para o lado que a foto precisa.
+function randomize(st, A, groups, locks) {
+    const on = (g) => groups.has(g), L = (p) => locks.has(p);
     const set = (path, v) => { if (L(path)) return; const [a, b] = path.split('.'); st[a][b] = v; };
+    const chance = (p) => Math.random() < p;
     const touched = [];
     if (on('luz')) {
         set('adj.exposure', Math.round(clampV(randNear(A ? (A.isDark ? 12 : A.isBright ? -12 : 0) : 0, 35), -60, 60)));
@@ -388,69 +340,64 @@ function randomize(st, A, groups, locks, only, vivid) {
         set('adj.contrast', Math.round(clampV(randNear(A ? (A.isLowContrast ? 14 : A.isHighContrast ? -14 : 0) : 0, 30), -55, 55)));
         set('adj.shadows', Math.round(clampV(randNear(0, 30), -55, 55)));
         set('adj.temperature', Math.round(clampV(randNear(0, 30), -55, 55)));
-        set('adj.saturation', Math.round(clampV(randNear((A ? (A.isLowSat ? 10 : A.isHighSat ? -10 : 0) : 0) + (vivid ? 22 : 0), vivid ? 18 : 30), -55, 70)));
-        if (vivid) { set('adj.contrast', Math.round(clampV(randNear(12, 14), -10, 45))); set('adj.exposure', Math.round(clampV(randNear(A && A.isDark ? 18 : 4, 14), -20, 45))); }
-        set('adj.posterize', vivid || Math.random() < 0.7 ? 0 : Math.round(5 + Math.random() * 25));
+        set('adj.saturation', Math.round(clampV(randNear(A ? (A.isLowSat ? 10 : A.isHighSat ? -10 : 0) : 0, 30), -55, 70)));
         touched.push('luz');
     }
     if (on('pixel')) { set('pixel.size', 1 + Math.floor(Math.random() * 4)); touched.push('pixel ' + st.pixel.size); }
     if (on('dither')) {
-        set('dither.mode', pick(['none', 'nintendo_ds', 'halftone', 'checkerboard', 'scanlines', 'noise', 'bayer8', 'floyd_approx']));
+        set('dither.mode', pick(DITHER_MODES));
         const busy = A && A.isBusy;
         set('dither.scale', Math.floor(Math.random() * (busy ? 2 : 3)) + 1);
         set('dither.intensity', Math.floor(Math.random() * (busy ? 50 : 80)) + 30);
         touched.push(DITHER_NAMES[st.dither.mode]);
     }
-    if (on('palette') && !L('color.palette')) {
-        const c = st.color;
-        let qty = parseInt(c.sel, 10);
-        if (!L('color.sel') || isNaN(qty)) qty = pick([3, 4, 5, 6, 6, 8, 8, 12]);
-        c.mode = 'random'; c.invert = false;
-        const pal = (L('color.sel') ? vividPalette(qty) : randomPalette(qty)).map(rgbHex);
-        c.sel = String(pal.length);
-        // mapa de tons: a paleta (do escuro ao claro) é distribuída pela luz da imagem,
-        // então todas as cores aparecem — em vez de a foto só "puxar" as cores parecidas com ela
+    if (on('palette') && !L('color.sel') && !L('color.palette')) {
+        const c = st.color, pal = randomPalette(pick([3, 4, 5, 6, 6, 8, 8, 12])).map(rgbHex);
+        // mapa de tons: a paleta (do escuro ao claro) se espalha pela luz da foto, então todas as cores aparecem
         const n = pal.length, ramp = pal.map((_, i) => { const v = Math.round(18 + 219 * (n > 1 ? i / (n - 1) : 0.5)); return rgbToHex(v, v, v); });
-        c.base = pal.slice(); c.ref = ramp; c.hue = c.sat = c.light = 0;
-        touched.push(pal.length + ' cores');
+        Object.assign(c, { mode: 'random', invert: false, sel: String(n), base: pal.slice(), ref: ramp, hue: 0, sat: 0, light: 0 });
+        touched.push(n + ' cores');
     }
-    if (on('edge')) { set('edge.size', !force && Math.random() > 0.5 ? 0 : Math.floor(Math.random() * 2) + 1); set('edge.color', rgbToHex(Math.random() * 255, Math.random() * 255, Math.random() * 255)); }
+    if (on('edge')) {
+        set('edge.size', chance(0.5) ? 0 : Math.floor(Math.random() * 2) + 1);
+        set('edge.color', rgbToHex(Math.random() * 255, Math.random() * 255, Math.random() * 255));
+    }
     if (on('fx') && !L('fx.id')) {
-        if (force || Math.random() < (vivid ? 0.3 : A && A.isBusy ? 0.35 : 0.6)) {
-            // no modo vivo, só texturas que preservam as cores (as outras repintam com cores próprias)
-            const keepColor = ['pattern_refraction', 'pixelate_fx', 'slice_shift', 'vhs', 'channel_mixer'];
-            const choice = pick(PixelarFX.listEffects().filter(f => !vivid || keepColor.includes(f.id)));
-            st.fx.id = choice.id; st.fxParams[choice.id] = randFxParams(choice.id); st.fx.mix = 50 + Math.floor(Math.random() * 31);
-            touched.push(PixelarFX.getEffectDef(choice.id).nome);
+        if (chance(A && A.isBusy ? 0.35 : 0.6)) {
+            const choice = pick(PixelarFX.listEffects());
+            st.fx.id = choice.id; st.fxParams[choice.id] = randFxParams(choice.id); set('fx.mix', 50 + Math.floor(Math.random() * 31));
+            touched.push(choice.nome);
         } else st.fx.id = 'none';
     }
     if (on('grain') && !L('grain.amount')) {
-        const g = st.grain, busy = A && A.isBusy;
-        if (force || Math.random() < (vivid ? 0.25 : busy ? 0.3 : 0.45)) {
-            g.amount = 10 + Math.floor(Math.random() * (busy ? 15 : 30)); g.size = 70 + Math.floor(Math.random() * 90); g.rough = 25 + Math.floor(Math.random() * 45);
-            g.bias = Math.floor(Math.random() * 50); g.speckle = Math.random() < 0.3 ? Math.floor(Math.random() * 30) : 0; g.mono = Math.random() < 0.7;
+        const busy = A && A.isBusy;
+        if (chance(busy ? 0.3 : 0.45)) {
+            st.grain.amount = 10 + Math.floor(Math.random() * (busy ? 15 : 30));
+            set('grain.size', 70 + Math.floor(Math.random() * 90)); set('grain.rough', 25 + Math.floor(Math.random() * 45));
+            set('grain.bias', Math.floor(Math.random() * 50)); set('grain.speckle', chance(0.3) ? Math.floor(Math.random() * 30) : 0); set('grain.mono', chance(0.7));
             touched.push('grão');
-        } else g.amount = 0;
+        } else st.grain.amount = 0;
     }
     if (on('film') && !L('film.look')) {
-        const keep = { frame: st.film.frame, stamp: st.film.stamp, frameColor: st.film.frameColor, stampColor: st.film.stampColor };
-        st.film = Object.assign(deepClone(DEFAULT_STATE.film), keep);
-        if (force || Math.random() < (vivid ? 0.3 : 0.5)) {
-            const bw = ['noir', 'hp5', 'nitrato', 'kodak_pb', 'lumiere'];
-            const ids = visibleLooks().filter(k => !(st.color.sel !== 'all' && bw.includes(k)));
-            const id = pick(ids); st.film.look = id; st.film.mix = vivid ? 35 + Math.floor(Math.random() * 3) * 10 : 50 + Math.floor(Math.random() * 4) * 10;
+        if (chance(0.5)) {
+            const bw = ['noir', 'trix', 'kodak_pb', 'lumiere'];   // P&B sobre paleta de cores apaga a paleta
+            const id = pick(Object.keys(FILM_LOOKS).filter(k => !(st.color.sel !== 'all' && bw.includes(k))));
+            st.film.look = id; set('film.mix', 50 + Math.floor(Math.random() * 4) * 10);
             if (id === 'vencido') st.film.vencido = Math.floor(Math.random() * 4);
             if (id === 'lumiere') st.film.lumiereHue = Math.floor(Math.random() * 360);
             touched.push(FILM_LOOKS[id].nome);
-        }
-        if (Math.random() < (vivid ? 0.2 : 0.35)) {
-            st.film.vignette = 0; st.film.halation = 0;   // vinheta e halação saíram da Lente
-            if (Math.random() < 0.25) st.film.soft = Math.floor(Math.random() * 30);
-            if (Math.random() < 0.2) st.film.leak = Math.floor(Math.random() * 50);
-        }
+        } else st.film.look = 'none';
+    }
+    if (on('lens')) {
+        LENS_KEYS.forEach(k => set('film.' + k, 0));
+        if (chance(0.4)) set('film.vignette', 15 + Math.floor(Math.random() * 40));
+        if (chance(0.25)) set('film.bloom', 10 + Math.floor(Math.random() * 30));
+        if (chance(0.2)) set('film.soft', Math.floor(Math.random() * 30));
+        if (chance(0.2)) set('film.leak', Math.floor(Math.random() * 50));
+        if (chance(0.15)) set('film.chroma', 10 + Math.floor(Math.random() * 30));
     }
     if (on('grad') && !L('grad.on')) {
-        if (force || Math.random() < 0.35) { randGradAll(st.grad); touched.push('degradê'); } else st.grad.on = false;
+        if (chance(0.35)) { randGradAll(st.grad); touched.push('degradê'); } else st.grad.on = false;
     }
     if (on('anim')) randAnim(st.anim);
     return touched;
@@ -489,4 +436,4 @@ function randAnim(a) {
     a.dither = a.fx = a.grain = a.film = true;
 }
 
-const DITHER_NAMES = { none: 'Sólido', nintendo_ds: 'Pontilhismo', halftone: 'Retícula', checkerboard: 'Xadrez', scanlines: 'TV analógica', noise: 'Ruído', bayer8: 'Bayer fino', floyd_approx: 'Difusão' };
+const DITHER_NAMES = { none: 'Sólido', bayer8: 'Bayer', halftone: 'Retícula', checkerboard: 'Xadrez', scanlines: 'TV analógica', noise: 'Ruído' };

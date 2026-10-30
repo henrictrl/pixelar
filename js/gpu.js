@@ -69,34 +69,6 @@ float fbm(vec2 p) {
 
 // Cada entrada: { id, nome (pt-br), uniforms (nome->default), src (corpo do main()) }
 const PIXELAR_FX_LIST = [
-
-  // ===================== EFFECTS =====================
-
-  
-  {
-    id: 'bokeh_blur', nome: 'Desfoque',
-    uniforms: { uRadius: 6.0, uThreshold: 0.6, uBoost: 2.0 },
-    src: `
-    uniform float uRadius, uThreshold, uBoost;
-    void main() {
-        vec2 texel = 1.0/uResolution;
-        vec3 sum = vec3(0.0);
-        float wsum = 0.0;
-        const int SAMPLES = 24;
-        for (int i = 0; i < SAMPLES; i++) {
-            float a = float(i) / float(SAMPLES) * 6.28318;
-            float r = sqrt(float(i) / float(SAMPLES));
-            vec2 off = vec2(cos(a), sin(a)) * r * uRadius * texel;
-            vec3 c = texture(uSource, vUv + off).rgb;
-            float br = luma(c);
-            float w = br > uThreshold ? 1.0 + (br - uThreshold) * uBoost : 1.0;
-            sum += c * w;
-            wsum += w;
-        }
-        outColor = vec4(sum / max(wsum, 0.001), 1.0);
-    }`
-  },
-
   {
     id: 'channel_mixer', nome: 'Misturador',
     uniforms: {
@@ -116,34 +88,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(outc, 0.0, 1.0), 1.0);
     }`
   },
-
-  
-  {
-    id: 'color_adjustment', nome: 'Ajuste',
-    uniforms: { uContrast: 1.3, uShadowLift: 0.0, uSatMid: 0.7, uToneAmount: 0.35,
-      uShadowTone_r:0.05,uShadowTone_g:0.25,uShadowTone_b:0.15, uHighTone_r:1.0,uHighTone_g:0.75,uHighTone_b:0.45 },
-    src: `
-    uniform float uContrast, uShadowLift, uSatMid, uToneAmount;
-    uniform float uShadowTone_r,uShadowTone_g,uShadowTone_b, uHighTone_r,uHighTone_g,uHighTone_b;
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        c = (c - 0.5) * uContrast + 0.5;
-        c = mix(vec3(0.0), c, smoothstep(0.0, 0.25, luma(c) + uShadowLift));
-        float l = luma(clamp(c,0.0,1.0));
-        vec3 shadowTone = vec3(uShadowTone_r,uShadowTone_g,uShadowTone_b);
-        vec3 highTone = vec3(uHighTone_r,uHighTone_g,uHighTone_b);
-        vec3 toned = mix(c * (shadowTone*2.0), c * (highTone*2.0), smoothstep(0.15, 0.85, l));
-        c = mix(c, toned, uToneAmount);
-        vec3 hsl = rgb2hsl(clamp(c,0.0,1.0));
-        hsl.y *= mix(1.0, uSatMid, smoothstep(0.15,0.6,hsl.z) * (1.0-smoothstep(0.6,0.9,hsl.z)));
-        outColor = vec4(clamp(hsl2rgb(hsl), 0.0, 1.0), 1.0);
-    }`
-  },
-
-  
-  
-  // filter_presets é tratado fora do FX (combinação de controles já existentes), sem shader próprio
-
   {
     id: 'gooey_merge', nome: 'Fusão',
     uniforms: { uThreshold: 0.5, uSmooth: 0.08, uColorA_r: 1.0, uColorA_g: 0.3, uColorA_b: 0.85, uColorB_r: 0.1, uColorB_g: 0.1, uColorB_b: 0.1 },
@@ -165,78 +109,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(mix(colB, colA, mask), 1.0);
     }`
   },
-
-  
-  
-  {
-    id: 'hatching', nome: 'Gravura',
-    uniforms: { uScale: 14.0, uThreshold: 0.5, uFg_r:0.0,uFg_g:0.6,uFg_b:1.0, uBg_r:1.0,uBg_g:1.0,uBg_b:1.0 },
-    src: `
-    uniform float uScale, uThreshold;
-    uniform float uFg_r,uFg_g,uFg_b, uBg_r,uBg_g,uBg_b;
-    void main() {
-        vec2 p = vUv * uResolution;
-        vec2 center = uResolution * 0.5;
-        float dist = length(p - center);
-        float ring = fract(dist / uScale - uAnim);
-        float lineDensity = mix(0.5, 0.08, luma(texture(uSource, vUv).rgb));
-        float lineMask = 1.0 - smoothstep(lineDensity-0.03, lineDensity+0.03, ring);
-        float shapeMask = step(uThreshold, luma(texture(uSource, vUv).rgb));
-        vec3 fg = vec3(uFg_r,uFg_g,uFg_b), bg = vec3(uBg_r,uBg_g,uBg_b);
-        vec3 result = mix(mix(bg, fg, lineMask), fg, shapeMask);
-        outColor = vec4(result, 1.0);
-    }`
-  },
-
-  {
-    id: 'lens_distortion', nome: 'Distorção',
-    uniforms: { uAmount: 0.35, uChroma: 0.015, uZoom: 1.0 },
-    src: `
-    uniform float uAmount, uChroma, uZoom;
-    vec2 distort(vec2 uv, float k) {
-        vec2 cc = uv - 0.5;
-        float r2 = dot(cc, cc);
-        return 0.5 + cc * (1.0 + k * r2) * uZoom;
-    }
-    void main() {
-        vec2 uvR = distort(vUv, uAmount + uChroma);
-        vec2 uvG = distort(vUv, uAmount);
-        vec2 uvB = distort(vUv, uAmount - uChroma);
-        float r = texture(uSource, uvR).r;
-        float g = texture(uSource, uvG).g;
-        float b = texture(uSource, uvB).b;
-        float inBounds = (uvG.x>=0.0&&uvG.x<=1.0&&uvG.y>=0.0&&uvG.y<=1.0) ? 1.0 : 0.0;
-        outColor = vec4(vec3(r,g,b) * inBounds, 1.0);
-    }`
-  },
-
-  {
-    id: 'outlines', nome: 'Contornos',
-    uniforms: { uSpacing: 8.0, uThickness: 2.0, uColor_r: 0.75, uColor_g: 0.85, uColor_b: 1.0, uBg_r:0.0,uBg_g:0.0,uBg_b:0.0 },
-    src: `
-    uniform float uSpacing, uThickness;
-    uniform float uColor_r,uColor_g,uColor_b, uBg_r,uBg_g,uBg_b;
-    void main() {
-        vec2 texel = 1.0/uResolution;
-        float lc = luma(texture(uSource, vUv).rgb);
-        // distancia aproximada até a borda de forma via diferença local repetida em aneis
-        float minEdge = 1.0;
-        for (float ring = 0.0; ring < 12.0; ring += 1.0) {
-            float rr = ring * uSpacing;
-            float found = 0.0;
-            for (float a = 0.0; a < 6.28318; a += 0.39269908) {
-                vec2 off = vec2(cos(a), sin(a)) * rr * texel;
-                float lsample = luma(texture(uSource, vUv + off).rgb);
-                if (abs(lsample - lc) > 0.15) found = 1.0;
-            }
-            if (found > 0.5) { minEdge = ring / 12.0; break; }
-        }
-        float lineMask = 1.0 - smoothstep(uThickness*0.5*0.02, uThickness*0.02, fract(minEdge*12.0/2.0));
-        vec3 col = vec3(uColor_r,uColor_g,uColor_b), bg = vec3(uBg_r,uBg_g,uBg_b);
-        outColor = vec4(mix(bg, col, step(0.5, mod(minEdge*12.0 + uAnim*2.0, 2.0)) ), 1.0);
-    }`
-  },
-
   {
     id: 'pattern_refraction', nome: 'Refração',
     uniforms: { uBands: 14.0, uShift: 0.06, uAngle: 0.0 },
@@ -252,34 +124,6 @@ const PIXELAR_FX_LIST = [
         outColor = texture(uSource, clamp(uv2, 0.0, 1.0));
     }`
   },
-
-  
-  {
-    id: 'pixelate_fx', nome: 'Pixelização',
-    uniforms: { uSizeX: 14.0, uSizeY: 6.0 },
-    src: `
-    uniform float uSizeX, uSizeY;
-    void main() {
-        vec2 cell = vec2(uSizeX, uSizeY);
-        vec2 uv = (floor(vUv * uResolution / cell) + 0.5) * cell / uResolution;
-        outColor = texture(uSource, uv);
-    }`
-  },
-
-  {
-    id: 'slice_shift', nome: 'Fatias',
-    uniforms: { uSlices: 8.0, uShift: 0.04, uSeed: 1.0 },
-    src: `
-    uniform float uSlices, uShift, uSeed;
-    void main() {
-        float sliceId = floor(vUv.x * uSlices);
-        float r = hash(vec2(sliceId, uSeed));
-        float off = (r - 0.5) * uShift;
-        vec2 uv2 = vec2(vUv.x, vUv.y + off);
-        outColor = texture(uSource, clamp(uv2, 0.0, 1.0));
-    }`
-  },
-
   {
     id: 'warp', nome: 'Deformação',
     uniforms: { uAmount: 0.05, uFreq: 6.0, uPhase: 0.0, uDuo: 1.0, uColorA_r:1.0,uColorA_g:0.85,uColorA_b:0.55, uColorB_r:0.35,uColorB_g:0.75,uColorB_b:1.0 },
@@ -298,7 +142,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(c, 1.0);
     }`
   },
-
   {
     // Inspirado em fotocópias/scans desbotados: contraste duro, tom monocromático
     // amarelado, ruído de scanner em faixas e vinheta suja nas bordas.
@@ -319,7 +162,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(result + g, 0.0, 1.0), 1.0);
     }`
   },
-
   {
     // Inspirado em fita VHS/vídeo analógico: leve deslocamento horizontal por
     // linha (jitter), sangramento de cor (chroma bleed) e scanlines escuras.
@@ -344,7 +186,6 @@ const PIXELAR_FX_LIST = [
 
   // ===================== NOVOS: GRÁFICOS, IMPRESSÃO, LUZ, ARTE =====================
   // Tamanhos em "px por 1000 px do lado maior": o efeito fica igual na miniatura, na tela e na exportação.
-
   {
     id: 'ascii', nome: 'ASCII',
     uniforms: { uCell: 10.0, uContrast: 1.35, uColorMode: 1.0, uInk_r: 0.62, uInk_g: 1.0, uInk_b: 0.62, uPaper_r: 0.02, uPaper_g: 0.04, uPaper_b: 0.03 },
@@ -367,7 +208,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(mix(vec3(uPaper_r, uPaper_g, uPaper_b), ink, on), 1.0);
     }`
   },
-
   {
     id: 'crt', nome: 'Monitor CRT',
     uniforms: { uPitch: 3.0, uMask: 0.55, uScan: 0.45, uCurve: 0.12, uGlow: 0.35 },
@@ -393,25 +233,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
     }`
   },
-
-  {
-    id: 'beads', nome: 'Miçangas',
-    uniforms: { uCell: 14.0, uHole: 0.28, uShine: 0.5, uBg_r: 0.93, uBg_g: 0.92, uBg_b: 0.9 },
-    src: `
-    uniform float uCell, uHole, uShine, uBg_r, uBg_g, uBg_b;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(4.0, uCell * S);
-        vec2 p = vUv * uResolution, id = floor(p / cs), f = fract(p / cs) - 0.5;
-        vec3 c = texture(uSource, (id + 0.5) * cs / uResolution).rgb;
-        float r = length(f), aa = 1.5 / cs;
-        float bead = smoothstep(0.47, 0.47 - aa, r) * smoothstep(uHole * 0.5 - aa, uHole * 0.5, r);
-        float shade = 0.75 + 0.25 * (1.0 - smoothstep(0.1, 0.5, length(f - vec2(-0.14, -0.16))));
-        vec3 bc = c * shade + uShine * 0.35 * smoothstep(0.14, 0.0, length(f - vec2(-0.16, -0.18)));
-        vec3 bg = vec3(uBg_r, uBg_g, uBg_b) * (0.9 + 0.1 * smoothstep(0.5, 0.2, r));
-        outColor = vec4(mix(bg, bc, bead), 1.0);
-    }`
-  },
-
   {
     id: 'knit', nome: 'Tricô',
     uniforms: { uCell: 12.0, uDepth: 0.6, uFuzz: 0.4 },
@@ -432,7 +253,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }`
   },
-
   {
     id: 'mosaic_tiles', nome: 'Pastilhas',
     uniforms: { uCell: 16.0, uGrout: 0.12, uBrick: 0.0, uBevel: 0.5, uGrout_r: 0.9, uGrout_g: 0.89, uGrout_b: 0.86 },
@@ -454,42 +274,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(mix(vec3(uGrout_r, uGrout_g, uGrout_b), c * lit, tile), 1.0);
     }`
   },
-
-  {
-    id: 'hologram', nome: 'Holograma',
-    uniforms: { uAmount: 0.7, uBands: 3.0, uShift: 1.2, uLines: 0.25 },
-    src: `
-    uniform float uAmount, uBands, uShift, uLines;
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        float l = luma(c);
-        float hue = fract(l * uBands + (vUv.x * 0.6 + vUv.y) * uShift + uAnim);
-        vec3 irid = hsl2rgb(vec3(hue, 0.85, 0.55 + 0.25 * l));
-        vec3 col = mix(c, irid * (0.35 + l), uAmount);
-        col = mix(col, 1.0 - (1.0 - col) * (1.0 - irid * 0.35), uAmount * 0.5);
-        float line = 0.5 + 0.5 * sin(vUv.y * uResolution.y * 1.2 + uAnim * 6.28318);
-        col *= 1.0 - uLines * 0.35 * line;
-        outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }`
-  },
-
-  {
-    id: 'contour', nome: 'Topografia',
-    uniforms: { uLevels: 10.0, uThickness: 1.4, uFill: 0.4, uInk_r: 0.12, uInk_g: 0.1, uInk_b: 0.09, uPaper_r: 0.96, uPaper_g: 0.94, uPaper_b: 0.89 },
-    src: `
-    uniform float uLevels, uThickness, uFill, uInk_r, uInk_g, uInk_b, uPaper_r, uPaper_g, uPaper_b;
-    float L(vec2 uv) { vec2 t = 4.0 * max(1.0, max(uResolution.x, uResolution.y) / 1000.0) / uResolution; return (luma(texture(uSource, uv).rgb) * 2.0 + luma(texture(uSource, uv + vec2(t.x, 0.0)).rgb) + luma(texture(uSource, uv - vec2(t.x, 0.0)).rgb) + luma(texture(uSource, uv + vec2(0.0, t.y)).rgb) + luma(texture(uSource, uv - vec2(0.0, t.y)).rgb)) / 6.0; }
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        float v = L(vUv) * uLevels;
-        float d = abs(fract(v - 0.5) - 0.5) / max(fwidth(v), 1e-4);
-        float S = max(uResolution.x, uResolution.y) / 1000.0;
-        float line = 1.0 - smoothstep(uThickness * S * 0.5, uThickness * S * 0.5 + 1.0, d);
-        vec3 base = mix(vec3(uPaper_r, uPaper_g, uPaper_b), c, uFill);
-        outColor = vec4(mix(base, vec3(uInk_r, uInk_g, uInk_b), line), 1.0);
-    }`
-  },
-
   {
     id: 'starlight', nome: 'Estrelas',
     uniforms: { uThreshold: 0.68, uLength: 34.0, uIntensity: 1.6, uDiagonal: 0.0 },
@@ -513,7 +297,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(c + acc / 8.0 * uIntensity * tw, 0.0, 1.0), 1.0);
     }`
   },
-
   {
     id: 'stipple', nome: 'Pontilhado',
     uniforms: { uCell: 6.0, uJitter: 0.8, uGamma: 1.2, uInk_r: 0.08, uInk_g: 0.07, uInk_b: 0.07, uPaper_r: 0.97, uPaper_g: 0.95, uPaper_b: 0.9 },
@@ -532,7 +315,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(mix(vec3(uPaper_r, uPaper_g, uPaper_b), vec3(uInk_r, uInk_g, uInk_b), ink), 1.0);
     }`
   },
-
   {
     id: 'woodcut', nome: 'Xilogravura',
     uniforms: { uSpacing: 7.0, uWarp: 1.4, uContrast: 1.3, uInk_r: 0.07, uInk_g: 0.06, uInk_b: 0.05, uPaper_r: 0.95, uPaper_g: 0.91, uPaper_b: 0.82 },
@@ -549,30 +331,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(mix(vec3(uInk_r, uInk_g, uInk_b), vec3(uPaper_r, uPaper_g, uPaper_b), ink), 1.0);
     }`
   },
-
-  {
-    id: 'mesh_lines', nome: 'Pulsar',
-    uniforms: { uSpacing: 14.0, uHeight: 70.0, uThickness: 1.8, uInk_r: 0.95, uInk_g: 0.95, uInk_b: 0.93, uBg_r: 0.02, uBg_g: 0.02, uBg_b: 0.03 },
-    src: `
-    uniform float uSpacing, uHeight, uThickness, uInk_r, uInk_g, uInk_b, uBg_r, uBg_g, uBg_b;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, sp = max(3.0, uSpacing * S), hh = uHeight * S;
-        vec2 p = vUv * uResolution; float ink = 0.0;
-        float k0 = floor(p.y / sp);
-        // linhas de cima para baixo: cada linha mais próxima (mais embaixo) tapa as de trás — como uma cordilheira
-        for (int j = 0; j <= 10; j++) {
-            float yl = (k0 + float(j)) * sp;
-            float xs = vUv.x;
-            float h = luma(texture(uSource, vec2(xs, clamp(yl / uResolution.y, 0.0, 1.0))).rgb);
-            float edge = smoothstep(0.0, 0.18, xs) * smoothstep(1.0, 0.82, xs);
-            float y = yl - pow(h, 1.4) * hh * (0.35 + 0.65 * edge);
-            if (p.y > y + uThickness * S) ink = 0.0;
-            ink = max(ink, 1.0 - smoothstep(uThickness * S * 0.5, uThickness * S * 0.5 + 1.0, abs(p.y - y)));
-        }
-        outColor = vec4(mix(vec3(uBg_r, uBg_g, uBg_b), vec3(uInk_r, uInk_g, uInk_b), ink), 1.0);
-    }`
-  },
-
   {
     id: 'paper', nome: 'Papel',
     uniforms: { uFiber: 0.5, uGrain: 0.35, uWarmth: 0.4, uFade: 0.12 },
@@ -592,7 +350,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }`
   },
-
   {
     id: 'fluted_glass', nome: 'Vidro canelado',
     uniforms: { uRib: 22.0, uStrength: 0.9, uAngle: 0.0, uShade: 0.35 },
@@ -612,7 +369,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
     }`
   },
-
   {
     id: 'cmyk_halftone', nome: 'Meio-tom CMYK',
     uniforms: { uCell: 7.0, uDot: 1.0, uPaper_r: 0.97, uPaper_g: 0.95, uPaper_b: 0.91 },
@@ -636,24 +392,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(col, 1.0);
     }`
   },
-
-  {
-    id: 'water', nome: 'Água',
-    uniforms: { uAmount: 0.6, uScale: 1.0, uCaustics: 0.4 },
-    src: `
-    uniform float uAmount, uScale, uCaustics;
-    void main() {
-        vec2 p = vUv * vec2(uResolution.x / uResolution.y, 1.0) * 6.0 * uScale;
-        float t = uAnim * 6.28318;
-        vec2 w = vec2(sin(p.y * 2.1 + t) + sin(p.x * 1.3 + p.y * 0.7 - t), cos(p.x * 1.7 - t) + cos(p.y * 1.1 + p.x * 0.9 + t));
-        vec2 uv = vUv + w * 0.004 * uAmount;
-        vec3 c = texture(uSource, clamp(uv, 0.0, 1.0)).rgb;
-        float ca = pow(abs(sin(p.x * 3.0 + w.x * 2.0 + t) * sin(p.y * 3.0 + w.y * 2.0 - t)), 6.0);
-        c += ca * uCaustics * 0.35;
-        outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
-    }`
-  },
-
   {
     id: 'thermal', nome: 'Térmico',
     uniforms: { uContrast: 1.2, uShift: 0.0, uBlur: 0.5 },
@@ -670,7 +408,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(heat((l - 0.5) * uContrast + 0.5 + uShift), 1.0);
     }`
   },
-
   {
     id: 'emboss', nome: 'Relevo',
     uniforms: { uStrength: 1.5, uAngle: 0.8, uColorMix: 0.25 },
@@ -685,7 +422,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(mix(vec3(e), c * (e + 0.5), uColorMix), 1.0);
     }`
   },
-
   {
     id: 'bitmap', nome: 'Bitmap',
     uniforms: { uThreshold: 0.5, uNoise: 0.25, uInk_r: 0.0, uInk_g: 0.0, uInk_b: 0.0, uPaper_r: 1.0, uPaper_g: 1.0, uPaper_b: 1.0 },
@@ -696,7 +432,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(l > uThreshold ? vec3(uPaper_r, uPaper_g, uPaper_b) : vec3(uInk_r, uInk_g, uInk_b), 1.0);
     }`
   },
-
   {
     id: 'duo_halftone', nome: 'Meio-tom duplo',
     uniforms: { uCell: 8.0, uColorA_r: 0.12, uColorA_g: 0.2, uColorA_b: 0.55, uColorB_r: 1.0, uColorB_g: 0.36, uColorB_b: 0.47, uPaper_r: 0.97, uPaper_g: 0.95, uPaper_b: 0.9 },
@@ -718,7 +453,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(col, 1.0);
     }`
   },
-
   {
     id: 'edge_ink', nome: 'Nanquim',
     uniforms: { uThickness: 1.0, uThreshold: 0.12, uWash: 0.35, uInk_r: 0.06, uInk_g: 0.05, uInk_b: 0.05, uPaper_r: 0.97, uPaper_g: 0.95, uPaper_b: 0.9 },
@@ -736,7 +470,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(mix(mix(paper, ink, wash), ink, e), 1.0);
     }`
   },
-
   {
     id: 'color_threshold', nome: 'Limiar de cor',
     uniforms: { uThreshold: 0.5, uSoft: 0.04, uSplit: 0.12 },
@@ -748,43 +481,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(smoothstep(t - uSoft, t + uSoft, c), 1.0);
     }`
   },
-
-  {
-    id: 'ghost_lens', nome: 'Lente fantasma',
-    uniforms: { uIntensity: 0.8, uThreshold: 0.72, uSpread: 0.6, uHalo: 0.4 },
-    src: `
-    uniform float uIntensity, uThreshold, uSpread, uHalo;
-    vec3 br(vec2 uv) { vec3 c = texture(uSource, clamp(uv, 0.0, 1.0)).rgb; return c * smoothstep(uThreshold, 1.0, luma(c)); }
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb, g = vec3(0.0);
-        vec2 toC = vec2(0.5) - vUv;
-        for (int i = 1; i <= 5; i++) {
-            float k = float(i) * 0.22 * uSpread;
-            vec3 tint = hsl2rgb(vec3(fract(float(i) * 0.19 + 0.55), 0.7, 0.6));
-            g += br(vUv + toC * k * 2.0) * tint * (1.0 - float(i) * 0.12);
-        }
-        vec2 hv = normalize(toC + 1e-5) * 0.35;
-        g += br(vUv + hv) * uHalo * vec3(0.8, 0.9, 1.0);
-        outColor = vec4(clamp(c + g * uIntensity * 0.6, 0.0, 1.0), 1.0);
-    }`
-  },
-
-  {
-    id: 'acid', nome: 'Ácido',
-    uniforms: { uAmount: 0.8, uWarp: 0.5, uSat: 1.6 },
-    src: `
-    uniform float uAmount, uWarp, uSat;
-    void main() {
-        vec2 q = vUv * 3.0;
-        vec2 w = vec2(fbm(q + uAnim * 2.0), fbm(q + 5.2 - uAnim * 2.0)) - 0.5;
-        vec3 c = texture(uSource, clamp(vUv + w * 0.03 * uWarp, 0.0, 1.0)).rgb;
-        vec3 h = rgb2hsl(c);
-        h.x = fract(h.x + luma(c) * uAmount * 1.5 + uAnim + w.x * uWarp);
-        h.y = clamp(h.y * uSat + 0.2 * uAmount, 0.0, 1.0);
-        outColor = vec4(mix(c, hsl2rgb(h), clamp(uAmount, 0.0, 1.0)), 1.0);
-    }`
-  },
-
   {
     id: 'neon_trace', nome: 'Traçado néon',
     uniforms: { uThickness: 1.2, uGlow: 0.8, uThreshold: 0.1, uBg: 0.05 },
@@ -803,7 +499,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }`
   },
-
   {
     id: 'smudge', nome: 'Borrão',
     uniforms: { uLength: 30.0, uAngle: 0.3, uFlow: 0.6 },
@@ -880,22 +575,6 @@ const PIXELAR_FX_LIST = [
     }`
   },
   {
-    id: 'kaleido', nome: 'Caleidoscópio',
-    uniforms: { uSegments: 8.0, uZoom: 1.0, uRotate: 0.0 },
-    src: `
-    uniform float uSegments, uZoom, uRotate;
-    void main() {
-        float asp = uResolution.x / uResolution.y;
-        vec2 q = (vUv - 0.5) * vec2(asp, 1.0);
-        float r = length(q) / max(0.2, uZoom), a = atan(q.y, q.x) + uRotate + uAnim * 6.2831853;
-        float seg = 6.2831853 / max(2.0, floor(uSegments));
-        a = mod(a, seg); a = abs(a - seg * 0.5);
-        vec2 uv = vec2(cos(a), sin(a)) * r; uv.x /= asp; uv += 0.5;
-        uv = abs(fract(uv * 0.5 + 0.5) * 2.0 - 1.0);
-        outColor = vec4(texture(uSource, uv).rgb, 1.0);
-    }`
-  },
-  {
     id: 'pixel_sort', nome: 'Pixel sort',
     uniforms: { uThreshold: 0.45, uLength: 120.0, uVertical: 1.0 },
     src: `
@@ -936,23 +615,6 @@ const PIXELAR_FX_LIST = [
     }`
   },
   {
-    id: 'cross_stitch', nome: 'Ponto-cruz',
-    uniforms: { uCell: 10.0, uThread: 0.22, uLinen_r: 0.95, uLinen_g: 0.92, uLinen_b: 0.85 },
-    src: `
-    uniform float uCell, uThread, uLinen_r, uLinen_g, uLinen_b;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(4.0, uCell * S);
-        vec2 p = vUv * uResolution, id = floor(p / cs), f = fract(p / cs);
-        vec3 c = texture(uSource, (id + 0.5) * cs / uResolution).rgb;
-        float d1 = abs(f.x - f.y), d2 = abs(f.x + f.y - 1.0), w = uThread, aa = 1.2 / cs;
-        float x1 = smoothstep(w, w - aa, d1), x2 = smoothstep(w, w - aa, d2);
-        float m = clamp(max(x1 * 0.85, x2), 0.0, 1.0) * smoothstep(0.02, 0.1, min(min(f.x, f.y), min(1.0 - f.x, 1.0 - f.y)) + 0.06);
-        vec3 linen = vec3(uLinen_r, uLinen_g, uLinen_b) * (0.94 + 0.06 * hash(floor(p / max(1.0, S * 2.0))));
-        vec3 thread = c * (0.8 + 0.3 * (x2 > x1 ? 1.0 - abs(f.x - 0.5) : 0.8));
-        outColor = vec4(mix(linen, thread, m), 1.0);
-    }`
-  },
-  {
     id: 'lcd', nome: 'Tela de bolso',
     uniforms: { uCell: 6.0, uGap: 0.18, uLevels: 4.0, uTint_r: 0.6, uTint_g: 0.72, uTint_b: 0.2 },
     src: `
@@ -986,38 +648,6 @@ const PIXELAR_FX_LIST = [
         vec3 col = c * (led * (0.75 + 0.5 * smoothstep(rad, 0.0, r)) + glow * 0.5);
         col += vec3(0.015);
         outColor = vec4(col, 1.0);
-    }`
-  },
-  {
-    id: 'sunburst', nome: 'Raios de sol',
-    uniforms: { uRays: 18.0, uCx: 0.5, uCy: 0.45, uMix: 0.45, uColorA_r: 1.0, uColorA_g: 0.82, uColorA_b: 0.2, uColorB_r: 1.0, uColorB_g: 0.3, uColorB_b: 0.5 },
-    src: `
-    uniform float uRays, uCx, uCy, uMix, uColorA_r, uColorA_g, uColorA_b, uColorB_r, uColorB_g, uColorB_b;
-    void main() {
-        vec3 src = texture(uSource, vUv).rgb;
-        vec2 q = (vUv - vec2(uCx, uCy)) * vec2(uResolution.x / uResolution.y, 1.0);
-        float a = atan(q.y, q.x) / 6.2831853 + uAnim / max(2.0, uRays);
-        float ray = step(0.5, fract(a * uRays));
-        vec3 rc = mix(vec3(uColorA_r, uColorA_g, uColorA_b), vec3(uColorB_r, uColorB_g, uColorB_b), ray);
-        vec3 ov = mix(2.0 * src * rc, 1.0 - 2.0 * (1.0 - src) * (1.0 - rc), step(0.5, src));
-        float fade = smoothstep(0.0, 0.25, length(q));
-        outColor = vec4(mix(src, ov, uMix * fade), 1.0);
-    }`
-  },
-  {
-    id: 'tie_dye', nome: 'Tie-dye',
-    uniforms: { uTwist: 3.0, uRings: 6.0, uAmount: 0.75, uKeep: 0.5 },
-    src: `
-    uniform float uTwist, uRings, uAmount, uKeep;
-    void main() {
-        vec3 src = texture(uSource, vUv).rgb;
-        vec2 q = (vUv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
-        float r = length(q), a = atan(q.y, q.x);
-        float n = fbm(vUv * 6.0) * 0.6;
-        float h = fract(a / 6.2831853 + r * uTwist + sin(r * uRings * 6.2831853 + n * 3.0) * 0.08 + uAnim);
-        float l = luma(src);
-        vec3 dye = hsl2rgb(vec3(h, 0.9, mix(0.5, l, uKeep)));
-        outColor = vec4(mix(src, dye, uAmount), 1.0);
     }`
   },
   {
@@ -1078,31 +708,6 @@ const PIXELAR_FX_LIST = [
     }`
   },
   {
-    id: 'comic', nome: 'Gibi',
-    uniforms: { uLevels: 4.0, uDot: 7.0, uInk: 0.12, uSat: 1.6 },
-    src: `
-    uniform float uLevels, uDot, uInk, uSat;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, px = S / uResolution.x, py = S / uResolution.y;
-        vec2 p = vUv * uResolution;
-        vec3 c = texture(uSource, vUv).rgb;
-        vec3 hsl = rgb2hsl(c); hsl.y = min(1.0, hsl.y * uSat);
-        float lq = floor(hsl.z * uLevels + 0.5) / uLevels; hsl.z = mix(lq, hsl.z, 0.15);
-        vec3 fc = hsl2rgb(hsl);
-        float cs = max(3.0, uDot * S); mat2 R = mat2(0.707, -0.707, 0.707, 0.707);
-        vec2 q = R * p / cs; float d = length(fract(q) - 0.5);
-        float dots = smoothstep(0.32, 0.28, d) * smoothstep(0.75, 0.35, hsl.z) * step(0.2, hsl.z);
-        fc *= 1.0 - dots * 0.35;
-        float e = 0.0;
-        for (int i = 0; i < 4; i++) { vec2 o = vec2(i == 0 ? px : i == 1 ? -px : 0.0, i == 2 ? py : i == 3 ? -py : 0.0); e += abs(luma(texture(uSource, vUv + o * 1.5).rgb) - luma(c)); }
-        float ink = smoothstep(uInk, uInk * 2.0, e);
-        outColor = vec4(mix(fc, vec3(0.05), ink), 1.0);
-    }`
-  },
-
-  // ===================== FILMES =====================
-
-  {
     // Kodak Verde: puxa a imagem para um tom oliva/esverdeado nos meios-tons
     // e sombras (tipico de slides de filme antigo desbotado, referencia das
     // fotos de praia), mantendo realces mais quentes/amarelados e contraste
@@ -1132,7 +737,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(hsl2rgb(hsl), 0.0, 1.0), 1.0);
     }`
   },
-
   {
     // Kodak P&B: conversao para preto-e-branco com curva de contraste forte
     // (tipo Ilford HP5 / Tri-X), leve tonalidade quente nas sombras (preto
@@ -1155,7 +759,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(result, 0.0, 1.0), 1.0);
     }`
   },
-
   {
     // Lumiere: efeito de matiz customizavel (roxo por padrao, referencia do
     // usuario). uHue (0-1, representando 0-360 graus) escolhe a cor de
@@ -1182,7 +785,6 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(hsl2rgb(hsl), 0.0, 1.0), 1.0);
     }`
   },
-
   {
     // Vencido: simula filme fotografico vencido/expirado. uVariant (0-3)
     // escolhe entre 4 assinaturas de degradacao distintas:
@@ -1245,79 +847,19 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(mix(c, result, uIntensity), 0.0, 1.0), 1.0);
     }`
   },
-
-  {
-    id: 'vignette', nome: 'Vinheta',
-    uniforms: { uRadius: 0.75, uSoftness: 0.45, uIntensity: 0.6, uColor_r: 0.0, uColor_g: 0.0, uColor_b: 0.0 },
-    src: `
-    uniform float uRadius, uSoftness, uIntensity;
-    uniform float uColor_r, uColor_g, uColor_b;
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        vec2 aspect = uResolution.x > uResolution.y ? vec2(uResolution.x/uResolution.y, 1.0) : vec2(1.0, uResolution.y/uResolution.x);
-        vec2 offset = (vUv - 0.5) * aspect;
-        float dist = length(offset);
-        float mask = smoothstep(uRadius - uSoftness, uRadius, dist) * uIntensity;
-        vec3 vigColor = vec3(uColor_r, uColor_g, uColor_b);
-        vec3 result = mix(c, vigColor, mask);
-        outColor = vec4(clamp(result, 0.0, 1.0), 1.0);
-    }`
-  },
-
-  {
-    // Bloom: parente direto do "bokeh_blur" acima -- reaproveita o mesmo
-    // padrão de 24 amostras radiais para o blur, mas em vez de PESAR e
-    // MISTURAR os pixels (como o bokeh_blur faz), extrai antes uma máscara
-    // de brilho (só pixels acima de uThreshold entram no blur) e depois
-    // SOMA aditivamente esse glow borrado sobre a imagem nítida original,
-    // multiplicado por uIntensity -- é literalmente um bokeh_blur restrito
-    // às altas-luzes e aplicado como halo aditivo, não como substituição.
-    id: 'bloom', nome: 'Bloom',
-    uniforms: { uThreshold: 0.7, uRadius: 8.0, uIntensity: 1.2 },
-    src: `
-    uniform float uThreshold, uRadius, uIntensity;
-    void main() {
-        vec3 original = texture(uSource, vUv).rgb;
-        vec2 texel = 1.0/uResolution;
-        vec3 glowSum = vec3(0.0);
-        float wsum = 0.0;
-        const int SAMPLES = 24;
-        for (int i = 0; i < SAMPLES; i++) {
-            float a = float(i) / float(SAMPLES) * 6.28318;
-            float r = sqrt(float(i) / float(SAMPLES));
-            vec2 off = vec2(cos(a), sin(a)) * r * uRadius * texel;
-            vec3 s = texture(uSource, vUv + off).rgb;
-            float br = luma(s);
-            float bright = max(0.0, br - uThreshold);
-            glowSum += s * bright;
-            wsum += 1.0;
-        }
-        vec3 bloomGlow = glowSum / max(wsum, 0.001);
-        outColor = vec4(clamp(original + bloomGlow * uIntensity, 0.0, 1.0), 1.0);
-    }`
-  },
-
-
-  
-  
-  
-  
-  
-  
 ];
 
 // ==========================================
 // PixelarGPU — motor WebGL2 único do pipeline inteiro.
 // Antes eram dois contextos (PixelarGL + PixelarFX) e o resultado
-// ia e voltava da GPU a cada etapa (readPixels → rgbShift/grão em CPU
-// → upload → efeito → readPixels → grão em CPU → putImageData).
+// ia e voltava da GPU a cada etapa (readPixels → grão em CPU → upload
+// → efeito → readPixels → putImageData).
 // Agora todas as etapas rodam encadeadas em framebuffers no mesmo
 // contexto, e o resultado final é desenhado direto no canvas de saída
 // (drawImage do canvas WebGL) — sem cópia para a CPU no caminho comum.
 //
 //   fonte (textura, só reenviada quando muda)
 //     → MAIN  (ajustes de cor + dither procedural + degradê + paleta/duotone)
-//     → SHIFT (aberração RGB)            [opcional]
 //     → FX    (efeito de textura + mix)  [opcional]
 //     → GRAIN (granulado de filme)       [opcional]
 //     → BLIT  (inverte Y para a tela)
@@ -1337,18 +879,14 @@ uvec3 pcg3d(uvec3 v) {
 float phash(ivec2 p, float s) { return float(pcg3d(uvec3(uvec2(p), floatBitsToUint(s))).x) / 4294967295.0; }
 `;
 
-const FILM_INT_UNIFORMS = new Set(['uSwap', 'uFrame', 'uStamp']);
+const FILM_INT_UNIFORMS = new Set(['uSwap']);
+// filmes feitos por shader próprio: ficam em Filme, fora da lista de texturas
 const FILM_FX_IDS = ['kodak_verde', 'kodak_pb', 'lumiere', 'vencido'];
-const LENS_FX_IDS = ['vignette', 'bloom', 'bokeh_blur', 'lens_distortion']; // viraram controles da Lente (Filtros)
-// repetiam outra parte do app (Pixel, Contorno, Luz): continuam funcionando em estilos antigos, mas não aparecem na lista
-const DUP_FX_IDS = ['pixelate_fx', 'outlines', 'color_adjustment'];
-// curadoria (out/2026): texturas que saíram da lista (continuam funcionando em estilos antigos)
-const HIDDEN_FX_IDS = ["acid", "beads", "comic", "contour", "cross_stitch", "hatching", "hologram", "kaleido", "mesh_lines", "sunburst", "tie_dye", "water"];
 const PixelarGPU = (function () {
     let gl = null, glCanvas = null;
     let initialized = false, ok = false, contextLost = false;
     let vao = null, maxTex = 4096;
-    const progs = {};          // MAIN, SHIFT, GRAIN, BLIT
+    const progs = {};          // MAIN, GRAIN, FILM, BLIT, BLEND…
     const fxProgs = {};        // id do efeito -> programa
     let srcTex, gradTex, palTex, refPalTex, dblTex, dblKey = null;
     let srcKey = null, gradKey = null, palKey = null, refPalKey = null, palCount = 0;
@@ -1365,10 +903,10 @@ const PixelarGPU = (function () {
     in vec2 vUv; out vec4 outColor;
     uniform sampler2D uSource, uGrad, uPalette, uRefPalette;
     // ajustes (mesma matemática do fallback CPU, em escala 0..255)
-    uniform float uExp, uBr, uSh, uSat, uCont, uContFactor, uTemp, uPoster;
+    uniform float uExp, uBr, uSh, uSat, uCont, uContFactor, uTemp;
     uniform bool uInvert;
     // dither
-    uniform int uDitherMode;         // 0 nenhum 1 halftone 2 ds(bayer4) 3 bayer8 4 floyd 5 xadrez 6 scanlines 7 ruído
+    uniform int uDitherMode;         // 0 nenhum 1 retícula 3 bayer 8×8 5 xadrez 6 linhas de TV 7 ruído
     uniform float uDScale, uDStrength, uSin, uCos, uNoiseSeed;
     // animação (0 = imagem estática)
     uniform float uAnimT, uAnimAmt, uAnimFrame;
@@ -1386,9 +924,7 @@ const PixelarGPU = (function () {
     uniform int uDuoCount;
     ${GLSL_HASH}
 
-    const int B4[16] = int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);
     const int B8[64] = int[64](0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21);
-    const int FS4[16] = int[16](0,0,7,3,5,1,0,0,3,7,0,0,0,0,1,5);
     const float TAU = 6.28318530718;
 
     vec3 rgb2hsl(vec3 c) {
@@ -1427,7 +963,6 @@ const PixelarGPU = (function () {
         float l = 0.3*c.r + 0.59*c.g + 0.11*c.b;
         if (uSat != 0.0) c = l + (c - l) * (1.0 + uSat);
         if (uSh != 0.0 && l < 128.0) c += uSh * (128.0 - l) / 128.0;
-        if (uPoster > 0.0) { float n = uPoster - 1.0; c = floor(c / 255.0 * n + 0.5) * (255.0 / n); }
         return floor(clamp(c, 0.0, 255.0) + 0.5); // Uint8ClampedArray arredonda
     }
 
@@ -1443,17 +978,9 @@ const PixelarGPU = (function () {
             float pulse = 1.0 + 0.35 * sin(TAU * T);
             return ((sqrt(cx*cx + cy*cy) * pulse / (size / 1.5)) - 0.5) * 1.5;
         }
-        if (uDitherMode == 2) {
-            int v = (B4[int(mod(sy, 4.0)) * 4 + int(mod(sx, 4.0))] + int(floor(T * 16.0))) % 16;
-            return (float(v) / 15.0 - 0.5) * 0.5;
-        }
         if (uDitherMode == 3) {
             int v = (B8[int(mod(sy, 8.0)) * 8 + int(mod(sx, 8.0))] + int(floor(T * 64.0))) % 64;
             return (float(v) / 63.0 - 0.5) * 0.5;
-        }
-        if (uDitherMode == 4) {
-            float o = floor(T * 4.0);
-            return (float(FS4[int(mod(sy + o, 4.0)) * 4 + int(mod(sx + o, 4.0))]) / 16.0 - 0.5) * 0.6;
         }
         if (uDitherMode == 5) {
             float par = mod(sx + sy, 2.0) < 0.5 ? 1.0 : -1.0;
@@ -1472,7 +999,6 @@ const PixelarGPU = (function () {
     vec2 patPeriod() {
         float sc = uDScale;
         if (uDitherMode == 1) return vec2(max(2.0, sc * 3.0) * 1.41421356);
-        if (uDitherMode == 2 || uDitherMode == 4) return vec2(4.0 * sc);
         if (uDitherMode == 3) return vec2(8.0 * sc);
         if (uDitherMode == 5) return vec2(2.0 * sc);
         if (uDitherMode == 6) return vec2(3.0 * sc);
@@ -1622,18 +1148,6 @@ const PixelarGPU = (function () {
         outColor = vec4(rgb / 255.0, 1.0);
     }`;
 
-    const SHIFT_FS = `#version 300 es
-    precision highp float; precision highp int;
-    out vec4 outColor;
-    uniform sampler2D uTex; uniform int uShift;
-    void main() {
-        ivec2 p = ivec2(gl_FragCoord.xy); int w = textureSize(uTex, 0).x;
-        vec4 c = texelFetch(uTex, p, 0);
-        if (p.x + uShift < w) c.r = texelFetch(uTex, ivec2(p.x + uShift, p.y), 0).r;
-        if (p.x - uShift >= 0) c.b = texelFetch(uTex, ivec2(p.x - uShift, p.y), 0).b;
-        outColor = c;
-    }`;
-
     const GRAIN_FS = `#version 300 es
     precision highp float; precision highp int;
     out vec4 outColor;
@@ -1684,16 +1198,9 @@ const PixelarGPU = (function () {
     uniform vec3 uHalColor;
     uniform float uLeak, uLeakPos, uDust, uScratch, uBurn, uGrain, uGrainSize, uJpeg, uChromaNoise, uInterlace, uAutochrome;
     uniform vec3 uLeakColor, uVigColor;
-    uniform int uFrame;
-    uniform vec3 uFrameColor;
-    uniform int uStamp;
-    uniform vec4 uStampA;
-    uniform vec2 uStampB;
-    uniform vec3 uStampColor;
     uniform float uAnim, uAnimFrame, uWeave, uFlicker, uLeakDrift, uBurnAnim;
     ${GLSL_HASH}
     const float TAU = 6.28318530718;
-    const int SEG[10] = int[10](63, 6, 91, 79, 102, 109, 125, 7, 127, 111);
 
     float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
     float h21(vec2 p, float s) { return phash(ivec2(floor(p)), s); }
@@ -1709,59 +1216,12 @@ const PixelarGPU = (function () {
         y.yz = mat2(cs, sn, -sn, cs) * y.yz;
         return fromY * y;
     }
-    float sdBox(vec2 p, vec2 b, float r) { vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
-    float segD(vec2 p, vec2 a, vec2 b) { vec2 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0); return length(pa - ba * h) - 0.11; }
-    float digitD(vec2 p, int d) {
-        if (d < 0 || d > 9) return 1e3;
-        int m = SEG[d]; float r = 1e3;
-        if ((m & 1) != 0) r = min(r, segD(p, vec2(0.15, 0.0), vec2(0.85, 0.0)));
-        if ((m & 2) != 0) r = min(r, segD(p, vec2(1.0, 0.15), vec2(1.0, 0.85)));
-        if ((m & 4) != 0) r = min(r, segD(p, vec2(1.0, 1.15), vec2(1.0, 1.85)));
-        if ((m & 8) != 0) r = min(r, segD(p, vec2(0.15, 2.0), vec2(0.85, 2.0)));
-        if ((m & 16) != 0) r = min(r, segD(p, vec2(0.0, 1.15), vec2(0.0, 1.85)));
-        if ((m & 32) != 0) r = min(r, segD(p, vec2(0.0, 0.15), vec2(0.0, 0.85)));
-        if ((m & 64) != 0) r = min(r, segD(p, vec2(0.15, 1.0), vec2(0.85, 1.0)));
-        return r;
-    }
-
     void main() {
         vec2 frag = gl_FragCoord.xy;              // linha 0 = topo da imagem
         vec2 S = uSize;
         float m = min(S.x, S.y);
 
-        // ---------- moldura: retângulo útil (em px) ----------
-        float L = 0.0, R = 0.0, T = 0.0, B = 0.0, rad = 0.0, rough = 0.0;
-        if (uFrame == 1) { L = R = T = 0.055 * m; B = 0.22 * m; }                  // Polaroid
-        else if (uFrame == 2) { L = R = 0.07 * m; T = 0.1 * m; B = 0.24 * m; rad = 0.015 * m; }  // Instax
-        else if (uFrame == 3) { T = B = 0.13 * S.y; L = R = 0.01 * S.x; }            // tira 35 mm
-        else if (uFrame == 4) { L = R = 0.05 * m; T = B = 0.04 * m; rad = 0.09 * m; } // Super 8
-        else if (uFrame == 5) { L = R = T = B = 0.035 * m; rough = 0.012 * m; }      // médio formato
-        else if (uFrame == 6) { float hb = max(0.0, (S.y - S.x / 2.39) * 0.5); T = B = hb; } // Cinemascope
-        else if (uFrame == 7) { L = R = T = B = 0.13 * m; rad = 0.03 * m; }          // moldura de slide
-        else if (uFrame == 8) { L = R = T = B = 0.06 * m; rough = 0.008 * m; }       // papel antigo
-        else if (uFrame == 9) { L = R = T = B = 0.03 * m; rough = 0.03 * m; }        // placa (ferrótipo)
-        else if (uFrame == 10) { L = R = T = 0.05 * m; B = 0.05 * m; rad = 0.04 * m; } // cantos arredondados
-        vec2 i0 = vec2(L, T), i1 = S - vec2(R, B);
-        vec2 isz = max(i1 - i0, vec2(1.0));
-        vec2 ic = (i0 + i1) * 0.5;
-        float sd = sdBox(frag - ic, isz * 0.5, rad);
-        if (rough > 0.0) sd += (vnoise(frag / (m * 0.02), 91.0) - 0.5) * rough * 2.0 + (vnoise(frag / (m * 0.004), 92.0) - 0.5) * rough * 0.6;
-        if (uFrame != 0 && sd > 0.0) {
-            vec3 fc = uFrameColor;
-            // textura do papel/plástico
-            fc *= 0.94 + 0.06 * vnoise(frag / 3.0, 71.0);
-            if (uFrame == 3) {
-                // furos de tracionamento
-                float pitch = 0.075 * m, hw = 0.022 * m, hh = 0.035 * m;
-                float cx = mod(frag.x, pitch) - pitch * 0.5;
-                float yTop = T * 0.5, yBot = S.y - B * 0.5;
-                float hole = min(sdBox(vec2(cx, frag.y - yTop), vec2(hw, hh * 0.5), 0.006 * m), sdBox(vec2(cx, frag.y - yBot), vec2(hw, hh * 0.5), 0.006 * m));
-                if (hole < 0.0) fc = vec3(0.92, 0.9, 0.84);
-            }
-            if (uFrame == 8) fc = mix(fc, fc * vec3(0.93, 0.86, 0.72), vnoise(frag / (m * 0.1), 77.0) * 0.35);
-            outColor = vec4(clamp(fc, 0.0, 1.0), 1.0);
-            return;
-        }
+        vec2 i0 = vec2(0.0), isz = S;
         vec2 iuv = (frag - i0) / isz;             // 0..1 dentro da foto
 
         // ---------- tremor de quadro (projetor) ----------
@@ -1925,28 +1385,7 @@ const PixelarGPU = (function () {
             float s = h21(vec2(cx, floor(uAnimFrame / 2.0)), 57.0);
             if (s > 1.0 - uScratch * 0.012) col = mix(col, vec3(0.92), 0.55 * vnoise(vec2(cx, iuv.y * 30.0), 3.0));
         }
-        // ---------- data carimbada (display de 7 segmentos) ----------
-        if (uStamp == 1) {
-            float u = max(2.2, 0.026 * min(isz.x, isz.y));
-            vec2 br = i1 - vec2(0.05, 0.05) * min(isz.x, isz.y);
-            float cw = 1.75;
-            vec2 p = (frag - (br - vec2(cw * 9.0 * u, 2.0 * u))) / u;
-            p.x += (2.0 - p.y) * 0.12;
-            int ci = int(floor(p.x / cw));
-            if (ci >= 0 && ci < 9 && p.y > -0.5 && p.y < 2.5) {
-                vec2 lp = vec2(p.x - float(ci) * cw, p.y);
-                float d2 = 1e3;
-                if (ci == 0) d2 = segD(lp, vec2(0.7, 0.0), vec2(0.55, 0.45));
-                else {
-                    int dg = ci == 1 ? int(uStampA.x) : ci == 2 ? int(uStampA.y) : ci == 4 ? int(uStampA.z) : ci == 5 ? int(uStampA.w) : ci == 7 ? int(uStampB.x) : ci == 8 ? int(uStampB.y) : -1;
-                    d2 = digitD(lp, dg);
-                }
-                float core = 1.0 - smoothstep(0.0, 1.0 / u, d2);
-                float glow = exp(-max(d2, 0.0) * 2.5) * 0.45;
-                col = mix(col, uStampColor * (1.0 + core * 0.2), clamp(core + glow * (1.0 - core), 0.0, 1.0));
-            }
-        }
-        // transparência: a foto mantém o alfa original; a moldura (retornada antes) é opaca
+        // transparência: a foto mantém o alfa original
         outColor = vec4(clamp(col, 0.0, 1.0), texture(uTex, TEX(duv)).a);
     }`;
 
@@ -2301,7 +1740,7 @@ const PixelarGPU = (function () {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-        progs.MAIN = link(MAIN_FS); progs.SHIFT = link(SHIFT_FS);
+        progs.MAIN = link(MAIN_FS);
         progs.GRAIN = link(GRAIN_FS); progs.BLIT = link(BLIT_FS); progs.FILM = link(FILM_FS); progs.EDGE = link(EDGE_FS);
         progs.BLEND = link(BLEND_FS); progs.GRADL = link(GRADL_FS); progs.CLUSTER = link(CLUSTER_FS); progs.DBL = link(DBL_FS);
         dblTex = newTex(gl.LINEAR); dblKey = null;
@@ -2387,7 +1826,7 @@ const PixelarGPU = (function () {
     }
 
     const GRAD_BLEND_IDS = { normal: 0, multiply: 1, screen: 2, overlay: 3, color: 4, darken: 5, lighten: 6, difference: 7, softlight: 8 };
-    const DITHER_IDS = { none: 0, halftone: 1, nintendo_ds: 2, bayer8: 3, floyd_approx: 4, checkerboard: 5, scanlines: 6, noise: 7 };
+    const DITHER_IDS = { none: 0, halftone: 1, bayer8: 3, checkerboard: 5, scanlines: 6, noise: 7 };   // números fixos (2 e 4 saíram)
 
     // o: ver renderFrame() — retorna true se renderizou (resultado em glCanvas, tamanho w x h)
     function render(o) {
@@ -2442,7 +1881,7 @@ const PixelarGPU = (function () {
                 gl.uniform1i(L.uGrad, 1); gl.uniform1i(L.uPalette, 2); gl.uniform1i(L.uRefPalette, 3);
                 gl.uniform1f(L.uExp, a.exp); gl.uniform1f(L.uBr, a.br); gl.uniform1f(L.uSh, a.sh);
                 gl.uniform1f(L.uSat, a.sat); gl.uniform1f(L.uCont, a.cont); gl.uniform1f(L.uContFactor, a.contFactor);
-                gl.uniform1f(L.uTemp, a.temp); gl.uniform1f(L.uPoster, a.poster); gl.uniform1i(L.uInvert, a.invert ? 1 : 0);
+                gl.uniform1f(L.uTemp, a.temp); gl.uniform1i(L.uInvert, a.invert ? 1 : 0);
                 gl.uniform1i(L.uDitherMode, DITHER_IDS[dt.mode] || 0);
                 gl.uniform1f(L.uDScale, Math.max(1, dt.scale)); gl.uniform1f(L.uDStrength, dt.strength);
                 gl.uniform1f(L.uSin, Math.sin(Math.PI / 4)); gl.uniform1f(L.uCos, Math.cos(Math.PI / 4));
@@ -2470,10 +1909,6 @@ const PixelarGPU = (function () {
                     pass(progs.CLUSTER, targets[cur].tex, next(), (L) => { gl.uniform1i(L.uRadius, o.cluster.radius); gl.uniform1f(L.uTol, o.cluster.tol); });
                     cur = next();
                 }
-            }
-            if (o.rgbShift > 0) {
-                pass(progs.SHIFT, targets[cur].tex, next(), (L) => gl.uniform1i(L.uShift, o.rgbShift));
-                cur = next();
             }
             // contorno: sempre medido na base (foto + paleta + pixel), não nas texturas por cima
             edgeBase = false;
@@ -2612,8 +2047,9 @@ const PixelarGPU = (function () {
 
 // Catálogo de efeitos (usado pela UI): mesmo contrato do antigo PixelarFX
 const PixelarFX = {
-    // texturas artísticas (filmes e lentes ficam em Filtros)
-    listEffects: () => PIXELAR_FX_LIST.filter(fx => !FILM_FX_IDS.includes(fx.id) && !LENS_FX_IDS.includes(fx.id) && !DUP_FX_IDS.includes(fx.id) && !HIDDEN_FX_IDS.includes(fx.id)).map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
+    // texturas da aba Textura (os filmes por shader ficam em Filme)
+    listEffects: () => PIXELAR_FX_LIST.filter(fx => !FILM_FX_IDS.includes(fx.id)).map(fx => ({ id: fx.id, nome: fx.nome, uniforms: fx.uniforms })),
+    isTexture: (id) => !FILM_FX_IDS.includes(id) && PIXELAR_FX_LIST.some(fx => fx.id === id),
     getEffectDef: (id) => PIXELAR_FX_LIST.find(fx => fx.id === id) || null,
     isAvailable: () => PixelarGPU.isAvailable(),
 };
