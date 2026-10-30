@@ -13,7 +13,7 @@
 @property --acc-text-d { syntax: '<color>'; inherits: true; initial-value: #ffd60a; }
 @property --tint-1 { syntax: '<color>'; inherits: true; initial-value: #ffcc00; }
 @property --tint-2 { syntax: '<color>'; inherits: true; initial-value: #ff9f0a; }
-@font-face { font-family: 'Departure Mono'; src: url('../DepartureMono-Regular.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'Departure Mono'; src: url('../DepartureMono-Regular.woff2') format('woff2'); font-display: swap; }
 
 /* ============================================================
    TOKENS
@@ -66,7 +66,8 @@
     --glass-edge: rgba(0, 0, 0, .08);
     --glass-strong: rgba(248, 248, 250, .86);
     --lens: rgba(255, 255, 255, .6);
-    --tab-lens: color-mix(in srgb, var(--tint-1) 10%, rgba(120, 120, 128, .14));
+    --tab-lens: rgba(120, 120, 128, .16);
+    --sheet-bg: #f4f4f7;
 
     color-scheme: light;
 }
@@ -79,7 +80,7 @@
         --checker-a: #111; --checker-b: #1b1b1b; --label-bg: rgba(90, 90, 96, .55);
         --glass-fill: rgba(30, 30, 34, .22); --glass-hi: rgba(255, 255, 255, .3); --glass-rim: rgba(255, 255, 255, .14); --glass-edge: rgba(0, 0, 0, .4);
         --glass-strong: rgba(28, 28, 32, .86); --lens: rgba(255, 255, 255, .12);
-        --tab-lens: color-mix(in srgb, var(--tint-1) 12%, rgba(255, 255, 255, .12));
+        --tab-lens: rgba(255, 255, 255, .12); --sheet-bg: #1c1c1f;
         color-scheme: dark;
     }
 }
@@ -91,7 +92,7 @@
     --checker-a: #111; --checker-b: #1b1b1b; --label-bg: rgba(90, 90, 96, .55);
     --glass-fill: rgba(30, 30, 34, .22); --glass-hi: rgba(255, 255, 255, .3); --glass-rim: rgba(255, 255, 255, .14); --glass-edge: rgba(0, 0, 0, .4);
     --glass-strong: rgba(28, 28, 32, .86); --lens: rgba(255, 255, 255, .12);
-    --tab-lens: color-mix(in srgb, var(--tint-1) 12%, rgba(255, 255, 255, .12));
+    --tab-lens: rgba(255, 255, 255, .12); --sheet-bg: #1c1c1f;
     color-scheme: dark;
 }
 @media (prefers-reduced-transparency: reduce) { :root { --glass-fill: var(--glass-strong); } }
@@ -143,11 +144,6 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .canvas-wrap canvas.smooth { image-rendering: auto; }
 .fit-anim .canvas-wrap canvas { transition: width .45s var(--ease), height .45s var(--ease); }
 #origCanvas { position: absolute; left: 0; top: 0; width: 100% !important; height: 100% !important; }
-.split { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; transform: translateX(-1px); pointer-events: none; }
-.split span { position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; margin: -12px; background: #fff; }
-.split span::before, .split span::after { content: ""; position: absolute; top: 7px; border: 5px solid transparent; }
-.split span::before { left: 0; border-right-color: #222; }
-.split span::after { right: 0; border-left-color: #222; }
 .param-label { position: absolute; left: calc(var(--ui-l, 8px) + (100% - var(--ui-l, 8px) - var(--ui-r, 8px)) / 2); bottom: calc(var(--ui-b, 300px) + 8px); transform: translate(-50%, 6px); padding: 6px 10px; border-radius: 8px; background: rgba(20, 20, 24, .78); color: #fff; opacity: 0; transition: opacity .25s, transform .4s var(--spring); pointer-events: none; white-space: nowrap; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis; z-index: 2; }
 .param-label.show { opacity: 1; transform: translate(-50%, 0); }
 .orig-badge { position: absolute; top: calc(var(--ui-t, 60px) + 8px); left: calc(var(--ui-l, 8px) + (100% - var(--ui-l, 8px) - var(--ui-r, 8px)) / 2); transform: translateX(-50%); padding: 5px 10px; border-radius: 8px; background: rgba(20, 20, 24, .78); color: #fff; letter-spacing: .1em; z-index: 2; }
@@ -177,7 +173,7 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .icon-btn:active:not(:disabled) { transform: scale(.86); transition-duration: .12s; }
 .icon-btn.on { color: var(--accent-text); }
 .icon-btn.round { width: 36px; height: 36px; background: var(--fill-1); }
-.icon-btn.dice.rolling .ic, .dial.rolling .ic { animation: roll .6s var(--spring); }
+.icon-btn.dice.rolling .ic { animation: roll .6s var(--spring); }
 @keyframes roll { 0% { transform: rotate(0) scale(1); } 45% { transform: rotate(180deg) scale(.75); } 100% { transform: rotate(360deg) scale(1); } }
 .icon-btn.only-wide { display: none; }
 .pill { height: 44px; padding: 0 18px; border-radius: 22px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; transition: transform .45s var(--spring), background .3s; }
@@ -224,13 +220,13 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .seg-row { position: relative; display: flex; overflow-x: auto; scrollbar-width: none; flex: none; padding: 0 8px; }
 .seg-row:empty { display: none; }
 .seg-row::-webkit-scrollbar, .dials::-webkit-scrollbar, .strip::-webkit-scrollbar, .chips::-webkit-scrollbar, .swatches::-webkit-scrollbar, .palettes::-webkit-scrollbar { display: none; }
-.seg { position: relative; z-index: 1; height: 30px; padding: 0 12px; border-radius: 15px; color: var(--text-2); white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 6px; transition: color .3s; }
+.seg { position: relative; z-index: 1; height: 34px; padding: 0 12px; border-radius: 17px; color: var(--text-2); white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 6px; transition: color .3s; }
 .seg.on { color: var(--text); }
-.lens { position: absolute; z-index: 0; pointer-events: none; border-radius: 15px; background: var(--fill-1); transition: left .5s var(--spring), width .5s var(--spring), top .5s var(--spring), height .5s var(--spring); }
+.lens { position: absolute; z-index: 0; pointer-events: none; border-radius: 17px; background: var(--fill-1); transition: left .5s var(--spring), width .5s var(--spring), top .5s var(--spring), height .5s var(--spring); }
 
 /* nomes dos ajustes (texto; o escolhido na cor de destaque) */
 .dials { position: relative; display: flex; align-items: center; gap: 2px; padding: 0 8px; overflow-x: auto; scrollbar-width: none; flex: none; height: 32px; }
-.dial { position: relative; flex: none; height: 30px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); white-space: nowrap; transition: color .25s; }
+.dial { position: relative; flex: none; height: 40px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); white-space: nowrap; transition: color .25s; }
 .dial .name { position: relative; }
 .dial.active { color: var(--accent-text); }
 .dial.active .name::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 2px; background: currentColor; }
@@ -240,14 +236,11 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .dial .tog { width: 10px; height: 10px; box-shadow: inset 0 0 0 1px currentColor; }
 .dial.on .tog { background: var(--accent); box-shadow: none; }
 .dial.on { color: var(--text); }
-.dial.kind-action.accent { color: var(--accent-text); padding: 0 6px; }
 .dial .lock-badge { display: grid; place-items: center; color: var(--text); }
 .dial .lock-badge .ic { width: 12px; height: 12px; }
 .dial:active { transform: scale(.95); }
-/* partes da categoria (Luz | Paleta | Degradê) */
-.parts { flex: none; display: flex; padding: 2px; margin-right: 6px; border-radius: 12px; background: var(--fill-1); }
-.part { height: 26px; padding: 0 10px; border-radius: 10px; color: var(--text-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; transition: background .3s, color .3s; }
-.part.on { background: var(--lens); color: var(--text); box-shadow: inset 0 1px 0 var(--glass-hi); }
+/* divisória com o nome da parte (Degradê, Grão, Lente…) dentro da fileira de ajustes */
+.dial-sep { flex: none; align-self: center; height: 18px; margin: 0 4px 0 8px; padding-left: 10px; border-left: 1px solid var(--hair); color: var(--text-3); white-space: nowrap; line-height: 18px; text-transform: uppercase; letter-spacing: .06em; }
 
 /* editor: altura fixa por aba, para trocar de ajuste nunca mexer no tamanho da imagem */
 .editor { height: var(--editor-h); display: flex; flex-direction: column; justify-content: center; gap: 6px; flex: none; overflow: hidden; }
@@ -285,16 +278,12 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .thumb .t { height: var(--thumb-label); line-height: 13px; flex: none; color: var(--text-2); text-align: center; width: calc(var(--thumb) + 8px); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; transition: color .3s; }
 .thumb.on .t { color: var(--text); }
 .thumb.add .pic { display: grid; place-items: center; color: var(--accent-text); }
-.thumb .star, .thumb .del { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 6px; display: none; place-items: center; z-index: 1; background: rgba(0, 0, 0, .42); color: #fff; cursor: pointer; }
-.thumb .star .ic, .thumb .del .ic { width: 12px; height: 12px; }
-.thumb.on .star, .thumb.on .del, .thumb .star.fav { display: grid; }
-.thumb .star.fav { color: #ffd60a; }
-.strip-group { display: none; }
+.thumb .del { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 7px; display: none; place-items: center; z-index: 1; background: rgba(0, 0, 0, .5); color: #fff; cursor: pointer; }
+.thumb .del .ic { width: 12px; height: 12px; }
+.thumb.on .del { display: grid; }
 .strip-empty { height: calc(var(--thumb) + var(--thumb-label) + 4px); display: grid; place-items: center; color: var(--text-2); text-align: center; padding: 0 32px; flex: none; }
-.mini-btn { height: 16px; padding: 0 8px; border-radius: 8px; color: var(--accent-text); white-space: nowrap; }
-.mini-btn:active { opacity: .6; }
 .chips { display: flex; gap: 4px; padding: 2px var(--pad); overflow-x: auto; overflow-y: hidden; align-items: center; scrollbar-width: none; flex-wrap: nowrap; }
-.chip { flex: none; height: 30px; padding: 0 11px; border-radius: 15px; color: var(--text-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; transition: background .3s, color .3s, transform .45s var(--spring); }
+.chip { flex: none; height: 36px; padding: 0 12px; border-radius: 18px; color: var(--text-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; transition: background .3s, color .3s, transform .45s var(--spring); }
 .chip.on { color: var(--text); background: var(--fill-1); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent); }
 .chip:active { transform: scale(.94); transition-duration: .12s; }
 .chip-sep { flex: none; width: 1px; height: 14px; background: var(--hair); margin: 0 6px; }
@@ -315,7 +304,7 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .exp-actions .pill { height: 44px; padding: 0 22px; }
 .exp-links { display: flex; }
 .exp-links:last-child { justify-content: flex-end; }
-.link { color: var(--accent-text); padding: 6px 2px; white-space: nowrap; }
+.link { color: var(--accent-text); min-height: 40px; padding: 0 4px; white-space: nowrap; }
 .link:active { opacity: .6; }
 
 /* ---------- abas ---------- */
@@ -323,7 +312,8 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .tab { position: relative; z-index: 1; min-width: 0; height: calc(var(--tab-h) - 8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: calc(var(--tab-h) / 2 - 4px); color: var(--text); transition: color .3s, transform .45s var(--spring); }
 .tab:active { transform: scale(.94); transition-duration: .12s; }
 .tab span { white-space: nowrap; }
-.tab.on { color: var(--accent-text); }
+.tab.on { color: var(--text); }
+.tab.on .ic { color: var(--accent-text); }
 .tabbar .lens { border-radius: calc(var(--tab-h) / 2 - 4px); background: var(--tab-lens); }
 
 /* ============================================================
@@ -333,7 +323,7 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 .sheet-backdrop.show { opacity: 1; }
 .sheet-backdrop.clear { background: transparent; }
 .sheet { position: fixed; z-index: 41; left: calc(var(--safe-l) + var(--m)); right: calc(var(--safe-r) + var(--m)); bottom: calc(var(--safe-b) + var(--m)); max-height: calc(100% - var(--safe-t) - var(--safe-b) - 5 * var(--m)); overflow: auto; border-radius: 28px; padding: 8px 16px 16px; transform: translateY(calc(100% + 24px)); transition: transform .55s var(--spring-soft); overscroll-behavior: contain;
-    background: var(--glass-strong); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 .5px var(--glass-rim); }
+    background: var(--sheet-bg); color: var(--text); box-shadow: 0 12px 40px rgba(0, 0, 0, .28), inset 0 1px 0 var(--glass-hi), inset 0 0 0 .5px var(--glass-rim); }
 .sheet.show { transform: none; }
 .sheet .grabber { width: 32px; height: 4px; border-radius: 2px; background: var(--fill-2); margin: 0 auto 12px; }
 .sheet h2 { font-size: var(--fs-l); font-weight: normal; }
@@ -431,7 +421,7 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
     --glass-hi: rgba(255, 255, 255, .95); --glass-edge: rgba(0, 0, 0, .06); --glass-strong: rgba(248, 248, 250, .9);
     --rim-a: rgba(255, 255, 255, .95); --rim-b: rgba(255, 255, 255, .35); --rim-c: rgba(0, 0, 0, .04); --rim-d: rgba(255, 255, 255, .7);
     --lens: rgba(255, 255, 255, .6);
-    --tab-lens: color-mix(in srgb, var(--tint-1) 16%, rgba(255, 255, 255, .55));
+    --tab-lens: rgba(255, 255, 255, .62);
 }
 /* vidro escuro: imagem escura/média atrás → texto claro */
 .tone-dark {
@@ -443,7 +433,7 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
     --glass-hi: rgba(255, 255, 255, .32); --glass-edge: rgba(0, 0, 0, .35); --glass-strong: rgba(24, 24, 28, .88);
     --rim-a: rgba(255, 255, 255, .55); --rim-b: rgba(255, 255, 255, .12); --rim-c: rgba(255, 255, 255, .03); --rim-d: rgba(255, 255, 255, .3);
     --lens: rgba(255, 255, 255, .16);
-    --tab-lens: color-mix(in srgb, var(--tint-1) 18%, rgba(255, 255, 255, .14));
+    --tab-lens: rgba(255, 255, 255, .16);
 }
 /* QUALIDADE ADAPTATIVA (Perf em ui.js)
    data-perf="1": aparelho sofreu em gesto → durante o toque as fileiras perdem o desfoque (véu mais denso).
@@ -487,7 +477,10 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
     .panel-body { flex: 1; min-height: 0; }
     .panel-inner { overflow-y: auto; gap: 14px; padding-bottom: 20px; overscroll-behavior: contain; }
     .seg-row { order: -2; flex-wrap: wrap; overflow: visible; gap: 2px; padding: 0; }
-    .dials { order: -1; flex-wrap: wrap; overflow: visible; height: auto; padding: 0; row-gap: 4px; }
+    .dials { order: -1; flex-wrap: wrap; overflow: visible; height: auto; padding: 0; row-gap: 0; }
+    .dock .dials { height: auto; padding: 4px 6px; }
+    .dial { height: 32px; }
+    .dial-sep { flex-basis: 100%; height: 22px; line-height: 22px; margin: 4px 0 0; padding: 0 10px; border-left: 0; border-top: 1px solid var(--hair); }
     .editor, .panel[data-tab] .editor { height: auto; min-height: 90px; justify-content: flex-start; }
     .strip { flex-wrap: wrap; overflow: visible; padding: 2px 0; }
     .strip .thumb { width: calc((100% - 24px) / 4); }
@@ -517,7 +510,7 @@ kbd { font: inherit; padding: 3px 6px; border-radius: 6px; background: var(--fil
 /* ============================================================
    MODO LEVE (aparelhos modestos): sem desfoque, menos animação. A exportação não muda.
    ============================================================ */
-:root[data-lite] .glass, :root[data-lite] .sheet, :root[data-lite] .toast, :root[data-lite] .param-label, :root[data-lite] .orig-badge { -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-lite] .glass, :root[data-lite] .toast, :root[data-lite] .param-label, :root[data-lite] .orig-badge { -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-lite] .glass, :root[data-lite] .dock .editor, :root[data-lite] .dock .dials, :root[data-lite] .dock .seg-row { background: var(--glass-strong); -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-lite] .enter > * { animation: none; }
 :root[data-lite] .stage.developing canvas#outCanvas { animation: none; }

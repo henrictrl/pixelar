@@ -78,7 +78,7 @@ const Exporter = (() => {
         let MB = null; try { MB = await Media.loadMediabunny(); } catch (e) { MB = null; }
         const r0 = renderAt(0); if (!r0) throw new Error('Falha ao renderizar');
         const W = Media.evenDim(r0.W), H = Media.evenDim(r0.H);
-        const bg = st.bg.fill ? st.bg.color : '#000000';
+        const bg = '#000000';   // vídeo não tem transparência
         if (MB) {
             const outFmt = job.format === 'webm' ? new MB.WebMOutputFormat() : new MB.Mp4OutputFormat({ fastStart: 'in-memory' });
             const bitrate = Math.min(80e6, Math.max(8e6, bitrateFor(H, fps) * 1.5));
