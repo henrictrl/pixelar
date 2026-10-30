@@ -20,11 +20,11 @@
     --m: 8px;                 /* respiro entre peças */
     --pad: 20px;              /* recuo interno (bordas da tela e das listas) */
     --gap: 10px;              /* espaço entre blocos */
-    --body-h: clamp(200px, 34vh, 290px);   /* altura da lista/detalhe no celular: a foto não pula ao navegar */
+    --body-h: clamp(200px, 38vh, 320px);   /* altura MÁXIMA da lista/detalhe no celular: o painel encolhe junto com o conteúdo */
     --r-inner: 10px;
     --bar-h: 44px;
     --tab-h: 54px;
-    --thumb: 60px; --thumb-label: 26px;
+    --thumb: 64px; --thumb-label: 26px;   /* 4 miniaturas por linha num iPhone: nomes de até 11 letras inteiros */
     --fs: 11px; --fs-l: 22px;
     --safe-b: env(safe-area-inset-bottom, 0px);
     --safe-t: env(safe-area-inset-top, 0px);
@@ -163,8 +163,12 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .panel:not(.closed) .seg span, .panel:not(.closed) .seg .ic.sm { display: none; }
 .panel:not(.closed) .seg .ic.lg { display: block; }
 
-/* lista de ajustes: blocos em 2 colunas, com nome e valor; seções com título */
-.dials { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; padding: 12px var(--pad) 16px; height: var(--body-h); overflow-y: auto; overscroll-behavior: contain; flex: none; }
+/* lista de ajustes: blocos em 2 colunas, com nome e valor; seções com título.
+   Miniaturas (texturas, filmes, padrões) entram direto na lista, na largura toda. */
+.dial-grid { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--gap); }
+.dials .strip { padding: 2px 0; }
+.dials .editor-note { padding: 0 2px; text-align: left; }
+.dials { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; padding: 12px var(--pad) 16px; max-height: var(--body-h); overflow-y: auto; overscroll-behavior: contain; flex: none; }
 .dial { position: relative; min-width: 0; height: 44px; padding: 0 12px; border-radius: 10px; background: var(--fill-1); display: flex; align-items: center; gap: 8px; color: var(--text); text-align: left; }
 .dial .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dial .ic.sm { color: var(--text-2); }
@@ -189,9 +193,8 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .crumb .title { color: var(--text); }
 
 /* editor do ajuste: altura fixa no celular; opções em grade com rolagem vertical */
-.editor { height: calc(var(--body-h) - 44px); display: flex; flex-direction: column; justify-content: center; gap: var(--gap); flex: none; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0 12px; }
+.editor { max-height: calc(var(--body-h) - 44px); display: flex; flex-direction: column; justify-content: flex-start; gap: var(--gap); flex: none; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0 16px; }
 .editor > * { flex: none; }
-.editor:has(.strip, .chips, .palettes, .swatches) { justify-content: flex-start; }
 .panel.single .editor { height: auto; max-height: 52vh; justify-content: flex-start; padding: 14px 0; }
 
 /* ---------- régua ---------- */
@@ -220,7 +223,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .thumb .pic canvas { width: 100%; height: 100%; display: block; object-fit: cover; }
 .thumb .pic::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .thumb.on .pic::after { box-shadow: inset 0 0 0 2px var(--accent); }
-.thumb .t { min-height: var(--thumb-label); line-height: 13px; color: var(--text-2); text-align: center; width: calc(100% + 12px); margin: 0 -6px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; hyphens: none; -webkit-hyphens: none; }   /* o nome usa o vão entre as miniaturas: palavras inteiras */
+.thumb .t { min-height: var(--thumb-label); line-height: 13px; color: var(--text-2); text-align: center; width: calc(100% + 8px); margin: 0 -4px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; hyphens: none; -webkit-hyphens: none; }   /* o nome usa o vão entre as miniaturas: palavras inteiras */
 .thumb.on .t { color: var(--text); }
 .thumb.add .pic { display: grid; place-items: center; color: var(--accent-text); }
 .thumb .del { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 7px; display: none; place-items: center; z-index: 1; background: rgba(0, 0, 0, .55); color: #fff; cursor: pointer; }
@@ -353,9 +356,9 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
     .seg .ic.sm, .panel:not(.closed) .seg .ic.sm { display: none; }
     .seg .ic.lg, .panel:not(.closed) .seg .ic.lg { display: block; }
     .seg { flex-direction: column; height: 60px; gap: 6px; }
-    .dials { flex: 1; height: auto; min-height: 0; padding: 16px var(--pad) 24px; }
+    .dials { flex: 0 1 auto; max-height: none; min-height: 0; padding: 16px var(--pad) 24px; }
     .crumb { order: -1; height: 52px; }
-    .editor, .panel.single .editor { flex: 1; height: auto; min-height: 0; max-height: none; padding: 8px 0 24px; justify-content: flex-start; }
+    .editor, .panel.single .editor { flex: 0 1 auto; min-height: 0; max-height: none; padding: 8px 0 24px; justify-content: flex-start; }
     .videobar { position: fixed; left: var(--safe-l); right: calc(var(--side) + var(--safe-r)); bottom: var(--safe-b); background: var(--bg); border-top: .5px solid var(--hair); }
     /* coluna escondida: só a barra do vídeo continua (ela é fixa e ocupa a largura toda) */
     .panel-collapsed .dock { width: 0; border: 0; overflow: visible; }
