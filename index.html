@@ -13,9 +13,9 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/app.css?v=3.7.0">
+    <link rel="stylesheet" href="css/app.css?v=3.8.0">
     <script>
-        window.PIXELAR_V = '3.7.0';
+        window.PIXELAR_V = '3.8.0';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
         // aparelhos modestos: modo leve (sem desfoque de vidro, prévia mais leve; a exportação não muda)
@@ -25,23 +25,18 @@
 <body>
     <div id="app" class="is-welcome">
         <!-- topo: abrir, desfazer/refazer, tocar, camadas, dado e mais -->
+        <!-- topo: abrir, desfazer/refazer, tocar, camadas e mais -->
         <header class="topbar" id="topbar">
-            <button class="icon-btn glass solo" id="btnOpen" type="button" title="Abrir foto ou vídeo" aria-label="Abrir foto ou vídeo"></button>
-            <div class="glass-group glass">
-                <button class="icon-btn" id="btnUndo" type="button" title="Desfazer" aria-label="Desfazer" disabled></button>
-                <button class="icon-btn" id="btnRedo" type="button" title="Refazer" aria-label="Refazer" disabled></button>
-            </div>
+            <button class="icon-btn" id="btnOpen" type="button" title="Abrir foto ou vídeo" aria-label="Abrir foto ou vídeo"></button>
+            <button class="icon-btn" id="btnUndo" type="button" title="Desfazer" aria-label="Desfazer" disabled></button>
+            <button class="icon-btn" id="btnRedo" type="button" title="Refazer" aria-label="Refazer" disabled></button>
             <div class="subbar-center" id="subbarCenter"></div>
-            <div class="glass-group glass">
-                <button class="icon-btn" id="btnLayers" type="button" title="Camadas" aria-label="Camadas"></button>
-                <button class="icon-btn dice" id="btnDice" type="button" title="Sortear tudo" aria-label="Sortear tudo"></button>
-                <button class="icon-btn" id="btnMore" type="button" title="Mais opções" aria-label="Mais opções"></button>
-                <button class="icon-btn only-wide" id="btnPanel" type="button" title="Mostrar ou esconder os controles" aria-label="Mostrar ou esconder os controles"></button>
-            </div>
+            <button class="icon-btn" id="btnLayers" type="button" title="Camadas" aria-label="Camadas"></button>
+            <button class="icon-btn" id="btnMore" type="button" title="Mais opções" aria-label="Mais opções"></button>
+            <button class="icon-btn only-wide" id="btnPanel" type="button" title="Mostrar ou esconder os controles" aria-label="Mostrar ou esconder os controles"></button>
         </header>
 
         <main class="stage" id="stage">
-            <canvas class="ambient" id="ambient" aria-hidden="true"></canvas>
             <div class="viewport" id="viewport">
                 <div class="canvas-wrap" id="canvasWrap">
                     <canvas id="outCanvas"></canvas>
@@ -57,11 +52,9 @@
             <div class="drop-hint" id="dropHint">Solte para abrir</div>
         </main>
 
-        <button class="restore glass" id="btnRestore" type="button" aria-label="Mostrar controles"></button>
-
-        <!-- base flutuante de vidro: vídeo, controles e abas -->
+        <!-- base: vídeo, painel da ferramenta (abre e fecha), ferramentas e abas -->
         <div class="dock" id="dock">
-            <div class="videobar glass" id="videoBar" hidden>
+            <div class="videobar" id="videoBar" hidden>
                 <button class="icon-btn" id="btnVideoPlay" type="button" aria-label="Tocar vídeo"></button>
                 <div class="filmstrip" id="filmstrip">
                     <div class="strip-frames" id="stripFrames"></div>
@@ -70,18 +63,14 @@
                 </div>
                 <button class="icon-btn" id="btnVideoMute" type="button" aria-label="Som"></button>
             </div>
-
-            <!-- sem cartão: cada fileira flutua sozinha (editor, nomes dos ajustes, categorias) -->
             <section class="panel" id="panel">
-                <button class="panel-handle" id="panelHandle" type="button" aria-label="Recolher controles" aria-expanded="true"><span></span></button>
-                <div class="panel-body"><div class="panel-inner" id="panelInner">
-                    <div class="editor" id="editor"></div>
-                    <div class="dials" id="dials"></div>
-                    <div class="seg-row" id="segRow"></div>
-                </div></div>
+                <div class="editor" id="editor"></div>
+                <div class="dials" id="dials"></div>
+                <div class="seg-row" id="segRow"></div>
             </section>
-
-            <nav class="tabbar glass" id="tabbar" aria-label="Ferramentas"></nav>
+            <nav class="tabbar" id="tabbar" aria-label="Ferramentas">
+                <button class="tab tab-action" id="btnDice" type="button" title="Sortear (segure: o que o dado muda)" aria-label="Sortear"></button>
+            </nav>
         </div>
     </div>
 
@@ -94,14 +83,14 @@
     <input type="file" id="configInput" accept="image/png,text/plain,.txt" hidden>
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js?v=3.7.0"></script>
-    <script defer src="js/engine.js?v=3.7.0"></script>
-    <script defer src="js/anim.js?v=3.7.0"></script>
-    <script defer src="js/config.js?v=3.7.0"></script>
-    <script defer src="js/media.js?v=3.7.0"></script>
-    <script defer src="js/export.js?v=3.7.0"></script>
-    <script defer src="js/icons.js?v=3.7.0"></script>
-    <script defer src="js/ui.js?v=3.7.0"></script>
+    <script defer src="js/gpu.js?v=3.8.0"></script>
+    <script defer src="js/engine.js?v=3.8.0"></script>
+    <script defer src="js/anim.js?v=3.8.0"></script>
+    <script defer src="js/config.js?v=3.8.0"></script>
+    <script defer src="js/media.js?v=3.8.0"></script>
+    <script defer src="js/export.js?v=3.8.0"></script>
+    <script defer src="js/icons.js?v=3.8.0"></script>
+    <script defer src="js/ui.js?v=3.8.0"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
         if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {

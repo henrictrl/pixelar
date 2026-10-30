@@ -30,7 +30,7 @@ const prefs = {
     palettes: store.get('palettes', {}),
     muted: store.get('muted', false),
 };
-const ui = { tab: 'editar', group: {}, active: {}, busy: false };
+const ui = { tab: 'editar', group: {}, active: {}, open: { estilos: true, editar: false, exportar: true }, busy: false };
 
 // ============================================================
 // AVISOS
@@ -117,7 +117,6 @@ function renderMainUnsafe() {
     lastRender = r;
     if (sizeChanged) fitView();
     outCanvas.classList.toggle('smooth', st.pixel.size <= 1 && r.W < view.fitW * devicePixelRatio);
-    Ambient.update(outCanvas);
     if (!anim.playing && (M.type !== 'video' || video.paused)) Accent.schedule(outCanvas);
 }
 let gpuLost = false;
@@ -164,82 +163,23 @@ const Accent = (() => {
         root.setProperty('--acc-ink', lum > 0.55 ? '#111111' : '#FFFFFF');
         root.setProperty('--acc-text-d', rgbHex(txtD));
         root.setProperty('--acc-text-l', rgbHex(txtL));
-        // reflexo do vidro acompanha o destaque: o próprio matiz e dois vizinhos (análogos), sempre juntos
-        const t1 = hslToRgb(hsl.h, s, chroma ? 0.55 : 0.7), t2 = hslToRgb((hsl.h + 0.09) % 1, s * 0.9, chroma ? 0.45 : 0.6), t3 = hslToRgb((hsl.h + 0.93) % 1, s * 0.85, chroma ? 0.65 : 0.8);
-        root.setProperty('--tint-1', rgbHex(t1)); root.setProperty('--tint-2', rgbHex(t2)); root.setProperty('--tint-3', rgbHex(t3));
     }
     // chamado depois de cada render; mede com calma (a cor segue a imagem, não cada quadro)
-    function schedule(src, delay = 250) { clearTimeout(timer); timer = setTimeout(() => { try { apply(pickFrom(src)); tone(src); } catch (e) {} }, delay); }
-
-    // CONTRASTE AUTOMÁTICO: mede a luz da imagem atrás do topo e da base e escolhe vidro claro ou escuro.
-    // Usa a mesma amostra 40×40 (já desenhada por pickFrom): nada de readPixels no WebGL.
-    const toneState = new Map();
-    function lumIn(d, rc, box) {
-        let s = 0, n = 0, g = 0, gn = 0;
-        for (let j = 0; j < 40; j++) for (let i = 0; i < 40; i++) {
-            const o = (j * 40 + i) * 4; if (d[o + 3] < 128) continue;
-            const y = (0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]) / 255; g += y; gn++;
-            const X = rc.left + (i + 0.5) / 40 * rc.width, Y = rc.top + (j + 0.5) / 40 * rc.height;
-            if (X >= box.left && X <= box.right && Y >= box.top && Y <= box.bottom) { s += y; n++; }
-        }
-        const glob = gn ? g / gn : 0.5;            // fora da imagem: o fundo é a própria imagem desfocada
-        if (!n) return glob;
-        const cover = Math.min(1, n / 40);          // pouca sobreposição: mistura com a média geral
-        return (s / n) * cover + glob * (1 - cover);
-    }
-    function setTone(els, l, key) {
-        const prev = toneState.get(key);
-        // histerese: só troca se passar com folga, para não piscar
-        const light = prev === undefined ? l > 0.56 : prev ? l > 0.5 : l > 0.62;
-        toneState.set(key, light);
-        els.forEach(e => { if (!e) return; e.classList.toggle('tone-light', light); e.classList.toggle('tone-dark', !light); });
-    }
-    function tone(src) {
-        if (!src || !src.width || app.classList.contains('is-welcome')) return;
-        const d = x.getImageData(0, 0, 40, 40).data, rc = src.getBoundingClientRect();
-        if (!rc.width) return;
-        const tb = $('topbar').getBoundingClientRect(), dk = $('dock').getBoundingClientRect();
-        setTone([$('topbar')], lumIn(d, rc, tb), 't');
-        setTone([$('dock'), $('btnRestore')], lumIn(d, rc, dk.height ? dk : $('btnRestore').getBoundingClientRect()), 'b');
-    }
-    return { schedule, apply, pickFrom };
+    function schedule(src, delay = 250) { clearTimeout(timer); timer = setTimeout(() => { try { apply(pickFrom(src)); } catch (e) {} }, delay); }
+    return { schedule };
 })();
 
 // ============================================================
-// INTERAÇÃO E QUALIDADE ADAPTATIVA
-// Enquanto o dedo está na tela: prévia mais leve (saída ≤1280 px quando não há pixel grande)
-// e medição dos quadros. Se o aparelho engasga em gestos, a qualidade do vidro desce um degrau
-// (e fica salva): 1 = sem desfoque nas fileiras durante o toque; 2 = modo leve completo.
-// ?perf=0 zera a medição.
+// INTERAÇÃO: enquanto o dedo está na tela, a prévia sai mais leve (≤1280 px quando não há pixel grande)
+// e volta à resolução cheia ao soltar
 // ============================================================
 const Interact = { on: false, lowRes: false };
-const Perf = (() => {
-    const root = document.documentElement;
-    if (/[?&]perf=0/.test(location.search)) store.set('perfTier', 0);
-    let tier = store.get('perfTier', 0), frames = [], last = 0, raf = 0, bad = 0;
-    function apply() {
-        root.dataset.perf = String(tier);
-        if (tier >= 2 && !root.dataset.lite) { root.dataset.lite = '1'; Engine.workCap = 1280; Engine.invalidate(); }
-    }
-    function loop(t) { if (last) frames.push(t - last); last = t; raf = requestAnimationFrame(loop); }
-    function start() { cancelAnimationFrame(raf); frames = []; last = 0; raf = requestAnimationFrame(loop); }
-    function stop() {
-        cancelAnimationFrame(raf); raf = 0;
-        if (frames.length < 24 || document.hidden) return;
-        frames.sort((a, b) => a - b);
-        const p75 = frames[Math.floor(frames.length * 0.75)];
-        if (p75 > 26) { if (++bad >= 3 && tier < 2) { tier++; bad = 0; store.set('perfTier', tier); apply(); } }   // < ~38 fps em 3 gestos
-        else bad = Math.max(0, bad - 1);
-    }
-    apply();
-    return { start, stop, get tier() { return tier; } };
-})();
 {
-    const down = (e) => { if (!e.isPrimary) return; Interact.on = true; document.documentElement.classList.add('touching'); Perf.start(); };
+    const down = (e) => { if (e.isPrimary) Interact.on = true; };
     const up = (e) => {
         if (!Interact.on || (e && e.isPrimary === false)) return;
-        Interact.on = false; document.documentElement.classList.remove('touching'); Perf.stop();
-        if (Interact.lowRes) { Interact.lowRes = false; requestRender(); }   // volta à resolução cheia
+        Interact.on = false;
+        if (Interact.lowRes) { Interact.lowRes = false; requestRender(); }
     };
     addEventListener('pointerdown', down, true);
     addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true);
@@ -247,50 +187,16 @@ const Perf = (() => {
 }
 
 // ============================================================
-// FUNDO ESTENDIDO: a própria imagem, ampliada e desfocada, preenche a tela atrás do vidro.
-// Canvas minúsculo (≤64 px) esticado pelo CSS; drawImage barato, limitado a ~8 vezes/s.
-// ============================================================
-const Ambient = (() => {
-    const c = $('ambient'), x = c && c.getContext('2d');
-    const tiny = document.createElement('canvas'), tx = tiny.getContext('2d');
-    let t = 0;
-    // desfoque grátis: reduz a 10 px de largura e amplia para 40 px com suavização; o CSS estica o resto.
-    // Nada de filter: blur (caro no iOS) e só depois que a imagem para de mudar.
-    function draw(src) {
-        if (!x || !src || !src.width) return;
-        const W = innerWidth, H = innerHeight, cw = 40, ch = Math.max(8, Math.round(40 * H / W));
-        const sw = 10, sh = Math.max(3, Math.round(10 * H / W));
-        if (tiny.width !== sw || tiny.height !== sh) { tiny.width = sw; tiny.height = sh; }
-        if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-        const k = Math.max(sw / src.width, sh / src.height), w = src.width * k, hh = src.height * k;   // cobrir
-        tx.imageSmoothingEnabled = true; tx.drawImage(src, (sw - w) / 2, (sh - hh) / 2, w, hh);
-        x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
-        x.globalAlpha = 1; x.drawImage(tiny, 0, 0, cw, ch);
-        x.fillStyle = 'rgba(0,0,0,.12)'; x.fillRect(0, 0, cw, ch);    // leve escurecida: a imagem principal se destaca
-        c.classList.add('on');
-    }
-    function update(src) { clearTimeout(t); t = setTimeout(() => draw(src), Interact.on ? 400 : 180); }
-    return { update };
-})();
-
-// ============================================================
 // VISUALIZAÇÃO: encaixe, zoom e deslocamento
 // ============================================================
 let uiInsets = { t: 60, r: 8, b: 300, l: 8 };
 function fitView(resetZoom) {
     if (!lastRender) return;
-    const vw0 = viewport.clientWidth, vh0 = viewport.clientHeight;
-    const full = vw0 >= innerWidth - 1;          // celular: viewport = tela toda
-    const pad = full ? 0 : 24;
-    const vw = vw0 - pad, vh = vh0 - pad;
+    const pad = innerWidth >= 900 ? 24 : 0;
+    const vw = viewport.clientWidth - pad, vh = viewport.clientHeight - pad;
     const k = Math.min(vw / lastRender.W, vh / lastRender.H);
     view.fitW = Math.max(1, Math.floor(lastRender.W * k)); view.fitH = Math.max(1, Math.floor(lastRender.H * k));
     outCanvas.style.width = view.fitW + 'px'; outCanvas.style.height = view.fitH + 'px';
-    // tela toda: centra no espaço livre entre topo e base, sem sair da tela (sem zoom extra)
-    if (full) {
-        const cy = (uiInsets.t + (vh0 - uiInsets.b)) / 2 - vh0 / 2, my = Math.max(0, (vh0 - view.fitH) / 2);
-        view.bx = 0; view.by = Math.round(clampN(cy, -my, my));
-    } else { view.bx = 0; view.by = 0; }
     if (resetZoom) { view.zoom = 1; view.x = 0; view.y = 0; }
     applyView();
 }
@@ -300,15 +206,13 @@ function applyView() {
     // mantém a imagem cobrindo o centro quando ampliada
     const maxX = Math.max(0, (w - vw) / 2 + 40), maxY = Math.max(0, (hh - vh) / 2 + 40);
     view.x = clampN(view.x, -maxX, maxX); view.y = clampN(view.y, -maxY, maxY);
-    wrap.style.transform = `translate(${view.x + (view.bx || 0)}px, ${view.y + (view.by || 0)}px) scale(${view.zoom})`;
-    wrap.style.transformOrigin = 'center center';
+    wrap.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`;
     if (lastRender) Accent.schedule(outCanvas, 300);   // a imagem mudou de lugar: recalcula o contraste
 }
 function zoomAt(factor, cx, cy) {
     const r = viewport.getBoundingClientRect();
-    // relativo ao centro da imagem em repouso (desconta o deslocamento de encaixe)
-    const bx = view.bx || 0, by = view.by || 0;
-    const px = cx !== undefined ? cx - r.left - r.width / 2 - bx : 0, py = cy !== undefined ? cy - r.top - r.height / 2 - by : 0;
+    // relativo ao centro da área da imagem
+    const px = cx !== undefined ? cx - r.left - r.width / 2 : 0, py = cy !== undefined ? cy - r.top - r.height / 2 : 0;
     const nz = clampN(view.zoom * factor, 1, 12), f = nz / view.zoom;
     view.x = px - (px - view.x) * f; view.y = py - (py - view.y) * f; view.zoom = nz;
     if (nz === 1) { view.x = 0; view.y = 0; }
@@ -644,41 +548,27 @@ function currentTab() { return TABS.find(t => t.id === ui.tab); }
 function currentGroup() { const gs = tabGroups(currentTab()); const gid = ui.group[ui.tab]; return gs.find(g => g.id === gid) || gs[0]; }
 let dialEls = [];
 
-// Lente que desliza até o item escolhido (abas e categorias), com mola.
-// Guardamos a última posição no próprio contêiner: se ele for refeito, a lente nasce onde estava e desliza.
-function placeLens(box, sel, instant) {
-    if (!box) return;
-    const on = box.querySelector(sel);
-    let lens = box.querySelector(':scope > .lens');
-    if (!on) { if (lens) lens.remove(); return; }
-    // posição relativa ao contêiner somando offsets (ignora animações em andamento e já inclui a rolagem)
-    let l = 0, t = 0, n = on;
-    while (n && n !== box) { l += n.offsetLeft; t += n.offsetTop; n = n.offsetParent; }
-    if (n !== box) return;
-    const to = { l, t, w: on.offsetWidth, h: on.offsetHeight };
-    if (!to.w) return;
-    const fresh = !lens;
-    if (fresh) { lens = h('span', 'lens'); box.prepend(lens); }
-    const from = box._lens;
-    const set = (r) => { lens.style.left = r.l + 'px'; lens.style.top = r.t + 'px'; lens.style.width = r.w + 'px'; lens.style.height = r.h + 'px'; };
-    if ((fresh && from) && !instant) { lens.style.transition = 'none'; set(from); void lens.offsetWidth; lens.style.transition = ''; }
-    else if (fresh || instant) { lens.style.transition = 'none'; set(to); void lens.offsetWidth; lens.style.transition = ''; }
-    set(to); box._lens = to;
-}
+// Abas embaixo, com o dado entre Editar e Exportar. Tocar na aba aberta fecha o painel dela.
 function buildTabbar() {
-    const bar = $('tabbar'); bar.innerHTML = '';
-    TABS.forEach((t, i) => {
+    const bar = $('tabbar'), dice = $('btnDice'); bar.innerHTML = '';
+    dice.innerHTML = icon('dice') + '<span>Sortear</span>';
+    TABS.forEach(t => {
         const b = h('button', 'tab' + (t.id === ui.tab ? ' on' : ''), icon(t.icon) + `<span>${t.label}</span>`);
         b.type = 'button'; b.dataset.tab = t.id; b.title = t.label;
-        b.onclick = () => { if (panelCollapsed) setPanelCollapsed(false); selectTab(t.id); };
+        b.onclick = () => { if (panelCollapsed) setPanelCollapsed(false); if (ui.tab === t.id) setOpen(!ui.open[t.id]); else selectTab(t.id); };
         bar.append(b);
+        if (t.id === 'editar') bar.append(dice);
     });
-    requestAnimationFrame(() => placeLens(bar, '.tab.on', true));
-    new ResizeObserver(() => placeLens(bar, '.tab.on', true)).observe(bar);
+}
+// painel da aba aberto ou fechado; a imagem acompanha o espaço que sobra
+function setOpen(on) {
+    ui.open[ui.tab] = !!on;
+    app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400);
+    buildPanel();
 }
 // abre uma ferramenta de Editar já com um ajuste escolhido (usado pelas Camadas e pela dupla exposição)
 function goTo(groupId, key) {
-    ui.group.editar = groupId; if (key) ui.active['editar/' + groupId] = key;
+    ui.group.editar = groupId; ui.open.editar = true; if (key) ui.active['editar/' + groupId] = key;
     if (panelCollapsed) setPanelCollapsed(false);
     lastPanelKey = null; selectTab('editar');
     const d = dialEls.find(x => ctrlId(x.c) === key); if (d) requestAnimationFrame(() => centerIn($('dials'), d.el));
@@ -686,8 +576,8 @@ function goTo(groupId, key) {
 function selectTab(id) {
     if (!TABS.some(t => t.id === id)) id = TABS[0].id;
     const was = ui.tab; ui.tab = id;
-    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
-    placeLens($('tabbar'), '.tab.on');
+    if (id !== 'editar') ui.open[id] = true;      // Estilos e Exportar abrem ao entrar; Editar lembra se havia ferramenta aberta
+    document.querySelectorAll('#tabbar .tab[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
     $('panel').dataset.tab = id;
     if (was === 'exportar' && id !== 'exportar') stopAnim();
     buildPanel(); updateSubbarCenter();
@@ -703,38 +593,38 @@ function pickActive(controls, key) {
         || controls.find(c => c.kind === 'choice' || c.kind === 'custom' || c.kind === 'range') || controls.find(isCtrl);
 }
 function buildPanel() {
-    const tab = currentTab(), grp = currentGroup(), groups = tabGroups(tab);
-    const pKey = panelKey(), same = pKey === lastPanelKey;
-    const keep = same ? { dials: $('dials').scrollLeft, panel: $('panel').scrollTop, seg: $('segRow').scrollLeft, ctrl: ui.active[pKey] } : null;
+    const tab = currentTab(), grp = currentGroup(), groups = tabGroups(tab), open = !!ui.open[tab.id];
+    const pKey = panelKey() + (open ? '' : '#fechado'), same = pKey === lastPanelKey;
+    const keep = same ? { dials: $('dials').scrollLeft, panel: $('panel').scrollTop, seg: $('segRow').scrollLeft, ctrl: ui.active[panelKey()] } : null;
     const sameTab = lastPanelKey && lastPanelKey.split('/')[0] === tab.id, segX = $('segRow').scrollLeft;
     lastPanelKey = pKey;
-    $('panel').dataset.tab = tab.id;
-    // ferramentas (logo acima das abas); aba com uma ferramenta só não mostra a fileira
+    const panel = $('panel'); panel.dataset.tab = tab.id; panel.classList.toggle('closed', !open);
+    // ferramentas: tocar abre; tocar na aberta fecha
     const seg = $('segRow'); seg.innerHTML = '';
     if (groups.length > 1) groups.forEach(g => {
-        const b = h('button', 'seg' + (g.id === grp.id ? ' on' : '')); b.type = 'button'; b.dataset.group = g.id;
+        const on = open && g.id === grp.id;
+        const b = h('button', 'seg' + (on ? ' on' : '')); b.type = 'button'; b.dataset.group = g.id;
         b.innerHTML = smallIcon(GROUP_ICONS[g.id]) + '<span></span>'; b.lastChild.textContent = g.label;
-        b.setAttribute('aria-pressed', String(g.id === grp.id));
-        b.onclick = () => { if (g.id === currentGroup().id) return; ui.group[tab.id] = g.id; buildPanel(); };
+        b.setAttribute('aria-expanded', String(on));
+        b.onclick = () => { if (on) { setOpen(false); return; } ui.group[tab.id] = g.id; setOpen(true); };
         seg.append(b);
     });
+    if (sameTab) seg.scrollLeft = segX;
+    if (!open) { dialEls = []; $('dials').innerHTML = ''; buildEditor(null); return; }
     const controls = groupControls(grp).filter(c => !c.hidden);
-    const active = pickActive(controls, pKey);
-    ui.active[pKey] = active && ctrlId(active);
+    const active = pickActive(controls, panelKey());
+    ui.active[panelKey()] = active && ctrlId(active);
     // Estilos e Exportar: um editor só, sem fileira de ajustes
     const single = controls.length === 1 && controls[0].kind === 'custom';
     const dials = $('dials'); dials.hidden = single;
-    $('panel').classList.toggle('single', single);
+    panel.classList.toggle('single', single);
     fillDials(controls);
-    placeLens(seg, '.seg.on', !sameTab);
-    if (!same) enterAnim(single ? null : dials, $('editor'));
-    ui.keepScroll = !!(keep && keep.ctrl === ui.active[pKey]);
+    ui.keepScroll = !!(keep && keep.ctrl === ui.active[panelKey()]);
     buildEditor(active);
     ui.keepScroll = false;
-    if (keep) { dials.scrollLeft = keep.dials; seg.scrollLeft = keep.seg; $('panel').scrollTop = keep.panel; return; }
-    // trocou de ferramenta: a fileira de ferramentas fica onde estava e a de ajustes mostra o ativo
-    const on = seg.querySelector('.seg.on');
-    if (sameTab) seg.scrollLeft = segX; else if (on) requestAnimationFrame(() => centerIn(seg, on));
+    if (keep) { dials.scrollLeft = keep.dials; seg.scrollLeft = keep.seg; panel.scrollTop = keep.panel; return; }
+    // abriu outra ferramenta: ela fica à vista na fileira e o ajuste ativo também
+    const on = seg.querySelector('.seg.on'); if (on && !sameTab) requestAnimationFrame(() => centerIn(seg, on));
     dials.scrollLeft = 0;
     const ad = dialEls.find(x => x.c === active); if (ad && ad.el.offsetLeft > dials.clientWidth - 40) requestAnimationFrame(() => centerIn(dials, ad.el));
 }
@@ -748,10 +638,6 @@ function fillDials(controls) {
         const d = makeDial(c, ctrlId(c) === ui.active[aKey]); d.style.setProperty('--i', Math.min(i++, 10));
         dials.append(d); dialEls.push({ c, el: d });
     });
-}
-// conteúdo novo entra com um leve deslizar (só quando muda de ferramenta ou de ajuste)
-function enterAnim(...els) {
-    els.forEach(el => { if (!el) return; el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); clearTimeout(el._et); el._et = setTimeout(() => el.classList.remove('enter'), 700); });
 }
 // Refaz só a fileira de ajustes (ex.: escolher um filme com parâmetros próprios), sem
 // tocar no editor — a faixa que o usuário está rolando continua exatamente onde está.
@@ -775,24 +661,19 @@ function fmtVal(c, v) { if (c.fmt) return c.fmt(v); return Math.abs(v) >= 100 ||
 
 // cada ajuste é só o nome, em texto (sem botões redondos); o dado de sortear é só o ícone
 function makeDial(c, active) {
-    const d = h('button', `dial kind-${c.kind}${active ? ' active' : ''}${c.accent ? ' accent' : ''}`); d.type = 'button';
-    const isDice = c.kind === 'action' && c.accent;
-    if (isDice) { d.innerHTML = icon('dice'); d.title = c.label + ' (segure: o que o dado muda)'; d.setAttribute('aria-label', c.label); }
-    else {
-        if (c.kind === 'color') d.append(h('span', 'swatch'));
-        else if (c.icon) d.insertAdjacentHTML('beforeend', smallIcon(c.icon));
-        const nm = h('span', 'name'); nm.textContent = c.label; d.append(nm);
-        if (c.kind === 'toggle') d.append(h('span', 'tog'));
-        d.title = c.label;
-    }
+    const d = h('button', `dial kind-${c.kind}${active ? ' active' : ''}`); d.type = 'button';
+    if (c.kind === 'color') d.append(h('span', 'swatch'));
+    else if (c.icon) d.insertAdjacentHTML('beforeend', smallIcon(c.icon));
+    const nm = h('span', 'name'); nm.textContent = c.label; d.append(nm);
+    if (c.kind === 'toggle') d.append(h('span', 'tog'));
+    d.title = c.label;
     updateDial(d, c);
     const lockKey = c.lockKey || c.key;
-    // segurar trava o ajuste para o aleatório (no dado: abre o que ele pode mudar)
+    // segurar trava o ajuste para o dado
     let lp = 0, longPressed = false;
     let downAt = null;
     d.addEventListener('pointerdown', (e) => {
         longPressed = false; downAt = { x: e.clientX, y: e.clientY };
-        if (isDice) { lp = setTimeout(() => { longPressed = true; openRandomSettings(); }, 550); return; }
         if (!lockKey || c.kind === 'action') return;
         lp = setTimeout(() => { longPressed = true; toggleLock(lockKey); }, 500);
     });
@@ -825,7 +706,7 @@ function toggleLock(key) {
 }
 function onDialClick(c, d) {
     const aKey = panelKey();
-    if (c.kind === 'action') { c.run(); if (c.accent) { d.classList.remove('rolling'); void d.offsetWidth; d.classList.add('rolling'); } return; }
+    if (c.kind === 'action') { c.run(); return; }
     if (c.kind === 'toggle') {
         const nv = !ctrlValue(c);
         if (c.onPick) c.onPick(nv); else change(c.key, nv, { rebuild: !!c.rebuild || grpDependsOn(c.key) });
@@ -834,12 +715,10 @@ function onDialClick(c, d) {
         return;
     }
     if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); if (final && c.ensure) refreshDials(); else updateDial(d, c); }, c.label); return; }
-    const changed = ui.active[aKey] !== ctrlId(c);
     ui.active[aKey] = ctrlId(c);
     dialEls.forEach(({ el }) => el.classList.toggle('active', el === d));
     refreshDials();
     buildEditor(c);
-    if (changed) enterAnim($('editor'));
     // o ajuste tocado fica à vista
     const r = d.getBoundingClientRect(), rr = $('dials').getBoundingClientRect();
     if (r.left < rr.left + 24 || r.right > rr.right - 24) $('dials').scrollTo({ left: d.offsetLeft - $('dials').clientWidth / 2 + d.offsetWidth / 2, behavior: 'smooth' });
@@ -1910,9 +1789,9 @@ function updateSubbarCenter() {
     if (key === subbarKey) return; subbarKey = key;
     const c = $('subbarCenter'); c.innerHTML = '';
     if (!show) return;
-    const g = h('div', 'glass-group glass'), b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(key)); b.type = 'button';
+    const b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(key)); b.type = 'button';
     b.title = anim.playing ? 'Parar animação' : 'Ver animação'; b.setAttribute('aria-label', b.title);
-    b.onclick = togglePlay; g.append(b); c.append(g);
+    b.onclick = togglePlay; c.append(b);
 }
 
 // ============================================================
@@ -1921,7 +1800,6 @@ function updateSubbarCenter() {
 function rollDice() {
     if (!M.el) return;
     const before = snapshot();
-    const dice = $('btnDice'); dice.classList.remove('rolling'); void dice.offsetWidth; dice.classList.add('rolling');
     try {
         const touched = randomize(st, M.analysis, prefs.groups, prefs.locks);
         Engine.invalidate(); afterExternalChange(); commit(true);
@@ -1935,32 +1813,22 @@ function rollDice() {
 // ============================================================
 $('btnUndo').innerHTML = icon('undo'); $('btnRedo').innerHTML = icon('redo');
 $('btnOpen').innerHTML = icon('upload'); $('btnPanel').innerHTML = icon('sidebar'); $('btnLayers').innerHTML = icon('layers');
-// ---------- controles recolhíveis (mais espaço para a imagem) ----------
+// ---------- coluna lateral recolhível (só no computador e tablet deitado) ----------
 let panelCollapsed = false;
-// ---------- área livre para a imagem ----------
-// A imagem ocupa a tela toda por baixo do vidro; ela é encaixada no espaço que sobra entre
-// a barra do topo e a base (celular) ou o cartão lateral (computador). Medido, nunca estimado.
+const isSide = () => matchMedia('(min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px)').matches;
+// ---------- área livre para a imagem: entre o topo e a base (celular) ou ao lado da coluna. Medido, nunca estimado. ----------
 function updateInsets() {
-    const cs = getComputedStyle(app), m = parseFloat(cs.getPropertyValue('--m')) || 8;
-    const W = app.clientWidth, H = app.clientHeight;
-    const tb = $('topbar'), top = tb.offsetTop + tb.offsetHeight + m;   // offsets ignoram animações (transform)
-    let r = m, b = m, l = m;
-    const side = matchMedia('(min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px)').matches;
+    const W = app.clientWidth, H = app.clientHeight, side = isSide();
+    if (panelCollapsed && !side) { panelCollapsed = false; app.classList.remove('panel-collapsed'); }
+    const top = $('topbar').offsetHeight;
     const vb = $('videoBar'), vbOn = !vb.hidden && !app.classList.contains('is-welcome');
-    if (side) {
-        if (!panelCollapsed) r = W - $('dock').offsetLeft + m;
-        if (vbOn) b = H - vb.getBoundingClientRect().top + m;
-    } else {
-        b = H - (panelCollapsed ? $('btnRestore').offsetTop : $('dock').offsetTop) + m;
-    }
+    let r = 0, b = 0;
+    if (side) { if (!panelCollapsed) r = W - $('dock').offsetLeft; if (vbOn) b = H - vb.getBoundingClientRect().top; }
+    else b = H - $('dock').offsetTop;
+    uiInsets = { t: top, r, b, l: 0 };
     const st = app.style, px = (v) => Math.round(v) + 'px';
-    uiInsets = { t: top, r, b, l };
-    // --ui-*: área livre entre os controles (avisos, rótulos, boas-vindas)
-    st.setProperty('--ui-t', px(top)); st.setProperty('--ui-r', px(r)); st.setProperty('--ui-b', px(b)); st.setProperty('--ui-l', px(l));
-    // --vp-*: onde a imagem pode ir. Celular: tela toda, por baixo do vidro (fitView centra na área livre)
-    const full = !side;
-    st.setProperty('--vp-t', full ? '0px' : px(top)); st.setProperty('--vp-r', full ? '0px' : px(r));
-    st.setProperty('--vp-b', full ? '0px' : px(b)); st.setProperty('--vp-l', full ? '0px' : px(l));
+    // --ui-*: área livre (avisos, rótulos, boas-vindas); --vp-*: onde a imagem fica
+    [['t', top], ['r', r], ['b', b], ['l', 0]].forEach(([k, v]) => { st.setProperty('--ui-' + k, px(v)); st.setProperty('--vp-' + k, px(v)); });
     fitView(); Accent.schedule(outCanvas, 300);
 }
 {
@@ -1970,37 +1838,16 @@ function updateInsets() {
     new MutationObserver(updateInsets).observe($('videoBar'), { attributes: true, attributeFilter: ['hidden'] });
 }
 function setPanelCollapsed(on, save = true) {
-    panelCollapsed = !!on;
+    panelCollapsed = !!on && isSide();
     app.classList.toggle('panel-collapsed', panelCollapsed);
-    const hd = $('panelHandle'); hd.setAttribute('aria-expanded', String(!panelCollapsed)); hd.setAttribute('aria-label', panelCollapsed ? 'Mostrar controles' : 'Recolher controles');
     $('btnPanel').classList.toggle('on', !panelCollapsed);
     if (save) store.set('panelCollapsed', panelCollapsed);
-    // no computador o cartão desliza para fora: a imagem acompanha com a mesma curva
-    app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 600);
+    app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400);
     updateInsets();
 }
-(() => {
-    const hd = $('panelHandle'); let y0 = null, moved = false;
-    hd.addEventListener('pointerdown', (e) => { y0 = e.clientY; moved = false; try { hd.setPointerCapture(e.pointerId); } catch (_) {} });
-    hd.addEventListener('pointermove', (e) => {
-        if (y0 === null) return; const dy = e.clientY - y0;
-        if (Math.abs(dy) > 18) { moved = true; setPanelCollapsed(dy > 0); y0 = null; }
-    });
-    hd.addEventListener('pointerup', () => { if (y0 !== null && !moved) setPanelCollapsed(!panelCollapsed); y0 = null; });
-    hd.addEventListener('pointercancel', () => { y0 = null; });
-    hd.addEventListener('click', (e) => { if (e.detail === 0) setPanelCollapsed(!panelCollapsed); });   // teclado (Enter/Espaço)
-    $('btnPanel').onclick = () => setPanelCollapsed(!panelCollapsed);
-    // puxador que sobra ao recolher: toque ou deslize para cima traz os controles de volta
-    const rs = $('btnRestore'); let ry = null;
-    rs.innerHTML = icon('chevron-up');
-    rs.addEventListener('pointerdown', (e) => { ry = e.clientY; try { rs.setPointerCapture(e.pointerId); } catch (_) {} });
-    rs.addEventListener('pointermove', (e) => { if (ry !== null && ry - e.clientY > 14) { ry = null; setPanelCollapsed(false); } });
-    rs.addEventListener('pointerup', () => { if (ry !== null) setPanelCollapsed(false); ry = null; });
-    rs.addEventListener('pointercancel', () => { ry = null; });
-    rs.addEventListener('click', (e) => { if (e.detail === 0) setPanelCollapsed(false); });
-    setPanelCollapsed(store.get('panelCollapsed', false), false);
-})();
-$('btnDice').innerHTML = icon('dice'); $('btnMore').innerHTML = icon('more');
+$('btnPanel').onclick = () => setPanelCollapsed(!panelCollapsed);
+setPanelCollapsed(store.get('panelCollapsed', false), false);
+$('btnMore').innerHTML = icon('more');
 $('btnOpen').onclick = () => $('fileInput').click();
 $('btnWelcomeOpen').onclick = () => $('fileInput').click();
 $('btnLayers').onclick = openLayers;

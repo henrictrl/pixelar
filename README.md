@@ -2,14 +2,15 @@
 
 Editor de pixel art, dither, filmes analógicos e animações para **fotos e vídeos**, direto no navegador. Nada é enviado para servidor: tudo roda no aparelho (WebGL2 + WebCodecs).
 
-Interface em vidro transparente com ícones em pixel e a fonte Departure Mono. Três abas:
+Interface flat, no estilo dos apps do iPhone (barras sólidas, sem vidro nem desfoque), com ícones em pixel e a fonte Departure Mono. Na barra de baixo:
 
 - **Estilos**: as combinações que você salvou (“Salvar atual”), com a intensidade do estilo.
-- **Editar**: 8 ferramentas, cada uma numa fileira de ajustes (divisórias separam as partes):
+- **Editar**: 8 ferramentas. Tocar numa ferramenta abre os ajustes dela; tocar de novo fecha e devolve o espaço à foto.
   **Cortar** · **Luz** · **Cor** (paleta, duotone/tritone e degradê) · **Pixel** (tamanho, padrão, agrupar e contorno) · **Textura** · **Filme** (filme, grão e lente) · **Dupla** exposição · **Movimento**.
+- **Sortear** (o dado): sorteia os ajustes; segurar abre “O que o dado muda”. Segurar um ajuste o trava.
 - **Exportar**: um painel só. Foto: PNG, JPEG, WebP ou SVG em Tela, Original (e 2×, 4K, 8K quando a imagem é redesenhada). GIF, MP4 e WebM aparecem quando algo se move. Vídeo: MP4, WebM ou GIF.
 
-No topo: abrir, desfazer/refazer, tocar (só quando há movimento), **Camadas** (ordem, mesclagem e opacidade dos efeitos), **dado** (sorteia os ajustes; segurar abre “O que o dado muda”) e o menu. Segurar um ajuste o trava para o dado. Segurar a foto mostra o original; pinça faz zoom. `Esc` fecha janelas.
+Tocar na aba aberta fecha o painel dela. No topo: abrir, desfazer/refazer, tocar (só quando há movimento), **Camadas** (ordem, mesclagem e opacidade dos efeitos) e o menu. Segurar a foto mostra o original; pinça faz zoom. `Esc` fecha janelas.
 
 ## Como usar localmente
 
