@@ -561,11 +561,9 @@ function buildTabbar() {
     });
 }
 // painel da aba aberto ou fechado; a imagem acompanha o espaço que sobra
-function setOpen(on) {
-    ui.open[ui.tab] = !!on;
-    app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400);
-    buildPanel();
-}
+function setOpen(on) { ui.open[ui.tab] = !!on; fitAnim(); buildPanel(); }
+// a foto acompanha suavemente quando o painel muda de altura
+function fitAnim() { app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400); }
 // abre uma ferramenta de Editar já com um ajuste escolhido (usado pelas Camadas e pela dupla exposição)
 function goTo(groupId, key) {
     ui.group.editar = groupId; ui.open.editar = true; ui.view['editar/' + groupId] = key ? 'detail' : 'list'; if (key) ui.active['editar/' + groupId] = key;
@@ -593,7 +591,8 @@ function pickActive(controls, key) {
 }
 // Ferramenta aberta tem duas telas: a LISTA (todos os ajustes, em seções, com o valor de cada um)
 // e o DETALHE (um ajuste com o seu controle e um “voltar”). Nada de fileiras compridas na horizontal.
-const isEditable = (c) => c && (c.kind === 'range' || c.kind === 'choice' || c.kind === 'custom');
+const isThumbs = (c) => c && c.kind === 'choice' && c.view === 'thumbs';
+const isEditable = (c) => c && !isThumbs(c) && (c.kind === 'range' || c.kind === 'choice' || c.kind === 'custom');
 const listScroll = {};
 function buildPanel() {
     const tab = currentTab(), grp = currentGroup(), groups = tabGroups(tab), open = !!ui.open[tab.id], k = panelKey();
@@ -629,7 +628,7 @@ function buildCrumb(grp, c) {
     if (!c) return;
     const back = h('button', 'back', icon('back') + '<span></span>'); back.type = 'button'; back.lastChild.textContent = grp.label;
     back.setAttribute('aria-label', 'Voltar para ' + grp.label);
-    back.onclick = () => { ui.view[panelKey()] = 'list'; buildPanel(); };
+    back.onclick = () => { ui.view[panelKey()] = 'list'; fitAnim(); buildPanel(); };
     const t = h('span', 'title'); t.textContent = c.label;
     box.append(back, t, h('span'));
 }
@@ -639,6 +638,13 @@ function fillDials(controls) {
     if (dials.hidden) return;
     controls.forEach(c => {
         if (c.kind === 'divider') { const sep = h('span', 'dial-sep'); sep.textContent = c.label; dials.append(sep); return; }
+        // miniaturas (texturas, filmes, padrões) entram direto na lista: escolher é um toque só
+        if (isThumbs(c)) {
+            const box = h('div', 'dial-grid'), keep = ui.keepScroll; ui.keepScroll = true;
+            box.append(makeThumbChoice(c)); ui.keepScroll = keep;
+            const n = choiceNote(c); if (n) box.append(h('div', 'editor-note', n));
+            dials.append(box); return;
+        }
         const d = makeDial(c, ctrlId(c) === ui.active[aKey]);
         dials.append(d); dialEls.push({ c, el: d });
     });
@@ -735,7 +741,7 @@ function onDialClick(c, d) {
     // abre o detalhe do ajuste (a lista guarda onde estava)
     listScroll[aKey] = $('dials').scrollTop;
     ui.active[aKey] = ctrlId(c); ui.view[aKey] = 'detail';
-    buildPanel();
+    fitAnim(); buildPanel();
 }
 // controles cujo valor muda quais outros controles aparecem
 const DEPENDS = new Set(['dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot',
@@ -965,8 +971,8 @@ function makeThumbChoice(c) {
         strip.append(t); items.push(t);
     };
     if (c.groupsOf) {
-        add('none', 'Nenhum');
-        c.groupsOf.forEach(([g, list]) => { const t = h('span', 'strip-group'); t.textContent = g; strip.append(t); list.forEach(([id, nome]) => add(id, nome)); });
+        // “Nenhum” abre o primeiro grupo (nada de uma linha só para ele)
+        c.groupsOf.forEach(([g, list], i) => { const t = h('span', 'strip-group'); t.textContent = g; strip.append(t); if (!i) add('none', 'Nenhum'); list.forEach(([id, nome]) => add(id, nome)); });
     } else c.options.forEach(([v, l]) => add(v, l));
     if (!ui.keepScroll) requestAnimationFrame(() => revealInEditor(strip.querySelector('.thumb.on')));
     return strip;

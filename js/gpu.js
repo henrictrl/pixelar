@@ -70,7 +70,7 @@ float fbm(vec2 p) {
 // Cada entrada: { id, nome (pt-br), uniforms (nome->default), src (corpo do main()) }
 const PIXELAR_FX_LIST = [
   {
-    id: 'channel_mixer', nome: 'Misturador',
+    id: 'channel_mixer', nome: 'Canais',
     uniforms: {
       uRR: 0.0, uRG: 1.0, uRB: 0.0,
       uGR: 0.0, uGG: 0.0, uGB: 1.0,
