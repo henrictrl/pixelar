@@ -1454,7 +1454,6 @@ function openLayers() {
                     const foot = h('div', 'lfoot'); foot.append(go);
                     det.append(chips, ruler, foot);
                     row.append(det);
-                    requestAnimationFrame(() => centerIn(chips, chips.querySelector('.chip.on')));
                 }
                 list.append(row);
                 dragRow(grip, row, list);

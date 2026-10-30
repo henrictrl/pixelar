@@ -262,7 +262,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .3); z-index: 40; opacity: 0; transition: opacity .25s; }
 .sheet-backdrop.show { opacity: 1; }
 .sheet-backdrop.clear { background: transparent; }
-.sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; max-height: calc(100% - var(--safe-t) - 40px); overflow: auto; border-radius: 14px 14px 0 0; padding: 8px var(--pad) calc(20px + var(--safe-b)); transform: translateY(100%); transition: transform .35s var(--ease); overscroll-behavior: contain; background: var(--surface); color: var(--text); }
+.sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; max-height: calc(100% - var(--safe-t) - 40px); overflow-x: hidden; overflow-y: auto; border-radius: 14px 14px 0 0; padding: 8px var(--pad) calc(20px + var(--safe-b)); transform: translateY(100%); transition: transform .35s var(--ease); overscroll-behavior: contain; background: var(--surface); color: var(--text); }
 .sheet.show { transform: none; }
 .sheet .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--fill-2); margin: 0 auto 12px; }
 .sheet h2 { font-size: var(--fs-l); font-weight: normal; }
@@ -307,7 +307,9 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .layer .lsub { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .layer.dragging { z-index: 2; background: var(--surface); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
 .layer .ldetail { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; padding: 0 0 10px; }
-.layer .ldetail .chips { padding: 0 12px; flex-wrap: nowrap; }
+.layer .ldetail { min-width: 0; }
+.layer .ldetail .chips { padding: 0 14px; flex-wrap: wrap; gap: 8px; }   /* misturas quebram em linhas: nada sai da tela */
+.layer .ldetail .rl-head { padding: 0 14px; }
 .layer .lfoot { display: flex; justify-content: flex-end; padding: 0 14px; }
 
 /* seletor de cor */

@@ -614,10 +614,14 @@ const Engine = (() => {
         let cap = o.maxWork !== undefined ? o.maxWork : workCap;
         // exportação: sem pixel grande, a imagem é processada já no tamanho final (efeitos nítidos,
         // nada ampliado depois); com pixel grande, a arte é ampliada sem suavizar (pixels perfeitos)
+        // unit: px desta renderização por px da prévia. Tudo que é medido em pixels (grão, padrões, ruídos,
+        // contorno, agrupar) cresce na mesma proporção: o arquivo sai igual ao que se vê na tela.
+        let unit = 1;
         if (o.workRes && px === 1 && PixelarGPU.isAvailable()) {
             const lim = Math.min(PixelarGPU.maxTex || 4096, 8192), long = Math.max(w, h);
             const target = Math.min(lim, Math.round(o.workRes * long / h));
             const k = target / long; w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k)); cap = 0;
+            unit = Math.max(w, h) / Math.min(long, workCap || long);   // a prévia trabalha com no máximo workCap px
         }
         // sem GPU (ou contexto perdido no celular): processa numa base menor para não travar a tela
         if (!PixelarGPU.isAvailable()) cap = Math.min(cap || 1024, 1024);
@@ -660,11 +664,11 @@ const Engine = (() => {
         let d = null;
         const { chain, edgeLast } = buildChain(st, s, fx, grain, an);
         // contorno dentro da cadeia: espessura em pixels da arte
-        chain.forEach(c => { if (c.kind === 'edge') { c.half = Math.max(0.35, s.edge.size / (2 * px)); c.color = rgbArr(s.edge.color); } });
+        chain.forEach(c => { if (c.kind === 'edge') { c.half = Math.max(0.35, s.edge.size * unit / (2 * px)); c.color = rgbArr(s.edge.color); } });
         const usedGPU = gpuReady && PixelarGPU.render({
             w, h, srcCanvas: small, srcKey: key, adj: s.adj, dither: s.dither, anim: an,
             minL: mm.minL, maxL: mm.maxL, shadowsInverted: s.shadowsInverted, midDither: s.midDither,
-            grad, color, chain, mix: s.mix, edgeBase: s.edge.size > 0, cluster: s.cluster,
+            grad, color, chain, mix: s.mix, edgeBase: s.edge.size > 0, cluster: s.cluster, unit,
             dbl: s.dbl ? Object.assign({}, s.dbl, { t: an && an.T ? an.T : 0 }) : null,
         });
         if (!usedGPU) {
@@ -679,7 +683,7 @@ const Engine = (() => {
         else octx.drawImage(cpuCanvas, 0, 0, w, h, 0, 0, W, H);
         // contorno medido em pixels da arte: mesma espessura relativa na tela, nas miniaturas e em qualquer tamanho exportado
         if (s.edge.size > 0 && (edgeLast || !usedGPU)) {
-            const thick = s.edge.size * displayScale * (o.edgeScale || 1);
+            const thick = s.edge.size * displayScale * unit * (o.edgeScale || 1);
             const comp = COMP_OPS[(edgeLast && edgeLast.blend) || 'normal'];
             if (comp) octx.globalCompositeOperation = comp;
             const rg = usedGPU && typeof PixelarGPU.edges === 'function' && PixelarGPU.edges({ W, H, scale: W / w, half: thick / 2, color: rgbArr(s.edge.color), opacity: s.edge.opacity });
@@ -687,7 +691,7 @@ const Engine = (() => {
             else { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, Object.assign({}, s.edge, { size: thick })); }
             octx.globalCompositeOperation = 'source-over';
         }
-        return { w, h, W, H, usedGPU, settings: s };
+        return { w, h, W, H, usedGPU, settings: s, unit };
     }
 
     function invalidate() { smallKey = null; smallData = null; }
