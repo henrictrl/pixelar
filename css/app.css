@@ -18,12 +18,13 @@
    ============================================================ */
 :root {
     --m: 8px;                 /* respiro entre peças */
-    --pad: 16px;              /* recuo interno */
+    --pad: 20px;              /* recuo interno (bordas da tela e das listas) */
+    --gap: 10px;              /* espaço entre blocos */
+    --body-h: clamp(200px, 34vh, 290px);   /* altura da lista/detalhe no celular: a foto não pula ao navegar */
     --r-inner: 10px;
     --bar-h: 44px;
     --tab-h: 54px;
     --thumb: 60px; --thumb-label: 26px;
-    --editor-h: 92px;
     --fs: 11px; --fs-l: 22px;
     --safe-b: env(safe-area-inset-bottom, 0px);
     --safe-t: env(safe-area-inset-top, 0px);
@@ -116,7 +117,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 /* ============================================================
    TOPO: ícones soltos sobre o fundo
    ============================================================ */
-.topbar { position: absolute; z-index: 5; top: 0; left: 0; right: 0; padding: var(--safe-t) calc(var(--safe-r) + 4px) 0 calc(var(--safe-l) + 4px); height: calc(var(--bar-h) + var(--safe-t)); display: flex; align-items: center; gap: 2px; background: var(--bg); }
+.topbar { position: absolute; z-index: 5; top: 0; left: 0; right: 0; padding: var(--safe-t) calc(var(--safe-r) + 10px) 0 calc(var(--safe-l) + 10px); height: calc(var(--bar-h) + var(--safe-t)); display: flex; align-items: center; gap: 2px; background: var(--bg); }
 .subbar-center { flex: 1; display: flex; justify-content: center; min-width: 0; }
 .icon-btn { width: var(--bar-h); height: var(--bar-h); display: grid; place-items: center; flex: none; color: var(--text); }
 .icon-btn.on { color: var(--accent-text); }
@@ -132,7 +133,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .dock { position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; padding: 0 var(--safe-r) var(--safe-b) var(--safe-l); display: flex; flex-direction: column; background: var(--bg); }
 
 /* vídeo */
-.videobar { display: flex; align-items: center; gap: 4px; padding: 6px 8px; }
+.videobar { display: flex; align-items: center; gap: 8px; padding: 8px var(--pad); }
 .videobar .icon-btn { width: 40px; height: 40px; }
 .filmstrip { position: relative; flex: 1; height: 44px; border-radius: 8px; overflow: hidden; background: var(--fill-1); touch-action: none; cursor: pointer; }
 .strip-frames { position: absolute; inset: 0; display: flex; }
@@ -144,38 +145,54 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .trim .handle::after { content: ""; position: absolute; left: 50%; top: 50%; width: 2px; height: 14px; margin: -7px -1px; background: var(--accent-ink); opacity: .6; }
 .playhead { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; pointer-events: none; }
 
-/* painel: editor e ajustes só aparecem com uma ferramenta aberta */
+/* painel: com uma ferramenta aberta mostra a LISTA de ajustes ou o DETALHE de um deles */
 .panel { display: flex; flex-direction: column; min-height: 0; }
-.panel.closed .editor, .panel.closed .dials { display: none; }
+.panel.closed .editor, .panel.closed .dials, .panel.closed .crumb { display: none; }
+.panel.list .editor, .panel.list .crumb { display: none; }
+.panel.detail .dials { display: none; }
+.panel.single .crumb { display: none; }
 
-/* ferramentas (Cortar, Luz, Cor…): texto; a aberta ganha um fundo discreto */
-.seg-row { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: none; padding: 4px 8px; border-top: .5px solid var(--hair); }
+/* ferramentas: grade sem rolagem. Fechado: 4 × 2 com nome. Aberto (celular): 8 ícones numa linha */
+.seg-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; flex: none; padding: 8px calc(var(--pad) - 10px); border-top: .5px solid var(--hair); }
 .seg-row:empty { display: none; }
-.seg { height: 36px; padding: 0 12px; border-radius: 18px; color: var(--text-2); white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 6px; }
+.seg { height: 40px; padding: 0 2px; border-radius: 10px; color: var(--text-2); white-space: nowrap; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.seg span { overflow: hidden; text-overflow: ellipsis; }
 .seg.on { color: var(--text); background: var(--fill-1); }
-.seg-row::-webkit-scrollbar, .dials::-webkit-scrollbar, .strip::-webkit-scrollbar, .chips::-webkit-scrollbar, .swatches::-webkit-scrollbar, .palettes::-webkit-scrollbar { display: none; }
+.panel:not(.closed) .seg-row { grid-template-columns: repeat(8, 1fr); }
+.seg .ic.lg { display: none; }
+.panel:not(.closed) .seg span, .panel:not(.closed) .seg .ic.sm { display: none; }
+.panel:not(.closed) .seg .ic.lg { display: block; }
 
-/* nomes dos ajustes (texto; o escolhido na cor de destaque, sublinhado) */
-.dials { display: flex; align-items: center; gap: 2px; padding: 0 8px; overflow-x: auto; scrollbar-width: none; flex: none; height: 44px; }
-.dial { position: relative; flex: none; height: 40px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); white-space: nowrap; }
-.dial .name { position: relative; }
-.dial.active { color: var(--accent-text); }
-.dial.active .name::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 2px; background: currentColor; }
-.dial.mod:not(.active) { color: var(--text); }
-.dial.mod .name::before { content: ""; position: absolute; right: -6px; top: -1px; width: 3px; height: 3px; background: var(--accent); }
-.dial .swatch { width: 10px; height: 10px; box-shadow: inset 0 0 0 1px var(--hair); }
-.dial .tog { width: 10px; height: 10px; box-shadow: inset 0 0 0 1px currentColor; }
-.dial.on .tog { background: var(--accent); box-shadow: none; }
-.dial.on { color: var(--text); }
-.dial .lock-badge { display: grid; place-items: center; color: var(--text); }
+/* lista de ajustes: blocos em 2 colunas, com nome e valor; seções com título */
+.dials { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; padding: 12px var(--pad) 16px; height: var(--body-h); overflow-y: auto; overscroll-behavior: contain; flex: none; }
+.dial { position: relative; min-width: 0; height: 44px; padding: 0 12px; border-radius: 10px; background: var(--fill-1); display: flex; align-items: center; gap: 8px; color: var(--text); text-align: left; }
+.dial .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dial .ic.sm { color: var(--text-2); }
+.dial .val { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.dial.mod .val { color: var(--accent-text); }
+.dial.active { box-shadow: inset 0 0 0 1px var(--accent); }
+.dial.kind-action { background: none; box-shadow: inset 0 0 0 .5px var(--hair); color: var(--text-2); }
+.dial .swatch { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--hair); flex: none; order: 3; }
+.dial .tog { width: 30px; height: 18px; border-radius: 9px; background: var(--fill-2); flex: none; position: relative; }
+.dial .tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s var(--ease); }
+.dial.on .tog { background: #34c759; }
+.dial.on .tog::after { transform: translateX(12px); }
+.dial .lock-badge { display: grid; place-items: center; color: var(--text-2); flex: none; }
 .dial .lock-badge .ic { width: 12px; height: 12px; }
-/* divisória com o nome da parte (Degradê, Grão, Lente…) dentro da fileira de ajustes */
-.dial-sep { flex: none; align-self: center; height: 18px; margin: 0 4px 0 8px; padding-left: 10px; border-left: .5px solid var(--hair); color: var(--text-3); white-space: nowrap; line-height: 18px; text-transform: uppercase; letter-spacing: .06em; }
+.dial-sep { grid-column: 1 / -1; padding: 10px 2px 0; color: var(--text-2); letter-spacing: .06em; text-transform: uppercase; }
+.dial-sep:first-child { padding-top: 0; }
 
-/* editor: altura fixa, para trocar de ajuste nunca mexer no tamanho da imagem */
-.editor { height: var(--editor-h); display: flex; flex-direction: column; justify-content: center; gap: 6px; flex: none; overflow: hidden; padding-top: 4px; }
+/* detalhe: ‹ ferramenta | ajuste */
+.crumb { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 44px; padding: 0 calc(var(--pad) - 8px); flex: none; }
+.crumb:empty { display: none; }
+.crumb .back { justify-self: start; height: 40px; padding: 0 8px 0 0; display: flex; align-items: center; gap: 2px; color: var(--accent-text); }
+.crumb .title { color: var(--text); }
+
+/* editor do ajuste: altura fixa no celular; opções em grade com rolagem vertical */
+.editor { height: calc(var(--body-h) - 44px); display: flex; flex-direction: column; justify-content: center; gap: var(--gap); flex: none; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0 12px; }
 .editor > * { flex: none; }
-.panel[data-tab="estilos"] .editor, .panel[data-tab="exportar"] .editor { height: auto; justify-content: flex-start; padding: 8px 0; }
+.editor:has(.strip, .chips, .palettes, .swatches) { justify-content: flex-start; }
+.panel.single .editor { height: auto; max-height: 52vh; justify-content: flex-start; padding: 14px 0; }
 
 /* ---------- régua ---------- */
 .rl-wrap { display: flex; flex-direction: column; gap: 2px; }
@@ -194,42 +211,44 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .rl-wrap.compact .rl-val { font-size: var(--fs); line-height: 16px; }
 .rl-wrap.compact .ruler { height: 28px; }
 
-/* ---------- miniaturas, chips, paletas ---------- */
-.strip { display: flex; gap: 8px; padding: 2px var(--pad); overflow-x: auto; overflow-y: hidden; align-items: flex-start; scrollbar-width: none; }
-.thumb { flex: none; width: var(--thumb); display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.thumb .pic { width: var(--thumb); height: var(--thumb); flex: none; border-radius: var(--r-inner); overflow: hidden; position: relative; background: var(--fill-1); }
+/* ---------- miniaturas, chips, paletas: tudo em grade, nada escondido para os lados ---------- */
+.strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--thumb), 1fr)); gap: 14px 12px; padding: 2px var(--pad); align-items: start; }
+.strip-group { grid-column: 1 / -1; padding-top: 6px; color: var(--text-2); letter-spacing: .06em; text-transform: uppercase; }
+.strip-group:first-of-type { padding-top: 0; }
+.thumb { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.thumb .pic { width: 100%; aspect-ratio: 1; border-radius: var(--r-inner); overflow: hidden; position: relative; background: var(--fill-1); }
 .thumb .pic canvas { width: 100%; height: 100%; display: block; object-fit: cover; }
 .thumb .pic::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .thumb.on .pic::after { box-shadow: inset 0 0 0 2px var(--accent); }
-.thumb .t { height: var(--thumb-label); line-height: 13px; flex: none; color: var(--text-2); text-align: center; width: calc(var(--thumb) + 8px); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
+.thumb .t { min-height: var(--thumb-label); line-height: 13px; color: var(--text-2); text-align: center; width: calc(100% + 12px); margin: 0 -6px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; hyphens: none; -webkit-hyphens: none; }   /* o nome usa o vão entre as miniaturas: palavras inteiras */
 .thumb.on .t { color: var(--text); }
 .thumb.add .pic { display: grid; place-items: center; color: var(--accent-text); }
-.thumb .del { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 7px; display: none; place-items: center; z-index: 1; background: rgba(0, 0, 0, .55); color: #fff; cursor: pointer; }
-.thumb .del .ic { width: 12px; height: 12px; }
+.thumb .del { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 7px; display: none; place-items: center; z-index: 1; background: rgba(0, 0, 0, .55); color: #fff; cursor: pointer; }
+.thumb .del .ic { width: 16px; height: 16px; }
 .thumb.on .del { display: grid; }
-.chips { display: flex; gap: 4px; padding: 2px var(--pad); overflow-x: auto; overflow-y: hidden; align-items: center; scrollbar-width: none; flex-wrap: nowrap; }
-.chip { flex: none; height: 36px; padding: 0 12px; border-radius: 18px; color: var(--text-2); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
-.chip.on { color: var(--text); background: var(--fill-1); box-shadow: inset 0 0 0 1px var(--accent); }
-.chip-sep { flex: none; width: 1px; height: 14px; background: var(--hair); margin: 0 6px; }
-.editor-note { text-align: center; color: var(--text-2); padding: 0 24px; height: 14px; line-height: 14px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: none; }
-.swatches { display: flex; gap: 8px; padding: 2px var(--pad); overflow-x: auto; scrollbar-width: none; justify-content: safe center; }
-.swatches button { flex: none; width: 36px; height: 36px; border-radius: 8px; box-shadow: inset 0 0 0 .5px var(--hair); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px var(--pad); align-items: center; }
+.chip { flex: none; height: 36px; padding: 0 14px; border-radius: 18px; color: var(--text); background: var(--fill-1); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.chip.on { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.chip-sep { flex-basis: 100%; height: 0; }
+.editor-note { text-align: center; color: var(--text-2); padding: 0 var(--pad); line-height: 1.45; flex: none; }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 2px var(--pad); justify-content: center; }
+.swatches button { flex: none; width: 40px; height: 40px; border-radius: 8px; box-shadow: inset 0 0 0 .5px var(--hair); }
 .swatches .add { display: grid; place-items: center; background: var(--fill-1); color: var(--text-2); box-shadow: none; }
-.palettes { display: flex; gap: 8px; padding: 2px var(--pad) 4px; overflow-x: auto; scrollbar-width: none; }
-.pal { flex: none; display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.pal .bar { display: flex; width: 72px; height: 28px; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 0 .5px var(--hair); }
+.palettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px 10px; padding: 2px var(--pad) 4px; }
+.pal { min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.pal .bar { display: flex; width: 100%; height: 30px; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 0 .5px var(--hair); }
 .pal .bar i { flex: 1; }
-.pal .t { color: var(--text-2); max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal .t { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 
 /* ---------- Exportar ---------- */
-.exp-actions { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 6px var(--pad) 0; }
+.exp-actions { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 10px var(--pad) 0; }
 .exp-actions .pill { padding: 0 22px; }
 .exp-links { display: flex; }
 .exp-links:last-child { justify-content: flex-end; }
 .link { color: var(--accent-text); min-height: 40px; padding: 0 4px; white-space: nowrap; }
 
 /* ---------- abas (como a barra de abas do iPhone) ---------- */
-.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); flex: none; border-top: .5px solid var(--hair); }
+.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); flex: none; padding: 0 var(--gap); border-top: .5px solid var(--hair); }
 .tab { min-width: 0; height: var(--tab-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--text-2); }
 .tab span { white-space: nowrap; }
 .tab.on { color: var(--accent-text); }
@@ -240,7 +259,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .3); z-index: 40; opacity: 0; transition: opacity .25s; }
 .sheet-backdrop.show { opacity: 1; }
 .sheet-backdrop.clear { background: transparent; }
-.sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; max-height: calc(100% - var(--safe-t) - 40px); overflow: auto; border-radius: 14px 14px 0 0; padding: 8px 16px calc(16px + var(--safe-b)); transform: translateY(100%); transition: transform .35s var(--ease); overscroll-behavior: contain; background: var(--surface); color: var(--text); }
+.sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; max-height: calc(100% - var(--safe-t) - 40px); overflow: auto; border-radius: 14px 14px 0 0; padding: 8px var(--pad) calc(20px + var(--safe-b)); transform: translateY(100%); transition: transform .35s var(--ease); overscroll-behavior: contain; background: var(--surface); color: var(--text); }
 .sheet.show { transform: none; }
 .sheet .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--fill-2); margin: 0 auto 12px; }
 .sheet h2 { font-size: var(--fs-l); font-weight: normal; }
@@ -310,38 +329,33 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
    TELAS BAIXAS (celular com as barras do navegador)
    ============================================================ */
 @media (max-height: 740px) and (max-width: 899px) {
-    :root { --thumb: 54px; --editor-h: 86px; --tab-h: 50px; }
+    :root { --tab-h: 50px; --body-h: clamp(180px, 32vh, 240px); }
 }
 @media (max-height: 620px) and (max-width: 899px) {
-    :root { --thumb: 46px; --thumb-label: 13px; --editor-h: 68px; --tab-h: 44px; }
+    :root { --thumb-label: 13px; --tab-h: 44px; --body-h: 170px; }
     .thumb .t { -webkit-line-clamp: 1; }
     .tab span { display: none; }
-    .ruler { height: 28px; }
 }
 
 /* ============================================================
    COMPUTADOR, TABLET DEITADO E CELULAR DEITADO: coluna lateral
    ============================================================ */
 @media (min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px) {
-    :root { --m: 16px; --side: 360px; --thumb: 72px; }
+    :root { --m: 16px; --side: 380px; --thumb: 58px; }
     .icon-btn.only-wide { display: grid; }
     .dock { top: calc(var(--safe-t) + var(--bar-h)); left: auto; width: calc(var(--side) + var(--safe-r)); padding: 0 var(--safe-r) var(--safe-b) 0; border-left: .5px solid var(--hair); }
     .tabbar { order: -1; border-top: 0; border-bottom: .5px solid var(--hair); }
-    .tab { height: 52px; }
-    .panel { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 20px; }
-    .seg-row { order: -2; flex-wrap: wrap; overflow: visible; padding: 8px; border-top: 0; }
-    .dials { order: -1; flex-wrap: wrap; overflow: visible; height: auto; padding: 4px 8px; border-top: .5px solid var(--hair); }
-    .dial { height: 32px; }
-    .dial-sep { flex-basis: 100%; height: 22px; line-height: 22px; margin: 4px 0 0; padding: 0 10px; border-left: 0; border-top: .5px solid var(--hair); }
-    .editor, .panel[data-tab] .editor { height: auto; min-height: 90px; justify-content: flex-start; padding: 8px 8px 0; }
-    .strip { flex-wrap: wrap; overflow: visible; padding: 2px 0; }
-    .strip .thumb { width: calc((100% - 24px) / 4); }
-    .strip .thumb .pic { width: 100%; height: auto; aspect-ratio: 1; }
-    .strip .thumb .t { width: 100%; }
-    .chips { flex-wrap: wrap; overflow: visible; padding: 2px 0; }
-    .exp-actions { padding: 6px 0 0; }
-    .rl-head { padding: 0; }
-    .swatches, .palettes { flex-wrap: wrap; justify-content: flex-start; padding: 2px 0; }
+    .tab { height: 56px; }
+    .panel { flex: 1; min-height: 0; }
+    /* coluna: ferramentas sempre com nome; lista e detalhe usam a altura toda */
+    .seg-row, .panel:not(.closed) .seg-row { order: -2; grid-template-columns: repeat(4, 1fr); padding: 12px calc(var(--pad) - 6px); border-top: 0; border-bottom: .5px solid var(--hair); }
+    .panel:not(.closed) .seg span { display: inline; }
+    .seg .ic.sm, .panel:not(.closed) .seg .ic.sm { display: none; }
+    .seg .ic.lg, .panel:not(.closed) .seg .ic.lg { display: block; }
+    .seg { flex-direction: column; height: 60px; gap: 6px; }
+    .dials { flex: 1; height: auto; min-height: 0; padding: 16px var(--pad) 24px; }
+    .crumb { order: -1; height: 52px; }
+    .editor, .panel.single .editor { flex: 1; height: auto; min-height: 0; max-height: none; padding: 8px 0 24px; justify-content: flex-start; }
     .videobar { position: fixed; left: var(--safe-l); right: calc(var(--side) + var(--safe-r)); bottom: var(--safe-b); background: var(--bg); border-top: .5px solid var(--hair); }
     /* coluna escondida: só a barra do vídeo continua (ela é fixa e ocupa a largura toda) */
     .panel-collapsed .dock { width: 0; border: 0; overflow: visible; }
@@ -354,7 +368,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
     .sheet .grabber { display: none; }
 }
 @media (orientation: landscape) and (max-height: 540px) and (min-width: 560px) and (max-width: 1100px) {
-    :root { --m: 8px; --side: 300px; --thumb: 52px; --bar-h: 40px; }
+    :root { --m: 8px; --side: 320px; --thumb: 56px; --bar-h: 40px; --pad: 14px; }
     .tab { height: 44px; }
     .tab span { display: none; }
 }

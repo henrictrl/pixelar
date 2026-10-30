@@ -5,7 +5,7 @@ Editor de pixel art, dither, filmes analógicos e animações para **fotos e ví
 Interface flat, no estilo dos apps do iPhone (barras sólidas, sem vidro nem desfoque), com ícones em pixel e a fonte Departure Mono. Na barra de baixo:
 
 - **Estilos**: as combinações que você salvou (“Salvar atual”), com a intensidade do estilo.
-- **Editar**: 8 ferramentas. Tocar numa ferramenta abre os ajustes dela; tocar de novo fecha e devolve o espaço à foto.
+- **Editar**: 8 ferramentas numa grade. Tocar numa ferramenta abre a lista dos ajustes dela (em seções, com o valor de cada um); tocar num ajuste abre o controle, com “‹ voltar”. Opções e miniaturas ficam em grade com rolagem vertical, nada escondido para os lados. Tocar na ferramenta aberta fecha e devolve o espaço à foto.
   **Cortar** · **Luz** · **Cor** (paleta, duotone/tritone e degradê) · **Pixel** (tamanho, padrão, agrupar e contorno) · **Textura** · **Filme** (filme, grão e lente) · **Dupla** exposição · **Movimento**.
 - **Sortear** (o dado): sorteia os ajustes; segurar abre “O que o dado muda”. Segurar um ajuste o trava.
 - **Exportar**: um painel só. Foto: PNG, JPEG, WebP ou SVG em Tela, Original (e 2×, 4K, 8K quando a imagem é redesenhada). GIF, MP4 e WebM aparecem quando algo se move. Vídeo: MP4, WebM ou GIF.
