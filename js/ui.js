@@ -30,7 +30,7 @@ const prefs = {
     palettes: store.get('palettes', {}),
     muted: store.get('muted', false),
 };
-const ui = { tab: 'editar', group: {}, active: {}, open: { estilos: true, editar: false, exportar: true }, busy: false };
+const ui = { tab: 'editar', group: {}, active: {}, view: {}, open: { estilos: true, editar: false, exportar: true }, busy: false };
 
 // ============================================================
 // AVISOS
@@ -568,10 +568,9 @@ function setOpen(on) {
 }
 // abre uma ferramenta de Editar já com um ajuste escolhido (usado pelas Camadas e pela dupla exposição)
 function goTo(groupId, key) {
-    ui.group.editar = groupId; ui.open.editar = true; if (key) ui.active['editar/' + groupId] = key;
+    ui.group.editar = groupId; ui.open.editar = true; ui.view['editar/' + groupId] = key ? 'detail' : 'list'; if (key) ui.active['editar/' + groupId] = key;
     if (panelCollapsed) setPanelCollapsed(false);
     lastPanelKey = null; selectTab('editar');
-    const d = dialEls.find(x => ctrlId(x.c) === key); if (d) requestAnimationFrame(() => centerIn($('dials'), d.el));
 }
 function selectTab(id) {
     if (!TABS.some(t => t.id === id)) id = TABS[0].id;
@@ -592,63 +591,73 @@ function pickActive(controls, key) {
     return controls.find(c => isCtrl(c) && ctrlId(c) === ui.active[key])
         || controls.find(c => c.kind === 'choice' || c.kind === 'custom' || c.kind === 'range') || controls.find(isCtrl);
 }
+// Ferramenta aberta tem duas telas: a LISTA (todos os ajustes, em seções, com o valor de cada um)
+// e o DETALHE (um ajuste com o seu controle e um “voltar”). Nada de fileiras compridas na horizontal.
+const isEditable = (c) => c && (c.kind === 'range' || c.kind === 'choice' || c.kind === 'custom');
+const listScroll = {};
 function buildPanel() {
-    const tab = currentTab(), grp = currentGroup(), groups = tabGroups(tab), open = !!ui.open[tab.id];
-    const pKey = panelKey() + (open ? '' : '#fechado'), same = pKey === lastPanelKey;
-    const keep = same ? { dials: $('dials').scrollLeft, panel: $('panel').scrollTop, seg: $('segRow').scrollLeft, ctrl: ui.active[panelKey()] } : null;
-    const sameTab = lastPanelKey && lastPanelKey.split('/')[0] === tab.id, segX = $('segRow').scrollLeft;
-    lastPanelKey = pKey;
+    const tab = currentTab(), grp = currentGroup(), groups = tabGroups(tab), open = !!ui.open[tab.id], k = panelKey();
+    lastPanelKey = k + (open ? '' : '#fechado');
     const panel = $('panel'); panel.dataset.tab = tab.id; panel.classList.toggle('closed', !open);
     // ferramentas: tocar abre; tocar na aberta fecha
     const seg = $('segRow'); seg.innerHTML = '';
     if (groups.length > 1) groups.forEach(g => {
         const on = open && g.id === grp.id;
-        const b = h('button', 'seg' + (on ? ' on' : '')); b.type = 'button'; b.dataset.group = g.id;
-        b.innerHTML = smallIcon(GROUP_ICONS[g.id]) + '<span></span>'; b.lastChild.textContent = g.label;
-        b.setAttribute('aria-expanded', String(on));
-        b.onclick = () => { if (on) { setOpen(false); return; } ui.group[tab.id] = g.id; setOpen(true); };
+        const b = h('button', 'seg' + (on ? ' on' : '')); b.type = 'button'; b.dataset.group = g.id; b.title = g.label;
+        b.innerHTML = smallIcon(GROUP_ICONS[g.id]) + icon('t-' + g.id, 'lg') + '<span></span>'; b.lastChild.textContent = g.label;
+        b.setAttribute('aria-expanded', String(on)); b.setAttribute('aria-label', g.label);
+        b.onclick = () => { if (on) { setOpen(false); return; } ui.group[tab.id] = g.id; ui.view[tab.id + '/' + g.id] = 'list'; setOpen(true); };
         seg.append(b);
     });
-    if (sameTab) seg.scrollLeft = segX;
-    if (!open) { dialEls = []; $('dials').innerHTML = ''; buildEditor(null); return; }
+    if (!open) { dialEls = []; $('dials').innerHTML = ''; $('crumb').innerHTML = ''; buildEditor(null); panel.classList.remove('list', 'detail', 'single'); return; }
     const controls = groupControls(grp).filter(c => !c.hidden);
-    const active = pickActive(controls, panelKey());
-    ui.active[panelKey()] = active && ctrlId(active);
-    // Estilos e Exportar: um editor só, sem fileira de ajustes
+    const active = pickActive(controls, k);
+    ui.active[k] = active && ctrlId(active);
+    // Estilos e Exportar: um editor só
     const single = controls.length === 1 && controls[0].kind === 'custom';
-    const dials = $('dials'); dials.hidden = single;
-    panel.classList.toggle('single', single);
+    const detail = !single && ui.view[k] === 'detail' && isEditable(active);
+    panel.classList.toggle('single', single); panel.classList.toggle('detail', detail); panel.classList.toggle('list', !single && !detail);
+    $('dials').hidden = single;
     fillDials(controls);
-    ui.keepScroll = !!(keep && keep.ctrl === ui.active[panelKey()]);
-    buildEditor(active);
-    ui.keepScroll = false;
-    if (keep) { dials.scrollLeft = keep.dials; seg.scrollLeft = keep.seg; panel.scrollTop = keep.panel; return; }
-    // abriu outra ferramenta: ela fica à vista na fileira e o ajuste ativo também
-    const on = seg.querySelector('.seg.on'); if (on && !sameTab) requestAnimationFrame(() => centerIn(seg, on));
-    dials.scrollLeft = 0;
-    const ad = dialEls.find(x => x.c === active); if (ad && ad.el.offsetLeft > dials.clientWidth - 40) requestAnimationFrame(() => centerIn(dials, ad.el));
+    buildCrumb(grp, detail ? active : null);
+    buildEditor(single || detail ? active : null);
+    if (!detail && !single) requestAnimationFrame(() => { $('dials').scrollTop = listScroll[k] || 0; });
 }
-// fileira de ajustes: um botão por controle; divisórias com o nome da parte
+// barra do detalhe: ‹ ferramenta | nome do ajuste
+function buildCrumb(grp, c) {
+    const box = $('crumb'); box.innerHTML = '';
+    if (!c) return;
+    const back = h('button', 'back', icon('back') + '<span></span>'); back.type = 'button'; back.lastChild.textContent = grp.label;
+    back.setAttribute('aria-label', 'Voltar para ' + grp.label);
+    back.onclick = () => { ui.view[panelKey()] = 'list'; buildPanel(); };
+    const t = h('span', 'title'); t.textContent = c.label;
+    box.append(back, t, h('span'));
+}
+// lista de ajustes: um bloco por controle, com o valor; divisórias com o nome da parte
 function fillDials(controls) {
     const dials = $('dials'), aKey = panelKey(); dials.innerHTML = ''; dialEls = [];
     if (dials.hidden) return;
-    let i = 0;
     controls.forEach(c => {
         if (c.kind === 'divider') { const sep = h('span', 'dial-sep'); sep.textContent = c.label; dials.append(sep); return; }
-        const d = makeDial(c, ctrlId(c) === ui.active[aKey]); d.style.setProperty('--i', Math.min(i++, 10));
+        const d = makeDial(c, ctrlId(c) === ui.active[aKey]);
         dials.append(d); dialEls.push({ c, el: d });
     });
 }
-// Refaz só a fileira de ajustes (ex.: escolher um filme com parâmetros próprios), sem
-// tocar no editor — a faixa que o usuário está rolando continua exatamente onde está.
+// Refaz só a lista (ex.: escolher um filme com parâmetros próprios) sem mexer no controle aberto
 function rebuildDials() {
     const dials = $('dials'); if (dials.hidden) { refreshDials(); return; }
-    const x = dials.scrollLeft;
+    const y = dials.scrollTop;
     fillDials(groupControls(currentGroup()).filter(c => !c.hidden));
-    dials.scrollLeft = x;
+    dials.scrollTop = y;
 }
 // centraliza um item dentro da sua fileira sem rolar a página inteira
 function centerIn(row, el) { if (!row || !el) return; row.scrollLeft = el.offsetLeft - row.clientWidth / 2 + el.offsetWidth / 2; }
+// a opção escolhida fica à vista dentro do editor (as opções agora quebram em linhas e rolam na vertical)
+function revealInEditor(el) {
+    const ed = $('editor'); if (!el || ed.scrollHeight <= ed.clientHeight) return;
+    const r = el.getBoundingClientRect(), er = ed.getBoundingClientRect();
+    if (r.top < er.top || r.bottom > er.bottom) ed.scrollTop += r.top - er.top - (er.height - r.height) / 2;
+}
 const ctrlId = (c) => c.key || c.id || c.label;
 
 function ctrlValue(c) { return c.get ? c.get() : c.key ? getP(c.key) : undefined; }
@@ -666,6 +675,7 @@ function makeDial(c, active) {
     else if (c.icon) d.insertAdjacentHTML('beforeend', smallIcon(c.icon));
     const nm = h('span', 'name'); nm.textContent = c.label; d.append(nm);
     if (c.kind === 'toggle') d.append(h('span', 'tog'));
+    else if (c.kind === 'range' || c.kind === 'choice') d.append(h('span', 'val'));
     d.title = c.label;
     updateDial(d, c);
     const lockKey = c.lockKey || c.key;
@@ -687,10 +697,17 @@ function makeDial(c, active) {
     d.addEventListener('dblclick', () => { if (c.kind === 'range' && c.key) { change(c.key, defP(c.key)); flashLabel(c.label + ' · padrão'); buildEditor(c); } });
     return d;
 }
+// valor como aparece na lista
+function valText(c, v) {
+    if (c.kind === 'choice') { const o = c.options.find(x => String(x[0]) === String(v)); return o ? o[1] : ''; }
+    if (typeof v !== 'number') return '';
+    const f = fmtVal(c, v); return c.min < 0 && c.max > 0 && v > 0 ? '+' + f : String(f);
+}
 function updateDial(d, c) {
     const v = ctrlValue(c);
     if (c.kind === 'toggle') d.classList.toggle('on', !!v);
     else if (c.kind === 'color') d.querySelector('.swatch').style.background = v;
+    const vl = d.querySelector('.val'); if (vl) vl.textContent = valText(c, v);
     d.classList.toggle('mod', (c.kind === 'range' || c.kind === 'choice') && isModified(c));
     const lockKey = c.lockKey || c.key;
     let lb = d.querySelector('.lock-badge');
@@ -715,13 +732,10 @@ function onDialClick(c, d) {
         return;
     }
     if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); if (final && c.ensure) refreshDials(); else updateDial(d, c); }, c.label); return; }
-    ui.active[aKey] = ctrlId(c);
-    dialEls.forEach(({ el }) => el.classList.toggle('active', el === d));
-    refreshDials();
-    buildEditor(c);
-    // o ajuste tocado fica à vista
-    const r = d.getBoundingClientRect(), rr = $('dials').getBoundingClientRect();
-    if (r.left < rr.left + 24 || r.right > rr.right - 24) $('dials').scrollTo({ left: d.offsetLeft - $('dials').clientWidth / 2 + d.offsetWidth / 2, behavior: 'smooth' });
+    // abre o detalhe do ajuste (a lista guarda onde estava)
+    listScroll[aKey] = $('dials').scrollTop;
+    ui.active[aKey] = ctrlId(c); ui.view[aKey] = 'detail';
+    buildPanel();
 }
 // controles cujo valor muda quais outros controles aparecem
 const DEPENDS = new Set(['dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot',
@@ -755,11 +769,11 @@ function buildEditor(c) {
     const ed = $('editor');
     // refazer o MESMO editor nunca volta a faixa para o começo: guarda e devolve a rolagem
     const key = c ? (c.key || c.id || (c.editor && c.editor.name) || c.label) + '|' + ui.tab : null;
-    const prev = key && key === lastEditorKey ? [...ed.querySelectorAll('.strip, .chips, .palettes, .swatches')].map(x => x.scrollLeft) : null;
+    const prev = key && key === lastEditorKey ? ed.scrollTop : null;
     lastEditorKey = key;
-    ed.innerHTML = '';
+    ed.innerHTML = ''; ed.scrollTop = 0;
     if (!c) return;
-    if (prev) { const keep = ui.keepScroll; ui.keepScroll = true; buildEditorInner(ed, c); ui.keepScroll = keep; [...ed.querySelectorAll('.strip, .chips, .palettes, .swatches')].forEach((x, i) => { if (prev[i] !== undefined) x.scrollLeft = prev[i]; }); return; }
+    if (prev !== null) { ui.keepScroll = true; buildEditorInner(ed, c); ui.keepScroll = false; ed.scrollTop = prev; return; }
     buildEditorInner(ed, c);
 }
 function buildEditorInner(ed, c) {
@@ -928,7 +942,7 @@ function makeChips(c) {
         };
         row.append(b);
     });
-    if (!ui.keepScroll) requestAnimationFrame(() => centerIn(row, row.querySelector('.chip.on')));
+    if (!ui.keepScroll) requestAnimationFrame(() => revealInEditor(row.querySelector('.chip.on')));
     return row;
 }
 
@@ -952,9 +966,9 @@ function makeThumbChoice(c) {
     };
     if (c.groupsOf) {
         add('none', 'Nenhum');
-        c.groupsOf.forEach(([, list]) => list.forEach(([id, nome]) => add(id, nome)));   // na ordem dos grupos
+        c.groupsOf.forEach(([g, list]) => { const t = h('span', 'strip-group'); t.textContent = g; strip.append(t); list.forEach(([id, nome]) => add(id, nome)); });
     } else c.options.forEach(([v, l]) => add(v, l));
-    if (!ui.keepScroll) requestAnimationFrame(() => centerIn(strip, strip.querySelector('.thumb.on')));
+    if (!ui.keepScroll) requestAnimationFrame(() => revealInEditor(strip.querySelector('.thumb.on')));
     return strip;
 }
 
