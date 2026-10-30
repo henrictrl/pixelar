@@ -19,6 +19,7 @@ uniform vec2 uResolution;
 uniform float uTime;      // reservado
 uniform float uAnim;      // fase da animação em loop (0 = imagem estática; período 1)
 uniform float uAnimFrame; // índice do quadro na animação (0 = estático) — re-semeia ruídos
+uniform float uUnit;      // px de saída por px da prévia (1 na tela; maior na exportação): ruído fino na mesma escala
 
 vec3 rgb2hsl(vec3 c) {
     float maxc = max(max(c.r, c.g), c.b);
@@ -158,7 +159,7 @@ const PIXELAR_FX_LIST = [
         vec3 result = mix(ink, paper, l);
         float streak = step(1.0 - uStreaks*0.3, hash(vec2(floor(vUv.y*uResolution.y*0.5), 7.0 + uAnimFrame)));
         result *= (1.0 - streak*0.25);
-        float g = (hash(vUv*uResolution + uAnimFrame*vec2(17.0, 31.0)) - 0.5) * uGrain;
+        float g = (hash(floor(vUv*uResolution/uUnit) + uAnimFrame*vec2(17.0, 31.0)) - 0.5) * uGrain;
         outColor = vec4(clamp(result + g, 0.0, 1.0), 1.0);
     }`
   },
@@ -179,7 +180,7 @@ const PIXELAR_FX_LIST = [
         vec3 c = vec3(r,g,b);
         float scan = 1.0 - uScanline * (0.5 + 0.5*sin(vUv.y * uResolution.y * 3.14159 + uAnim*6.28318530718));
         c *= scan;
-        float n = (hash(vUv*uResolution*1.7 + uAnimFrame*vec2(13.0, 7.0)) - 0.5) * uNoise;
+        float n = (hash(floor(vUv*uResolution/uUnit)*1.7 + uAnimFrame*vec2(13.0, 7.0)) - 0.5) * uNoise;
         outColor = vec4(clamp(c + n, 0.0, 1.0), 1.0);
     }`
   },
@@ -428,7 +429,7 @@ const PIXELAR_FX_LIST = [
     src: `
     uniform float uThreshold, uNoise, uInk_r, uInk_g, uInk_b, uPaper_r, uPaper_g, uPaper_b;
     void main() {
-        float l = luma(texture(uSource, vUv).rgb) + (hash(floor(vUv * uResolution)) - 0.5) * uNoise;
+        float l = luma(texture(uSource, vUv).rgb) + (hash(floor(vUv * uResolution / uUnit)) - 0.5) * uNoise;
         outColor = vec4(l > uThreshold ? vec3(uPaper_r, uPaper_g, uPaper_b) : vec3(uInk_r, uInk_g, uInk_b), 1.0);
     }`
   },
@@ -752,7 +753,7 @@ const PIXELAR_FX_LIST = [
         float s = (l - 0.5) * uContrast + 0.5;
         s = smoothstep(0.0, 1.0, clamp(s, 0.0, 1.0));
         s = clamp((s - uBlackPoint) / max(0.0001, (uWhitePoint - uBlackPoint)), 0.0, 1.0);
-        float g = (hash(vUv*uResolution*2.2 + uAnimFrame*vec2(11.0, 19.0)) - 0.5) * uMicroGrain;
+        float g = (hash(floor(vUv*uResolution/uUnit)*2.2 + uAnimFrame*vec2(11.0, 19.0)) - 0.5) * uMicroGrain;
         s = clamp(s + g, 0.0, 1.0);
         vec3 warmBlack = vec3(0.05, 0.035, 0.02) * uWarmth;
         vec3 result = mix(warmBlack, vec3(1.0), s);
@@ -887,6 +888,7 @@ const PixelarGPU = (function () {
     let initialized = false, ok = false, contextLost = false;
     let vao = null, maxTex = 4096;
     const progs = {};          // MAIN, GRAIN, FILM, BLIT, BLEND…
+    let unit = 1;              // px de saída por px da prévia (render(o.unit)); todo shader com uUnit recebe
     const fxProgs = {};        // id do efeito -> programa
     let srcTex, gradTex, palTex, refPalTex, dblTex, dblKey = null;
     let srcKey = null, gradKey = null, palKey = null, refPalKey = null, palCount = 0;
@@ -908,6 +910,7 @@ const PixelarGPU = (function () {
     // dither
     uniform int uDitherMode;         // 0 nenhum 1 retícula 3 bayer 8×8 5 xadrez 6 linhas de TV 7 ruído
     uniform float uDScale, uDStrength, uSin, uCos, uNoiseSeed;
+    uniform float uUnit;             // px de saída por px da prévia: o padrão cresce junto e sai igual ao da tela
     // animação (0 = imagem estática)
     uniform float uAnimT, uAnimAmt, uAnimFrame;
     // estilos de movimento do dither (0 = assinatura do padrão)
@@ -1088,7 +1091,7 @@ const PixelarGPU = (function () {
 
         if (uShadowsInverted && norm < 0.45) rgb = 255.0 - rgb;
 
-        float x = float(ip.x), y = float(ip.y);
+        float x = floor(float(ip.x) / uUnit), y = floor(float(ip.y) / uUnit);
         float factor = 0.0;
         if (uDitherMode != 0) {
             factor = ditherAt(x, y, 0.0, uNoiseSeed, false);
@@ -1152,14 +1155,15 @@ const PixelarGPU = (function () {
     precision highp float; precision highp int;
     out vec4 outColor;
     uniform sampler2D uTex;
-    uniform float uStrength, uCell, uRough, uBias, uSpeckle, uSeed;
+    uniform float uStrength, uCell, uRough, uBias, uSpeckle, uSeed, uUnit;
     uniform bool uMono;
     ${GLSL_HASH}
     void main() {
-        ivec2 ip = ivec2(gl_FragCoord.xy);
-        vec4 c = texelFetch(uTex, ip, 0);
+        vec4 c = texelFetch(uTex, ivec2(gl_FragCoord.xy), 0);
         if (c.a == 0.0) { outColor = c; return; }
         vec3 d = floor(c.rgb * 255.0 + 0.5);
+        // grão na grade da prévia: na exportação cada grão cresce na mesma proporção da imagem
+        ivec2 ip = ivec2(floor(gl_FragCoord.xy / uUnit));
         float x = float(ip.x), y = float(ip.y);
         float s0 = uSeed * 91.7 + 1.0, s1 = uSeed * 91.7 + 37.0;
         float coarse = phash(ivec2(floor(x / uCell), floor(y / uCell)), s0);
@@ -1197,6 +1201,7 @@ const PixelarGPU = (function () {
     uniform float uHalation, uBloom, uSoft, uBlur, uSharpen, uVignette, uDistort, uChroma, uFlash;
     uniform vec3 uHalColor;
     uniform float uLeak, uLeakPos, uDust, uScratch, uBurn, uGrain, uGrainSize, uJpeg, uChromaNoise, uInterlace, uAutochrome;
+    uniform float uUnit;   // px de saída por px da prévia
     uniform vec3 uLeakColor, uVigColor;
     uniform float uAnim, uAnimFrame, uWeave, uFlicker, uLeakDrift, uBurnAnim;
     ${GLSL_HASH}
@@ -1218,6 +1223,7 @@ const PixelarGPU = (function () {
     }
     void main() {
         vec2 frag = gl_FragCoord.xy;              // linha 0 = topo da imagem
+        vec2 fu = floor(frag / uUnit);            // mesmo pixel na grade da prévia (ruídos e grão iguais aos da tela)
         vec2 S = uSize;
         float m = min(S.x, S.y);
 
@@ -1255,7 +1261,7 @@ const PixelarGPU = (function () {
             col = acc / wsum;
         }
         if (uSharpen > 0.0) {
-            vec2 px = 1.0 / isz;
+            vec2 px = uUnit / isz;
             vec3 b = (img(TEX(duv + vec2(px.x, 0.0))) + img(TEX(duv - vec2(px.x, 0.0))) + img(TEX(duv + vec2(0.0, px.y))) + img(TEX(duv - vec2(0.0, px.y)))) * 0.25;
             col += (col - b) * uSharpen * 2.2;
         }
@@ -1320,7 +1326,7 @@ const PixelarGPU = (function () {
 
         // ---------- autocromo: grãos de amido coloridos ----------
         if (uAutochrome > 0.0) {
-            float hsel = h21(frag / 1.3, 55.0);
+            float hsel = h21(fu / 1.3, 55.0);
             vec3 dotc = hsel < 0.34 ? vec3(1.25, 0.55, 0.35) : hsel < 0.67 ? vec3(0.5, 1.2, 0.45) : vec3(0.55, 0.45, 1.3);
             col = mix(col, col * dotc, uAutochrome * 0.55);
         }
@@ -1357,26 +1363,26 @@ const PixelarGPU = (function () {
         if (uFlicker > 0.0) col *= 1.0 + uFlicker * (phash(ivec2(int(uAnimFrame), 3), 11.0) - 0.5) * 0.16;
         // ---------- vídeo e digital ----------
         if (uJpeg > 0.0) {
-            vec2 blk = (floor(iuv * isz / 8.0) * 8.0 + 4.0) / isz;
+            vec2 blk = (floor(iuv * isz / (8.0 * uUnit)) * 8.0 * uUnit + 4.0 * uUnit) / isz;
             col = mix(col, mix(col, img(TEX(blk)), 0.55), uJpeg);
             col = mix(col, floor(col * 24.0 + 0.5) / 24.0, uJpeg * 0.6);
         }
-        if (uInterlace > 0.0) col *= 1.0 - uInterlace * 0.22 * step(0.5, fract(frag.y * 0.5 + uAnimFrame * 0.5));
+        if (uInterlace > 0.0) col *= 1.0 - uInterlace * 0.22 * step(0.5, fract(fu.y * 0.5 + uAnimFrame * 0.5));
         if (uChromaNoise > 0.0) {
             float sh = 1.0 - smoothstep(0.0, 0.6, luma(col));
-            col += (vec3(h21(frag, 1.0 + uAnimFrame), h21(frag, 2.0 + uAnimFrame), h21(frag, 3.0 + uAnimFrame)) - 0.5) * uChromaNoise * 0.3 * (0.3 + sh);
+            col += (vec3(h21(fu, 1.0 + uAnimFrame), h21(fu, 2.0 + uAnimFrame), h21(fu, 3.0 + uAnimFrame)) - 0.5) * uChromaNoise * 0.3 * (0.3 + sh);
         }
         // ---------- grão de filme (mais forte nos meios-tons) ----------
         if (uGrain > 0.0) {
-            vec2 gp = frag / max(1.0, uGrainSize);
+            vec2 gp = frag / (max(1.0, uGrainSize) * uUnit);
             float n = vnoise(gp, 7.0 + uAnimFrame) + vnoise(gp * 2.3, 13.0 + uAnimFrame) * 0.5 - 0.75;
             float l = luma(col);
             col += n * uGrain * 0.4 * (0.35 + 0.65 * (1.0 - abs(l - 0.5) * 2.0));
         }
         // ---------- poeira e riscos ----------
         if (uDust > 0.0) {
-            float sd2 = h21(frag / max(1.0, m * 0.004), 31.0 + uAnimFrame);
-            if (sd2 > 1.0 - uDust * 0.006) col = mix(col, (h21(frag, 33.0 + uAnimFrame) > 0.5) ? vec3(0.95) : vec3(0.04), 0.85);
+            float sd2 = h21(frag / max(uUnit, m * 0.004), 31.0 + uAnimFrame);
+            if (sd2 > 1.0 - uDust * 0.006) col = mix(col, (h21(fu, 33.0 + uAnimFrame) > 0.5) ? vec3(0.95) : vec3(0.04), 0.85);
             float hair = abs(sin(iuv.x * 17.0 + vnoise(iuv * 3.0, 41.0 + floor(uAnimFrame / 4.0)) * 9.0) * 0.5 + 0.5 - iuv.y);
             if (h21(vec2(floor(uAnimFrame / 4.0), 1.0), 47.0) < uDust * 0.6) col = mix(col, vec3(0.05), (1.0 - smoothstep(0.0, 1.5 / isz.y, hair)) * 0.6);
         }
@@ -1563,19 +1569,20 @@ const PixelarGPU = (function () {
     out vec4 outColor;
     uniform sampler2D uTex;
     uniform int uRadius;
-    uniform float uTol;
+    uniform float uTol, uUnit;
     void main() {
         ivec2 p = ivec2(gl_FragCoord.xy), sz = textureSize(uTex, 0);
         vec4 me = texelFetch(uTex, p, 0);
         if (me.a == 0.0) { outColor = me; return; }
         vec3 best = me.rgb; float bestN = -1.0;
+        int st = max(1, int(uUnit + 0.5));   // vizinhança na escala da prévia
         for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
             if (abs(x) > uRadius || abs(y) > uRadius) continue;
-            vec3 c = texelFetch(uTex, clamp(p + ivec2(x, y), ivec2(0), sz - 1), 0).rgb;
+            vec3 c = texelFetch(uTex, clamp(p + ivec2(x, y) * st, ivec2(0), sz - 1), 0).rgb;
             float n = 0.0;
             for (int v = -2; v <= 2; v++) for (int u = -2; u <= 2; u++) {
                 if (abs(u) > uRadius || abs(v) > uRadius) continue;
-                vec3 d = texelFetch(uTex, clamp(p + ivec2(u, v), ivec2(0), sz - 1), 0).rgb - c;
+                vec3 d = texelFetch(uTex, clamp(p + ivec2(u, v) * st, ivec2(0), sz - 1), 0).rgb - c;
                 n += step(dot(d, d), uTol * uTol);
             }
             n += (x == 0 && y == 0) ? 0.5 : 0.0;   // empate: fica a cor do próprio pixel
@@ -1795,6 +1802,7 @@ const PixelarGPU = (function () {
         gl.viewport(0, 0, tw, th);
         gl.useProgram(prog.p);
         if (inputTex) { bindTex(0, inputTex); if (prog.loc.uTex) gl.uniform1i(prog.loc.uTex, 0); if (prog.loc.uSource) gl.uniform1i(prog.loc.uSource, 0); }
+        if (prog.loc.uUnit) gl.uniform1f(prog.loc.uUnit, unit);
         setUniforms && setUniforms(prog.loc);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
@@ -1830,6 +1838,7 @@ const PixelarGPU = (function () {
 
     // o: ver renderFrame() — retorna true se renderizou (resultado em glCanvas, tamanho w x h)
     function render(o) {
+        unit = o.unit > 0 ? o.unit : 1;
         if (!isAvailable() || !fits(o.w, o.h)) return false;
         try {
             const { w, h } = o;
