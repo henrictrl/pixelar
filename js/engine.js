@@ -29,7 +29,7 @@ const ANIM_DEFAULTS = {
 
 const DEFAULT_STATE = {
     v: 2,
-    adj: { exposure: 0, brightness: 0, contrast: 0, shadows: 0, temperature: 0, saturation: 0, posterize: 0, rgbShift: 0, shadowsInverted: false },
+    adj: { exposure: 0, brightness: 0, contrast: 0, shadows: 0, temperature: 0, saturation: 0, shadowsInverted: false },
     grain: { amount: 0, size: 100, rough: 45, bias: 20, speckle: 0, mono: true },
     pixel: { size: 1, scale: 100, group: 0, groupRadius: 1, groupTol: 35 },   // group: agrupar pixels (0 = desligado)
     dither: { mode: 'none', scale: 1, intensity: 100, opacity: 100, midOnly: false },
@@ -39,11 +39,10 @@ const DEFAULT_STATE = {
     color: { sel: 'all', mode: 'original', invert: false, base: [], ref: [], hue: 0, sat: 0, light: 0, duo: ['#0A1A2F', '#5A82A5', '#F2EFE9'] },
     grad: { on: false, colors: ['#FF00FF', '#00FFFF'], type: 'linear', angle: 90, steps: 0, pos: 50, smooth: 100, blend: 'source-atop', cx: 50, cy: 50, scale: 100, repeat: 1, mirror: false, noise: 0, opacity: 100 },
     film: {
-        look: 'none', mix: 100, temp: 0, grainAmt: 100, frame: 'auto', frameColor: '#f5f2eb', stamp: 'auto', stampColor: '#ff8c1f',
+        look: 'none', mix: 100, grainAmt: 100,
         vignette: 0, halation: 0, bloom: 0, soft: 0, distort: 0, chroma: 0, leak: 0, dust: 0, flash: 0,
         vigColor: '#000000', leakColor: '#ff7319', vencido: 0, lumiereHue: 280,
     },
-    bg: { fill: false, color: '#F0F0F0' },
     mix: 100,                           // intensidade do estilo (mistura com a foto original)
     // dupla exposição: segunda imagem (ou fonte gerada) misturada à foto
     dbl: { on: false, src: 'image', blend: 'screen', op: 85, pre: true, scale: 100, x: 0, y: 0, rot: 0, flip: false,
@@ -57,20 +56,33 @@ const DEFAULT_STATE = {
 const deepClone = (o) => JSON.parse(JSON.stringify(o));
 function freshState() { return deepClone(DEFAULT_STATE); }
 
-// mescla um estado parcial/antigo sobre o padrão (campos novos ganham o valor padrão)
+// mescla um estado parcial/antigo sobre o padrão: só entram campos conhecidos (e do tipo certo);
+// nomes que saíram do app viram o equivalente atual
+const DITHER_ALIAS = { nintendo_ds: 'bayer8', floyd_approx: 'bayer8' };
+const FX_ALIAS = { slice_shift: 'glitch_blocks' };
 function normalizeState(p) {
     const out = freshState();
     if (!p || typeof p !== 'object') return out;
     for (const k of Object.keys(out)) {
-        if (p[k] === undefined) continue;
-        if (out[k] && typeof out[k] === 'object' && !Array.isArray(out[k])) {
-            if (k === 'fxParams') out[k] = deepClone(p[k] || {});
-            else if (k === 'layers') out[k] = normalizeLayers(p[k]);
-            else Object.assign(out[k], deepClone(p[k]));
-        } else out[k] = deepClone(p[k]);
+        const v = p[k];
+        if (v === undefined || v === null) continue;
+        if (k === 'fxParams') { if (typeof v === 'object') out.fxParams = deepClone(v); }
+        else if (k === 'layers') out.layers = normalizeLayers(v);
+        else if (out[k] && typeof out[k] === 'object' && !Array.isArray(out[k])) {
+            if (typeof v !== 'object') continue;
+            for (const f of Object.keys(out[k])) if (v[f] !== undefined && v[f] !== null && typeof v[f] === typeof out[k][f]) out[k][f] = deepClone(v[f]);
+        } else if (typeof v === typeof out[k]) out[k] = deepClone(v);
     }
-    // temperatura só existe em Luz agora: a do filme (versões antigas e estilos) é somada lá
-    if (out.film.temp) { out.adj.temperature = Math.max(-100, Math.min(100, Math.round((+out.adj.temperature || 0) + out.film.temp * 0.8))); out.film.temp = 0; }
+    // versões antigas: temperatura do filme vai para Luz; deslocamento RGB vira aberração da lente
+    const film = p.film || {}, adj = p.adj || {};
+    if (+film.temp) out.adj.temperature = Math.max(-100, Math.min(100, Math.round(out.adj.temperature + film.temp * 0.8)));
+    if (+adj.rgbShift > 0) out.film.chroma = Math.min(100, out.film.chroma + Math.round(adj.rgbShift * 6));
+    // filme, padrão e textura que não existem mais
+    const f = out.film; if (LOOK_ALIAS[f.look]) f.look = LOOK_ALIAS[f.look]; if (f.look !== 'none' && !FILM_LOOKS[f.look]) f.look = 'none';
+    const d = out.dither; if (DITHER_ALIAS[d.mode]) d.mode = DITHER_ALIAS[d.mode]; if (!DITHER_MODES.includes(d.mode)) d.mode = 'none';
+    const fx = out.fx; if (FX_ALIAS[fx.id]) { out.fxParams[FX_ALIAS[fx.id]] = {}; fx.id = FX_ALIAS[fx.id]; }
+    if (fx.id !== 'none' && typeof PixelarFX !== 'undefined' && !PixelarFX.isTexture(fx.id)) fx.id = 'none';
+    if (typeof PixelarFX !== 'undefined') Object.keys(out.fxParams).forEach(id => { if (!PixelarFX.getEffectDef(id)) delete out.fxParams[id]; });
     out.v = 2;
     return out;
 }
@@ -108,23 +120,6 @@ function interpolatePalette(anchors, size) {
     return out;
 }
 
-// paleta harmônica aleatória (mesmo algoritmo do original)
-function generateHarmonyPalette(qty) {
-    const baseHue = Math.random(), saturation = 0.65 + Math.random() * 0.35;
-    const modes = ['dark', 'bright', 'mixed', 'pastel', 'vibrant', 'pop', 'random'];
-    const lMode = modes[Math.floor(Math.random() * modes.length)];
-    const getL = (i, n) => { if (lMode === 'dark') return 0.15 + (i / n) * 0.35; if (lMode === 'bright') return 0.5 + (i / n) * 0.4; if (lMode === 'pastel') return 0.7 + Math.random() * 0.2; if (lMode === 'vibrant') return 0.4 + Math.random() * 0.3; if (lMode === 'pop') return i % 2 === 0 ? 0.2 + Math.random() * 0.15 : 0.7 + Math.random() * 0.2; if (lMode === 'random') return 0.15 + Math.random() * 0.7; return 0.1 + (i / n) * 0.8; };
-    const getS = () => { if (lMode === 'pastel') return 0.4 + Math.random() * 0.4; if (lMode === 'vibrant' || lMode === 'pop') return 0.8 + Math.random() * 0.2; if (lMode === 'random') return 0.5 + Math.random() * 0.5; return saturation; };
-    const H = [[0], [0, 1 / 12, -1 / 12, 2 / 12], [0, 0.5], [0, 5 / 12, 7 / 12], [0, 1 / 3, 2 / 3], [0, 0.25, 0.5, 0.75], [0, 0.2, 0.4, 0.6, 0.8], Array.from({ length: Math.max(qty, 3) }, (_, i) => i / Math.max(qty, 3)), Array.from({ length: Math.max(qty, 4) }, () => Math.random())];
-    const pool = qty > 2 ? [H[1], H[3], H[4], H[4], H[5], H[5], H[6], H[7], H[8], H[8]] : H;
-    const harmony = pool[Math.floor(Math.random() * pool.length)];
-    const anchors = [];
-    for (let i = 0; i < qty; i++) {
-        const shift = lMode === 'random' ? Math.random() * 0.05 - 0.025 : 0;
-        anchors.push(hslToRgb((baseHue + harmony[i % harmony.length] + shift + 1) % 1, getS(), getL(i, qty)));
-    }
-    return anchors.sort((a, b) => luma(a) - luma(b));
-}
 
 // paleta exibida = base com os deslocamentos globais de matiz/saturação/luz
 function displayPalette(c) {
@@ -177,17 +172,15 @@ function pcgHash(x, y, s) {
     return a / 4294967295;
 }
 const f32 = Math.fround;
-const B4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const B8 = [0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21];
-const FS4 = [0, 0, 7, 3, 5, 1, 0, 0, 3, 7, 0, 0, 0, 0, 1, 5];
+// padrões de pontilhado (a ordem não importa; o GPU usa DITHER_IDS em gpu.js)
+const DITHER_MODES = ['none', 'bayer8', 'halftone', 'checkerboard', 'scanlines', 'noise'];
 const HT_S = Math.sin(Math.PI / 4), HT_C = Math.cos(Math.PI / 4);
 function ditherAtCPU(mode, x, y, sc, T, seed, anim) {
     const sx = Math.floor(x / sc), sy = Math.floor(y / sc);
     switch (mode) {
         case 'halftone': { const size = Math.max(2, sc * 3); const rx = x * HT_C - y * HT_S, ry = x * HT_S + y * HT_C; const cx = ((Math.abs(rx) + T * size) % size) - size / 2, cy = ((Math.abs(ry) + T * size) % size) - size / 2; return ((Math.sqrt(cx * cx + cy * cy) * (1 + 0.35 * Math.sin(TAU * T)) / (size / 1.5)) - 0.5) * 1.5; }
-        case 'nintendo_ds': return (((B4[(sy % 4) * 4 + sx % 4] + Math.floor(T * 16)) % 16) / 15 - 0.5) * 0.5;
         case 'bayer8': return (((B8[(sy % 8) * 8 + sx % 8] + Math.floor(T * 64)) % 64) / 63 - 0.5) * 0.5;
-        case 'floyd_approx': { const o = Math.floor(T * 4); return (FS4[((sy + o) % 4) * 4 + (sx + o) % 4] / 16 - 0.5) * 0.6; }
         case 'checkerboard': { const par = (sx + sy) % 2 === 0 ? 1 : -1; return anim ? -0.3 * par * Math.cos(TAU * (T - (sx + sy) / 24)) : -0.3 * par; }
         case 'scanlines': return (Math.floor((y + T * 3 * sc) / sc) % 3 === 0) ? -0.4 : 0.1;
         case 'noise': return (pcgHash(x, y, seed) - 0.5) * 0.4;
@@ -234,7 +227,6 @@ function cpuAdjust(src, dst, a, step = 4, samples = null) {
         const l = 0.3 * r + 0.59 * g + 0.11 * b;
         if (a.sat !== 0) { const k = 1 + a.sat; r = l + (r - l) * k; g = l + (g - l) * k; b = l + (b - l) * k; }
         if (a.sh !== 0 && l < 128) { const f = a.sh * (128 - l) / 128; r += f; g += f; b += f; }
-        if (a.poster > 0) { const n = a.poster - 1, q = 255 / n; r = Math.round((r / 255) * n) * q; g = Math.round((g / 255) * n) * q; b = Math.round((b / 255) * n) * q; }
         t[0] = r; t[1] = g; t[2] = b;
         if (dst) { dst[i] = t[0]; dst[i + 1] = t[1]; dst[i + 2] = t[2]; dst[i + 3] = 255; }
         if (samples) samples.push({ r: t[0], g: t[1], b: t[2] });
@@ -289,7 +281,6 @@ function renderCPU(src, w, h, s, color, grad, anim, grain, mm) {
         }
         d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 255;
     }
-    if (s.rgbShift > 0) { const copy = new Uint8ClampedArray(d), sh = s.rgbShift; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4; if (x + sh < w) d[i] = copy[i + sh * 4]; if (x - sh >= 0) d[i + 2] = copy[i - sh * 4 + 2]; } }
     if (grain) applyFilmGrainCPU(d, w, h, grain);
     return d;
 }
@@ -360,112 +351,46 @@ const FILM_NEUTRAL = {
     uHalation: 0, uHalColor: [1, 0.35, 0.1], uBloom: 0, uSoft: 0, uBlur: 0, uSharpen: 0, uVignette: 0, uVigColor: [0, 0, 0],
     uDistort: 0, uChroma: 0, uFlash: 0, uLeak: 0, uLeakPos: 0.1, uLeakColor: [1, 0.45, 0.1],
     uDust: 0, uScratch: 0, uBurn: 0, uGrain: 0, uGrainSize: 1.5, uJpeg: 0, uChromaNoise: 0, uInterlace: 0, uAutochrome: 0,
-    uFrame: 0, uFrameColor: [0.96, 0.95, 0.92], uStamp: 0, uStampA: [0, 0, 0, 0], uStampB: [0, 0], uStampColor: [1, 0.55, 0.12],
     uWeave: 0, uFlicker: 0, uLeakDrift: 0, uBurnAnim: 0, uAnim: 0, uAnimFrame: 0,
 };
 const FILM_SCALE_KEYS = ['uHalation', 'uBloom', 'uSoft', 'uBlur', 'uSharpen', 'uVignette', 'uDistort', 'uChroma', 'uFlash', 'uLeak', 'uDust', 'uScratch', 'uBurn', 'uGrain', 'uJpeg', 'uChromaNoise', 'uInterlace', 'uAutochrome'];
-const FRAME_NAMES = { 1: 'Polaroid', 2: 'Instax', 3: 'Filme 35 mm', 4: 'Super 8', 5: 'Médio formato', 6: 'Cinemascope', 7: 'Slide', 8: 'Papel antigo', 9: 'Placa de metal', 10: 'Cantos redondos' };
-const FRAME_COLORS = { 1: [0.96, 0.95, 0.92], 2: [0.98, 0.98, 0.97], 3: [0.06, 0.05, 0.04], 4: [0.03, 0.03, 0.03], 5: [0.02, 0.02, 0.02], 6: [0, 0, 0], 7: [0.94, 0.93, 0.9], 8: [0.9, 0.86, 0.76], 9: [0.12, 0.1, 0.08], 10: [0.97, 0.96, 0.93] };
-// Emulações sutis de filmes e câmeras reais (sem molduras, datas ou danos exagerados).
-// Referências: características publicadas de cada filme (saturação, contraste, dominante,
-// grão e halação) — ex.: Kodachrome = vermelhos quentes e densos, azuis profundos e
-// contraste firme; Ektachrome = neutro e limpo; Velvia = saturação intensa.
-// [grupo, [id, nome, descrição, uniforms do shader FILM, extras]]
+// Emulações sutis de filmes e câmeras reais, em 4 grupos de 5.
+// [grupo, [id, nome, descrição, uniforms do FILM_FS, extras]] — extras.fx: filme feito por shader próprio (gpu.js)
 const FILM_LOOK_DEFS = [
-    ['Kodak', [
-        ['kodachrome64', 'Kodachrome 64', 'Vermelhos quentes e densos, azuis profundos e contraste firme: o slide clássico de viagem.', { uSat: 1.28, uContrast: 1.2, uExposure: -0.05, uTemp: 0.12, uTint: 0.03, uSplit: 0.25, uShadowTint: [0.45, 0.47, 0.55], uHighTint: [0.58, 0.52, 0.44], uGrain: 0.08 }],
-        ['kodachrome25', 'Kodachrome 25', 'Versão de grão finíssimo do Kodachrome: cores ricas com um pouco mais de suavidade.', { uSat: 1.2, uContrast: 1.14, uTemp: 0.08, uSplit: 0.2, uShadowTint: [0.46, 0.47, 0.54], uHighTint: [0.56, 0.52, 0.46], uGrain: 0.04, uSharpen: 0.1 }],
+    ['Cor natural', [
         ['ektachrome', 'Ektachrome E100', 'Slide neutro e limpo: cores fiéis, levemente frio, grão quase invisível.', { uSat: 1.12, uContrast: 1.14, uTemp: -0.06, uSplit: 0.15, uShadowTint: [0.46, 0.49, 0.55], uGrain: 0.04, uSharpen: 0.15 }],
-        ['portra160', 'Portra 160', 'Negativo de retrato: pele suave, pouco contraste e grão fino.', { uContrast: 0.9, uRoll: 0.4, uSat: 0.85, uTemp: 0.1, uFade: 0.04, uBase: [0.04, 0.035, 0.03], uSplit: 0.2, uShadowTint: [0.48, 0.5, 0.52], uHighTint: [0.54, 0.51, 0.48], uGrain: 0.08 }],
-        ['portra', 'Portra 400', 'Negativo de retrato: pele suave, luzes macias e baixo contraste.', { uContrast: 0.9, uRoll: 0.4, uSat: 0.9, uTemp: 0.15, uTint: 0.05, uFade: 0.06, uBase: [0.05, 0.04, 0.04], uSplit: 0.25, uShadowTint: [0.47, 0.5, 0.53], uHighTint: [0.55, 0.51, 0.47], uGrain: 0.15, uGrainSize: 1.2, uHalation: 0.05 }],
-        ['portra800', 'Portra 800', 'Portra para pouca luz: mais quente, mais cor e grão aparente.', { uContrast: 0.95, uRoll: 0.35, uSat: 1.0, uTemp: 0.18, uTint: 0.04, uFade: 0.05, uBase: [0.05, 0.04, 0.035], uSplit: 0.3, uShadowTint: [0.46, 0.5, 0.54], uHighTint: [0.57, 0.52, 0.46], uGrain: 0.25, uGrainSize: 1.3 }],
         ['gold200', 'Gold 200', 'O filme das férias: dourado, quente e alegre.', { uTemp: 0.3, uSat: 1.1, uContrast: 1.05, uSplit: 0.3, uShadowTint: [0.46, 0.47, 0.5], uHighTint: [0.6, 0.55, 0.42], uFade: 0.04, uBase: [0.04, 0.03, 0.02], uGrain: 0.2 }],
-        ['ultramax', 'Ultramax 400', 'Negativo popular: cores vivas, quente e contrastado.', { uSat: 1.2, uContrast: 1.1, uTemp: 0.2, uTint: 0.03, uSplit: 0.25, uShadowTint: [0.46, 0.48, 0.5], uHighTint: [0.6, 0.54, 0.42], uGrain: 0.25 }],
-        ['colorplus', 'ColorPlus 200', 'Negativo barato e nostálgico: amarelado, suave e granulado.', { uSat: 1.05, uContrast: 1.05, uTemp: 0.28, uFade: 0.06, uBase: [0.05, 0.04, 0.02], uSplit: 0.3, uShadowTint: [0.48, 0.47, 0.46], uHighTint: [0.6, 0.55, 0.4], uGrain: 0.28 }],
-        ['ektar', 'Ektar 100', 'Grão finíssimo: cores puras, saturadas e nítidas.', { uSat: 1.3, uContrast: 1.18, uTemp: 0.05, uGrain: 0.05, uSharpen: 0.25 }],
+        ['portra', 'Portra 400', 'Negativo de retrato: pele suave, luzes macias e baixo contraste.', { uContrast: 0.9, uRoll: 0.4, uSat: 0.9, uTemp: 0.15, uTint: 0.05, uFade: 0.06, uBase: [0.05, 0.04, 0.04], uSplit: 0.25, uShadowTint: [0.47, 0.5, 0.53], uHighTint: [0.55, 0.51, 0.47], uGrain: 0.15, uGrainSize: 1.2, uHalation: 0.05 }],
+        ['ae1', 'Canon AE-1', 'Reflex dos anos 70: suave, levemente quente e desbotado.', { uContrast: 1.02, uSat: 1.02, uTemp: 0.12, uSoft: 0.12, uVignette: 0.2, uFade: 0.04, uBase: [0.04, 0.035, 0.03], uGrain: 0.2 }],
+        ['descartavel', 'Descartável', 'Câmera descartável: flash no centro e lente simples.', { uFlash: 0.45, uTemp: 0.12, uSat: 1.08, uContrast: 1.1, uVignette: 0.4, uSoft: 0.2, uChroma: 0.4, uGrain: 0.3 }],
+    ]],
+    ['Cinema e P&B', [
         ['trix', 'Tri-X 400', 'O P&B do fotojornalismo: contraste marcante e grão vigoroso.', { uBW: 1, uBWMix: [0.3, 0.6, 0.1], uContrast: 1.3, uRoll: 0.1, uGrain: 0.4, uGrainSize: 1.3 }],
-        ['tmax', 'T-Max 100', 'P&B moderno: tons limpos, grão fino e muita nitidez.', { uBW: 1, uContrast: 1.15, uRoll: 0.25, uGrain: 0.08, uSharpen: 0.2 }],
+        ['noir', 'Film noir', 'P&B de estúdio: pretos fundos e luz dura.', { uBW: 1, uContrast: 1.5, uExposure: -0.15, uVignette: 0.5, uBloom: 0.15, uGrain: 0.25 }],
+        ['kodak_pb', 'Kodak P&B', 'Preto e branco contrastado com microgrão.', {}, { fx: 'kodak_pb' }],
+        ['cinestill', 'CineStill 800T', 'Tungstênio: frio, com brilho vermelho ao redor das luzes.', { uTemp: -0.4, uTint: 0.05, uHalation: 0.8, uHalColor: [1, 0.18, 0.08], uContrast: 1.05, uSat: 1.05, uRoll: 0.3, uGrain: 0.3, uGrainSize: 1.3, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46] }],
+        ['techni3', 'Technicolor', 'Cores cheias e vermelhos profundos dos musicais clássicos.', { uSwap: 3, uSwapAmt: 0.8, uSat: 1.25, uContrast: 1.15, uRoll: 0.3, uSplit: 0.25, uShadowTint: [0.45, 0.5, 0.55], uHighTint: [0.58, 0.52, 0.42], uGrain: 0.12 }],
     ]],
-    ['Fujifilm', [
-        ['velvia', 'Velvia 50', 'Slide de paisagem: saturação intensa, verdes e azuis profundos, contraste alto.', { uSat: 1.45, uContrast: 1.28, uExposure: -0.08, uTemp: -0.02, uTint: 0.06, uSplit: 0.2, uShadowTint: [0.47, 0.46, 0.56], uHighTint: [0.52, 0.52, 0.47], uGrain: 0.04 }],
-        ['provia', 'Provia 100F', 'Slide equilibrado: cor natural com um toque de brilho, grão mínimo.', { uSat: 1.12, uContrast: 1.12, uTemp: -0.04, uGrain: 0.03, uSharpen: 0.1 }],
-        ['astia', 'Astia 100F', 'Slide suave para retrato: contraste baixo e pele delicada.', { uSat: 1.05, uContrast: 0.94, uRoll: 0.3, uTemp: 0.03, uGrain: 0.03 }],
-        ['pro400h', 'Pro 400H', 'Negativo arejado: tons pastel, verdes frescos e luz suave.', { uContrast: 0.9, uRoll: 0.35, uSat: 0.9, uTemp: -0.08, uTint: -0.06, uFade: 0.05, uBase: [0.04, 0.05, 0.05], uSplit: 0.3, uShadowTint: [0.46, 0.53, 0.52], uHighTint: [0.5, 0.52, 0.52], uGrain: 0.15 }],
-        ['superia', 'Superia 400', 'Negativo do dia a dia: verdes marcantes e tons frios.', { uTemp: -0.1, uTint: -0.15, uSat: 1.1, uContrast: 1.1, uSplit: 0.3, uShadowTint: [0.44, 0.54, 0.52], uHighTint: [0.53, 0.53, 0.47], uGrain: 0.22 }],
-        ['c200', 'C200', 'Negativo simples: um pouco esverdeado, suave e honesto.', { uSat: 1.0, uContrast: 1.05, uTemp: -0.05, uTint: -0.1, uFade: 0.05, uBase: [0.03, 0.05, 0.04], uSplit: 0.25, uShadowTint: [0.45, 0.53, 0.5], uGrain: 0.25 }],
-        ['natura', 'Natura 1600', 'Filme de luz ambiente: tons naturais, sombras esverdeadas e grão.', { uContrast: 0.95, uTemp: 0.05, uTint: -0.05, uFade: 0.06, uBase: [0.04, 0.05, 0.05], uSplit: 0.2, uShadowTint: [0.45, 0.52, 0.53], uGrain: 0.35, uGrainSize: 1.3 }],
-        ['acros', 'Neopan Acros', 'P&B de grão finíssimo e tons muito limpos.', { uBW: 1, uBWMix: [0.25, 0.6, 0.15], uContrast: 1.2, uGrain: 0.06, uSharpen: 0.15 }],
-    ]],
-    ['Ilford, Agfa e outros', [
-        ['hp5', 'Ilford HP5', 'P&B versátil: meios-tons suaves e grão fino.', { uBW: 1, uBWMix: [0.25, 0.6, 0.15], uContrast: 1.2, uRoll: 0.2, uGrain: 0.35, uGrainSize: 1.3 }],
-        ['delta3200', 'Ilford Delta 3200', 'P&B noturno: grão grande e pretos levemente lavados.', { uBW: 1, uContrast: 1.15, uFade: 0.05, uBase: [0.04, 0.04, 0.04], uGrain: 0.5, uGrainSize: 1.5 }],
-        ['xp2', 'Ilford XP2', 'P&B cromogênico: tons macios e grão quase invisível.', { uBW: 1, uContrast: 0.95, uRoll: 0.3, uGrain: 0.08 }],
-        ['agfavista', 'Agfa Vista 200', 'Negativo de supermercado: vermelhos fortes e céu ciano.', { uSat: 1.22, uContrast: 1.12, uTemp: 0.05, uHue: -0.04, uSplit: 0.3, uShadowTint: [0.44, 0.48, 0.56], uHighTint: [0.58, 0.5, 0.46], uGrain: 0.2 }],
-        ['agfaapx', 'Agfa APX 100', 'P&B clássico alemão: contraste médio e textura fina.', { uBW: 1, uBWMix: [0.28, 0.6, 0.12], uContrast: 1.12, uGrain: 0.15 }],
-        ['lomo800', 'Lomography 800', 'Negativo da lomografia: cores fortes, quente e com grão.', { uSat: 1.28, uContrast: 1.15, uTemp: 0.12, uTint: 0.05, uSplit: 0.3, uShadowTint: [0.46, 0.46, 0.56], uHighTint: [0.6, 0.52, 0.44], uGrain: 0.3, uVignette: 0.2 }],
+    ['Cores loucas', [
         ['cross', 'Processo cruzado', 'Slide revelado como negativo: amarelos e verdes ácidos.', { uCross: 0.8, uSat: 1.2, uContrast: 1.15, uSplit: 0.25, uShadowTint: [0.45, 0.55, 0.5], uHighTint: [0.6, 0.58, 0.4] }],
         ['lomopurple', 'LomoChrome Purple', 'Troca de cores: verdes viram roxo e azuis viram verde.', { uSwap: 2, uSwapAmt: 1, uSat: 1.15, uContrast: 1.1, uGrain: 0.25 }],
         ['aerochrome', 'Aerochrome', 'Infravermelho colorido: vegetação vira vermelho e rosa.', { uSwap: 1, uSwapAmt: 1, uSat: 1.2, uContrast: 1.15, uGrain: 0.15 }],
-    ]],
-    ['Cinema', [
-        ['vision250d', 'Vision3 250D', 'Negativo de cinema para o dia: luzes macias, sombras levemente frias.', { uContrast: 0.95, uRoll: 0.5, uSat: 0.95, uTemp: 0.05, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.54], uHighTint: [0.57, 0.52, 0.46], uHalation: 0.15, uGrain: 0.12 }],
-        ['vision500t', 'Vision3 500T', 'Negativo de cinema para a noite: frio, suave e com brilho nas luzes.', { uTemp: -0.3, uContrast: 0.95, uRoll: 0.45, uSat: 0.95, uSplit: 0.3, uShadowTint: [0.43, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46], uHalation: 0.35, uHalColor: [1, 0.25, 0.12], uGrain: 0.25 }],
-        ['cinestill50', 'CineStill 50D', 'Cinema para a luz do dia: azuis frios, vermelhos acentuados e halo nas luzes.', { uTemp: -0.08, uSat: 1.1, uContrast: 1.05, uSplit: 0.25, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.47], uHalation: 0.5, uHalColor: [1, 0.2, 0.1], uGrain: 0.05 }],
-        ['cinestill', 'CineStill 800T', 'Tungstênio: frio, com brilho vermelho ao redor das luzes.', { uTemp: -0.4, uTint: 0.05, uHalation: 0.8, uHalColor: [1, 0.18, 0.08], uContrast: 1.05, uSat: 1.05, uRoll: 0.3, uGrain: 0.3, uGrainSize: 1.3, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46] }],
-        ['techni3', 'Technicolor', 'Cores cheias e vermelhos profundos dos musicais clássicos.', { uSwap: 3, uSwapAmt: 0.8, uSat: 1.25, uContrast: 1.15, uRoll: 0.3, uSplit: 0.25, uShadowTint: [0.45, 0.5, 0.55], uHighTint: [0.58, 0.52, 0.42], uGrain: 0.12 }],
-        ['noir', 'Film noir', 'P&B de estúdio: pretos fundos e luz dura.', { uBW: 1, uContrast: 1.5, uExposure: -0.15, uVignette: 0.5, uBloom: 0.15, uGrain: 0.25 }],
-        ['bleach', 'Bleach bypass', 'Prata sobre a cor: dessaturado e duro.', { uBleach: 0.9, uSat: 0.85, uContrast: 1.12, uTemp: -0.05, uGrain: 0.2 }],
-    ]],
-    ['Câmeras', [
-        ['contaxt2', 'Contax T2', 'Compacta de luxo: nítida, tons de pele quentes e contraste agradável.', { uSharpen: 0.35, uContrast: 1.08, uSat: 1.05, uTemp: 0.12, uSplit: 0.2, uHighTint: [0.56, 0.52, 0.47], uVignette: 0.15, uGrain: 0.15 }],
-        ['mju2', 'Olympus mju II', 'Compacta cult: contraste vivo, cor quente e cantos levemente escuros.', { uSharpen: 0.25, uContrast: 1.12, uSat: 1.1, uTemp: 0.15, uVignette: 0.35, uGrain: 0.2 }],
-        ['ae1', 'Canon AE-1', 'Reflex dos anos 70: suave, levemente quente e desbotado.', { uContrast: 1.02, uSat: 1.02, uTemp: 0.12, uSoft: 0.12, uVignette: 0.2, uFade: 0.04, uBase: [0.04, 0.035, 0.03], uGrain: 0.2 }],
-        ['leica', 'Leica M6', 'Telemétrica: microcontraste alto, cor sóbria e vinheta discreta.', { uSharpen: 0.3, uContrast: 1.12, uRoll: 0.2, uSat: 0.95, uVignette: 0.25, uGrain: 0.15 }],
-        ['hasselblad', 'Hasselblad 500C/M', 'Médio formato: tons longos e suaves, detalhe fino e grão mínimo.', { uContrast: 0.97, uRoll: 0.35, uSat: 0.98, uSharpen: 0.2, uGrain: 0.04, uVignette: 0.1 }],
         ['lomo', 'Lomo LC-A', 'Cores fortes e bordas escuras da lomografia.', { uVignette: 0.9, uSat: 1.3, uContrast: 1.25, uCross: 0.15, uGrain: 0.25 }],
         ['holga', 'Holga 120', 'Câmera de plástico: foco macio nas bordas e vinheta.', { uVignette: 0.8, uSoft: 0.4, uBlur: 0.5, uSat: 1.1, uContrast: 1.08, uGrain: 0.2 }],
-        ['descartavel', 'Descartável', 'Câmera descartável: flash no centro e lente simples.', { uFlash: 0.45, uTemp: 0.12, uSat: 1.08, uContrast: 1.1, uVignette: 0.4, uSoft: 0.2, uChroma: 0.4, uGrain: 0.3 }],
-        ['compacta', 'Compacta automática', 'Câmera de bolso dos anos 90 com flash embutido.', { uTemp: 0.18, uSat: 1.05, uContrast: 1.08, uSplit: 0.2, uShadowTint: [0.46, 0.5, 0.52], uHighTint: [0.56, 0.52, 0.45], uFlash: 0.25, uVignette: 0.25, uGrain: 0.22 }],
     ]],
-    ['Instantâneas e vídeo', [
-        ['polaroid', 'Polaroid 600', 'Instantânea clássica: cores lavadas e sombras esverdeadas.', { uContrast: 0.92, uFade: 0.12, uBase: [0.06, 0.07, 0.05], uSat: 0.9, uTemp: 0.12, uSplit: 0.3, uShadowTint: [0.45, 0.53, 0.5], uHighTint: [0.57, 0.53, 0.45], uSoft: 0.2, uGrain: 0.1 }],
-        ['instax', 'Instax Mini', 'Instantânea moderna: nítida, fria e brilhante.', { uContrast: 1.05, uSat: 1.08, uTemp: -0.08, uFade: 0.05, uBase: [0.03, 0.04, 0.05], uGrain: 0.06 }],
+    ['Vintage e vídeo', [
         ['super8', 'Super 8', 'Filme caseiro dos anos 70: quente, suave e granulado.', { uTemp: 0.22, uSat: 1.12, uContrast: 1.08, uFade: 0.07, uBase: [0.05, 0.03, 0.02], uGrain: 0.35, uGrainSize: 1.5, uSoft: 0.3, uVignette: 0.35, uHalation: 0.15 }],
-        ['vhscam', 'Filmadora VHS', 'Cor borrada, entrelaçamento e ruído nas sombras.', { uSoft: 0.6, uSharpen: 0.3, uSat: 1.2, uChroma: 0.9, uChromaNoise: 0.45, uInterlace: 0.45, uContrast: 0.95, uFade: 0.06, uBase: [0.04, 0.04, 0.05], uTemp: 0.08 }],
-        ['hi8', 'Hi8', 'Filmadora de mão: cor limpa, leve ruído.', { uSoft: 0.3, uSharpen: 0.4, uSat: 1.08, uChroma: 0.5, uChromaNoise: 0.3, uInterlace: 0.3, uTemp: -0.05 }],
         ['ccd', 'Digital CCD', 'Compacta digital dos anos 2000: nítida, fria e com flash.', { uSharpen: 0.5, uSat: 1.15, uContrast: 1.12, uTemp: -0.1, uBloom: 0.2, uFlash: 0.3, uJpeg: 0.2, uChromaNoise: 0.25, uExposure: 0.08 }],
-    ]],
-    ['Clássicos do Pixelar', [
         ['kodak_verde', 'Kodak desbotado', 'Filme antigo desbotado com dominante esverdeada.', {}, { fx: 'kodak_verde' }],
-        ['kodak_pb', 'Kodak P&B', 'Preto e branco contrastado com microgrão.', {}, { fx: 'kodak_pb' }],
         ['lumiere', 'Lumiere', 'Tingimento monocromático (matiz ajustável).', {}, { fx: 'lumiere' }],
         ['vencido', 'Filme vencido', 'Filme fora da validade (4 variações).', {}, { fx: 'vencido' }],
     ]],
 ];
 const FILM_LOOKS = {};
 FILM_LOOK_DEFS.forEach(([group, list]) => list.forEach(([id, nome, desc, u, x]) => { FILM_LOOKS[id] = Object.assign({ id, nome, desc, group, u }, x || {}); }));
-// curadoria (out/2026): filmes que saíram da lista ou repetiam outro quase igual. Continuam
-// definidos para estilos antigos e arquivos salvos funcionarem, mas não aparecem nem são sorteados.
-const HIDDEN_LOOKS = new Set(["acros", "agfaapx", "agfavista", "astia", "bleach", "c200", "cinestill50", "colorplus", "compacta", "contaxt2", "delta3200", "ektar", "hasselblad", "hi8", "hp5", "instax", "kodachrome25", "kodachrome64", "lomo800", "mju2", "natura", "polaroid", "portra", "portra160", "portra800", "pro400h", "provia", "superia", "tmax", "ultramax", "velvia", "vhscam", "vision250d", "vision500t", "xp2"]);
-// grupos equilibrados (5 filmes em cada)
-{
-    const byId = {}; FILM_LOOK_DEFS.forEach(([, list]) => list.forEach(d => { byId[d[0]] = d; }));
-    const GROUPS = [
-        ['Cor natural', ['ektachrome', 'gold200', 'ae1', 'leica', 'descartavel']],
-        ['Cinema e P&B', ['trix', 'noir', 'kodak_pb', 'cinestill', 'techni3']],
-        ['Cores loucas', ['cross', 'lomopurple', 'aerochrome', 'lomo', 'holga']],
-        ['Vintage e vídeo', ['super8', 'ccd', 'kodak_verde', 'lumiere', 'vencido']],
-    ];
-    FILM_LOOK_DEFS.length = 0;
-    GROUPS.forEach(([g, ids]) => FILM_LOOK_DEFS.push([g, ids.filter(id => byId[id] && !HIDDEN_LOOKS.has(id)).map(id => byId[id])]));
-}
-const visibleLooks = () => Object.keys(FILM_LOOKS).filter(k => !HIDDEN_LOOKS.has(k));
+// filmes que saíram (out/2026) → o visível mais parecido (medido): arquivos antigos continuam abrindo
+const LOOK_ALIAS = { kodachrome64: 'ektachrome', kodachrome25: 'ektachrome', portra160: 'portra', portra800: 'portra', ultramax: 'gold200', colorplus: 'gold200', ektar: 'ektachrome', tmax: 'trix', velvia: 'ektachrome', provia: 'ektachrome', astia: 'portra', pro400h: 'portra', superia: 'ektachrome', c200: 'gold200', natura: 'kodak_verde', acros: 'trix', hp5: 'trix', delta3200: 'trix', xp2: 'trix', agfavista: 'ektachrome', agfaapx: 'trix', lomo800: 'super8', vision250d: 'portra', vision500t: 'portra', cinestill50: 'gold200', bleach: 'trix', contaxt2: 'ae1', mju2: 'super8', leica: 'ae1', hasselblad: 'kodak_verde', compacta: 'super8', polaroid: 'kodak_verde', instax: 'gold200', vhscam: 'kodak_verde', hi8: 'kodak_verde' };
 const LENS_KEYS = ['vignette', 'halation', 'bloom', 'soft', 'distort', 'chroma', 'leak', 'dust', 'flash'];
-
-function stampDigits(year) {
-    const d = new Date(), y = (year || d.getFullYear()) % 100, mo = d.getMonth() + 1, da = d.getDate();
-    return { A: [Math.floor(y / 10), y % 10, Math.floor(mo / 10), mo % 10], B: [Math.floor(da / 10), da % 10] };
-}
 
 function fxParamsFor(st, effectId) {
     const p = Object.assign({}, (st.fxParams && st.fxParams[effectId]) || {});
@@ -476,28 +401,22 @@ function fxParamsFor(st, effectId) {
 
 function readFilm(st, part = 'all') {
     const f = st.film, look = part === 'lens' ? null : (FILM_LOOKS[f.look] || null);
-    const mix = f.mix / 100, temp = part === 'lens' ? 0 : (+f.temp || 0), grainK = f.grainAmt / 100;
-    const frame = 0, stamp = false;   // molduras e data carimbada foram removidas do app
+    const mix = f.mix / 100, grainK = f.grainAmt / 100;
     const lens = {}; let lensOn = false;
     if (part !== 'look') LENS_KEYS.forEach(k => { lens[k] = (+f[k] || 0) / 100; if (lens[k]) lensOn = true; });
     else LENS_KEYS.forEach(k => { lens[k] = 0; });
-    if (!look && !lensOn && !frame && !stamp && !temp) return null;
+    if (!look && !lensOn) return null;
     const chem = look && !look.fx;
     const u = Object.assign({}, FILM_NEUTRAL, chem ? look.u : {});
-    u.uLookOn = (chem || temp) ? 1 : 0;
+    u.uLookOn = chem ? 1 : 0;
     u.uMix = chem ? mix : 1;
     if (chem) FILM_SCALE_KEYS.forEach(k => { u[k] *= mix; });
     ['uGrain', 'uDust', 'uScratch', 'uChromaNoise'].forEach(k => { u[k] *= grainK; });
-    u.uTemp += temp / 100 * 0.6;
     u.uVignette += lens.vignette * 1.5; u.uHalation += lens.halation; u.uBloom += lens.bloom;
     u.uSoft += lens.soft * 2.5; u.uDistort += lens.distort * 0.8; u.uChroma += lens.chroma * 1.5;
     u.uLeak += lens.leak; u.uDust += lens.dust; u.uFlash += lens.flash;
     u.uVigColor = rgbArr(f.vigColor); u.uLeakColor = rgbArr(f.leakColor);
-    u.uFrame = frame; u.uFrameColor = rgbArr(f.frameColor);
-    u.uStamp = stamp ? 1 : 0;
-    if (stamp) { const sd = stampDigits(look && look.year); u.uStampA = sd.A; u.uStampB = sd.B; }
-    u.uStampColor = rgbArr(f.stampColor);
-    const active = u.uLookOn || frame || stamp || FILM_SCALE_KEYS.some(k => u[k] !== 0);
+    const active = u.uLookOn || FILM_SCALE_KEYS.some(k => u[k] !== 0);
     return {
         id: look ? look.id : 'none', legacy: !!(look && look.fx),
         fx: look && look.fx ? { id: look.fx, mix, params: fxParamsFor(st, look.fx) } : null,
@@ -509,7 +428,7 @@ function readFilm(st, part = 'all') {
 // LEITURA DO ESTADO → PARÂMETROS DE RENDER
 // ============================================================
 function readSettings(st) {
-    const a = st.adj, cont = +a.contrast, post = +a.posterize, g = st.grain;
+    const a = st.adj, cont = +a.contrast, g = st.grain;
     return {
         px: Math.max(1, Math.round(st.pixel.size)),
         imageScale: st.pixel.scale / 100,
@@ -517,15 +436,13 @@ function readSettings(st) {
         adj: {
             exp: Math.pow(2, a.exposure / 50), br: +a.brightness, sh: +a.shadows, sat: a.saturation / 100,
             cont, contFactor: (259 * (cont + 255)) / (255 * (259 - cont)), temp: +a.temperature,
-            poster: post > 0 ? Math.max(2, Math.round(16 - (post / 100) * 14)) : 0, invert: !!st.color.invert,
+            invert: !!st.color.invert,
         },
         dither: { mode: st.dither.mode, scale: Math.max(1, Math.round(st.dither.scale)), strength: (st.dither.intensity / 100) * (st.dither.opacity / 100) },
         shadowsInverted: !!a.shadowsInverted, midDither: !!st.dither.midOnly,
-        rgbShift: Math.round(a.rgbShift),
         fx: st.fx.id !== 'none' ? { id: st.fx.id, mix: st.fx.mix / 100, params: fxParamsFor(st, st.fx.id) } : null,
         grain: g.amount ? { strength: (g.amount / 100) * 60, cell: Math.max(1, g.size / 100), rough: g.rough / 100, bias: g.bias / 100, speckle: g.speckle / 100, mono: !!g.mono } : null,
         edge: { size: +st.edge.size, color: st.edge.color, opacity: st.edge.opacity / 100 },
-        fillBg: null,   // o preenchimento de fundo saiu do app (a transparência é mantida)
         grad: !!st.grad.on,
         film: readFilm(st),
         filmLook: readFilm(st, 'look'), filmLens: readFilm(st, 'lens'),
@@ -747,7 +664,7 @@ const Engine = (() => {
         const usedGPU = gpuReady && PixelarGPU.render({
             w, h, srcCanvas: small, srcKey: key, adj: s.adj, dither: s.dither, anim: an,
             minL: mm.minL, maxL: mm.maxL, shadowsInverted: s.shadowsInverted, midDither: s.midDither,
-            grad, color, rgbShift: s.rgbShift, chain, mix: s.mix, edgeBase: s.edge.size > 0, cluster: s.cluster,
+            grad, color, chain, mix: s.mix, edgeBase: s.edge.size > 0, cluster: s.cluster,
             dbl: s.dbl ? Object.assign({}, s.dbl, { t: an && an.T ? an.T : 0 }) : null,
         });
         if (!usedGPU) {
@@ -757,7 +674,7 @@ const Engine = (() => {
         }
         const octx = out.ctx;
         octx.imageSmoothingEnabled = !!o.smooth; if (o.smooth) octx.imageSmoothingQuality = 'high';
-        if (s.fillBg) { octx.fillStyle = s.fillBg; octx.fillRect(0, 0, W, H); } else octx.clearRect(0, 0, W, H);
+        octx.clearRect(0, 0, W, H);
         if (usedGPU) { const g = PixelarGPU.region(); octx.drawImage(PixelarGPU.canvas, g.x, g.y, w, h, 0, 0, W, H); }
         else octx.drawImage(cpuCanvas, 0, 0, w, h, 0, 0, W, H);
         // contorno medido em pixels da arte: mesma espessura relativa na tela, nas miniaturas e em qualquer tamanho exportado
