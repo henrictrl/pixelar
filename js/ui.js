@@ -340,6 +340,7 @@ const FX_GROUP_DEFS = [
     ['Cor e luz', ['thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass']],
     ['Tela', ['ascii', 'lcd', 'led', 'bitmap', 'blueprint', 'vhs']],
     ['Impressão', ['riso', 'cmyk_halftone', 'stipple', 'emboss']],
+    ['Pintura', ['oil', 'watercolor']],
     ['Forma e matéria', ['lego', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort']],
 ];
 function FX_GROUPS() {
@@ -1124,13 +1125,24 @@ function applyPreset(name, ps) {
     Object.entries(favs).forEach(([name, ms]) => { if (ms && typeof ms === 'object' && !prefs.presets[name]) prefs.presets[name] = ms; });
     store.set('presets', prefs.presets); try { localStorage.removeItem('pixelar.favs'); } catch (e) {}
 })();
+// estilos prontos: combinações das ferramentas normais (tudo continua editável depois de aplicar)
+const longSide = () => { const A = M.analysis || {}; return Math.max(A.W || 1600, A.H || 1200); };
+const BUILTIN_STYLES = {
+    '16-bit': (s) => { s.pixel.size = Math.max(1, Math.round(longSide() / 240)); s.color.sel = '24'; s.dither.mode = 'bayer8'; s.dither.scale = 1; s.dither.intensity = 70; s.adj.saturation = 35; s.adj.contrast = 15; },
+    'Óleo': (s) => { s.fx.id = 'oil'; s.adj.saturation = 10; },
+    'Aquarela': (s) => { s.fx.id = 'watercolor'; s.adj.brightness = 8; },
+    'Celular 2010': (s) => { s.film.look = 'celular2010'; },
+    'Flash noturno': (s) => { s.film.look = 'flash_noturno'; },
+    'Vencido verde-rosa': (s) => { s.film.look = 'vencido_verde'; },
+};
+const builtinState = (name) => { const s = freshState(); BUILTIN_STYLES[name](s); return s; };
 function styleThumb(strip, name, stateFn, del) {
     const t = h('button', 'thumb' + (ui.lastPreset === name ? ' on' : '')); t.type = 'button';
     const pic = h('span', 'pic'), lab = h('span', 't'); lab.textContent = name;
     t.append(pic, lab); t.title = name;
     Thumbs.attach(pic, 'style:' + name, () => presetApplyState(stateFn()), false);
     const x = h('span', 'del', icon('close')); x.setAttribute('role', 'button'); x.setAttribute('aria-label', 'Apagar ' + name);
-    x.onclick = (e) => { e.stopPropagation(); del(); }; pic.append(x);
+    if (del) { x.onclick = (e) => { e.stopPropagation(); del(); }; pic.append(x); }
     t.onclick = () => { applyPreset(name, stateFn()); strip.querySelectorAll('.thumb').forEach(o => o.classList.toggle('on', o === t)); };
     strip.append(t);
 }
@@ -1145,7 +1157,12 @@ function styleMixRuler(ed) {
 }
 function syncStyleRuler() { if (styleRuler && styleRuler.isConnected && styleRuler._sync) styleRuler._sync(); }
 function editMine(ed) {
+    const ready = h('div', 'strip');
+    const gt = h('span', 'strip-group'); gt.textContent = 'Prontos'; ready.append(gt);
+    Object.keys(BUILTIN_STYLES).forEach(name => styleThumb(ready, name, () => builtinState(name), null));
+    ed.append(ready);
     const strip = h('div', 'strip');
+    const mt = h('span', 'strip-group'); mt.textContent = 'Meus estilos'; strip.append(mt);
     const add = h('button', 'thumb add'); add.type = 'button'; add.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`;
     add.onclick = saveUserPreset; strip.append(add);
     Object.keys(prefs.presets).forEach(name => styleThumb(strip, name, () => prefs.presets[name], () => {

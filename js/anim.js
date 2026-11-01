@@ -198,6 +198,8 @@ const FX_RANGES = {
     uRR: [-1, 2], uRG: [-1, 2], uRB: [-1, 2], uGR: [-1, 2], uGG: [-1, 2], uGB: [-1, 2], uBR: [-1, 2], uBG: [-1, 2], uBB: [-1, 2],
 };
 const FX_RANGES_BY_EFFECT = {
+    oil: { uBrush: [2, 30], uImpasto: [0, 2], uStroke: [0, 1.5], uSat: [0.5, 2] },
+    watercolor: { uWash: [0, 1], uBleed: [0, 1.5], uInk: [0, 1.5], uGrain: [0, 1.5], uPaper: [0, 1.5] },
     ascii: { uCell: [5, 28], uContrast: [0.5, 2.5], uBg: [0, 0.6] },
     starlight: { uThreshold: [0.4, 0.98], uLength: [5, 80], uIntensity: [0, 3], uDiagonal: [0, 1] },
     stipple: { uCell: [3, 16], uJitter: [0, 1], uGamma: [0.5, 2.5] },
@@ -218,6 +220,7 @@ const FX_RANGES_BY_EFFECT = {
     blueprint: { uGrid: [10, 120], uLines: [0.03, 0.4], uFill: [0, 1] },
 };
 const FX_LABELS = {
+    uBrush: 'Pincel', uImpasto: 'Relevo da tinta', uStroke: 'Marcas do pincel', uBleed: 'Escorrido', uPaper: 'Papel',
     uThreshold: 'Limiar', uIntensity: 'Intensidade', uRadius: 'Raio', uBoost: 'Realce', uScale: 'Escala', uGrain: 'Granulado', uContrast: 'Contraste', uShadowLift: 'Sombras',
     uSatMid: 'Saturação', uAngle: 'Ângulo', uSmooth: 'Suavidade', uFreq: 'Frequência', uThickness: 'Espessura', uAmount: 'Quantidade', uChroma: 'Aberração', uZoom: 'Zoom',
     uSpacing: 'Espaçamento', uBands: 'Faixas', uShift: 'Deslocamento', uSizeX: 'Largura', uSizeY: 'Altura', uSlices: 'Fatias', uSeed: 'Semente', uDuo: 'Duotone', uPhase: 'Fase',
@@ -340,6 +343,7 @@ const FX_FAMILIES = {
     screen: ['ascii', 'lcd', 'led', 'bitmap', 'blueprint', 'vhs'],
     color: ['thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass'],
     matter: ['lego', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort'],
+    art: ['oil', 'watercolor'],
     bw: ['stipple', 'bitmap', 'emboss'],
 };
 const FILM_STYLE_LOOKS = { natural: ['gold200'], cinema: ['cinestill', 'techni3'], loucas: ['techni3', 'vencido', 'lumiere'], vintage: ['vencido', 'gold200', 'lumiere'], pb: ['trix', 'lumiere'] };
@@ -402,7 +406,7 @@ const LUZ_STYLES = { natural: 'Luz natural', dramatico: 'Dramático', lavado: 'L
 const COR_STYLES = { paleta: 'Paleta', retro: 'Paleta retrô', foto: 'Cores da foto', duo: 'Duotone', degrade: 'Degradê', original: 'Cor original' };
 const PIXEL_STYLES = { leve: 'Pixel fino', grande: 'Pixel grande', mosaico: 'Mosaico', dither: 'Pontilhado', agrupar: 'Manchas' };
 const FILME_STYLES = { natural: 'Filme', cinema: 'Cinema', loucas: 'Cores loucas', vintage: 'Vintage', pb: 'Filme P&B', lente: 'Lente', grao: 'Grão' };
-const TEX_STYLES = { print: 'Impressão', screen: 'Tela', color: 'Cor e luz', matter: 'Matéria', bw: 'Gravura' };
+const TEX_STYLES = { print: 'Impressão', screen: 'Tela', color: 'Cor e luz', matter: 'Matéria', bw: 'Gravura', art: 'Pintura' };
 
 const TOOL_DICE = {
     luz(k, style) {
@@ -507,6 +511,7 @@ const RECIPES = [
     { id: 'poster', nome: 'Pôster', steps: [['cor', ['foto', 'paleta', 'duo']], ['pixel', 'agrupar'], ['luz', ['dramatico', 'vivo']], ['filme', 'grao', 0.35]] },
     { id: 'sonho', nome: 'Sonho', steps: [['dupla'], ['filme', ['lente', 'vintage']], ['luz', ['lavado', 'quente']], ['cor', 'degrade', 0.4]] },
     { id: 'materia', nome: 'Arte e matéria', steps: [['textura', 'matter'], ['luz', ['natural', 'vivo'], 0.6]] },
+    { id: 'tela_pintada', nome: 'Pintura', steps: [['textura', 'art'], ['luz', ['natural', 'vivo', 'quente'], 0.7], ['cor', ['foto', 'paleta'], 0.3]] },
     { id: 'duotone', nome: 'Duotone', steps: [['cor', 'duo'], ['filme', 'grao', 0.5], ['pixel', 'dither', 0.3], ['luz', ['dramatico', 'natural'], 0.6]] },
     { id: 'noturno', nome: 'Cinema noturno', steps: [['luz', 'noturno'], ['filme', 'cinema'], ['cor', 'degrade', 0.25]] },
     { id: 'livre', nome: 'Mistura livre', steps: null },
