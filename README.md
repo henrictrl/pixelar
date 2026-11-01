@@ -4,7 +4,7 @@ Editor de pixel art, dither, filmes analógicos e animações para **fotos e ví
 
 Interface flat, no estilo dos apps do iPhone (barras sólidas, sem vidro nem desfoque), com ícones em pixel e a fonte Departure Mono. Na barra de baixo:
 
-- **Estilos**: as combinações que você salvou (“Salvar atual”), com a intensidade do estilo.
+- **Estilos**: os Prontos (16-bit, Óleo, Aquarela, Celular 2010, Flash noturno, Vencido verde-rosa) e as combinações que você salvou (“Salvar atual”), com a intensidade do estilo. Tudo continua editável depois de aplicar.
 - **Editar**: 9 ferramentas numa grade. Tocar numa ferramenta abre a lista dos ajustes dela (em seções, com o valor de cada um); tocar num ajuste abre o controle, com “‹ voltar”. Opções e miniaturas ficam em grade com rolagem vertical, nada escondido para os lados. Tocar na ferramenta aberta fecha e devolve o espaço à foto.
   **Cortar** · **Luz** · **Cor** (paleta, duotone/tritone e degradê) · **Pixel** (tamanho, padrão, agrupar e contorno) · **Textura** · **Filme** (filme, grão e lente) · **Pintura** (regiões ou pixels, com cores, detalhe, células, manchas mínimas, arredondar e linhas ajustáveis) · **Dupla** exposição · **Movimento**.
 - **Sortear** (o dado): cada jogada escolhe uma receita (Pixel art, 8-bit, Analógico, Lomografia, P&B, Impressão, Tela e glitch, Pop art, Pintura por números, Pôster, Sonho, Matéria, Duotone, Cinema noturno ou Mistura livre) e devolve ao natural as ferramentas que ela não usa. Cada ferramenta tem o próprio dado (“Sortear Cor”…) e pode ser travada (segurar a ferramenta, ou o cadeado na folha do dado). Segurar o dado abre essa folha; segurar um ajuste trava só ele.
@@ -41,6 +41,7 @@ Depois abra `http://localhost:8000`. Para publicar, qualquer hospedagem estátic
 | `sw.js` | Cache offline (abre instantâneo nas próximas visitas) |
 | `icons/logo.svg` | Logo (sol em pixel). `tools/icones.py` gera os PNGs do app a partir dele |
 | `tools/galeria.js` | Gera a galeria de todos os efeitos aplicados a duas fotos (Playwright) |
+| `tools/estudo.js` | Gera o estudo de filmes e câmeras candidatos (`tools/estudo-filmes.js`), que só entram no app depois de escolhidos |
 
 ### A regra que evita "arrumar uma coisa e quebrar outra"
 

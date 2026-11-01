@@ -356,8 +356,9 @@ const FILM_NEUTRAL = {
     uDistort: 0, uChroma: 0, uFlash: 0, uLeak: 0, uLeakPos: 0.1, uLeakColor: [1, 0.45, 0.1],
     uDust: 0, uScratch: 0, uBurn: 0, uGrain: 0, uGrainSize: 1.5, uJpeg: 0, uChromaNoise: 0, uInterlace: 0, uAutochrome: 0,
     uWeave: 0, uFlicker: 0, uLeakDrift: 0, uBurnAnim: 0, uAnim: 0, uAnimFrame: 0,
+    uSmear: 0, uDream: 0, uNeg: 0, uLowRes: 0, uSmearColor: [0.75, 0.3, 1.0],
 };
-const FILM_SCALE_KEYS = ['uHalation', 'uBloom', 'uSoft', 'uBlur', 'uSharpen', 'uVignette', 'uDistort', 'uChroma', 'uFlash', 'uLeak', 'uDust', 'uScratch', 'uBurn', 'uGrain', 'uJpeg', 'uChromaNoise', 'uInterlace', 'uAutochrome'];
+const FILM_SCALE_KEYS = ['uSmear', 'uDream', 'uNeg', 'uHalation', 'uBloom', 'uSoft', 'uBlur', 'uSharpen', 'uVignette', 'uDistort', 'uChroma', 'uFlash', 'uLeak', 'uDust', 'uScratch', 'uBurn', 'uGrain', 'uJpeg', 'uChromaNoise', 'uInterlace', 'uAutochrome'];
 // Emulações de filmes reais, em 2 grupos (curadoria de nov/2026).
 // [grupo, [id, nome, descrição, uniforms do FILM_FS, extras]] — extras.fx: filme feito por shader próprio (gpu.js)
 const FILM_LOOK_DEFS = [
@@ -365,6 +366,11 @@ const FILM_LOOK_DEFS = [
         ['gold200', 'Gold 200', 'O filme das férias: dourado, quente e alegre.', { uTemp: 0.3, uSat: 1.1, uContrast: 1.05, uSplit: 0.3, uShadowTint: [0.46, 0.47, 0.5], uHighTint: [0.6, 0.55, 0.42], uFade: 0.04, uBase: [0.04, 0.03, 0.02], uGrain: 0.2 }],
         ['cinestill', 'CineStill 800T', 'Tungstênio: frio, com brilho vermelho ao redor das luzes.', { uTemp: -0.4, uTint: 0.05, uHalation: 0.8, uHalColor: [1, 0.18, 0.08], uContrast: 1.05, uSat: 1.05, uRoll: 0.3, uGrain: 0.3, uGrainSize: 1.3, uSplit: 0.3, uShadowTint: [0.44, 0.5, 0.56], uHighTint: [0.56, 0.5, 0.46] }],
         ['techni3', 'Technicolor', 'Cores cheias e vermelhos profundos dos musicais clássicos.', { uSwap: 3, uSwapAmt: 0.8, uSat: 1.25, uContrast: 1.15, uRoll: 0.3, uSplit: 0.25, uShadowTint: [0.45, 0.5, 0.55], uHighTint: [0.58, 0.52, 0.42], uGrain: 0.12 }],
+    ]],
+    ['Câmeras', [
+        ['celular2010', 'Celular 2010', 'Câmera de celular antiga: dourado, brilho difuso forte, luzes estouradas e risco do sensor.', { uTemp: 0.9, uTint: -0.3, uDream: 1.1, uBloom: 0.8, uExposure: 0.18, uContrast: 0.9, uFade: 0.18, uBase: [0.12, 0.1, 0.02], uSat: 0.8, uSplit: 0.6, uShadowTint: [0.5, 0.52, 0.42], uHighTint: [0.62, 0.58, 0.4], uSoft: 0.22, uSmear: 0.7, uJpeg: 0.2, uVignette: 0.35, uLowRes: 1.5, uGrain: 0.12 }],
+        ['flash_noturno', 'Flash noturno', 'Filme subexposto à noite: flash estourado no centro, sombras azul-petróleo e grão pesado.', { uExposure: -0.85, uFlash: 1.0, uVignette: 1.3, uTemp: -0.6, uTint: -0.1, uSplit: 0.7, uShadowTint: [0.33, 0.5, 0.64], uHighTint: [0.55, 0.55, 0.55], uBase: [0.03, 0.08, 0.14], uFade: 0.3, uSat: 0.85, uContrast: 1.15, uGrain: 0.6, uGrainSize: 1.6, uChromaNoise: 0.35 }],
+        ['vencido_verde', 'Vencido verde-rosa', 'Filme vencido: dominante verde-água, luzes rosadas, contraste baixo e vazamento de luz.', { uTint: -1.5, uTemp: -0.35, uFade: 0.38, uBase: [0.14, 0.22, 0.19], uContrast: 0.75, uSat: 0.65, uSplit: 1.0, uShadowTint: [0.36, 0.6, 0.55], uHighTint: [0.66, 0.5, 0.52], uLeak: 0.9, uLeakPos: 0.12, uLeakColor: [1.0, 0.38, 0.45], uGrain: 0.35, uSoft: 0.12 }],
     ]],
     ['P&B e tingidos', [
         ['trix', 'Tri-X 400', 'O P&B do fotojornalismo: contraste marcante e grão vigoroso.', { uBW: 1, uBWMix: [0.3, 0.6, 0.1], uContrast: 1.3, uRoll: 0.1, uGrain: 0.4, uGrainSize: 1.3 }],
@@ -402,7 +408,9 @@ function readFilm(st, part = 'all') {
     u.uVignette += lens.vignette * 1.5; u.uHalation += lens.halation; u.uBloom += lens.bloom;
     u.uSoft += lens.soft * 2.5; u.uDistort += lens.distort * 0.8; u.uChroma += lens.chroma * 1.5;
     u.uLeak += lens.leak;
-    u.uVigColor = rgbArr(f.vigColor); u.uLeakColor = rgbArr(f.leakColor);
+    // cores da vinheta e do vazamento: as da Lente quando ela está em uso; senão as do próprio filme
+    u.uVigColor = (chem && look.u.uVigColor && !f.vignette) ? look.u.uVigColor : rgbArr(f.vigColor);
+    u.uLeakColor = (chem && look.u.uLeakColor && !f.leak) ? look.u.uLeakColor : rgbArr(f.leakColor);
     const active = u.uLookOn || FILM_SCALE_KEYS.some(k => u[k] !== 0);
     return {
         id: look ? look.id : 'none', legacy: !!(look && look.fx),

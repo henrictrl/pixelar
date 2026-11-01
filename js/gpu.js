@@ -489,6 +489,105 @@ const PIXELAR_FX_LIST = [
     }`
   },
   {
+    // Pintura a óleo: Kuwahara anisotrópico (manchas chapadas que seguem as formas)
+    // + marcas do pincel na direção dos contornos + relevo de tinta grossa (impasto).
+    // As cores são as da imagem: a paleta fica por conta da ferramenta Cor.
+    id: 'oil', nome: 'Pintura a óleo',
+    uniforms: { uBrush: 10.0, uImpasto: 1.0, uStroke: 0.9, uSat: 1.2 },
+    src: `
+    uniform float uBrush, uImpasto, uStroke, uSat;
+    vec2 strokeDir(vec2 uv, float S, float r) {
+        vec2 px = max(2.0 * S, r * 0.8) / uResolution;   // direção medida numa escala do tamanho do pincel (suave)
+        float gx = luma(texture(uSource, uv + vec2(px.x, 0.0)).rgb) - luma(texture(uSource, uv - vec2(px.x, 0.0)).rgb);
+        float gy = luma(texture(uSource, uv + vec2(0.0, px.y)).rgb) - luma(texture(uSource, uv - vec2(0.0, px.y)).rgb);
+        float a = atan(gy, gx + 1e-5) + 1.5708;
+        float flat_ = smoothstep(0.02, 0.0, length(vec2(gx, gy)));            // área lisa: pinceladas soltas na diagonal
+        a = mix(a, 0.7 + (fbm(uv * 3.0) - 0.5) * 2.0, flat_);
+        return vec2(cos(a), sin(a));
+    }
+    // pinceladas: uma "pincelada" elíptica por célula, orientada pelo contorno, com fibras de cerda
+    float dabs(vec2 p, float r, float S) {
+        float cs = r * 1.15; vec2 ip = floor(p / cs); float hm = 0.0;
+        for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+            vec2 id = ip + vec2(float(x), float(y));
+            vec2 ctr = (id + 0.5 + (vec2(hash(id), hash(id + 7.3)) - 0.5) * 0.9) * cs;
+            vec2 dd = strokeDir(ctr / uResolution, S, r), nn = vec2(-dd.y, dd.x);
+            vec2 q = p - ctr; float u = dot(q, dd) / (r * 2.6), v = dot(q, nn) / (r * 1.0);
+            float e = 1.0 - (u * u + v * v);
+            if (e > 0.0) { float h = sqrt(e) * (0.9 + 0.1 * uStroke * sin(v * 9.0 + hash(id + 3.1) * 6.28)) * 0.8 + hash(id + 1.7) * 0.2; hm = max(hm, h); }
+        }
+        return hm;
+    }
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0, r = max(1.0, uBrush * S);
+        vec2 p = vUv * uResolution, d = strokeDir(vUv, S, r), n = vec2(-d.y, d.x);
+        vec3 m0 = vec3(0.0), m1 = vec3(0.0), m2 = vec3(0.0), m3 = vec3(0.0), q0 = vec3(0.0), q1 = vec3(0.0), q2 = vec3(0.0), q3 = vec3(0.0);
+        const int N = 5; float cnt = 0.0;
+        for (int i = 0; i <= N; i++) for (int j = 0; j <= N; j++) {
+            float a = float(i) / float(N), b = float(j) / float(N);
+            vec2 oa = d * a * r * 1.7, ob = n * b * r * 0.75;
+            vec3 c0 = texture(uSource, (p + oa + ob) / uResolution).rgb, c1 = texture(uSource, (p - oa + ob) / uResolution).rgb;
+            vec3 c2 = texture(uSource, (p - oa - ob) / uResolution).rgb, c3 = texture(uSource, (p + oa - ob) / uResolution).rgb;
+            m0 += c0; q0 += c0 * c0; m1 += c1; q1 += c1 * c1; m2 += c2; q2 += c2 * c2; m3 += c3; q3 += c3 * c3; cnt += 1.0;
+        }
+        m0 /= cnt; m1 /= cnt; m2 /= cnt; m3 /= cnt;
+        float v0 = dot(q0 / cnt - m0 * m0, vec3(1.0)), v1 = dot(q1 / cnt - m1 * m1, vec3(1.0)), v2 = dot(q2 / cnt - m2 * m2, vec3(1.0)), v3 = dot(q3 / cnt - m3 * m3, vec3(1.0));
+        vec3 col = m0; float vm = v0;
+        if (v1 < vm) { vm = v1; col = m1; } if (v2 < vm) { vm = v2; col = m2; } if (v3 < vm) { vm = v3; col = m3; }
+        vec3 h = rgb2hsl(col); h.y = clamp(h.y * uSat, 0.0, 1.0); col = hsl2rgb(h);
+        // relevo da tinta: altura = marcas do pincel; luz vinda do alto à esquerda
+        float e = max(1.0, r * 0.12);
+        float h0 = dabs(p, r, S), hx = dabs(p + vec2(e, 0.0), r, S), hy = dabs(p + vec2(0.0, e), r, S);
+        float shade = ((h0 - hx) + (h0 - hy)) * uImpasto * 1.4;
+        col *= 1.0 + clamp(shade, -0.5, 0.5) * 0.45;
+        col += vec3(1.0) * smoothstep(0.15, 0.5, shade) * uImpasto * 0.12;   // brilho do óleo nas cristas
+        outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+    }`
+  },
+  {
+    // Aquarela de ilustração (traço a nanquim + aguadas): manchas que escorrem, borda
+    // mais escura onde a tinta seca, granulação do pigmento e textura do papel.
+    // Traço e aguadas usam as cores da própria imagem.
+    id: 'watercolor', nome: 'Aquarela',
+    uniforms: { uWash: 0.75, uBleed: 0.9, uInk: 1.0, uGrain: 0.7, uPaper: 0.7 },
+    src: `
+    uniform float uWash, uBleed, uInk, uGrain, uPaper;
+    vec3 C(vec2 uv) { return texture(uSource, clamp(uv, 0.0, 1.0)).rgb; }
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0;
+        vec2 p = vUv * uResolution / S;
+        // a tinta escorre: amostragem deslocada por ruído suave
+        vec2 flow = (vec2(fbm(p * 0.012), fbm(p * 0.012 + 9.1)) - 0.5) * uBleed * 0.03;
+        vec2 uv = vUv + flow;
+        float r = (1.5 + uBleed * 4.0) * S;
+        vec3 acc = C(uv) * 2.0; float ws = 2.0;
+        for (int i = 0; i < 12; i++) { float a = float(i) * 0.5236; vec2 o = vec2(cos(a), sin(a)) * r * (i % 2 == 0 ? 1.0 : 0.5) / uResolution; acc += C(uv + o); ws += 1.0; }
+        vec3 c = acc / ws;
+        // aguadas: luz em poucos degraus suaves, cor mais leve e transparente
+        vec3 h = rgb2hsl(c);
+        float lv = 4.0, l = h.z * lv, fl = floor(l);
+        h.z = (fl + smoothstep(0.35, 0.65, l - fl)) / lv;
+        h.y = clamp(h.y * (1.0 + uWash * 0.35), 0.0, 1.0);   // pigmento limpo e vivo
+        h.z = mix(h.z, 0.25 + h.z * 0.8, uWash * 0.6);        // aguada: sombras transparentes, nada de preto chapado
+        c = hsl2rgb(h);
+        // borda da aguada mais escura (onde o pigmento acumula ao secar)
+        vec2 e = 2.5 * S / uResolution;
+        float g = length(vec2(luma(C(uv + vec2(e.x, 0.0))) - luma(C(uv - vec2(e.x, 0.0))), luma(C(uv + vec2(0.0, e.y))) - luma(C(uv - vec2(0.0, e.y)))));
+        c *= 1.0 - smoothstep(0.04, 0.25, g) * 0.25 * uWash;
+        // granulação do pigmento (mais nas áreas escuras) e papel
+        float gr = fbm(p * 0.35) - 0.5, pap = fbm(p * 0.09) * 0.6 + noise2(p * 0.8) * 0.4 - 0.5;
+        c *= 1.0 + gr * uGrain * 0.35 * (1.0 - h.z);
+        c *= 1.0 + pap * uPaper * 0.12;
+        // traço a nanquim: contorno fino na cor escura da própria região
+        vec2 t = 1.0 * S / uResolution;
+        float gx = luma(C(vUv + vec2(t.x, 0.0))) - luma(C(vUv - vec2(t.x, 0.0))), gy = luma(C(vUv + vec2(0.0, t.y))) - luma(C(vUv - vec2(0.0, t.y)));
+        float ink = smoothstep(0.08, 0.22, length(vec2(gx, gy))) * uInk;
+        ink *= 0.75 + 0.25 * noise2(p * 0.6);   // pena irregular
+        c = mix(c, C(vUv) * 0.28, ink);
+        outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+    }`
+  },
+  {
     // Lumiere: efeito de matiz customizavel (roxo por padrao, referencia do
     // usuario). uHue (0-1, representando 0-360 graus) escolhe a cor de
     // aplicacao. A aplicacao NAO e uma tinta uniforme: dosa por luminancia
@@ -929,6 +1028,8 @@ const PixelarGPU = (function () {
     uniform float uHalation, uBloom, uSoft, uBlur, uSharpen, uVignette, uDistort, uChroma, uFlash;
     uniform vec3 uHalColor;
     uniform float uLeak, uLeakPos, uDust, uScratch, uBurn, uGrain, uGrainSize, uJpeg, uChromaNoise, uInterlace, uAutochrome;
+    uniform float uSmear, uDream, uNeg, uLowRes;   // câmera digital: mancha do sensor CCD, brilho de sonho, negativo, sensor de baixa resolução
+    uniform vec3 uSmearColor;
     uniform float uUnit;   // px de saída por px da prévia
     uniform vec3 uLeakColor, uVigColor;
     uniform float uAnim, uAnimFrame, uWeave, uFlicker, uLeakDrift, uBurnAnim;
@@ -968,6 +1069,8 @@ const PixelarGPU = (function () {
         vec2 cc = iuv - 0.5;
         float r2 = dot(cc, cc);
         vec2 duv = 0.5 + cc * (1.0 + uDistort * r2) / (1.0 + uDistort * 0.25);
+        // sensor de baixa resolução (webcam, celular antigo): blocos medidos em px da prévia
+        if (uLowRes > 0.0) { vec2 blk = vec2(max(1.0, uLowRes * uUnit)); duv = (floor(duv * isz / blk) + 0.5) * blk / isz; }
         // coordenada de amostragem na textura inteira
         vec2 toTex = isz / S, offTex = i0 / S;
         #define TEX(u) (offTex + clamp(u, 0.0, 1.0) * toTex)
@@ -995,15 +1098,18 @@ const PixelarGPU = (function () {
         }
 
         // ---------- halação (brilho avermelhado nas luzes) e bloom ----------
-        if (uHalation > 0.0 || uBloom > 0.0) {
-            vec3 glow = vec3(0.0);
+        if (uHalation > 0.0 || uBloom > 0.0 || uDream > 0.0) {
+            vec3 glow = vec3(0.0), all = vec3(0.0);
             for (int i = 0; i < 16; i++) {
                 float a = float(i) * TAU / 16.0 + 0.3;
                 float rr = (float(i % 4) + 1.0) / 4.0;
                 vec3 s = img(TEX(duv + vec2(cos(a), sin(a)) * rr * m * 0.035 / isz));
                 glow += s * max(0.0, luma(s) - 0.68) / 0.32; // só as luzes fortes
+                all += s;
             }
-            glow /= 16.0;
+            glow /= 16.0; all /= 16.0;
+            // brilho de sonho (efeito Orton): a imagem difusa e clareada somada por "tela"
+            if (uDream > 0.0) { vec3 d = clamp(all * all * 1.6, 0.0, 1.0); col = mix(col, 1.0 - (1.0 - col) * (1.0 - d), clamp(uDream, 0.0, 1.5) * 0.75); }
             col += uHalColor * luma(glow) * uHalation * 1.6;
             col += glow * uBloom * 1.4;
         }
@@ -1049,9 +1155,20 @@ const PixelarGPU = (function () {
             c += (uShadowTint - 0.5) * uSplit * (1.0 - smoothstep(0.0, 0.55, lum));
             c += (uHighTint - 0.5) * uSplit * smoothstep(0.45, 1.0, lum);
             c = mix(c, uBase + c * (1.0 - uBase), uFade);
+            // negativo colorido (C-41): cores invertidas sobre a base laranja
+            if (uNeg > 0.0) c = mix(c, (1.0 - c) * vec3(0.96, 0.66, 0.42) + vec3(0.03, 0.02, 0.0), uNeg);
             col = mix(src, clamp(c, 0.0, 1.0), uMix);
         }
 
+        // ---------- mancha do sensor CCD: risco vertical saindo das luzes fortes ----------
+        if (uSmear > 0.0) {
+            float sm = 0.0, avg = 0.0;
+            for (int i = 0; i < 32; i++) { float l = luma(img(TEX(vec2(duv.x, (float(i) + 0.5) / 32.0)))); sm = max(sm, l); avg += l; }
+            avg /= 32.0;
+            // coluna com um ponto muito forte e o resto escuro = fonte de luz pontual
+            float k = smoothstep(0.93, 1.0, sm) * smoothstep(0.55, 0.25, avg);
+            col += uSmearColor * k * uSmear * 0.9;
+        }
         // ---------- autocromo: grãos de amido coloridos ----------
         if (uAutochrome > 0.0) {
             float hsel = h21(fu / 1.3, 55.0);
