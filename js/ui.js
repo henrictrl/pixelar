@@ -337,10 +337,10 @@ const DBL_BLEND_OPTS = [...BLEND_OPTS, ['add', 'Somar luz'], ['subtract', 'Subtr
 const FILM_OPTS = [['none', 'Nenhum'], ...Object.values(FILM_LOOKS).map(l => [l.id, l.nome])];
 // texturas agrupadas (miniaturas com títulos de grupo, como os filmes)
 const FX_GROUP_DEFS = [
-    ['Cor e luz', ['warhol', 'prism_map', 'thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass']],
-    ['Tela e glitch', ['ascii', 'crt', 'lcd', 'led', 'bitmap', 'blueprint', 'glitch_blocks', 'vhs']],
-    ['Impressão', ['riso', 'cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'photocopy', 'edge_ink', 'paper', 'emboss']],
-    ['Arte e matéria', ['lego', 'knit', 'mosaic_tiles', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort']],
+    ['Cor e luz', ['thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass']],
+    ['Tela', ['ascii', 'lcd', 'led', 'bitmap', 'blueprint', 'vhs']],
+    ['Impressão', ['riso', 'cmyk_halftone', 'stipple', 'emboss']],
+    ['Forma e matéria', ['lego', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort']],
 ];
 function FX_GROUPS() {
     const byId = Object.fromEntries(PixelarFX.listEffects().map(f => [f.id, f.nome]));
@@ -353,13 +353,9 @@ const PALETTE_LIBRARY = {
     'Cinza': ['#111111', '#555555', '#AAAAAA', '#F2F2F2'],
     'Sépia': ['#2B1B0E', '#6B4226', '#A67B5B', '#D9BF9A', '#F5EBDC'],
     'Vaporwave': ['#2D1B69', '#FF6AD5', '#C774E8', '#AD8CFF', '#94D0FF'],
-    'Terra': ['#3B2F2F', '#8C5E3C', '#C98B4F', '#E3C08D', '#F4E9D8'],
-    'Oceano': ['#03045E', '#0077B6', '#00B4D8', '#90E0EF', '#CAF0F8'],
-    'Neon': ['#0B0019', '#FF00E6', '#00F0FF', '#FFE600'],
-    'Riso': ['#1D3557', '#FF5F7E', '#F7F1E3'],
 };
 const DUO_LIBRARY = { 'Noite': ['#0A1A2F', '#5A82A5', '#F2EFE9'], 'Rosa': ['#2A0845', '#FF6FB5', '#FFE3F1'], 'Laranja': ['#1B1B3A', '#FF7B00', '#FFE8C2'], 'Menta': ['#0B2E2B', '#2EC4B6', '#E8FFF9'], 'Sangue': ['#140000', '#B3001B', '#FFD6D6'], 'Ouro': ['#1C1405', '#C99A2E', '#FFF4D6'] };
-const DBL_SRC_OPTS = [['image', 'Foto escolhida'], ['self', 'A mesma foto'], ['clouds', 'Nuvens'], ['stars', 'Estrelas'], ['light', 'Ondas de luz'], ['leaves', 'Folhagem']];
+const DBL_SRC_OPTS = [['image', 'Foto escolhida'], ['self', 'A mesma foto'], ['clouds', 'Nuvens'], ['light', 'Ondas de luz'], ['leaves', 'Folhagem']];
 const DBL_MASK_OPTS = [['none', 'Sem máscara'], ['base-light', 'Luzes da foto'], ['base-dark', 'Sombras da foto'], ['img-light', 'Luzes da 2ª imagem'], ['center', 'Centro'], ['bottom', 'De baixo'], ['side', 'Da esquerda']];
 const DBL_TONE_OPTS = [['color', 'Cores'], ['mono', 'Preto e branco'], ['tint', 'Tingido'], ['invert', 'Negativo']];
 const CROP_OPTS = [['original', 'Original'], ['1:1', 'Quadrado'], ['4:5', '4:5'], ['5:4', '5:4'], ['3:4', '3:4'], ['4:3', '4:3'], ['2:3', '2:3'], ['3:2', '3:2'], ['9:16', '9:16'], ['16:9', '16:9'], ['21:9', 'Cinema']];
@@ -454,26 +450,21 @@ const FILME_TOOL = { id: 'filme', label: 'Filme', controls: () => {
         R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta', { ensure: () => { if (!st.film.vignette) st.film.vignette = 50; } }),
         R('film.bloom', 'Brilho difuso', 'bloom', 0, 100), R('film.halation', 'Halação', 'halation', 0, 100),
         R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100),
-        R('film.flash', 'Flash', 'flash', 0, 100), R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }),
-        R('film.dust', 'Poeira', 'dust', 0, 100),
+        R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }),
         resetAction('Filme', () => { st.film = fresh('film'); st.grain = fresh('grain'); }));
     return list;
 } };
 const PAINT_MODE_OPTS = [['none', 'Desligado'], ['regions', 'Regiões'], ['pixels', 'Pixels']];
-const PAINT_FILL_OPTS = [['full', 'Pintado'], ['partial', 'Pela metade'], ['faded', 'Clarinho'], ['blank', 'Para pintar']];
 const PINTURA_TOOL = { id: 'pintura', label: 'Pintura', controls: () => {
-    const p = st.paint;
-    // modo e acabamento em miniaturas: o resultado aparece antes de escolher
+    const p = st.paint, regions = p.mode === 'regions';
     const list = [C('paint.mode', 'Modo', 'brush', PAINT_MODE_OPTS, { view: 'thumbs', variant: (s, v) => { s.paint.mode = v; } })];
-    if (p.mode === 'none') { list.push(resetAction('Pintura', () => { st.paint = fresh('paint'); })); return list; }
-    list.push(C('paint.fill', 'Acabamento', 'palette', PAINT_FILL_OPTS, { view: 'thumbs', variant: (s, v) => { s.paint.fill = v; } }),
-        C('paint.level', 'Detalhe', 'scale', [['easy', 'Fácil'], ['balanced', 'Equilibrado'], ['detailed', 'Detalhado']]));
-    if (p.fill === 'partial') list.push(R('paint.progress', 'Progresso', 'steps', 0, 100, { step: 5, fmt: (v) => v + '%' }),
-        C('paint.order', 'Ordem', 'swap', [['color', 'Por cor'], ['random', 'Aleatória']]),
-        A('Outra ordem', 'reset', () => { p.seed = 1 + Math.floor(Math.random() * 999); if (p.order !== 'random') p.order = 'random'; change(null, null, { dials: true }); }));
-    list.push(D('Traço'), R('paint.lines', 'Linhas', 'edge', 0, 100), K('paint.ink', 'Cor do traço'));
-    if (p.fill !== 'full') list.push(T('paint.numbers', 'Números', 'steps'), K('paint.paper', 'Cor do papel'));
-    if (p.mode === 'regions') list.push(R('paint.smooth', 'Arredondar', 'smooth', 0, 4));
+    if (p.mode !== 'none') {
+        // quantidade de cores, detalhe/tamanho e manchas: tudo ajustável
+        list.push(R('paint.colors', 'Cores', 'palette', 2, 48));
+        if (regions) list.push(R('paint.detail', 'Detalhe', 'scale', 0, 100), R('paint.minArea', 'Manchas mínimas', 'size', 1, 80), R('paint.smooth', 'Arredondar', 'smooth', 0, 4));
+        else list.push(R('paint.size', 'Células', 'pixel', 8, 200));
+        list.push(D('Traço'), R('paint.lines', 'Linhas', 'edge', 0, 100), K('paint.ink', 'Cor do traço'));
+    }
     list.push(resetAction('Pintura', () => { st.paint = fresh('paint'); }));
     return list;
 } };
@@ -483,7 +474,7 @@ const DUPLA_TOOL = { id: 'dupla', label: 'Dupla', controls: () => {
         A('Escolher foto', 'upload', () => $('dblInput').click()),
         C('dbl.src', 'Fonte', 'image', DBL_SRC_OPTS, { onPick: (v) => { d.on = true; if (v === 'image' && !DblImage.img) setTimeout(() => $('dblInput').click(), 50); } })];
     if (!d.on) return list;
-    if (['clouds', 'stars', 'light', 'leaves'].includes(d.src)) list.push(A('Outra variação', 'reset', () => { d.seed = 1 + Math.floor(Math.random() * 999); change(null, null); }));
+    if (['clouds', 'light', 'leaves'].includes(d.src)) list.push(A('Outra variação', 'reset', () => { d.seed = 1 + Math.floor(Math.random() * 999); change(null, null); }));
     list.push(C('dbl.blend', 'Mistura', 'layers', DBL_BLEND_OPTS), R('dbl.op', 'Opacidade', 'opacity', 0, 100), T('dbl.pre', 'Antes da paleta', 'palette'),
         D('Posição'), R('dbl.scale', 'Tamanho', 'scale', 20, 400, { step: 5 }), R('dbl.x', 'Horizontal', 'move', -100, 100), R('dbl.y', 'Vertical', 'move', -100, 100),
         R('dbl.rot', 'Girar', 'rotate', -180, 180), T('dbl.flip', 'Espelhar', 'flipH'),
@@ -771,7 +762,7 @@ function onDialClick(c, d) {
     fitAnim(); buildPanel();
 }
 // controles cujo valor muda quais outros controles aparecem
-const DEPENDS = new Set(['paint.mode', 'paint.fill', 'dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot',
+const DEPENDS = new Set(['paint.mode', 'dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot',
     'grain.amount', 'pixel.group', 'edge.size', 'anim.dStyle', 'anim.dither', 'anim.fx', 'anim.grain', 'anim.film']);
 function grpDependsOn(key) { return DEPENDS.has(key); }
 // mover o recorte só faz sentido no eixo em que sobra imagem
@@ -1482,6 +1473,21 @@ const LAYER_DEFS = {
     edge: { label: 'Contorno', on: () => st.edge.size > 0, sub: () => '', go: ['pixel', 'edge.size'],
         getO: () => st.edge.opacity, setO: (v) => { st.edge.opacity = v; } },
 };
+// excluir uma camada: desliga o efeito dela (a parte do estado volta ao padrão)
+const LAYER_OFF = {
+    dbl: () => { st.dbl = fresh('dbl'); }, grad: () => { st.grad = fresh('grad'); },
+    fx: () => { if (st.fx.id !== 'none') delete st.fxParams[st.fx.id]; st.fx = fresh('fx'); },
+    film: () => { st.film.look = 'none'; st.film.mix = 100; }, lens: () => { LENS_KEYS.forEach(k => { st.film[k] = 0; }); },
+    grain: () => { st.grain = fresh('grain'); }, edge: () => { st.edge = fresh('edge'); },
+    paint: () => { st.paint = fresh('paint'); },
+};
+function deleteLayer(id, label, after) {
+    const before = snapshot();
+    LAYER_OFF[id](); delete st.layers.blend[id]; delete st.layers.op[id];
+    Engine.invalidate(); afterExternalChange(); commit(true);
+    if (after) after();
+    toast(label + ' excluída', { label: 'Desfazer', run: () => { restore(before); commit(true); if (after) after(); } });
+}
 const layerBlend = (id) => { const d = LAYER_DEFS[id]; return d.getB ? d.getB() : (st.layers.blend[id] || 'normal'); };
 const setLayerBlend = (id, v) => { const d = LAYER_DEFS[id]; if (d.setB) d.setB(v); else if (v === 'normal') delete st.layers.blend[id]; else st.layers.blend[id] = v; };
 const layerOp = (id) => { const d = LAYER_DEFS[id]; return d.getO ? d.getO() : (st.layers.op[id] === undefined ? 100 : st.layers.op[id]); };
@@ -1499,7 +1505,7 @@ function openLayers() {
             // a ordem de aplicação é de cima para baixo: a de baixo fica por cima na imagem
             const active = st.layers.order.filter(id => LAYER_DEFS[id].on());
             const base = h('div', 'layer base'); base.innerHTML = `<span class="lname">Foto, paleta e pixel</span>`; list.append(base);
-            if (!active.length) list.append(h('p', 'note', 'Nenhum efeito por cima da foto ainda. Textura, filme, lente, grão, contorno e degradê aparecem aqui.'));
+            if (!active.length && st.paint.mode === 'none') list.append(h('p', 'note', 'Nenhum efeito por cima da foto ainda. Textura, filme, lente, grão, contorno, degradê e pintura aparecem aqui.'));
             active.forEach((id) => {
                 const d = LAYER_DEFS[id], row = h('div', 'layer' + (layersOpen === id ? ' open' : '')); row.dataset.id = id;
                 const grip = h('span', 'grip', icon('grip')); grip.setAttribute('aria-label', 'Arrastar para reordenar');
@@ -1509,7 +1515,9 @@ function openLayers() {
                 nm.querySelector('.lname').textContent = d.label;
                 nm.querySelector('.lsub').textContent = [d.sub(), bl !== 'normal' ? BLEND_OPTS.find(b => b[0] === bl)[1] : '', op < 100 ? Math.round(op) + '%' : ''].filter(Boolean).join(' · ');
                 nm.onclick = () => { layersOpen = layersOpen === id ? null : id; draw(); };
-                row.append(grip, nm);
+                const del = h('button', 'ldel', icon('close')); del.type = 'button'; del.title = 'Excluir ' + d.label; del.setAttribute('aria-label', del.title);
+                del.onclick = () => { if (layersOpen === id) layersOpen = null; deleteLayer(id, d.label, draw); };
+                row.append(grip, nm, del);
                 if (layersOpen === id) {
                     const det = h('div', 'ldetail');
                     const chips = h('div', 'chips');
@@ -1526,6 +1534,15 @@ function openLayers() {
                 list.append(row);
                 dragRow(grip, row, list);
             });
+            // Pintura: sempre por último (sobre tudo), sem mistura; só dá para excluir
+            if (st.paint.mode !== 'none') {
+                const row = h('div', 'layer fixed'), nm = h('div', 'lmain');
+                nm.innerHTML = '<span class="lname">Pintura</span><span class="lsub"></span>';
+                nm.querySelector('.lsub').textContent = (st.paint.mode === 'pixels' ? 'Pixels' : 'Regiões') + ' · sempre por cima';
+                const del = h('button', 'ldel', icon('close')); del.type = 'button'; del.title = 'Excluir Pintura'; del.setAttribute('aria-label', del.title);
+                del.onclick = () => deleteLayer('paint', 'Pintura', draw);
+                row.append(h('span', 'grip', smallIcon('brush')), nm, del); list.append(row);
+            }
         };
         // arrastar pela alça: a fila se reorganiza ao vivo; ao soltar, a nova ordem vale
         const dragRow = (grip, row, box) => {

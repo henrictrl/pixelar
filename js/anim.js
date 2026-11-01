@@ -14,16 +14,11 @@ function rotateMixer(p, T, a) {
 }
 // Só movimentos contínuos (nada de pulsar, piscar ou "respirar"): o loop parece infinito.
 const FX_ANIM = {
-    crt: { nome: 'varredura do tubo', shader: true },
     starlight: { nome: 'estrelas cintilando', shader: true },
-    prism_map: { nome: 'arco-íris correndo', shader: true },
-    glitch_blocks: { nome: 'glitch pulando', shader: true },
     channel_mixer: { nome: 'canais girando', fn: (p, T, a) => rotateMixer(p, T, Math.min(1, a)) },
     pattern_refraction: { nome: 'faixas correndo', shader: true },
     warp: { nome: 'ondas correndo', fn: (p, T) => ({ uPhase: p.uPhase + TAU * T }) },
-    photocopy: { nome: 'scanner vivo', shader: true },
     vhs: { nome: 'fita rodando', shader: true },
-    kodak_pb: { nome: 'grão vivo', shader: true },
     vencido: { nome: 'grão vivo', shader: true },
 };
 const DITHER_STYLES = {
@@ -203,33 +198,23 @@ const FX_RANGES = {
     uRR: [-1, 2], uRG: [-1, 2], uRB: [-1, 2], uGR: [-1, 2], uGG: [-1, 2], uGB: [-1, 2], uBR: [-1, 2], uBG: [-1, 2], uBB: [-1, 2],
 };
 const FX_RANGES_BY_EFFECT = {
-    ascii: { uCell: [5, 28], uContrast: [0.5, 2.5], uColorMode: [0, 1] },
-    crt: { uPitch: [2, 8], uMask: [0, 1], uScan: [0, 1], uCurve: [0, 0.5], uGlow: [0, 1] },
-    knit: { uCell: [6, 32], uDepth: [0, 1], uFuzz: [0, 1] },
-    mosaic_tiles: { uCell: [6, 48], uGrout: [0, 0.4], uBrick: [0, 1], uBevel: [0, 1] },
+    ascii: { uCell: [5, 28], uContrast: [0.5, 2.5], uBg: [0, 0.6] },
     starlight: { uThreshold: [0.4, 0.98], uLength: [5, 80], uIntensity: [0, 3], uDiagonal: [0, 1] },
     stipple: { uCell: [3, 16], uJitter: [0, 1], uGamma: [0.5, 2.5] },
-    woodcut: { uSpacing: [3, 16], uWarp: [0, 3], uContrast: [0.5, 2.5] },
-    paper: { uFiber: [0, 1], uGrain: [0, 1], uWarmth: [0, 1], uFade: [0, 0.6] },
     fluted_glass: { uRib: [6, 60], uStrength: [0, 2], uAngle: [0, 3.1416], uShade: [0, 1] },
     cmyk_halftone: { uCell: [3, 20], uDot: [0.5, 1.6] },
     thermal: { uContrast: [0.5, 2.5], uShift: [-0.5, 0.5], uBlur: [0, 2] },
     emboss: { uStrength: [0.2, 4], uAngle: [0, 6.2832], uColorMix: [0, 1] },
-    bitmap: { uThreshold: [0.1, 0.9], uNoise: [0, 1] },
-    duo_halftone: { uCell: [3, 20] },
-    edge_ink: { uThickness: [0.5, 4], uThreshold: [0.02, 0.4], uWash: [0, 1] },
+    bitmap: { uThreshold: [0.1, 0.9], uNoise: [0, 1], uColorMix: [0, 1] },
     color_threshold: { uThreshold: [0.1, 0.9], uSoft: [0, 0.3], uSplit: [0, 0.4] },
     neon_trace: { uThickness: [0.5, 4], uGlow: [0, 2], uThreshold: [0.02, 0.4], uBg: [0, 0.6] },
     smudge: { uLength: [4, 80], uAngle: [0, 6.2832], uFlow: [0, 1.5] },
-    warhol: { uHue: [0, 1], uSat: [0.3, 1], uSplit: [0.15, 0.5], uGap: [0, 1] },
     riso: { uOffset: [0, 16], uGrain: [0, 1] },
-    glitch_blocks: { uAmount: [0, 1], uBlock: [6, 80], uShift: [0, 0.25], uColor: [0, 1.5] },
     pixel_sort: { uThreshold: [0.1, 0.9], uLength: [10, 400], uVertical: [0, 1] },
     lego: { uCell: [8, 48], uLevels: [2, 10], uStud: [0, 1] },
     lcd: { uCell: [2, 16], uGap: [0, 0.4], uLevels: [2, 8] },
     led: { uCell: [5, 30], uSize: [0.3, 1], uGlow: [0, 1.5], uBoost: [0.5, 2.5] },
     stained_glass: { uCell: [15, 120], uLead: [0.02, 0.3], uSat: [0.5, 2.5] },
-    prism_map: { uCycles: [0.5, 5], uShift: [0, 1], uSat: [0.2, 1], uMix: [0, 1] },
     blueprint: { uGrid: [10, 120], uLines: [0.03, 0.4], uFill: [0, 1] },
 };
 const FX_LABELS = {
@@ -342,8 +327,6 @@ const RETRO_PALETTES = [
     ['#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8', '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'],
     ['#2B1B0E', '#6B4226', '#A67B5B', '#D9BF9A', '#F5EBDC'],
     ['#2D1B69', '#FF6AD5', '#C774E8', '#AD8CFF', '#94D0FF'],
-    ['#0B0019', '#FF00E6', '#00F0FF', '#FFE600'],
-    ['#1D3557', '#FF5F7E', '#F7F1E3'],
     ['#211E20', '#555568', '#A0A08B', '#E9EFEC'],
     ['#1A1C2C', '#5D275D', '#B13E53', '#EF7D57', '#FFCD75', '#A7F070', '#38B764', '#257179', '#29366F', '#3B5DC9', '#41A6F6', '#73EFF7', '#F4F4F4', '#94B0C2', '#566C86', '#333C57'],
     ['#332C50', '#46878F', '#94E344', '#E2F3E4'],
@@ -353,14 +336,13 @@ const DUO_SETS = [
     ['#140000', '#B3001B', '#FFD6D6'], ['#1C1405', '#C99A2E', '#FFF4D6'], ['#101820', '#F2AA4C', '#FDF6E3'], ['#1E0B36', '#00C2A8', '#F9F871'],
 ];
 const FX_FAMILIES = {
-    print: ['riso', 'cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'photocopy', 'edge_ink', 'paper', 'emboss'],
-    screen: ['ascii', 'crt', 'lcd', 'led', 'bitmap', 'blueprint', 'glitch_blocks', 'vhs'],
-    color: ['warhol', 'prism_map', 'thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass'],
-    matter: ['lego', 'knit', 'mosaic_tiles', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort'],
-    bw: ['photocopy', 'woodcut', 'stipple', 'edge_ink', 'bitmap'],
+    print: ['riso', 'cmyk_halftone', 'stipple', 'emboss'],
+    screen: ['ascii', 'lcd', 'led', 'bitmap', 'blueprint', 'vhs'],
+    color: ['thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass'],
+    matter: ['lego', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort'],
+    bw: ['stipple', 'bitmap', 'emboss'],
 };
-const FILM_FAMILIES = { natural: 0, cinema: 1, loucas: 2, vintage: 3 };
-const BW_LOOKS = ['trix', 'noir', 'kodak_pb'];
+const FILM_STYLE_LOOKS = { natural: ['gold200'], cinema: ['cinestill', 'techni3'], loucas: ['techni3', 'vencido', 'lumiere'], vintage: ['vencido', 'gold200', 'lumiere'], pb: ['trix', 'lumiere'] };
 
 const rr = (a, b) => a + Math.random() * (b - a);              // real entre a e b
 const ri = (a, b) => Math.round(rr(a, b));                      // inteiro entre a e b
@@ -411,9 +393,8 @@ function texturePick(k, fam) {
     return pickFresh(ids.length ? ids : all, 'fx:' + fam);
 }
 function filmPick(fam) {
-    if (fam === 'pb') return pickFresh(BW_LOOKS.filter(id => FILM_LOOKS[id]), 'film:pb');
-    const g = FILM_LOOK_DEFS[FILM_FAMILIES[fam] !== undefined ? FILM_FAMILIES[fam] : Math.floor(Math.random() * FILM_LOOK_DEFS.length)];
-    return pickFresh(g[1].map(x => x[0]).filter(id => !BW_LOOKS.includes(id)), 'film:' + fam);
+    const ids = (FILM_STYLE_LOOKS[fam] || Object.keys(FILM_LOOKS)).filter(id => FILM_LOOKS[id]);
+    return pickFresh(ids.length ? ids : Object.keys(FILM_LOOKS), 'film:' + fam);
 }
 
 // ---------- o dado de cada ferramenta: estilo forte e coerente ----------
@@ -421,7 +402,6 @@ const LUZ_STYLES = { natural: 'Luz natural', dramatico: 'Dramático', lavado: 'L
 const COR_STYLES = { paleta: 'Paleta', retro: 'Paleta retrô', foto: 'Cores da foto', duo: 'Duotone', degrade: 'Degradê', original: 'Cor original' };
 const PIXEL_STYLES = { leve: 'Pixel fino', grande: 'Pixel grande', mosaico: 'Mosaico', dither: 'Pontilhado', agrupar: 'Manchas' };
 const FILME_STYLES = { natural: 'Filme', cinema: 'Cinema', loucas: 'Cores loucas', vintage: 'Vintage', pb: 'Filme P&B', lente: 'Lente', grao: 'Grão' };
-const PINTURA_STYLES = { pintado: 'Pintura pronta', metade: 'Pintura pela metade', molde: 'Molde para pintar', clarinho: 'Pintura clarinha' };
 const TEX_STYLES = { print: 'Impressão', screen: 'Tela', color: 'Cor e luz', matter: 'Matéria', bw: 'Gravura' };
 
 const TOOL_DICE = {
@@ -483,8 +463,8 @@ const TOOL_DICE = {
         // lente: 1–3 efeitos fortes, sempre com cara de escolha
         const lens = { natural: 0.5, cinema: 0.6, loucas: 0.9, vintage: 0.9, pb: 0.5, lente: 1, grao: 0.2 }[style];
         if (chanceP(lens)) {
-            const opts = ['vignette', 'halation', 'bloom', 'leak', 'chroma', 'soft', 'dust', 'flash'], n = style === 'lente' ? ri(2, 3) : ri(1, 2);
-            const range = { vignette: [25, 70], halation: [25, 70], bloom: [20, 55], leak: [25, 70], chroma: [20, 60], soft: [15, 45], dust: [20, 60], flash: [20, 50] };
+            const opts = ['vignette', 'halation', 'bloom', 'leak', 'chroma', 'soft', 'distort'], n = style === 'lente' ? ri(2, 3) : ri(1, 2);
+            const range = { vignette: [25, 70], halation: [25, 70], bloom: [20, 55], leak: [25, 70], chroma: [20, 60], soft: [15, 45], distort: [-40, 40] };
             for (let i = 0; i < n; i++) { const kx = pick(opts); s('film.' + kx, ri(...range[kx])); }
             if (f.leak) s('film.leakColor', pick(['#ff7319', '#ff3d6e', '#ffb000', '#ff5ac8']));
         }
@@ -494,17 +474,16 @@ const TOOL_DICE = {
         return style;
     },
     pintura(k, style) {
-        style = style || pickFresh(['pintado', 'pintado', 'metade', 'molde', 'clarinho'], 'pintura');
-        const s = k.set, pixels = chanceP(0.3);
-        s('paint.mode', pixels ? 'pixels' : 'regions'); s('paint.level', pick(['easy', 'balanced', 'balanced', 'detailed']));
-        s('paint.fill', { pintado: 'full', metade: 'partial', molde: 'blank', clarinho: 'faded' }[style]);
-        s('paint.lines', style === 'pintado' ? ri(0, 40) : ri(45, 90)); s('paint.progress', ri(30, 70)); s('paint.order', pick(['color', 'random']));
-        s('paint.smooth', ri(1, 3)); s('paint.seed', ri(1, 999)); s('paint.numbers', true);
-        k.touched.push(PINTURA_STYLES[style] + (pixels ? ' (pixels)' : '')); return style;
+        style = style || pickFresh(['regioes', 'regioes', 'pixels'], 'pintura');
+        const s = k.set, pixels = style === 'pixels';
+        s('paint.mode', pixels ? 'pixels' : 'regions'); s('paint.colors', pick([6, 10, 14, 18, 24, 32]));
+        s('paint.detail', ri(25, 85)); s('paint.size', ri(28, 90)); s('paint.minArea', ri(6, 30)); s('paint.smooth', ri(1, 3));
+        s('paint.lines', chanceP(0.5) ? 0 : ri(15, 45));
+        k.touched.push(pixels ? 'Pintura em pixels' : 'Pintura em regiões'); return style;
     },
     dupla(k) {
         const d = k.st.dbl, s = k.set;
-        const srcs = ['self', 'clouds', 'stars', 'light', 'leaves'].concat(typeof DblImage !== 'undefined' && DblImage.img ? ['image', 'image'] : []);
+        const srcs = ['self', 'clouds', 'light', 'leaves'].concat(typeof DblImage !== 'undefined' && DblImage.img ? ['image', 'image'] : []);
         s('dbl.on', true); s('dbl.src', pickFresh(srcs, 'dbl')); s('dbl.blend', pick(['screen', 'overlay', 'softlight', 'multiply', 'lighten', 'add']));
         s('dbl.op', ri(50, 90)); s('dbl.scale', ri(80, 180)); s('dbl.x', ri(-30, 30)); s('dbl.y', ri(-30, 30)); s('dbl.rot', chanceP(0.5) ? 0 : ri(-30, 30)); s('dbl.flip', chanceP(0.4));
         s('dbl.mask', pick(['none', 'base-light', 'base-dark', 'center', 'bottom', 'side'])); s('dbl.maskLo', ri(35, 65)); s('dbl.maskSoft', ri(15, 50));

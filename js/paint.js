@@ -1,24 +1,20 @@
-/* Pixelar — Pintura por números (efeito final inspirado em apps de "pintar a foto").
+/* Pixelar — Pintura (efeito final inspirado em apps de "pintar a foto": só o resultado pronto).
  *
  * Dois modos sobre a imagem já processada:
  *  - Regiões: a foto vira manchas de cor chapada (quantização + filtro de maioria + fusão
- *    de manchas pequenas), com contornos finos e o número de cada cor no ponto mais
- *    "folgado" da região (transformada de distância).
- *  - Pixels: grade de células com a cor média quantizada, linhas da grade e números.
- * Acabamentos: Pintado, Pela metade, Clarinho e Para pintar (molde em branco).
+ *    de manchas pequenas), com contorno fino opcional entre elas.
+ *  - Pixels: grade de células com a cor quantizada e linhas da grade opcionais.
+ * Tudo ajustável: quantidade de cores, detalhe (regiões), tamanho das células (pixels),
+ * manchas mínimas, arredondamento, linhas e cor do traço.
  *
- * Roda depois de todo o resto (é o último passo do Engine.render), na resolução final:
- * linhas e números ficam nítidos em qualquer tamanho e proporcionais à imagem
- * (a prévia e o arquivo exportado saem iguais). O último resultado fica guardado
- * para o SVG vetorial (molde imprimível).
+ * Roda depois de todo o resto (último passo do Engine.render), na resolução final:
+ * as linhas ficam nítidas e proporcionais (a prévia e o arquivo exportado saem iguais).
+ * O último resultado fica guardado para o SVG vetorial.
  */
 'use strict';
 
-const PAINT_LEVELS = {
-    easy: { grid: 110, cells: 28, colors: 10, minArea: 18 },
-    balanced: { grid: 190, cells: 44, colors: 18, minArea: 14 },
-    detailed: { grid: 300, cells: 64, colors: 28, minArea: 10 },
-};
+const PAINT_LIMITS = { colors: [2, 48], detail: [0, 100], size: [8, 200], minArea: [1, 80], smooth: [0, 4], lines: [0, 100] };
+const clampP = (v, k) => Math.max(PAINT_LIMITS[k][0], Math.min(PAINT_LIMITS[k][1], Math.round(+v || 0)));
 
 const PaintFX = (() => {
     const gridC = document.createElement('canvas'), gctx = gridC.getContext('2d', { willReadFrequently: true });
@@ -27,10 +23,8 @@ const PaintFX = (() => {
     let last = null;                                   // último desenho (para o SVG)
 
     // ---------- utilitários ----------
-    const hash01 = (a, b) => { let x = Math.imul(a ^ 0x9E3779B9, 0x85EBCA6B) ^ Math.imul(b + 0x632BE5AB, 0xC2B2AE35); x ^= x >>> 15; x = Math.imul(x, 0x2C1B3C6D); x ^= x >>> 12; return (x >>> 0) / 4294967295; };
     function quickHash(d) { let h = 2166136261; for (let i = 0; i < d.length; i += 13) h = Math.imul(h ^ d[i], 16777619); return (h >>> 0).toString(36) + d.length; }
     const lum = (c) => 0.3 * c.r + 0.59 * c.g + 0.11 * c.b;
-    const mixC = (a, b, k) => ({ r: a.r + (b.r - a.r) * k, g: a.g + (b.g - a.g) * k, b: a.b + (b.b - a.b) * k });
     const css = (c, a = 1) => `rgba(${Math.round(c.r)},${Math.round(c.g)},${Math.round(c.b)},${a})`;
 
     // paleta (do escuro ao claro) e índice de cor por pixel; 255 = transparente
@@ -110,26 +104,11 @@ const PaintFX = (() => {
         }
         return label(idx, w, h);
     }
-    // ponto mais longe da borda em cada região (onde cabe o número)
-    function labelPoints(L, w, h) {
-        const n = w * h, D = new Float32Array(n), comp = L.comp;
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-            const p = y * w + x, c = comp[p];
-            const edge = x === 0 || y === 0 || x === w - 1 || y === h - 1 || comp[p - 1] !== c || comp[p + 1] !== c || comp[p - w] !== c || comp[p + w] !== c;
-            D[p] = edge ? 1 : 1e9;
-        }
-        const S = Math.SQRT2;
-        for (let y = 1; y < h; y++) for (let x = 1; x < w - 1; x++) { const p = y * w + x; if (D[p] <= 1) continue; D[p] = Math.min(D[p], D[p - 1] + 1, D[p - w] + 1, D[p - w - 1] + S, D[p - w + 1] + S); }
-        for (let y = h - 2; y >= 0; y--) for (let x = w - 2; x >= 1; x--) { const p = y * w + x; if (D[p] <= 1) continue; D[p] = Math.min(D[p], D[p + 1] + 1, D[p + w] + 1, D[p + w + 1] + S, D[p + w - 1] + S); }
-        const best = new Float32Array(L.count), bx = new Int32Array(L.count), by = new Int32Array(L.count);
-        for (let p = 0; p < n; p++) { const c = comp[p]; if (c >= 0 && D[p] > best[c]) { best[c] = D[p]; bx[c] = p % w; by[c] = (p / w) | 0; } }
-        return { best, bx, by };
-    }
-
     // ---------- análise (cacheada pelo conteúdo) ----------
     function analyze(src, W, H, p) {
-        const lv = PAINT_LEVELS[p.level] || PAINT_LEVELS.balanced, pixels = p.mode === 'pixels';
-        const G = pixels ? lv.cells : lv.grid;
+        const pixels = p.mode === 'pixels';
+        // regiões: detalhe 0–100 → grade de 70 a 420 px no lado maior; pixels: células no lado maior
+        const G = pixels ? clampP(p.size, 'size') : Math.round(70 + clampP(p.detail, 'detail') * 3.5);
         const gw = W >= H ? G : Math.max(2, Math.round(G * W / H)), gh = H >= W ? G : Math.max(2, Math.round(G * H / W));
         if (gridC.width !== gw || gridC.height !== gh) { gridC.width = gw; gridC.height = gh; }
         gctx.clearRect(0, 0, gw, gh); gctx.imageSmoothingEnabled = true; gctx.imageSmoothingQuality = 'high';
@@ -141,17 +120,16 @@ const PaintFX = (() => {
         }
         gctx.drawImage(s, 0, 0, sw, sh, 0, 0, gw, gh);
         const d = gctx.getImageData(0, 0, gw, gh).data;
-        const key = [p.mode, p.level, p.smooth, gw, gh, quickHash(d)].join('|');
+        const key = [p.mode, p.colors, p.minArea, p.smooth, gw, gh, quickHash(d)].join('|');
         if (cache.key === key) return cache.res;
-        const q = quantize(d, gw * gh, lv.colors);
-        let idx = q.idx, L, pts = null;
+        const q = quantize(d, gw * gh, clampP(p.colors, 'colors'));
+        let idx = q.idx, L;
         if (pixels) { L = { comp: null, count: 0 }; }
         else {
-            idx = majority(idx, gw, gh, Math.max(0, Math.min(4, Math.round(p.smooth))));
-            L = mergeSmall(idx, gw, gh, lv.minArea);
-            pts = labelPoints(L, gw, gh);
+            idx = majority(idx, gw, gh, clampP(p.smooth, 'smooth'));
+            L = mergeSmall(idx, gw, gh, clampP(p.minArea, 'minArea'));
         }
-        const res = { gw, gh, pal: q.pal, idx, L, pts, pixels };
+        const res = { gw, gh, pal: q.pal, idx, L, pixels };
         cache = { key, res };
         return res;
     }
@@ -160,22 +138,10 @@ const PaintFX = (() => {
     function apply(octx, srcCanvas, W, H, p) {
         if (!p || p.mode === 'none' || !W || !H) return;
         const A = analyze(srcCanvas, W, H, p);
-        const { gw, gh, pal, idx, L, pts, pixels } = A, n = gw * gh, N = pal.length;
-        const paper = hexToRgb(p.paper), ink = hexToRgb(p.ink), fill = p.fill;
-        const prog = Math.max(0, Math.min(100, +p.progress)) / 100, seed = p.seed | 0;
-        // o que já está pintado: por cor (do escuro ao claro) ou por região/célula, aleatório
-        const filledColor = (c) => c < Math.round(prog * N);
-        const isFilled = (c, unit) => fill === 'full' ? true : fill !== 'partial' ? false : p.order === 'random' ? hash01(unit, seed) < prog : filledColor(c);
-        // cor de cada pixel da grade
+        const { gw, gh, pal, idx, L, pixels } = A, n = gw * gh;
+        const ink = hexToRgb(p.ink);
         const img = fctx.createImageData(gw, gh), o = img.data;
-        const filled = new Uint8Array(n);
-        for (let q = 0; q < n; q++) {
-            const c = idx[q], i = q * 4; if (c === 255) continue;
-            const unit = pixels ? q : L.comp[q];
-            const f = isFilled(c, unit); filled[q] = f ? 1 : 0;
-            const col = f ? pal[c] : fill === 'faded' ? mixC(pal[c], paper, 0.78) : paper;
-            o[i] = col.r; o[i + 1] = col.g; o[i + 2] = col.b; o[i + 3] = 255;
-        }
+        for (let q = 0; q < n; q++) { const c = idx[q], i = q * 4; if (c === 255) continue; const col = pal[c]; o[i] = col.r; o[i + 1] = col.g; o[i + 2] = col.b; o[i + 3] = 255; }
         if (fillC.width !== gw || fillC.height !== gh) { fillC.width = gw; fillC.height = gh; }
         fctx.putImageData(img, 0, 0);
         octx.save();
@@ -184,59 +150,38 @@ const PaintFX = (() => {
         octx.drawImage(fillC, 0, 0, gw, gh, 0, 0, W, H);
         const sx = W / gw, sy = H / gh;
         const lw = Math.max(0.75, Math.min(W, H) * 0.0012) * (pixels ? 0.8 : 1);
-        const lineA = Math.max(0, Math.min(100, +p.lines)) / 100;
+        const lineA = clampP(p.lines, 'lines') / 100;
         const rects = [];
-        // linhas: bordas entre regiões (ou a grade inteira, no modo pixels)
+        const R = (x, y, w, h) => { octx.rect(x, y, w, h); rects.push([x, y, w, h]); };
         if (lineA > 0) {
             octx.fillStyle = css(ink, lineA); octx.beginPath();
             if (pixels) {
-                for (let x = 1; x < gw; x++) { octx.rect(x * sx - lw / 2, 0, lw, H); rects.push([x * sx - lw / 2, 0, lw, H]); }
-                for (let y = 1; y < gh; y++) { octx.rect(0, y * sy - lw / 2, W, lw); rects.push([0, y * sy - lw / 2, W, lw]); }
+                for (let x = 1; x < gw; x++) R(x * sx - lw / 2, 0, lw, H);
+                for (let y = 1; y < gh; y++) R(0, y * sy - lw / 2, W, lw);
             } else {
                 const comp = L.comp;
                 for (let y = 0; y < gh; y++) {
-                    // trechos verticais (fronteira entre x-1 e x) unidos em linhas contínuas na vertical
-                    for (let x = 1; x < gw; x++) { const pp = y * gw + x; if (comp[pp] !== comp[pp - 1]) { octx.rect(x * sx - lw / 2, y * sy - lw / 2, lw, sy + lw); rects.push([x * sx - lw / 2, y * sy - lw / 2, lw, sy + lw]); } }
+                    for (let x = 1; x < gw; x++) { const pp = y * gw + x; if (comp[pp] !== comp[pp - 1]) R(x * sx - lw / 2, y * sy - lw / 2, lw, sy + lw); }
                     if (y > 0) {
                         let x0 = -1;
                         for (let x = 0; x <= gw; x++) {
                             const diff = x < gw && comp[y * gw + x] !== comp[(y - 1) * gw + x];
                             if (diff && x0 < 0) x0 = x;
-                            if (!diff && x0 >= 0) { octx.rect(x0 * sx - lw / 2, y * sy - lw / 2, (x - x0) * sx + lw, lw); rects.push([x0 * sx - lw / 2, y * sy - lw / 2, (x - x0) * sx + lw, lw]); x0 = -1; }
+                            if (!diff && x0 >= 0) { R(x0 * sx - lw / 2, y * sy - lw / 2, (x - x0) * sx + lw, lw); x0 = -1; }
                         }
                     }
                 }
             }
             octx.fill();
         }
-        // números nas partes ainda não pintadas
-        const texts = [];
-        if (p.numbers && fill !== 'full') {
-            const minFs = Math.min(W, H) * 0.012, maxFs = Math.min(W, H) * 0.05;
-            const font = (fs) => `${Math.round(fs * 10) / 10}px "Departure Mono", ui-monospace, monospace`;
-            octx.textAlign = 'center'; octx.textBaseline = 'middle';
-            const put = (txt, x, y, fs, col) => { octx.font = font(fs); octx.fillStyle = col; octx.fillText(txt, x, y); texts.push([txt, x, y, fs, col]); };
-            const numCol = (c) => fill === 'faded' ? css(mixC(pal[c], { r: 0, g: 0, b: 0 }, 0.35)) : css(mixC(ink, { r: 0, g: 0, b: 0 }, 0.25));
-            if (pixels) {
-                const fs = Math.min(sx, sy) * 0.46;
-                if (fs >= minFs * 0.7) for (let q = 0; q < n; q++) { const c = idx[q]; if (c === 255 || filled[q]) continue; put(String(c + 1), (q % gw + 0.5) * sx, ((q / gw | 0) + 0.5) * sy, fs, numCol(c)); }
-            } else {
-                for (let k = 0; k < L.count; k++) {
-                    const q = pts.by[k] * gw + pts.bx[k]; if (filled[q]) continue;
-                    const c = L.colors[k], fs = Math.min(maxFs, pts.best[k] * Math.min(sx, sy) * 1.15);
-                    if (fs < minFs) continue;
-                    put(String(c + 1), (pts.bx[k] + 0.5) * sx, (pts.by[k] + 0.5) * sy, fs, numCol(c));
-                }
-            }
-        }
         octx.restore();
-        last = { W, H, gw, gh, data: img.data.slice(0), rects, ink: css(ink, lineA), texts };
+        last = { W, H, gw, gh, data: img.data.slice(0), rects, ink: css(ink, lineA) };
     }
 
-    // molde vetorial: manchas como retângulos por linha, linhas e números como texto
+    // vetor: manchas como retângulos por linha e as linhas como um caminho só
     function svg() {
         if (!last) return null;
-        const { W, H, gw, gh, data, rects, ink, texts } = last, sx = W / gw, sy = H / gh, f = (v) => Math.round(v * 100) / 100;
+        const { W, H, gw, gh, data, rects, ink } = last, sx = W / gw, sy = H / gh, f = (v) => Math.round(v * 100) / 100;
         const out = [`<?xml version="1.0" encoding="utf-8"?>\n<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">`];
         for (let y = 0; y < gh; y++) {
             let start = 0, cur = null;
@@ -247,9 +192,8 @@ const PaintFX = (() => {
             }
         }
         if (rects.length) out.push(`<path fill="${ink}" d="${rects.map(r => `M${f(r[0])} ${f(r[1])}h${f(r[2])}v${f(r[3])}h${f(-r[2])}z`).join('')}"/>`);
-        texts.forEach(([t, x, y, fs, col]) => out.push(`<text x="${f(x)}" y="${f(y)}" font-size="${f(fs)}" font-family="monospace" text-anchor="middle" dominant-baseline="central" fill="${col}">${t}</text>`));
         out.push('</svg>');
         return out.join('\n');
     }
-    return { apply, svg, levels: PAINT_LEVELS };
+    return { apply, svg };
 })();

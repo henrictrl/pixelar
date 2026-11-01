@@ -91,23 +91,22 @@ const PIXELAR_FX_LIST = [
   },
   {
     id: 'gooey_merge', nome: 'Fusão',
-    uniforms: { uThreshold: 0.5, uSmooth: 0.08, uColorA_r: 1.0, uColorA_g: 0.3, uColorA_b: 0.85, uColorB_r: 0.1, uColorB_g: 0.1, uColorB_b: 0.1 },
+    uniforms: { uThreshold: 0.5, uSmooth: 0.08 },
     src: `
     uniform float uThreshold, uSmooth;
-    uniform float uColorA_r, uColorA_g, uColorA_b, uColorB_r, uColorB_g, uColorB_b;
     void main() {
         vec2 texel = 1.0/uResolution;
-        float acc = 0.0, wsum = 0.0;
+        float acc = 0.0, wsum = 0.0; vec3 cacc = vec3(0.0);
         for (float x=-3.0;x<=3.0;x+=1.0) for (float y=-3.0;y<=3.0;y+=1.0) {
             float w = exp(-(x*x+y*y)/8.0);
-            acc += luma(texture(uSource, vUv + vec2(x,y)*texel*2.0).rgb) * w;
+            vec3 s = texture(uSource, vUv + vec2(x,y)*texel*2.0).rgb;
+            acc += luma(s) * w; cacc += s * w;
             wsum += w;
         }
         float field = acc / max(wsum,0.001);
         float mask = smoothstep(uThreshold-uSmooth, uThreshold+uSmooth, field);
-        vec3 colA = vec3(uColorA_r,uColorA_g,uColorA_b);
-        vec3 colB = vec3(uColorB_r,uColorB_g,uColorB_b);
-        outColor = vec4(mix(colB, colA, mask), 1.0);
+        vec3 c = cacc / max(wsum, 0.001);   // cor da própria foto: clara nas manchas, escura fora
+        outColor = vec4(mix(c * 0.35, min(c * 1.2, vec3(1.0)), mask), 1.0);
     }`
   },
   {
@@ -127,40 +126,14 @@ const PIXELAR_FX_LIST = [
   },
   {
     id: 'warp', nome: 'Deformação',
-    uniforms: { uAmount: 0.05, uFreq: 6.0, uPhase: 0.0, uDuo: 1.0, uColorA_r:1.0,uColorA_g:0.85,uColorA_b:0.55, uColorB_r:0.35,uColorB_g:0.75,uColorB_b:1.0 },
+    uniforms: { uAmount: 0.05, uFreq: 6.0, uPhase: 0.0 },
     src: `
-    uniform float uAmount, uFreq, uPhase, uDuo;
-    uniform float uColorA_r,uColorA_g,uColorA_b, uColorB_r,uColorB_g,uColorB_b;
+    uniform float uAmount, uFreq, uPhase;
     void main() {
         vec2 uv = vUv;
         float wobble = sin(uv.y * uFreq + uPhase) * uAmount;
         vec2 uv2 = vec2(uv.x + wobble, uv.y);
-        vec3 c = texture(uSource, clamp(uv2, 0.0, 1.0)).rgb;
-        if (uDuo > 0.5) {
-            vec3 colA = vec3(uColorA_r,uColorA_g,uColorA_b), colB = vec3(uColorB_r,uColorB_g,uColorB_b);
-            c = mix(colB, colA, luma(c));
-        }
-        outColor = vec4(c, 1.0);
-    }`
-  },
-  {
-    // Inspirado em fotocópias/scans desbotados: contraste duro, tom monocromático
-    // amarelado, ruído de scanner em faixas e vinheta suja nas bordas.
-    id: 'photocopy', nome: 'Fotocópia',
-    uniforms: { uContrast: 2.2, uGrain: 0.18, uStreaks: 0.25, uInk_r:0.16,uInk_g:0.16,uInk_b:0.32, uPaper_r:0.96,uPaper_g:0.94,uPaper_b:0.82 },
-    src: `
-    uniform float uContrast, uGrain, uStreaks;
-    uniform float uInk_r,uInk_g,uInk_b, uPaper_r,uPaper_g,uPaper_b;
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        float l = luma(c);
-        l = clamp((l - 0.5) * uContrast + 0.5, 0.0, 1.0);
-        vec3 ink = vec3(uInk_r,uInk_g,uInk_b), paper = vec3(uPaper_r,uPaper_g,uPaper_b);
-        vec3 result = mix(ink, paper, l);
-        float streak = step(1.0 - uStreaks*0.3, hash(vec2(floor(vUv.y*uResolution.y*0.5), 7.0 + uAnimFrame)));
-        result *= (1.0 - streak*0.25);
-        float g = (hash(floor(vUv*uResolution/uUnit) + uAnimFrame*vec2(17.0, 31.0)) - 0.5) * uGrain;
-        outColor = vec4(clamp(result + g, 0.0, 1.0), 1.0);
+        outColor = vec4(texture(uSource, clamp(uv2, 0.0, 1.0)).rgb, 1.0);
     }`
   },
   {
@@ -189,9 +162,9 @@ const PIXELAR_FX_LIST = [
   // Tamanhos em "px por 1000 px do lado maior": o efeito fica igual na miniatura, na tela e na exportação.
   {
     id: 'ascii', nome: 'ASCII',
-    uniforms: { uCell: 10.0, uContrast: 1.35, uColorMode: 1.0, uInk_r: 0.62, uInk_g: 1.0, uInk_b: 0.62, uPaper_r: 0.02, uPaper_g: 0.04, uPaper_b: 0.03 },
+    uniforms: { uCell: 10.0, uContrast: 1.35, uBg: 0.12 },
     src: `
-    uniform float uCell, uContrast, uColorMode, uInk_r, uInk_g, uInk_b, uPaper_r, uPaper_g, uPaper_b;
+    uniform float uCell, uContrast, uBg;
     // 10 caracteres do mais vazio ao mais cheio: ' . : - = + * # % @' (5x7, linhas de cima para baixo)
     const int G[70] = int[70](0,0,0,0,0,0,0, 0,0,0,0,0,12,12, 0,12,12,0,12,12,0, 0,0,0,14,0,0,0, 0,0,31,0,31,0,0,
                               0,4,4,31,4,4,0, 0,21,14,31,14,21,0, 10,31,10,10,31,10,0, 25,26,2,4,8,11,19, 14,17,23,21,23,16,14);
@@ -205,74 +178,7 @@ const PIXELAR_FX_LIST = [
         int col = int(floor(f.x * 6.0)), row = int(floor(f.y * 8.0));
         float on = 0.0;
         if (col < 5 && row < 7) on = float((G[g * 7 + row] >> (4 - col)) & 1);
-        vec3 ink = mix(vec3(uInk_r, uInk_g, uInk_b), c * 1.25, uColorMode);
-        outColor = vec4(mix(vec3(uPaper_r, uPaper_g, uPaper_b), ink, on), 1.0);
-    }`
-  },
-  {
-    id: 'crt', nome: 'Monitor CRT',
-    uniforms: { uPitch: 3.0, uMask: 0.55, uScan: 0.45, uCurve: 0.12, uGlow: 0.35 },
-    src: `
-    uniform float uPitch, uMask, uScan, uCurve, uGlow;
-    void main() {
-        vec2 uv = vUv * 2.0 - 1.0;
-        uv *= 1.0 + uCurve * dot(uv, uv) * 0.25;
-        vec2 t = uv * 0.5 + 0.5;
-        if (t.x < 0.0 || t.x > 1.0 || t.y < 0.0 || t.y > 1.0) { outColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
-        float S = max(uResolution.x, uResolution.y) / 1000.0, pitch = max(2.0, uPitch * S);
-        vec3 c = texture(uSource, t).rgb;
-        vec3 blur = (texture(uSource, t + vec2(2.0, 0.0) / uResolution).rgb + texture(uSource, t - vec2(2.0, 0.0) / uResolution).rgb + texture(uSource, t + vec2(0.0, 2.0) / uResolution).rgb) / 3.0;
-        c += blur * blur * uGlow;
-        vec2 px = t * uResolution;
-        float m = mod(floor(px.x / (pitch / 3.0)), 3.0);
-        vec3 mask = m < 0.5 ? vec3(1.0, 0.3, 0.3) : m < 1.5 ? vec3(0.3, 1.0, 0.3) : vec3(0.3, 0.3, 1.0);
-        c *= mix(vec3(1.0), mask * 1.6, uMask);
-        float roll = 0.5 + 0.5 * sin((t.y - uAnim) * 6.28318);
-        float scan = 0.5 + 0.5 * cos(px.y / pitch * 6.28318);
-        c *= mix(1.0, scan, uScan) * (0.94 + 0.06 * roll);
-        vec2 v = t * (1.0 - t); c *= pow(v.x * v.y * 16.0, 0.18);
-        outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
-    }`
-  },
-  {
-    id: 'knit', nome: 'Tricô',
-    uniforms: { uCell: 12.0, uDepth: 0.6, uFuzz: 0.4 },
-    src: `
-    uniform float uCell, uDepth, uFuzz;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, cw = max(4.0, uCell * S), ch = cw * 1.25;
-        vec2 p = vUv * uResolution, id = floor(p / vec2(cw, ch)), f = fract(p / vec2(cw, ch));
-        vec3 c = texture(uSource, (id + 0.5) * vec2(cw, ch) / uResolution).rgb;
-        // ponto em V: duas “pernas” inclinadas (elipses) lado a lado
-        vec2 a = vec2(f.x * 2.0 - 0.5, f.y - 0.45); a.x = abs(a.x) - 0.25;
-        float ang = sign(f.x - 0.5) * 0.55; mat2 R = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
-        vec2 q = R * vec2(a.x * 2.0, a.y * 1.05);
-        float leg = smoothstep(0.62, 0.42, length(q * vec2(1.7, 0.9)));
-        float yarn = 0.72 + 0.28 * sin(q.y * 24.0 + q.x * 6.0);
-        float fuzz = (hash(p * 0.7) - 0.5) * uFuzz * 0.25;
-        vec3 col = c * mix(1.0 - uDepth * 0.7, 1.0, leg) * mix(1.0, yarn, leg * uDepth) + fuzz;
-        outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }`
-  },
-  {
-    id: 'mosaic_tiles', nome: 'Pastilhas',
-    uniforms: { uCell: 16.0, uGrout: 0.12, uBrick: 0.0, uBevel: 0.5, uGrout_r: 0.9, uGrout_g: 0.89, uGrout_b: 0.86 },
-    src: `
-    uniform float uCell, uGrout, uBrick, uBevel, uGrout_r, uGrout_g, uGrout_b;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(4.0, uCell * S);
-        vec2 p = vUv * uResolution / cs;
-        vec2 size = uBrick > 0.5 ? vec2(2.0, 1.0) : vec2(1.0);
-        p.x += uBrick > 0.5 ? step(1.0, mod(floor(p.y), 2.0)) * 1.0 : 0.0;
-        vec2 id = floor(p / size), f = fract(p / size);
-        vec3 c = texture(uSource, clamp(((id + 0.5) * size - vec2(uBrick > 0.5 ? step(1.0, mod(floor(p.y), 2.0)) : 0.0, 0.0)) * cs / uResolution, 0.0, 1.0)).rgb;
-        c *= 0.94 + 0.12 * hash(id + 7.0);
-        vec2 e = min(f, 1.0 - f) * size;
-        float g = uGrout * 0.5, aa = 1.0 / cs;
-        float tile = smoothstep(g, g + aa, min(e.x, e.y));
-        float bevel = smoothstep(g + 0.18, g, min(e.x, e.y)) * uBevel;
-        float lit = (f.x < 0.5 || f.y < 0.5) ? 1.0 + bevel * 0.35 : 1.0 - bevel * 0.35;
-        outColor = vec4(mix(vec3(uGrout_r, uGrout_g, uGrout_b), c * lit, tile), 1.0);
+        outColor = vec4(mix(c * uBg, min(c * 1.25, vec3(1.0)), on), 1.0);
     }`
   },
   {
@@ -300,9 +206,9 @@ const PIXELAR_FX_LIST = [
   },
   {
     id: 'stipple', nome: 'Pontilhado',
-    uniforms: { uCell: 6.0, uJitter: 0.8, uGamma: 1.2, uInk_r: 0.08, uInk_g: 0.07, uInk_b: 0.07, uPaper_r: 0.97, uPaper_g: 0.95, uPaper_b: 0.9 },
+    uniforms: { uCell: 6.0, uJitter: 0.8, uGamma: 1.2 },
     src: `
-    uniform float uCell, uJitter, uGamma, uInk_r, uInk_g, uInk_b, uPaper_r, uPaper_g, uPaper_b;
+    uniform float uCell, uJitter, uGamma;
     void main() {
         float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(2.5, uCell * S);
         vec2 p = vUv * uResolution / cs; float ink = 0.0;
@@ -313,42 +219,8 @@ const PIXELAR_FX_LIST = [
             float r = sqrt(dark) * 0.62;
             ink = max(ink, smoothstep(r, r - 1.2 / cs, length(p - ctr)));
         }
-        outColor = vec4(mix(vec3(uPaper_r, uPaper_g, uPaper_b), vec3(uInk_r, uInk_g, uInk_b), ink), 1.0);
-    }`
-  },
-  {
-    id: 'woodcut', nome: 'Xilogravura',
-    uniforms: { uSpacing: 7.0, uWarp: 1.4, uContrast: 1.3, uInk_r: 0.07, uInk_g: 0.06, uInk_b: 0.05, uPaper_r: 0.95, uPaper_g: 0.91, uPaper_b: 0.82 },
-    src: `
-    uniform float uSpacing, uWarp, uContrast, uInk_r, uInk_g, uInk_b, uPaper_r, uPaper_g, uPaper_b;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, sp = max(2.5, uSpacing * S);
-        vec2 p = vUv * uResolution;
-        float l = clamp((luma(texture(uSource, vUv).rgb) - 0.5) * uContrast + 0.5, 0.0, 1.0);
-        float flow = fbm(p / (sp * 18.0)) * uWarp * 4.0 + luma(texture(uSource, vUv).rgb) * uWarp;
-        float v = 0.5 + 0.5 * sin((p.y / sp + flow) * 6.28318);
-        float grain = (fbm(p / (sp * 0.6)) - 0.5) * 0.25;
-        float ink = smoothstep(l - 0.08, l + 0.08, v + grain);
-        outColor = vec4(mix(vec3(uInk_r, uInk_g, uInk_b), vec3(uPaper_r, uPaper_g, uPaper_b), ink), 1.0);
-    }`
-  },
-  {
-    id: 'paper', nome: 'Papel',
-    uniforms: { uFiber: 0.5, uGrain: 0.35, uWarmth: 0.4, uFade: 0.12 },
-    src: `
-    uniform float uFiber, uGrain, uWarmth, uFade;
-    void main() {
         vec3 c = texture(uSource, vUv).rgb;
-        float S = max(uResolution.x, uResolution.y) / 1000.0;
-        vec2 p = vUv * uResolution / S;
-        float fib = fbm(vec2(p.x * 0.02, p.y * 0.35)) * 0.6 + fbm(p * 0.08) * 0.4;
-        float g = hash(floor(p * 0.9)) - 0.5;
-        vec3 paper = vec3(0.97, 0.94, 0.87) + vec3(0.0, -0.01, -0.04) * uWarmth;
-        vec3 col = mix(c, c * paper, 0.7);
-        col = mix(col, paper, uFade);
-        col *= 1.0 - (fib - 0.5) * uFiber * 0.35;
-        col += g * uGrain * 0.12;
-        outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+        outColor = vec4(mix(mix(c, vec3(1.0), 0.82), c * 0.3, ink), 1.0);
     }`
   },
   {
@@ -411,7 +283,7 @@ const PIXELAR_FX_LIST = [
   },
   {
     id: 'emboss', nome: 'Relevo',
-    uniforms: { uStrength: 1.5, uAngle: 0.8, uColorMix: 0.25 },
+    uniforms: { uStrength: 1.5, uAngle: 0.8, uColorMix: 0.85 },
     src: `
     uniform float uStrength, uAngle, uColorMix;
     void main() {
@@ -425,50 +297,14 @@ const PIXELAR_FX_LIST = [
   },
   {
     id: 'bitmap', nome: 'Bitmap',
-    uniforms: { uThreshold: 0.5, uNoise: 0.25, uInk_r: 0.0, uInk_g: 0.0, uInk_b: 0.0, uPaper_r: 1.0, uPaper_g: 1.0, uPaper_b: 1.0 },
+    uniforms: { uThreshold: 0.5, uNoise: 0.25, uColorMix: 1.0 },
     src: `
-    uniform float uThreshold, uNoise, uInk_r, uInk_g, uInk_b, uPaper_r, uPaper_g, uPaper_b;
+    uniform float uThreshold, uNoise, uColorMix;
     void main() {
-        float l = luma(texture(uSource, vUv).rgb) + (hash(floor(vUv * uResolution / uUnit)) - 0.5) * uNoise;
-        outColor = vec4(l > uThreshold ? vec3(uPaper_r, uPaper_g, uPaper_b) : vec3(uInk_r, uInk_g, uInk_b), 1.0);
-    }`
-  },
-  {
-    id: 'duo_halftone', nome: 'Meio-tom duplo',
-    uniforms: { uCell: 8.0, uColorA_r: 0.12, uColorA_g: 0.2, uColorA_b: 0.55, uColorB_r: 1.0, uColorB_g: 0.36, uColorB_b: 0.47, uPaper_r: 0.97, uPaper_g: 0.95, uPaper_b: 0.9 },
-    src: `
-    uniform float uCell, uColorA_r, uColorA_g, uColorA_b, uColorB_r, uColorB_g, uColorB_b, uPaper_r, uPaper_g, uPaper_b;
-    float dotAt(vec2 p, float ang, float cs, float amt) {
-        mat2 R = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)); vec2 q = R * p / cs, id = floor(q) + 0.5;
-        float r = sqrt(clamp(amt, 0.0, 1.0)) * 0.72; return smoothstep(r, r - 1.2 / cs, length(q - id));
-    }
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(3.0, uCell * S);
-        vec2 p = vUv * uResolution;
-        float l = luma(texture(uSource, vUv).rgb);
-        float a = dotAt(p, 0.785, cs, pow(1.0 - l, 1.4));
-        float b = dotAt(p, 0.26, cs, smoothstep(0.1, 0.9, 1.0 - abs(l - 0.55) * 1.8));
-        vec3 col = vec3(uPaper_r, uPaper_g, uPaper_b);
-        col = mix(col, col * vec3(uColorB_r, uColorB_g, uColorB_b), b * 0.9);
-        col = mix(col, col * vec3(uColorA_r, uColorA_g, uColorA_b), a * 0.95);
-        outColor = vec4(col, 1.0);
-    }`
-  },
-  {
-    id: 'edge_ink', nome: 'Nanquim',
-    uniforms: { uThickness: 1.0, uThreshold: 0.12, uWash: 0.35, uInk_r: 0.06, uInk_g: 0.05, uInk_b: 0.05, uPaper_r: 0.97, uPaper_g: 0.95, uPaper_b: 0.9 },
-    src: `
-    uniform float uThickness, uThreshold, uWash, uInk_r, uInk_g, uInk_b, uPaper_r, uPaper_g, uPaper_b;
-    float L(vec2 uv) { return luma(texture(uSource, uv).rgb); }
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0;
-        vec2 t = uThickness * S / uResolution;
-        float gx = L(vUv + vec2(t.x, 0.0)) - L(vUv - vec2(t.x, 0.0)) + 0.5 * (L(vUv + t) - L(vUv - t) + L(vUv + vec2(t.x, -t.y)) - L(vUv + vec2(-t.x, t.y)));
-        float gy = L(vUv + vec2(0.0, t.y)) - L(vUv - vec2(0.0, t.y)) + 0.5 * (L(vUv + t) - L(vUv - t) - L(vUv + vec2(t.x, -t.y)) + L(vUv + vec2(-t.x, t.y)));
-        float e = smoothstep(uThreshold, uThreshold * 2.2, length(vec2(gx, gy)));
-        float wash = (1.0 - L(vUv)) * uWash;
-        vec3 paper = vec3(uPaper_r, uPaper_g, uPaper_b), ink = vec3(uInk_r, uInk_g, uInk_b);
-        outColor = vec4(mix(mix(paper, ink, wash), ink, e), 1.0);
+        vec3 c = texture(uSource, vUv).rgb;
+        float l = luma(c) + (hash(floor(vUv * uResolution / uUnit)) - 0.5) * uNoise;
+        vec3 lo = mix(vec3(0.0), c * 0.2, uColorMix), hi = mix(vec3(1.0), mix(c, vec3(1.0), 0.7), uColorMix);
+        outColor = vec4(l > uThreshold ? hi : lo, 1.0);
     }`
   },
   {
@@ -517,24 +353,6 @@ const PIXELAR_FX_LIST = [
 
   // ===================== NOVOS 3.3: POP, COR E OFÍCIOS =====================
   {
-    id: 'warhol', nome: 'Pop Warhol',
-    uniforms: { uHue: 0.0, uSat: 0.85, uSplit: 0.36, uGap: 0.0 },
-    src: `
-    uniform float uHue, uSat, uSplit, uGap;
-    void main() {
-        vec2 t = floor(vUv * 2.0), uv = fract(vUv * 2.0);
-        float g = uGap * 0.02;
-        if (uv.x < g || uv.y < g || uv.x > 1.0 - g || uv.y > 1.0 - g) { outColor = vec4(vec3(0.97), 1.0); return; }
-        float l = luma(texture(uSource, uv).rgb);
-        float k = t.x + t.y * 2.0, h = fract(uHue + k * 0.27 + 0.05 * k * k);
-        vec3 dark = hsl2rgb(vec3(fract(h + 0.5), uSat, 0.2));
-        vec3 mid = hsl2rgb(vec3(fract(h + 0.12), uSat, 0.52));
-        vec3 light = hsl2rgb(vec3(h, uSat, 0.8));
-        vec3 col = l < uSplit ? dark : (l < 1.0 - uSplit * 0.6 ? mid : light);
-        outColor = vec4(col, 1.0);
-    }`
-  },
-  {
     id: 'riso', nome: 'Risografia',
     uniforms: { uOffset: 4.0, uGrain: 0.35, uInkA_r: 1.0, uInkA_g: 0.28, uInkA_b: 0.55, uInkB_r: 0.0, uInkB_g: 0.47, uInkB_b: 0.75, uPaper_r: 0.98, uPaper_g: 0.96, uPaper_b: 0.9 },
     src: `
@@ -549,29 +367,6 @@ const PIXELAR_FX_LIST = [
         vec3 col = vec3(uPaper_r, uPaper_g, uPaper_b);
         col *= mix(vec3(1.0), vec3(uInkB_r, uInkB_g, uInkB_b), b);
         col *= mix(vec3(1.0), vec3(uInkA_r, uInkA_g, uInkA_b), a);
-        outColor = vec4(col, 1.0);
-    }`
-  },
-  {
-    id: 'glitch_blocks', nome: 'Glitch',
-    uniforms: { uAmount: 0.5, uBlock: 24.0, uShift: 0.06, uColor: 0.6 },
-    src: `
-    uniform float uAmount, uBlock, uShift, uColor;
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0, bs = max(4.0, uBlock * S);
-        vec2 p = vUv * uResolution;
-        float seed = floor(uAnimFrame) * 0.37 + 1.0;
-        vec2 cell = floor(vec2(p.x / (bs * 4.0), p.y / bs));
-        float r = hash(cell + seed), r2 = hash(cell.yx + seed * 1.7);
-        vec2 uv = vUv;
-        float on = step(1.0 - uAmount * 0.6, r);
-        uv.x += on * (r2 - 0.5) * uShift * 2.0;
-        float row = hash(vec2(floor(p.y / (bs * 0.5)), seed));
-        uv.x += step(1.0 - uAmount * 0.15, row) * (row - 0.5) * uShift;
-        float ca = uColor * 0.012 * (0.4 + on);
-        vec3 col = vec3(texture(uSource, uv + vec2(ca, 0.0)).r, texture(uSource, uv).g, texture(uSource, uv - vec2(ca, 0.0)).b);
-        if (on > 0.5 && r2 > 0.8) col = col.gbr;
-        if (on > 0.5 && r2 < 0.12) col = 1.0 - col;
         outColor = vec4(col, 1.0);
     }`
   },
@@ -617,19 +412,16 @@ const PIXELAR_FX_LIST = [
   },
   {
     id: 'lcd', nome: 'Tela de bolso',
-    uniforms: { uCell: 6.0, uGap: 0.18, uLevels: 4.0, uTint_r: 0.6, uTint_g: 0.72, uTint_b: 0.2 },
+    uniforms: { uCell: 6.0, uGap: 0.18, uLevels: 4.0 },
     src: `
-    uniform float uCell, uGap, uLevels, uTint_r, uTint_g, uTint_b;
+    uniform float uCell, uGap, uLevels;
     void main() {
         float S = max(uResolution.x, uResolution.y) / 1000.0, cs = max(2.0, uCell * S);
         vec2 p = vUv * uResolution, id = floor(p / cs), f = fract(p / cs);
-        float l = luma(texture(uSource, (id + 0.5) * cs / uResolution).rgb);
-        l = floor(clamp(l, 0.0, 0.999) * uLevels) / max(1.0, uLevels - 1.0);
-        vec3 tint = vec3(uTint_r, uTint_g, uTint_b);
-        vec3 dark = tint * 0.18, light = mix(tint, vec3(1.0), 0.45);
-        vec3 col = mix(dark, light, l);
+        vec3 c = texture(uSource, (id + 0.5) * cs / uResolution).rgb;
+        vec3 col = floor(clamp(c, 0.0, 0.999) * uLevels) / max(1.0, uLevels - 1.0);
         float gap = step(f.x, uGap) + step(f.y, uGap);
-        col = mix(col, light * 0.96, clamp(gap, 0.0, 1.0) * 0.6);
+        col = mix(col, mix(col, vec3(1.0), 0.35), clamp(gap, 0.0, 1.0) * 0.6);
         outColor = vec4(col, 1.0);
     }`
   },
@@ -674,18 +466,6 @@ const PIXELAR_FX_LIST = [
     }`
   },
   {
-    id: 'prism_map', nome: 'Mapa arco-íris',
-    uniforms: { uCycles: 1.5, uShift: 0.0, uSat: 0.95, uMix: 1.0 },
-    src: `
-    uniform float uCycles, uShift, uSat, uMix;
-    void main() {
-        vec3 src = texture(uSource, vUv).rgb;
-        float l = luma(src);
-        vec3 c = hsl2rgb(vec3(fract(l * uCycles + uShift + uAnim), uSat, 0.25 + l * 0.5));
-        outColor = vec4(mix(src, c, uMix), 1.0);
-    }`
-  },
-  {
     id: 'blueprint', nome: 'Planta azul',
     uniforms: { uGrid: 40.0, uLines: 0.12, uFill: 0.35 },
     src: `
@@ -706,58 +486,6 @@ const PIXELAR_FX_LIST = [
         col = mix(col, vec3(0.95, 0.98, 1.0), l * uFill);
         col = mix(col, vec3(1.0), e);
         outColor = vec4(col, 1.0);
-    }`
-  },
-  {
-    // Kodak Verde: puxa a imagem para um tom oliva/esverdeado nos meios-tons
-    // e sombras (tipico de slides de filme antigo desbotado, referencia das
-    // fotos de praia), mantendo realces mais quentes/amarelados e contraste
-    // levemente suavizado.
-    id: 'kodak_verde', nome: 'Kodak',
-    uniforms: {
-      uContrast: 0.92, uFade: 0.12, uSatShift: 0.85,
-      uShadowTone_r: 0.55, uShadowTone_g: 0.62, uShadowTone_b: 0.42,
-      uHighTone_r: 1.0, uHighTone_g: 0.93, uHighTone_b: 0.68
-    },
-    src: `
-    uniform float uContrast, uFade, uSatShift;
-    uniform float uShadowTone_r,uShadowTone_g,uShadowTone_b, uHighTone_r,uHighTone_g,uHighTone_b;
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        c = mix(c, vec3(0.5), uFade * 0.3);
-        c = (c - 0.5) * uContrast + 0.5;
-        c = clamp(c, 0.0, 1.0);
-        float l = luma(c);
-        vec3 shadowTone = vec3(uShadowTone_r,uShadowTone_g,uShadowTone_b);
-        vec3 highTone = vec3(uHighTone_r,uHighTone_g,uHighTone_b);
-        vec3 toned = mix(c * (shadowTone * 1.5), c * (highTone * 1.15), smoothstep(0.2, 0.85, l));
-        c = mix(c, toned, 0.55);
-        vec3 hsl = rgb2hsl(clamp(c, 0.0, 1.0));
-        hsl.y *= uSatShift;
-        hsl.x = mix(hsl.x, mod(hsl.x + (0.34 - hsl.x) * 0.18 + 1.0, 1.0), 0.5);
-        outColor = vec4(clamp(hsl2rgb(hsl), 0.0, 1.0), 1.0);
-    }`
-  },
-  {
-    // Kodak P&B: conversao para preto-e-branco com curva de contraste forte
-    // (tipo Ilford HP5 / Tri-X), leve tonalidade quente nas sombras (preto
-    // nao 100% neutro, como no filme real) e grao sutil embutido para dar
-    // corpo -- independente do controle global de Grain da aba Pixel.
-    id: 'kodak_pb', nome: 'Kodak P&B',
-    uniforms: { uContrast: 1.55, uBlackPoint: 0.04, uWhitePoint: 0.97, uWarmth: 0.06, uMicroGrain: 0.05 },
-    src: `
-    uniform float uContrast, uBlackPoint, uWhitePoint, uWarmth, uMicroGrain;
-    void main() {
-        vec3 c = texture(uSource, vUv).rgb;
-        float l = luma(c);
-        float s = (l - 0.5) * uContrast + 0.5;
-        s = smoothstep(0.0, 1.0, clamp(s, 0.0, 1.0));
-        s = clamp((s - uBlackPoint) / max(0.0001, (uWhitePoint - uBlackPoint)), 0.0, 1.0);
-        float g = (hash(floor(vUv*uResolution/uUnit)*2.2 + uAnimFrame*vec2(11.0, 19.0)) - 0.5) * uMicroGrain;
-        s = clamp(s + g, 0.0, 1.0);
-        vec3 warmBlack = vec3(0.05, 0.035, 0.02) * uWarmth;
-        vec3 result = mix(warmBlack, vec3(1.0), s);
-        outColor = vec4(clamp(result, 0.0, 1.0), 1.0);
     }`
   },
   {
@@ -882,7 +610,7 @@ float phash(ivec2 p, float s) { return float(pcg3d(uvec3(uvec2(p), floatBitsToUi
 
 const FILM_INT_UNIFORMS = new Set(['uSwap']);
 // filmes feitos por shader próprio: ficam em Filme, fora da lista de texturas
-const FILM_FX_IDS = ['kodak_verde', 'kodak_pb', 'lumiere', 'vencido'];
+const FILM_FX_IDS = ['lumiere', 'vencido'];
 const PixelarGPU = (function () {
     let gl = null, glCanvas = null;
     let initialized = false, ok = false, contextLost = false;
