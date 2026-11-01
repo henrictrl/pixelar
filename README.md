@@ -36,7 +36,7 @@ Depois abra `http://localhost:8000`. Para publicar, qualquer hospedagem estátic
 | `js/export.js` | PNG/JPEG/WebP/SVG, animação e vídeo (MP4/WebM/GIF) |
 | `js/icons.js` | Ícones em pixel (desenhos de 12 × 12 em texto) |
 | `js/ui.js` | Interface: ferramentas (`TABS`), régua, miniaturas, camadas, linha do tempo, exportação |
-| `vendor/` | mediabunny (MPL-2.0) e o worker do FFmpeg, carregados só quando necessário |
+| `vendor/` | mediabunny 1.57.0 completo (MPL-2.0) e o worker do FFmpeg, carregados só quando necessário |
 | `sw.js` | Cache offline (abre instantâneo nas próximas visitas) |
 | `icons/logo.svg` | Logo (sol em pixel). `tools/icones.py` gera os PNGs do app a partir dele |
 | `tools/galeria.js` | Gera a galeria de todos os efeitos aplicados a duas fotos (Playwright) |
