@@ -519,7 +519,7 @@ const MOV_TOOL = { id: 'movimento', label: 'Movimento', controls: () => {
 const TABS = [
     // Estilos: a tela inicial tem fileiras horizontais (Prontos, Texturas, Filmes, Pintura, Meus estilos);
     // tocar num efeito aplica e abre as configurações dele (com “‹ Estilos” para voltar)
-    { id: 'estilos', label: 'Estilos', icon: 'tab-styles', groups: () => [{ id: 'mine', label: 'Estilos', controls: () => [X('mine', 'Estilos', 'styles', editMine)] }, TEXTURA_TOOL, FILME_TOOL, PINTURA_TOOL] },
+    { id: 'estilos', label: 'Estilos', icon: 'tab-styles', groups: () => [{ id: 'mine', label: 'Estilos', controls: () => [X('mine', 'Estilos', 'styles', () => {})] }, TEXTURA_TOOL, FILME_TOOL, PINTURA_TOOL] },
     { id: 'editar', label: 'Editar', icon: 'tab-edit', groups: () => [CROP_TOOL, LUZ_TOOL, COR_TOOL, PIXEL_TOOL, LENTE_TOOL, DUPLA_TOOL, MOV_TOOL] },
     { id: 'exportar', label: 'Exportar', icon: 'tab-export', groups: () => [{ id: 'exp', label: 'Exportar', controls: () => [X('exp', 'Exportar', 'download', exportPanel)] }] },
 ];
@@ -585,7 +585,14 @@ function setOpen(on) { ui.open[ui.tab] = !!on; fitAnim(); buildPanel(); }
 // a foto acompanha suavemente quando o painel muda de altura
 function fitAnim() { app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400); }
 // abre uma ferramenta de Editar já com um ajuste escolhido (usado pelas Camadas e pela dupla exposição)
+const STYLE_KIND = { textura: 'fx', filme: 'film', pintura: 'paint' };
 function goTo(groupId, key) {
+    if (STYLE_KIND[groupId]) {
+        const kind = STYLE_KIND[groupId], id = kind === 'fx' ? st.fx.id : kind === 'film' ? st.film.look : st.paint.mode;
+        ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleParam = key || null; ui.open.estilos = true;
+        if (panelCollapsed) setPanelCollapsed(false);
+        selectTab('estilos'); return;
+    }
     const tab = TABS.find(t => tabGroups(t).some(g => g.id === groupId)) || TABS[1], k = tab.id + '/' + groupId;
     ui.group[tab.id] = groupId; ui.open[tab.id] = true; ui.view[k] = key ? 'detail' : 'list'; if (key) ui.active[k] = key;
     if (panelCollapsed) setPanelCollapsed(false);
@@ -633,7 +640,9 @@ function buildPanel() {
         }
         seg.append(b);
     });
+    panel.classList.toggle('styles-bar', tab.id === 'estilos' && open);
     if (!open) { dialEls = []; $('dials').innerHTML = ''; $('crumb').innerHTML = ''; buildEditor(null); panel.classList.remove('list', 'detail', 'single'); return; }
+    if (tab.id === 'estilos') { buildStylesBar(); return; }
     const controls = groupControls(grp).filter(c => !c.hidden);
     const active = pickActive(controls, k);
     ui.active[k] = active && ctrlId(active);
@@ -1167,48 +1176,106 @@ function styleMixRuler(ed) {
     ed.append(styleRuler);
 }
 function syncStyleRuler() { if (styleRuler && styleRuler.isConnected && styleRuler._sync) styleRuler._sync(); }
-// uma fileira horizontal de efeitos com miniatura; tocar aplica e abre as configurações do efeito
-function effectRow(ed, title, key, groupsOf, apply, toolId) {
-    const row = h('div', 'style-row'), head = h('div', 'style-head'); head.textContent = title; row.append(head);
-    const strip = h('div', 'strip'), cur = String(getP(key));
-    const add = (val, label) => {
-        const t = h('button', 'thumb' + (String(val) === cur ? ' on' : '')); t.type = 'button';
-        const pic = h('span', 'pic'); t.append(pic, h('span', 't', label));
-        Thumbs.attach(pic, 'row:' + key + ':' + val, () => { const s = deepClone(st); apply(s, val); return s; }, true);
-        t.onclick = () => {
-            apply(st, val); change(null, null, { dials: false }); flashLabel(label);
-            if (val === 'none') { strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t)); return; }
-            ui.group.estilos = toolId; ui.view['estilos/' + toolId] = 'list'; lastEditorKey = null; fitAnim(); buildPanel();
-        };
+// ============================================================
+// ESTILOS EM BARRA: tudo em fileiras horizontais, empilhadas de baixo para cima
+//   [régua do ajuste]        ← abre ao tocar num ajuste (toque de novo fecha)
+//   [ajustes do efeito]      ← botões com ícone e nome; abre ao selecionar um efeito
+//   [todos os efeitos]       ← Prontos · Texturas · Filmes · Pintura · Meus estilos, numa linha só
+//   [Estilos Editar Sortear Exportar]
+// ============================================================
+ui.styleSel = null; ui.styleParam = null; ui.styleScroll = 0;
+function styleItems() {
+    const items = [], G = (label) => items.push({ group: label });
+    G('Prontos');
+    Object.keys(BUILTIN_STYLES).forEach(n => items.push({ kind: 'preset', id: n, label: n, state: () => presetApplyState(builtinState(n)), on: () => ui.lastPreset === n }));
+    G('Texturas');
+    FX_GROUPS().forEach(([, list]) => list.forEach(([id, nome]) => items.push({ kind: 'fx', id, label: nome, state: () => { const s = deepClone(st); s.fx.id = id; if (s.fx.mix < 30) s.fx.mix = 100; return s; }, on: () => st.fx.id === id })));
+    G('Filmes');
+    FILM_LOOK_DEFS.forEach(([, list]) => list.forEach(([id, nome]) => items.push({ kind: 'film', id, label: nome, state: () => { const s = deepClone(st); s.film.look = id; if (s.film.mix < 30) s.film.mix = 100; return s; }, on: () => st.film.look === id })));
+    G('Pintura');
+    PAINT_MODE_OPTS.slice(1).forEach(([id, nome]) => items.push({ kind: 'paint', id, label: nome, state: () => { const s = deepClone(st); s.paint.mode = id; return s; }, on: () => st.paint.mode === id }));
+    G('Meus estilos');
+    items.push({ kind: 'add' });
+    Object.keys(prefs.presets).forEach(n => items.push({ kind: 'mine', id: n, label: n, state: () => presetApplyState(prefs.presets[n]), on: () => ui.lastPreset === n }));
+    return items;
+}
+const isSel = (it) => ui.styleSel && ui.styleSel.kind === it.kind && ui.styleSel.id === it.id;
+function selectStyle(it) {
+    if (isSel(it)) { ui.styleSel = null; ui.styleParam = null; buildStylesBar(); return; }   // toque de novo: fecha
+    if (!it.on()) {
+        if (it.kind === 'preset' || it.kind === 'mine') applyPreset(it.label, it.kind === 'preset' ? builtinState(it.id) : prefs.presets[it.id]);
+        else { const s = it.state(); if (it.kind === 'fx') st.fx = s.fx; else if (it.kind === 'film') st.film = s.film; else st.paint = s.paint; change(null, null); }
+        flashLabel(it.label);
+    }
+    ui.styleSel = { kind: it.kind, id: it.id }; ui.styleParam = null; buildStylesBar();
+}
+// ajustes do efeito selecionado (os mesmos das ferramentas, sem a escolha do efeito)
+function styleControls(sel) {
+    const mixC = { kind: 'range', key: '_mix', label: 'Intensidade', icon: 'intensity', min: 0, max: 100, step: 1, def: 100, get: () => st.mix, set: (v, final) => { st.mix = v; requestRender(); if (final) commit(); } };
+    const rm = (label, fn) => A('Remover', 'reset', () => { const before = snapshot(); fn(); ui.styleSel = null; ui.styleParam = null; Engine.invalidate(); afterExternalChange(); commit(true); toast(label + ' removido', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); });
+    const clean = (list) => list.filter(c => c.kind !== 'divider' && !(c.kind === 'choice' && c.view === 'thumbs') && !(c.kind === 'action' && c.label === 'Restaurar') && !/^Sortear/.test(c.label) && c.label !== 'Travar');
+    // o dado de um efeito troca o efeito: a seleção acompanha o novo
+    const roll = (g, kind, cur) => A('Sortear', 'dice', () => { rollTool(g); const id = cur(); ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleParam = null; buildStylesBar(); });
+    if (sel.kind === 'fx') return [...clean(TEXTURA_TOOL.controls()), roll('textura', 'fx', () => st.fx.id), rm('Textura', () => { delete st.fxParams[st.fx.id]; st.fx = fresh('fx'); })];
+    if (sel.kind === 'film') return [...clean(FILME_TOOL.controls()), roll('filme', 'film', () => st.film.look), rm('Filme', () => { Object.assign(st.film, { look: 'none', mix: 100 }); })];
+    if (sel.kind === 'paint') return [...clean(PINTURA_TOOL.controls()), roll('pintura', 'paint', () => st.paint.mode), rm('Pintura', () => { st.paint = fresh('paint'); })];
+    const list = [mixC];
+    if (sel.kind === 'mine') list.push(A('Apagar', 'close', () => { const name = sel.id, bak = prefs.presets[name]; delete prefs.presets[name]; store.set('presets', prefs.presets); ui.styleSel = null; buildStylesBar();
+        toast('Estilo apagado', { label: 'Desfazer', run: () => { prefs.presets[name] = bak; store.set('presets', prefs.presets); buildStylesBar(); } }); }));
+    return list;
+}
+function buildStylesBar() {
+    const ed = $('editor'), panel = $('panel');
+    const old = ed.querySelector('.style-strip'); if (old) ui.styleScroll = old.scrollLeft;
+    panel.classList.add('single'); panel.classList.remove('list', 'detail');
+    $('dials').hidden = true; $('dials').innerHTML = ''; dialEls = []; $('crumb').innerHTML = ''; lastEditorKey = null;
+    ed.innerHTML = ''; ed.scrollTop = 0;
+    if (!M.el) return;
+    // o efeito selecionado precisa continuar aplicado (desfazer, dado…): senão a seleção fecha
+    if (ui.styleSel) { const it = styleItems().find(isSel); if (!it || !it.on()) { ui.styleSel = null; ui.styleParam = null; } }
+    const controls = ui.styleSel ? styleControls(ui.styleSel) : [];
+    const active = controls.find(c => ctrlId(c) === ui.styleParam);
+    // 1) régua (ou opções) do ajuste aberto
+    if (active && (active.kind === 'range' || active.kind === 'choice')) {
+        const row = h('div', 'param-row');
+        if (active.kind === 'range') row.append(makeRuler(active, { label: true }));
+        else { const ch = makeChips(active); ch.addEventListener('click', () => setTimeout(buildStylesBar, 0)); row.append(ch); }
+        ed.append(row);
+    }
+    // 2) botões dos ajustes
+    if (controls.length) {
+        const row = h('div', 'set-row');
+        controls.forEach(c => {
+            const id = ctrlId(c), b = h('button', 'set-btn' + (id === ui.styleParam ? ' on' : '') + (c.kind === 'toggle' && ctrlValue(c) ? ' lit' : '')); b.type = 'button';
+            if (c.kind === 'color') { const sw = h('span', 'swatch'); sw.style.background = ctrlValue(c); b.append(sw); }
+            else b.insertAdjacentHTML('beforeend', smallIcon(c.icon) || smallIcon('fx'));
+            const t = h('span', 't'); t.textContent = c.label; b.append(t); b.title = c.label;
+            b.onclick = () => {
+                if (c.kind === 'range' || c.kind === 'choice') { ui.styleParam = ui.styleParam === id ? null : id; buildStylesBar(); return; }
+                if (c.kind === 'toggle') { const nv = !ctrlValue(c); if (c.onPick) c.onPick(nv); else change(c.key, nv); buildStylesBar(); return; }
+                if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); const sw = b.querySelector('.swatch'); if (sw) sw.style.background = hex; }, c.label); return; }
+                if (c.kind === 'action') c.run();
+            };
+            row.append(b);
+        });
+        ed.append(row);
+        requestAnimationFrame(() => centerIn(row, row.querySelector('.set-btn.on')));
+    }
+    // 3) todos os efeitos numa linha só
+    const strip = h('div', 'strip style-strip');
+    styleItems().forEach(it => {
+        if (it.group) { const g = h('span', 'strip-group'); g.textContent = it.group; strip.append(g); return; }
+        if (it.kind === 'add') { const a = h('button', 'thumb add'); a.type = 'button'; a.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`; a.onclick = saveUserPreset; strip.append(a); return; }
+        const t = h('button', 'thumb' + (it.on() ? ' on' : '') + (isSel(it) ? ' sel' : '')); t.type = 'button'; t.title = it.label;
+        const pic = h('span', 'pic'); t.append(pic, h('span', 't', '')); t.lastChild.textContent = it.label;
+        Thumbs.attach(pic, 'bar:' + it.kind + ':' + it.id, it.state, it.kind !== 'preset' && it.kind !== 'mine');
+        t.onclick = () => selectStyle(it);
         strip.append(t);
-    };
-    groupsOf.forEach(([g, list], i) => {
-        if (g) { const gl = h('span', 'strip-group'); gl.textContent = g; strip.append(gl); }
-        if (!i) add('none', 'Nenhum');
-        list.forEach(([v, l]) => add(v, l));
     });
-    row.append(strip); ed.append(row);
-    requestAnimationFrame(() => centerIn(strip, strip.querySelector('.thumb.on')));
+    strip.addEventListener('scroll', () => { ui.styleScroll = strip.scrollLeft; }, { passive: true });
+    ed.append(strip);
+    strip.scrollLeft = ui.styleScroll;
 }
-function editMine(ed) {
-    const ready = h('div', 'style-row'), rh = h('div', 'style-head'); rh.textContent = 'Prontos'; ready.append(rh);
-    const rs = h('div', 'strip'); Object.keys(BUILTIN_STYLES).forEach(name => styleThumb(rs, name, () => builtinState(name), null));
-    ready.append(rs); ed.append(ready);
-    effectRow(ed, 'Texturas', 'fx.id', FX_GROUPS(), (s, v) => { s.fx.id = v; if (v !== 'none' && s.fx.mix < 30) s.fx.mix = 100; }, 'textura');
-    effectRow(ed, 'Filmes', 'film.look', FILM_LOOK_DEFS.map(([g, l]) => [g, l.map(x => [x[0], x[1]])]), (s, v) => { s.film.look = v; if (v !== 'none' && s.film.mix < 30) s.film.mix = 100; }, 'filme');
-    effectRow(ed, 'Pintura', 'paint.mode', [['', PAINT_MODE_OPTS.slice(1)]], (s, v) => { s.paint.mode = v; }, 'pintura');
-    const mine = h('div', 'style-row'), mh = h('div', 'style-head'); mh.textContent = 'Meus estilos'; mine.append(mh);
-    const strip = h('div', 'strip');
-    const addB = h('button', 'thumb add'); addB.type = 'button'; addB.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`;
-    addB.onclick = saveUserPreset; strip.append(addB);
-    Object.keys(prefs.presets).forEach(name => styleThumb(strip, name, () => prefs.presets[name], () => {
-        const bak = prefs.presets[name]; delete prefs.presets[name]; store.set('presets', prefs.presets); lastEditorKey = null; buildPanel();
-        toast('Estilo apagado', { label: 'Desfazer', run: () => { prefs.presets[name] = bak; store.set('presets', prefs.presets); lastEditorKey = null; buildPanel(); } });
-    }));
-    mine.append(strip); ed.append(mine);
-    styleMixRuler(ed);
-}
-
 function editPalette(ed) {
     const pal = displayPalette(st.color), row = h('div', 'swatches');
     if (!pal.length) { ed.append(h('div', 'editor-note', 'A paleta aparece depois que a imagem for processada.')); requestAnimationFrame(() => { if (st.color.base.length) buildEditor({ kind: 'custom', editor: editPalette }); }); return; }
