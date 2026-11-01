@@ -441,10 +441,13 @@ const FILME_TOOL = { id: 'filme', label: 'Filme', controls: () => {
     if (look && look.fx === 'lumiere') list.push(R('film.lumiereHue', 'Matiz', 'hue', 0, 360));
     if (look && look.fx === 'vencido') list.push(C('film.vencido', 'Variação', 'film', [[0, 'Quente'], [1, 'Névoa magenta'], [2, 'Frio'], [3, 'Desbotado']]));
     if (look && look.fx) list.push(...fxParamControls(look.fx, ['uVariant', 'uHue'], FILM_FX_LABELS[look.fx]));
-    // grão: o do filme (quando o filme tem) e o grão livre, num lugar só
-    list.push(D('Grão'));
     if (look && !look.fx) list.push(R('film.grainAmt', 'Grão do filme', 'grain', 0, 200, { step: 5 }));
-    list.push(R('grain.amount', 'Quantidade', 'grain', 0, 100));
+    list.push(resetAction('Filme', () => { Object.assign(st.film, { look: 'none', mix: 100, grainAmt: 100 }); }));
+    return list;
+} };
+// Lente e grão (Editar): ajustes de câmera que valem com ou sem filme
+const LENTE_TOOL = { id: 'lente', label: 'Lente', controls: () => {
+    const list = [R('grain.amount', 'Grão', 'grain', 0, 100)];
     if (st.grain.amount > 0) list.push(R('grain.size', 'Tamanho', 'size', 10, 400, { step: 5 }), R('grain.rough', 'Aspereza', 'rough', 0, 100),
         R('grain.bias', 'Sombras ↔ luzes', 'bias', -100, 100), R('grain.speckle', 'Manchas', 'speckle', 0, 100), T('grain.mono', 'Monocromático', 'mono'));
     list.push(D('Lente'),
@@ -452,7 +455,7 @@ const FILME_TOOL = { id: 'filme', label: 'Filme', controls: () => {
         R('film.bloom', 'Brilho difuso', 'bloom', 0, 100), R('film.halation', 'Halação', 'halation', 0, 100),
         R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100),
         R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }),
-        resetAction('Filme', () => { st.film = fresh('film'); st.grain = fresh('grain'); }));
+        resetAction('Lente', () => { const f = fresh('film'); LENS_KEYS.concat(['vigColor', 'leakColor']).forEach(k => { st.film[k] = f[k]; }); st.grain = fresh('grain'); }));
     return list;
 } };
 const PAINT_MODE_OPTS = [['none', 'Desligado'], ['regions', 'Regiões'], ['pixels', 'Pixels']];
@@ -514,8 +517,10 @@ const MOV_TOOL = { id: 'movimento', label: 'Movimento', controls: () => {
 } };
 
 const TABS = [
-    { id: 'estilos', label: 'Estilos', icon: 'tab-styles', groups: () => [{ id: 'mine', label: 'Meus estilos', controls: () => [X('mine', 'Meus estilos', 'styles', editMine)] }] },
-    { id: 'editar', label: 'Editar', icon: 'tab-edit', groups: () => [CROP_TOOL, LUZ_TOOL, COR_TOOL, PIXEL_TOOL, TEXTURA_TOOL, FILME_TOOL, PINTURA_TOOL, DUPLA_TOOL, MOV_TOOL] },
+    // Estilos: a tela inicial tem fileiras horizontais (Prontos, Texturas, Filmes, Pintura, Meus estilos);
+    // tocar num efeito aplica e abre as configurações dele (com “‹ Estilos” para voltar)
+    { id: 'estilos', label: 'Estilos', icon: 'tab-styles', groups: () => [{ id: 'mine', label: 'Estilos', controls: () => [X('mine', 'Estilos', 'styles', editMine)] }, TEXTURA_TOOL, FILME_TOOL, PINTURA_TOOL] },
+    { id: 'editar', label: 'Editar', icon: 'tab-edit', groups: () => [CROP_TOOL, LUZ_TOOL, COR_TOOL, PIXEL_TOOL, LENTE_TOOL, DUPLA_TOOL, MOV_TOOL] },
     { id: 'exportar', label: 'Exportar', icon: 'tab-export', groups: () => [{ id: 'exp', label: 'Exportar', controls: () => [X('exp', 'Exportar', 'download', exportPanel)] }] },
 ];
 function groupControls(g) {
@@ -557,7 +562,7 @@ function fxParamControls(id, hidden, names = {}) {
 // PAINEL
 // ============================================================
 // ícones pequenos das ferramentas
-const GROUP_ICONS = { crop: 'crop', luz: 'brightness', cor: 'palette', pixel: 'pixel', textura: 'pattern', filme: 'film', pintura: 'brush', dupla: 'layers', movimento: 'wave' };
+const GROUP_ICONS = { crop: 'crop', luz: 'brightness', cor: 'palette', pixel: 'pixel', lente: 'vignette', textura: 'pattern', filme: 'film', pintura: 'brush', dupla: 'layers', movimento: 'wave' };
 function tabGroups(t) { return typeof t.groups === 'function' ? t.groups() : t.groups; }
 function currentTab() { return TABS.find(t => t.id === ui.tab); }
 function currentGroup() { const gs = tabGroups(currentTab()); const gid = ui.group[ui.tab]; return gs.find(g => g.id === gid) || gs[0]; }
@@ -581,9 +586,10 @@ function setOpen(on) { ui.open[ui.tab] = !!on; fitAnim(); buildPanel(); }
 function fitAnim() { app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400); }
 // abre uma ferramenta de Editar já com um ajuste escolhido (usado pelas Camadas e pela dupla exposição)
 function goTo(groupId, key) {
-    ui.group.editar = groupId; ui.open.editar = true; ui.view['editar/' + groupId] = key ? 'detail' : 'list'; if (key) ui.active['editar/' + groupId] = key;
+    const tab = TABS.find(t => tabGroups(t).some(g => g.id === groupId)) || TABS[1], k = tab.id + '/' + groupId;
+    ui.group[tab.id] = groupId; ui.open[tab.id] = true; ui.view[k] = key ? 'detail' : 'list'; if (key) ui.active[k] = key;
     if (panelCollapsed) setPanelCollapsed(false);
-    lastPanelKey = null; selectTab('editar');
+    lastPanelKey = null; selectTab(tab.id);
 }
 function selectTab(id) {
     if (!TABS.some(t => t.id === id)) id = TABS[0].id;
@@ -615,7 +621,7 @@ function buildPanel() {
     const panel = $('panel'); panel.dataset.tab = tab.id; panel.classList.toggle('closed', !open);
     // ferramentas: tocar abre; tocar na aberta fecha
     const seg = $('segRow'); seg.innerHTML = '';
-    if (groups.length > 1) groups.forEach(g => {
+    if (groups.length > 1 && tab.id !== 'estilos') groups.forEach(g => {
         const on = open && g.id === grp.id;
         const b = h('button', 'seg' + (on ? ' on' : '')); b.type = 'button'; b.dataset.group = g.id; b.title = g.label;
         b.innerHTML = smallIcon(GROUP_ICONS[g.id]) + icon('t-' + g.id, 'lg') + '<span></span>'; b.lastChild.textContent = g.label;
@@ -644,6 +650,13 @@ function buildPanel() {
 // barra do detalhe: ‹ ferramenta | nome do ajuste
 function buildCrumb(grp, c) {
     const box = $('crumb'); box.innerHTML = '';
+    if (!c && ui.tab === 'estilos' && grp.id !== 'mine') {
+        const back = h('button', 'back', icon('back') + '<span>Estilos</span>'); back.type = 'button'; back.setAttribute('aria-label', 'Voltar para Estilos');
+        back.onclick = () => { ui.group.estilos = 'mine'; lastEditorKey = null; fitAnim(); buildPanel(); };
+        const t = h('span', 'title'); t.textContent = grp.label;
+        box.append(back, t, h('span')); $('panel').classList.add('has-crumb'); return;
+    }
+    $('panel').classList.remove('has-crumb');
     if (!c) return;
     const back = h('button', 'back', icon('back') + '<span></span>'); back.type = 'button'; back.lastChild.textContent = grp.label;
     back.setAttribute('aria-label', 'Voltar para ' + grp.label);
@@ -993,7 +1006,7 @@ function makeThumbChoice(c) {
         // “Nenhum” abre o primeiro grupo (nada de uma linha só para ele)
         c.groupsOf.forEach(([g, list], i) => { const t = h('span', 'strip-group'); t.textContent = g; strip.append(t); if (!i) add('none', 'Nenhum'); list.forEach(([id, nome]) => add(id, nome)); });
     } else c.options.forEach(([v, l]) => add(v, l));
-    if (!ui.keepScroll) requestAnimationFrame(() => revealInEditor(strip.querySelector('.thumb.on')));
+    requestAnimationFrame(() => centerIn(strip, strip.querySelector('.thumb.on')));
     return strip;
 }
 
@@ -1154,21 +1167,45 @@ function styleMixRuler(ed) {
     ed.append(styleRuler);
 }
 function syncStyleRuler() { if (styleRuler && styleRuler.isConnected && styleRuler._sync) styleRuler._sync(); }
+// uma fileira horizontal de efeitos com miniatura; tocar aplica e abre as configurações do efeito
+function effectRow(ed, title, key, groupsOf, apply, toolId) {
+    const row = h('div', 'style-row'), head = h('div', 'style-head'); head.textContent = title; row.append(head);
+    const strip = h('div', 'strip'), cur = String(getP(key));
+    const add = (val, label) => {
+        const t = h('button', 'thumb' + (String(val) === cur ? ' on' : '')); t.type = 'button';
+        const pic = h('span', 'pic'); t.append(pic, h('span', 't', label));
+        Thumbs.attach(pic, 'row:' + key + ':' + val, () => { const s = deepClone(st); apply(s, val); return s; }, true);
+        t.onclick = () => {
+            apply(st, val); change(null, null, { dials: false }); flashLabel(label);
+            if (val === 'none') { strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t)); return; }
+            ui.group.estilos = toolId; ui.view['estilos/' + toolId] = 'list'; lastEditorKey = null; fitAnim(); buildPanel();
+        };
+        strip.append(t);
+    };
+    groupsOf.forEach(([g, list], i) => {
+        if (g) { const gl = h('span', 'strip-group'); gl.textContent = g; strip.append(gl); }
+        if (!i) add('none', 'Nenhum');
+        list.forEach(([v, l]) => add(v, l));
+    });
+    row.append(strip); ed.append(row);
+    requestAnimationFrame(() => centerIn(strip, strip.querySelector('.thumb.on')));
+}
 function editMine(ed) {
-    const ready = h('div', 'strip');
-    const gt = h('span', 'strip-group'); gt.textContent = 'Prontos'; ready.append(gt);
-    Object.keys(BUILTIN_STYLES).forEach(name => styleThumb(ready, name, () => builtinState(name), null));
-    ed.append(ready);
+    const ready = h('div', 'style-row'), rh = h('div', 'style-head'); rh.textContent = 'Prontos'; ready.append(rh);
+    const rs = h('div', 'strip'); Object.keys(BUILTIN_STYLES).forEach(name => styleThumb(rs, name, () => builtinState(name), null));
+    ready.append(rs); ed.append(ready);
+    effectRow(ed, 'Texturas', 'fx.id', FX_GROUPS(), (s, v) => { s.fx.id = v; if (v !== 'none' && s.fx.mix < 30) s.fx.mix = 100; }, 'textura');
+    effectRow(ed, 'Filmes', 'film.look', FILM_LOOK_DEFS.map(([g, l]) => [g, l.map(x => [x[0], x[1]])]), (s, v) => { s.film.look = v; if (v !== 'none' && s.film.mix < 30) s.film.mix = 100; }, 'filme');
+    effectRow(ed, 'Pintura', 'paint.mode', [['', PAINT_MODE_OPTS.slice(1)]], (s, v) => { s.paint.mode = v; }, 'pintura');
+    const mine = h('div', 'style-row'), mh = h('div', 'style-head'); mh.textContent = 'Meus estilos'; mine.append(mh);
     const strip = h('div', 'strip');
-    const mt = h('span', 'strip-group'); mt.textContent = 'Meus estilos'; strip.append(mt);
-    const add = h('button', 'thumb add'); add.type = 'button'; add.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`;
-    add.onclick = saveUserPreset; strip.append(add);
+    const addB = h('button', 'thumb add'); addB.type = 'button'; addB.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`;
+    addB.onclick = saveUserPreset; strip.append(addB);
     Object.keys(prefs.presets).forEach(name => styleThumb(strip, name, () => prefs.presets[name], () => {
         const bak = prefs.presets[name]; delete prefs.presets[name]; store.set('presets', prefs.presets); lastEditorKey = null; buildPanel();
         toast('Estilo apagado', { label: 'Desfazer', run: () => { prefs.presets[name] = bak; store.set('presets', prefs.presets); lastEditorKey = null; buildPanel(); } });
     }));
-    ed.append(strip);
-    if (!Object.keys(prefs.presets).length) ed.append(h('div', 'editor-note', 'Salve a edição atual para reusar.'));
+    mine.append(strip); ed.append(mine);
     styleMixRuler(ed);
 }
 
@@ -1483,8 +1520,8 @@ const LAYER_DEFS = {
         getO: () => st.fx.mix, setO: (v) => { st.fx.mix = v; } },
     film: { label: 'Filme', on: () => st.film.look !== 'none', sub: () => (FILM_LOOKS[st.film.look] || {}).nome || '', go: ['filme', 'film.look'],
         getO: () => st.film.mix, setO: (v) => { st.film.mix = v; } },
-    lens: { label: 'Lente', on: () => LENS_KEYS.some(k => st.film[k]), sub: () => LENS_KEYS.filter(k => st.film[k]).length > 1 ? 'Vários ajustes' : '', go: ['filme', 'film.vignette'] },
-    grain: { label: 'Grão', on: () => st.grain.amount > 0, sub: () => '', go: ['filme', 'grain.amount'] },
+    lens: { label: 'Lente', on: () => LENS_KEYS.some(k => st.film[k]), sub: () => LENS_KEYS.filter(k => st.film[k]).length > 1 ? 'Vários ajustes' : '', go: ['lente', 'film.vignette'] },
+    grain: { label: 'Grão', on: () => st.grain.amount > 0, sub: () => '', go: ['lente', 'grain.amount'] },
     edge: { label: 'Contorno', on: () => st.edge.size > 0, sub: () => '', go: ['pixel', 'edge.size'],
         getO: () => st.edge.opacity, setO: (v) => { st.edge.opacity = v; } },
 };

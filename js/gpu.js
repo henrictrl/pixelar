@@ -546,6 +546,61 @@ const PIXELAR_FX_LIST = [
   },
 
   {
+    // Vencido (química): véu de base, uma camada de cor perdendo força, manchas de densidade e vazamento —
+    // tudo com cor tirada da própria foto (domColor), nunca um tom fixo.
+    id: 'vencido_quimica', nome: 'Vencido (química)',
+    uniforms: { uAge: 0.8, uFog: 0.6, uMottle: 0.6, uLeak: 0.6, uLayer: 0.0 },
+    src: `
+vec3 domColor() {
+    vec3 acc = vec3(0.0); float w = 0.0;
+    for (int y = 0; y < 6; y++) for (int x = 0; x < 6; x++) {
+        vec3 c = texture(uSource, (vec2(float(x), float(y)) + 0.5) / 6.0).rgb; vec3 h = rgb2hsl(c);
+        float k = h.y * (1.0 - abs(h.z - 0.5) * 1.6) + 0.02; acc += c * k; w += k;
+    }
+    return acc / w;
+}
+vec3 tone(vec3 base, float l, float s) { vec3 h = rgb2hsl(base); return hsl2rgb(vec3(h.x, clamp(h.y * s, 0.0, 1.0), l)); }
+// pigmento: mesmo matiz da foto, com saturação mínima (fotos quase sem cor ainda dão tinta)
+vec3 pigment(vec3 base, float l, float smin) { vec3 h = rgb2hsl(base); return hsl2rgb(vec3(h.x, clamp(max(h.y * 2.0, smin), 0.0, 1.0), l)); }
+
+    uniform float uAge, uFog, uMottle, uLeak, uLayer;
+    void main() {
+        vec3 c = texture(uSource, vUv).rgb, dom = domColor();
+        float v = floor(mod(uLayer, 3.0) + 0.5);
+        vec3 lose = v < 0.5 ? vec3(1.0, 0.0, 0.0) : v < 1.5 ? vec3(0.0, 1.0, 0.0) : vec3(0.0, 0.0, 1.0);
+        // a camada mais velha perde contraste e sobe (não é uma cor escolhida: é a química)
+        vec3 flat_ = mix(c, vec3(0.45 + c * 0.35), lose * uAge);
+        float m = fbm(vUv * 3.0 + v * 7.0);
+        vec3 fogc = tone(1.0 - dom, 0.22 + m * 0.1, 0.5);                   // véu: complementar da foto
+        vec3 col = mix(flat_, flat_ + fogc * (1.0 - luma(flat_)), uFog * 0.7);
+        col *= 1.0 + (m - 0.5) * uMottle * 0.5;                             // densidade irregular
+        // vazamento: posição e cor variam com a foto e a variação
+        vec2 lp = vec2(fract(0.17 + v * 0.37 + dom.r * 0.3), fract(0.83 - v * 0.29 + dom.b * 0.4));
+        float lk = smoothstep(0.75, 0.0, length((vUv - lp) * vec2(1.0, 0.6)));
+        vec3 lc = tone(dom, 0.62, 1.6);
+        col = 1.0 - (1.0 - col) * (1.0 - lc * lk * uLeak);
+        outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+    }`
+  },
+  {
+    // Infravermelho P&B (efeito Wood): folhagem branca, céu escuro, halo nas luzes.
+    id: 'infra_pb', nome: 'Infravermelho P&B',
+    uniforms: { uFoliage: 1.0, uSky: 0.8, uGlow: 0.7, uGrain: 0.5 },
+    src: `
+    uniform float uFoliage, uSky, uGlow, uGrain;
+    float ir(vec3 c) { vec3 h = rgb2hsl(c); float leaf = smoothstep(0.15, 0.45, c.g - c.b + (c.g - c.r) * 0.5) * h.y; float sky = smoothstep(0.05, 0.3, c.b - max(c.r, c.g) * 0.9);
+        return clamp(luma(c) * 0.8 + leaf * uFoliage * 1.4 - sky * uSky * 0.7, 0.0, 1.0); }
+    void main() {
+        float S = max(uResolution.x, uResolution.y) / 1000.0;
+        float l = ir(texture(uSource, vUv).rgb), g = 0.0;
+        for (int i = 0; i < 12; i++) { float a = float(i) * 0.5236; g += ir(texture(uSource, vUv + vec2(cos(a), sin(a)) * 14.0 * S / uResolution).rgb); }
+        g /= 12.0;
+        l = 1.0 - (1.0 - l) * (1.0 - smoothstep(0.5, 1.0, g) * uGlow);
+        l += (hash(floor(vUv * uResolution / (1.4 * S * uUnit))) - 0.5) * uGrain * 0.18;
+        outColor = vec4(vec3(clamp(l, 0.0, 1.0)), 1.0);
+    }`
+  },
+  {
     // Lumiere: efeito de matiz customizavel (roxo por padrao, referencia do
     // usuario). uHue (0-1, representando 0-360 graus) escolhe a cor de
     // aplicacao. A aplicacao NAO e uma tinta uniforme: dosa por luminancia
@@ -667,7 +722,7 @@ float phash(ivec2 p, float s) { return float(pcg3d(uvec3(uvec2(p), floatBitsToUi
 
 const FILM_INT_UNIFORMS = new Set(['uSwap']);
 // filmes feitos por shader próprio: ficam em Filme, fora da lista de texturas
-const FILM_FX_IDS = ['lumiere', 'vencido'];
+const FILM_FX_IDS = ['lumiere', 'vencido', 'vencido_quimica', 'infra_pb'];
 const PixelarGPU = (function () {
     let gl = null, glCanvas = null;
     let initialized = false, ok = false, contextLost = false;

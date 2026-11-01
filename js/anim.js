@@ -198,6 +198,8 @@ const FX_RANGES = {
     uRR: [-1, 2], uRG: [-1, 2], uRB: [-1, 2], uGR: [-1, 2], uGG: [-1, 2], uGB: [-1, 2], uBR: [-1, 2], uBG: [-1, 2], uBB: [-1, 2],
 };
 const FX_RANGES_BY_EFFECT = {
+    vencido_quimica: { uAge: [0, 1], uFog: [0, 1], uMottle: [0, 1.5], uLeak: [0, 1.5], uLayer: [0, 2] },
+    infra_pb: { uFoliage: [0, 2], uSky: [0, 1.5], uGlow: [0, 1.5], uGrain: [0, 1.5] },
     oil: { uBrush: [2, 30], uImpasto: [0, 2], uStroke: [0, 1.5], uSat: [0.5, 2] },
     ascii: { uCell: [5, 28], uContrast: [0.5, 2.5], uBg: [0, 0.6] },
     starlight: { uThreshold: [0.4, 0.98], uLength: [5, 80], uIntensity: [0, 3], uDiagonal: [0, 1] },
@@ -219,6 +221,7 @@ const FX_RANGES_BY_EFFECT = {
     blueprint: { uGrid: [10, 120], uLines: [0.03, 0.4], uFill: [0, 1] },
 };
 const FX_LABELS = {
+    uLeak: 'Vazamento', uAge: 'Idade', uFog: 'Véu', uMottle: 'Manchas', uLayer: 'Camada fraca', uFoliage: 'Folhagem', uSky: 'Céu',
     uBrush: 'Pincel', uImpasto: 'Relevo da tinta', uStroke: 'Marcas do pincel', uBleed: 'Escorrido', uPaper: 'Papel',
     uThreshold: 'Limiar', uIntensity: 'Intensidade', uRadius: 'Raio', uBoost: 'Realce', uScale: 'Escala', uGrain: 'Granulado', uContrast: 'Contraste', uShadowLift: 'Sombras',
     uSatMid: 'Saturação', uAngle: 'Ângulo', uSmooth: 'Suavidade', uFreq: 'Frequência', uThickness: 'Espessura', uAmount: 'Quantidade', uChroma: 'Aberração', uZoom: 'Zoom',
