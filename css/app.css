@@ -109,9 +109,11 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .welcome { position: absolute; top: var(--ui-t, 52px); right: 0; bottom: var(--ui-b, 120px); left: 0; display: grid; place-items: center; align-content: center; gap: 8px; padding: 8px; }
 /* logo (sol em pixel): mesma cor do texto, nítido em qualquer tamanho */
 .logo { display: block; fill: currentColor; flex: none; }
-.welcome-logo { color: var(--text); }
-.logo.big { width: 72px; height: 66px; }
-.logo.top { width: 22px; height: 20px; color: var(--text); }
+.logo.top { width: 20px; height: 18px; color: var(--text); }
+.subbar-center { pointer-events: none; }
+/* logo exatamente no meio da tela; em telas estreitas com o tocar à esquerda, ele sai para não encostar */
+@media (max-width: 380px) { .topbar:has(#playSlot button) .logo.top { display: none; } }
+.subbar-center .logo.top { position: absolute; left: 50%; bottom: calc(var(--bar-h) / 2 - 9px); transform: translateX(-50%); }
 .about { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
 .about .logo.mini { width: 18px; height: 17px; color: var(--text); }
 .about .note { margin-top: 0 !important; }
@@ -119,7 +121,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .upload-big { width: min(400px, 100%); height: min(200px, 100%); color: var(--text-2); display: grid; place-content: center; justify-items: center; gap: 16px; }
 .upload-big .ic { width: 48px; height: 48px; }
 .is-welcome .dock .panel, .is-welcome .videobar, .is-welcome .canvas-wrap { display: none; }
-.is-welcome #subbarCenter { visibility: hidden; }
+.play-slot { display: contents; }
 .is-welcome .tabbar, .is-welcome .topbar .icon-btn:not(#btnOpen) { opacity: .3; pointer-events: none; }
 
 /* ============================================================

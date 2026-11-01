@@ -369,8 +369,7 @@ const FILM_LOOK_DEFS = [
     ]],
     ['Câmeras', [
         ['celular2010', 'Celular 2010', 'Câmera de celular antiga: dourado, brilho difuso forte, luzes estouradas e risco do sensor.', { uTemp: 0.9, uTint: -0.3, uDream: 1.1, uBloom: 0.8, uExposure: 0.18, uContrast: 0.9, uFade: 0.18, uBase: [0.12, 0.1, 0.02], uSat: 0.8, uSplit: 0.6, uShadowTint: [0.5, 0.52, 0.42], uHighTint: [0.62, 0.58, 0.4], uSoft: 0.22, uSmear: 0.7, uJpeg: 0.2, uVignette: 0.35, uLowRes: 1.5, uGrain: 0.12 }],
-        ['flash_noturno', 'Flash noturno', 'Filme subexposto à noite: flash estourado no centro, sombras azul-petróleo e grão pesado.', { uExposure: -0.85, uFlash: 1.0, uVignette: 1.3, uTemp: -0.6, uTint: -0.1, uSplit: 0.7, uShadowTint: [0.33, 0.5, 0.64], uHighTint: [0.55, 0.55, 0.55], uBase: [0.03, 0.08, 0.14], uFade: 0.3, uSat: 0.85, uContrast: 1.15, uGrain: 0.6, uGrainSize: 1.6, uChromaNoise: 0.35 }],
-        ['vencido_verde', 'Vencido verde-rosa', 'Filme vencido: dominante verde-água, luzes rosadas, contraste baixo e vazamento de luz.', { uTint: -1.5, uTemp: -0.35, uFade: 0.38, uBase: [0.14, 0.22, 0.19], uContrast: 0.75, uSat: 0.65, uSplit: 1.0, uShadowTint: [0.36, 0.6, 0.55], uHighTint: [0.66, 0.5, 0.52], uLeak: 0.9, uLeakPos: 0.12, uLeakColor: [1.0, 0.38, 0.45], uGrain: 0.35, uSoft: 0.12 }],
+        ['webcam', 'Webcam 2000', 'Webcam de computador: imagem grossa, compressão pesada, ruído de cor e contraste duro.', { uLowRes: 6, uJpeg: 1.0, uSat: 0.8, uContrast: 1.35, uChromaNoise: 0.9, uExposure: -0.15, uVignette: 0.6, uSharpen: 0.4 }],
     ]],
     ['P&B e tingidos', [
         ['trix', 'Tri-X 400', 'O P&B do fotojornalismo: contraste marcante e grão vigoroso.', { uBW: 1, uBWMix: [0.3, 0.6, 0.1], uContrast: 1.3, uRoll: 0.1, uGrain: 0.4, uGrainSize: 1.3 }],
@@ -381,7 +380,7 @@ const FILM_LOOK_DEFS = [
 const FILM_LOOKS = {};
 FILM_LOOK_DEFS.forEach(([group, list]) => list.forEach(([id, nome, desc, u, x]) => { FILM_LOOKS[id] = Object.assign({ id, nome, desc, group, u }, x || {}); }));
 // filmes que saíram (out/2026) → o visível mais parecido (medido): arquivos antigos continuam abrindo
-const LOOK_ALIAS_V4 = { ektachrome: 'gold200', portra: 'gold200', ae1: 'gold200', descartavel: 'gold200', super8: 'gold200', ccd: 'gold200', kodak_verde: 'gold200', noir: 'trix', kodak_pb: 'trix', cross: 'techni3', lomopurple: 'techni3', aerochrome: 'techni3', lomo: 'techni3', holga: 'techni3' };
+const LOOK_ALIAS_V4 = { flash_noturno: 'none', vencido_verde: 'none', ektachrome: 'gold200', portra: 'gold200', ae1: 'gold200', descartavel: 'gold200', super8: 'gold200', ccd: 'gold200', kodak_verde: 'gold200', noir: 'trix', kodak_pb: 'trix', cross: 'techni3', lomopurple: 'techni3', aerochrome: 'techni3', lomo: 'techni3', holga: 'techni3' };
 const LOOK_ALIAS = { kodachrome64: 'ektachrome', kodachrome25: 'ektachrome', portra160: 'portra', portra800: 'portra', ultramax: 'gold200', colorplus: 'gold200', ektar: 'ektachrome', tmax: 'trix', velvia: 'ektachrome', provia: 'ektachrome', astia: 'portra', pro400h: 'portra', superia: 'ektachrome', c200: 'gold200', natura: 'kodak_verde', acros: 'trix', hp5: 'trix', delta3200: 'trix', xp2: 'trix', agfavista: 'ektachrome', agfaapx: 'trix', lomo800: 'super8', vision250d: 'portra', vision500t: 'portra', cinestill50: 'gold200', bleach: 'trix', contaxt2: 'ae1', mju2: 'super8', leica: 'ae1', hasselblad: 'kodak_verde', compacta: 'super8', polaroid: 'kodak_verde', instax: 'gold200', vhscam: 'kodak_verde', hi8: 'kodak_verde' };
 const LENS_KEYS = ['vignette', 'halation', 'bloom', 'soft', 'distort', 'chroma', 'leak'];
 

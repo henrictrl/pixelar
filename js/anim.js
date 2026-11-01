@@ -199,7 +199,6 @@ const FX_RANGES = {
 };
 const FX_RANGES_BY_EFFECT = {
     oil: { uBrush: [2, 30], uImpasto: [0, 2], uStroke: [0, 1.5], uSat: [0.5, 2] },
-    watercolor: { uWash: [0, 1], uBleed: [0, 1.5], uInk: [0, 1.5], uGrain: [0, 1.5], uPaper: [0, 1.5] },
     ascii: { uCell: [5, 28], uContrast: [0.5, 2.5], uBg: [0, 0.6] },
     starlight: { uThreshold: [0.4, 0.98], uLength: [5, 80], uIntensity: [0, 3], uDiagonal: [0, 1] },
     stipple: { uCell: [3, 16], uJitter: [0, 1], uGamma: [0.5, 2.5] },
@@ -343,7 +342,7 @@ const FX_FAMILIES = {
     screen: ['ascii', 'lcd', 'led', 'bitmap', 'blueprint', 'vhs'],
     color: ['thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass'],
     matter: ['lego', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort'],
-    art: ['oil', 'watercolor'],
+    art: ['oil'],
     bw: ['stipple', 'bitmap', 'emboss'],
 };
 const FILM_STYLE_LOOKS = { natural: ['gold200'], cinema: ['cinestill', 'techni3'], loucas: ['techni3', 'vencido', 'lumiere'], vintage: ['vencido', 'gold200', 'lumiere'], pb: ['trix', 'lumiere'] };

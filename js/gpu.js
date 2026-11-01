@@ -544,49 +544,7 @@ const PIXELAR_FX_LIST = [
         outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }`
   },
-  {
-    // Aquarela de ilustração (traço a nanquim + aguadas): manchas que escorrem, borda
-    // mais escura onde a tinta seca, granulação do pigmento e textura do papel.
-    // Traço e aguadas usam as cores da própria imagem.
-    id: 'watercolor', nome: 'Aquarela',
-    uniforms: { uWash: 0.75, uBleed: 0.9, uInk: 1.0, uGrain: 0.7, uPaper: 0.7 },
-    src: `
-    uniform float uWash, uBleed, uInk, uGrain, uPaper;
-    vec3 C(vec2 uv) { return texture(uSource, clamp(uv, 0.0, 1.0)).rgb; }
-    void main() {
-        float S = max(uResolution.x, uResolution.y) / 1000.0;
-        vec2 p = vUv * uResolution / S;
-        // a tinta escorre: amostragem deslocada por ruído suave
-        vec2 flow = (vec2(fbm(p * 0.012), fbm(p * 0.012 + 9.1)) - 0.5) * uBleed * 0.03;
-        vec2 uv = vUv + flow;
-        float r = (1.5 + uBleed * 4.0) * S;
-        vec3 acc = C(uv) * 2.0; float ws = 2.0;
-        for (int i = 0; i < 12; i++) { float a = float(i) * 0.5236; vec2 o = vec2(cos(a), sin(a)) * r * (i % 2 == 0 ? 1.0 : 0.5) / uResolution; acc += C(uv + o); ws += 1.0; }
-        vec3 c = acc / ws;
-        // aguadas: luz em poucos degraus suaves, cor mais leve e transparente
-        vec3 h = rgb2hsl(c);
-        float lv = 4.0, l = h.z * lv, fl = floor(l);
-        h.z = (fl + smoothstep(0.35, 0.65, l - fl)) / lv;
-        h.y = clamp(h.y * (1.0 + uWash * 0.35), 0.0, 1.0);   // pigmento limpo e vivo
-        h.z = mix(h.z, 0.25 + h.z * 0.8, uWash * 0.6);        // aguada: sombras transparentes, nada de preto chapado
-        c = hsl2rgb(h);
-        // borda da aguada mais escura (onde o pigmento acumula ao secar)
-        vec2 e = 2.5 * S / uResolution;
-        float g = length(vec2(luma(C(uv + vec2(e.x, 0.0))) - luma(C(uv - vec2(e.x, 0.0))), luma(C(uv + vec2(0.0, e.y))) - luma(C(uv - vec2(0.0, e.y)))));
-        c *= 1.0 - smoothstep(0.04, 0.25, g) * 0.25 * uWash;
-        // granulação do pigmento (mais nas áreas escuras) e papel
-        float gr = fbm(p * 0.35) - 0.5, pap = fbm(p * 0.09) * 0.6 + noise2(p * 0.8) * 0.4 - 0.5;
-        c *= 1.0 + gr * uGrain * 0.35 * (1.0 - h.z);
-        c *= 1.0 + pap * uPaper * 0.12;
-        // traço a nanquim: contorno fino na cor escura da própria região
-        vec2 t = 1.0 * S / uResolution;
-        float gx = luma(C(vUv + vec2(t.x, 0.0))) - luma(C(vUv - vec2(t.x, 0.0))), gy = luma(C(vUv + vec2(0.0, t.y))) - luma(C(vUv - vec2(0.0, t.y)));
-        float ink = smoothstep(0.08, 0.22, length(vec2(gx, gy))) * uInk;
-        ink *= 0.75 + 0.25 * noise2(p * 0.6);   // pena irregular
-        c = mix(c, C(vUv) * 0.28, ink);
-        outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
-    }`
-  },
+
   {
     // Lumiere: efeito de matiz customizavel (roxo por padrao, referencia do
     // usuario). uHue (0-1, representando 0-360 graus) escolhe a cor de

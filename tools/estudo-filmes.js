@@ -7,7 +7,6 @@ window.ESTUDO_FILMES = [
         ['descartavel_flash', 'Descartável com flash', 'Flash duro no centro, cores berrantes, vinheta e lente de plástico.', { uFlash: 0.95, uSat: 1.4, uTemp: 0.25, uContrast: 1.3, uVignette: 0.9, uChroma: 1.3, uSoft: 0.3, uGrain: 0.45, uExposure: -0.25 }],
         ['vhs_cam', 'Filmadora VHS', 'Fita caseira: baixa resolução, cor vazando, linhas entrelaçadas e ruído.', { uLowRes: 4, uSoft: 0.5, uChromaNoise: 1.0, uInterlace: 1.2, uSat: 1.45, uTemp: 0.15, uContrast: 1.15, uBloom: 0.6, uChroma: 3.0, uFade: 0.1, uBase: [0.05, 0.03, 0.08] }],
         ['digital2005', 'Digital 2005', 'Compacta digital: nítida demais, compressão, flash frio e risco do sensor.', { uSharpen: 1.6, uJpeg: 0.8, uChromaNoise: 0.7, uFlash: 0.8, uTemp: -0.55, uSat: 1.3, uContrast: 1.3, uBloom: 0.6, uSmear: 0.8, uExposure: 0.15, uSplit: 0.5, uShadowTint: [0.42, 0.48, 0.6] }],
-        ['webcam', 'Webcam 2000', 'Webcam de computador: imagem grossa, verde, compressão pesada e ruído.', { uLowRes: 6, uJpeg: 1.0, uTint: -1.5, uSat: 0.65, uContrast: 1.35, uChromaNoise: 0.9, uExposure: -0.2, uVignette: 0.7, uSplit: 0.9, uShadowTint: [0.4, 0.62, 0.42], uHighTint: [0.55, 0.6, 0.45] }],
         ['pinhole', 'Pinhole', 'Câmera sem lente: tudo macio, bordas escuras e distorcidas.', { uBlur: 2.5, uSoft: 0.45, uVignette: 1.5, uDistort: 0.6, uSat: 0.8, uFade: 0.12, uBase: [0.06, 0.05, 0.04], uGrain: 0.4 }],
     ]],
     ['Cor forte', [
