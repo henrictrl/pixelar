@@ -43,6 +43,11 @@ const Exporter = (() => {
 
     async function svg(st, media, { res, key } = {}) {
         const c = renderStill(st, media, res, key); if (!c) throw new Error('Imagem vazia');
+        // pintura por números: vetor de verdade (manchas, linhas e números como texto) — molde imprimível
+        if (st.paint && st.paint.mode !== 'none' && typeof PaintFX !== 'undefined') {
+            const v = PaintFX.svg();
+            if (v) { const blob = new Blob([v], { type: 'image/svg+xml;charset=utf-8' }); download(blob, `pixelar_pintura_${stamp()}.svg`); return blob; }
+        }
         const w = c.width, h = c.height, d = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
         const parts = [`<?xml version="1.0" encoding="utf-8"?>\n<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">`];
         for (let y = 0; y < h; y++) {

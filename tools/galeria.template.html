@@ -1,0 +1,175 @@
+<title>Pixelar · Efeitos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* layout: faixa fixa com contagem e filtros; seções empilhadas; cartões com as duas fotos lado a lado na mesma altura */
+@font-face { font-family: 'Departure Mono'; src: url(data:font/woff2;base64,/*FONT*/) format('woff2'); font-display: swap; }
+:root {
+  --bg: #f3f3f1; --surface: #ffffff; --ink: #141414; --ink-2: #5e5d58; --hair: rgba(20, 20, 20, .12);
+  --sun: #c98a00; --sun-soft: rgba(201, 138, 0, .14);
+  --keep: #1f8a4c; --keep-soft: rgba(31, 138, 76, .13); --drop: #c23b2e; --drop-soft: rgba(194, 59, 46, .12);
+  --mono: 'Departure Mono', ui-monospace, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f0f0e; --surface: #1b1b19; --ink: #f2f2ef; --ink-2: #a3a29b; --hair: rgba(242, 242, 239, .13);
+  --sun: #ffc533; --sun-soft: rgba(255, 197, 51, .14);
+  --keep: #4cc27d; --keep-soft: rgba(76, 194, 125, .16); --drop: #ff6b5c; --drop-soft: rgba(255, 107, 92, .15); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f0f0e; --surface: #1b1b19; --ink: #f2f2ef; --ink-2: #a3a29b; --hair: rgba(242, 242, 239, .13);
+  --sun: #ffc533; --sun-soft: rgba(255, 197, 51, .14);
+  --keep: #4cc27d; --keep-soft: rgba(76, 194, 125, .16); --drop: #ff6b5c; --drop-soft: rgba(255, 107, 92, .15); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--hair); padding-block: 14px 12px; display: grid; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand svg { width: 28px; height: 26px; color: var(--ink); flex: none; }
+h1 { font: 22px/1.1 var(--mono); margin: 0; letter-spacing: .02em; }
+.count { font: 13px var(--mono); color: var(--ink-2); margin-left: auto; font-variant-numeric: tabular-nums; display: flex; gap: 12px; flex-wrap: wrap; }
+.count b { font-weight: normal; }
+.count .k { color: var(--keep); } .count .d { color: var(--drop); }
+.bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip { font: 12px var(--mono); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--hair); color: var(--ink-2); white-space: nowrap; text-decoration: none; }
+.chip.on { color: var(--ink); border-color: var(--ink); }
+.chip.new { color: var(--sun); border-color: var(--sun); }
+.copy { margin-left: auto; font: 13px var(--mono); padding: 8px 14px; border-radius: 6px; background: var(--ink); color: var(--bg); }
+.intro { max-width: 68ch; color: var(--ink-2); margin: 20px 0 4px; }
+.intro strong { color: var(--ink); font-weight: 600; }
+section { padding-top: 28px; scroll-margin-top: 140px; }
+h2 { font: 17px var(--mono); margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; text-wrap: balance; }
+h2 .n { color: var(--ink-2); font-size: 13px; }
+h2 .tag { font-size: 11px; color: var(--sun); border: 1px solid var(--sun); border-radius: 4px; padding: 1px 6px; letter-spacing: .06em; }
+.sec-note { color: var(--ink-2); margin: 0 0 14px; max-width: 68ch; }
+h3 { font: 12px var(--mono); color: var(--ink-2); letter-spacing: .08em; text-transform: uppercase; margin: 18px 0 10px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; overflow: hidden; display: grid; min-width: 0; }
+.card.keep { border-color: var(--keep); box-shadow: 0 0 0 1px var(--keep); }
+.card.drop { border-color: var(--drop); }
+.card.drop .pics { opacity: .45; }
+.pics { display: grid; grid-template-columns: 0.75fr 1.3333fr; gap: 2px; background: var(--hair); }
+.pics img { display: block; width: 100%; height: auto; max-width: 100%; }
+.meta { padding: 10px 12px 12px; display: grid; gap: 8px; }
+.name { font: 14px var(--mono); }
+.desc { color: var(--ink-2); font-size: 13px; line-height: 1.4; }
+.vote { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.vote button { font: 12px var(--mono); padding: 8px; border-radius: 6px; border: 1px solid var(--hair); color: var(--ink-2); }
+.vote .k.on { background: var(--keep-soft); color: var(--keep); border-color: var(--keep); }
+.vote .d.on { background: var(--drop-soft); color: var(--drop); border-color: var(--drop); }
+
+.dado .desc span { display: block; }
+.ref { max-width: 620px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); font: 13px var(--mono); padding: 10px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; }
+textarea.fallback { width: 100%; min-height: 160px; font: 12px var(--mono); margin-top: 10px; background: var(--surface); color: var(--ink); border: 1px solid var(--hair); border-radius: 6px; padding: 8px; }
+@media (max-width: 520px) { .count { margin-left: 0; width: 100%; } .copy { margin-left: 0; } }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><!--LOGO--><h1>Efeitos do Pixelar</h1>
+      <div class="count" id="count"></div></div>
+    <div class="bar" id="filters"></div>
+    <nav class="bar" id="nav" aria-label="Seções"></nav>
+  </header>
+  <p class="intro">Cada efeito aparece aplicado às duas fotos, com os valores padrão do app. Marque <strong>Fica</strong> ou <strong>Sai</strong> em cada um (tocar de novo desmarca) e use <strong>Copiar escolhas</strong> para colar a lista na conversa. As marcações ficam salvas neste navegador.</p>
+  <textarea class="fallback" id="fallback" hidden readonly aria-label="Lista de escolhas"></textarea>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const DATA = /*DATA*/null;
+const SECS = [
+  ['ref', 'Referência', 'As fotos sem nenhum efeito.'],
+  ['pintura', 'Pintura por números', 'Novo, inspirado no resultado final do SnapPaint: a foto vira manchas de cor chapada (Regiões) ou uma grade (Pixels), com quatro acabamentos. "Para pintar" sai como molde, e o SVG exportado é vetorial.', true],
+  ['padrao', 'Padrões', 'Ferramenta Pixel → Padrão (pontilhado).'],
+  ['pixel', 'Pixel', 'Tamanho do pixel, agrupar e contorno.'],
+  ['cor', 'Cor', 'Modos da ferramenta Cor.'],
+  ['paleta', 'Paletas prontas', 'Cor → Prontas.'],
+  ['textura', 'Texturas', 'Ferramenta Textura, nos quatro grupos do app.'],
+  ['filme', 'Filmes', 'Ferramenta Filme: emulações de filmes e câmeras.'],
+  ['lente', 'Lente e grão', 'Ajustes da parte Lente (em 70) e o grão livre.'],
+  ['dupla', 'Dupla exposição', 'As fontes geradas da ferramenta Dupla.'],
+  ['dado', 'Dado novo', 'Dez jogadas do dado refeito em cada foto (sorteios diferentes em cada uma). Só para ver a variedade; não precisa marcar.', true],
+];
+const KEY = 'pixelar-galeria-escolhas';
+let votes = {}; try { votes = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { votes = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(votes)); } catch (e) {} };
+let filter = 'all';
+const votable = (it) => it.sec !== 'ref' && it.sec !== 'dado';
+const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+
+function card(it) {
+  const c = el('article', 'card' + (it.sec === 'dado' ? ' dado' : '') + (it.sec === 'ref' ? ' ref' : ''));
+  c.dataset.id = it.id;
+  const pics = el('div', 'pics');
+  it.imgs.forEach((src, k) => { const im = el('img'); im.src = src; im.loading = 'lazy'; im.alt = (it.nomes[k] || it.nome) + (k ? ' (foto 2)' : ' (foto 1)'); pics.append(im); });
+  const meta = el('div', 'meta');
+  if (it.sec === 'dado') {
+    meta.append(el('div', 'name', 'Jogada ' + (+it.id.split('.')[1] + 1)));
+    const d = el('div', 'desc'); it.nomes.forEach((n, k) => d.append(el('span', '', 'Foto ' + (k + 1) + ': ' + n + (it.descs[k] ? ' · ' + it.descs[k] : '')))); meta.append(d);
+  } else {
+    meta.append(el('div', 'name', it.nome));
+    if (it.desc || it.grupo) meta.append(el('div', 'desc', it.desc || ''));
+  }
+  if (votable(it)) {
+    const v = el('div', 'vote'), k = el('button', 'k', 'Fica'), d = el('button', 'd', 'Sai');
+    k.type = d.type = 'button';
+    const sync = () => { const s = votes[it.id]; k.classList.toggle('on', s === 'k'); d.classList.toggle('on', s === 'd'); k.setAttribute('aria-pressed', s === 'k'); d.setAttribute('aria-pressed', s === 'd'); c.classList.toggle('keep', s === 'k'); c.classList.toggle('drop', s === 'd'); };
+    const set = (s) => { if (votes[it.id] === s) delete votes[it.id]; else votes[it.id] = s; save(); sync(); counts(); applyFilter(); };
+    k.onclick = () => set('k'); d.onclick = () => set('d');
+    v.append(k, d); meta.append(v); sync();
+  }
+  c.append(pics, meta);
+  return c;
+}
+function build() {
+  const main = document.getElementById('main'), nav = document.getElementById('nav');
+  SECS.forEach(([id, title, note, isNew]) => {
+    const items = DATA.filter(x => x.sec === id); if (!items.length) return;
+    const s = el('section'); s.id = id;
+    const h = el('h2', '', title); h.append(' ', el('span', 'n', String(items.length))); if (isNew) h.append(' ', el('span', 'tag', id === 'dado' ? 'REFEITO' : 'NOVO'));
+    s.append(h, el('p', 'sec-note', note));
+    const groups = [...new Set(items.map(x => x.grupo).filter(Boolean))];
+    if (groups.length) groups.forEach(g => { s.append(el('h3', '', g)); const gr = el('div', 'grid'); items.filter(x => x.grupo === g).forEach(x => gr.append(card(x))); s.append(gr); });
+    else { const gr = el('div', 'grid'); items.forEach(x => gr.append(card(x))); s.append(gr); }
+    main.append(s);
+    const a = el('a', 'chip' + (isNew ? ' new' : ''), title); a.href = '#' + id; nav.append(a);
+  });
+  const f = document.getElementById('filters');
+  [['all', 'Tudo'], ['none', 'Sem decisão'], ['k', 'Fica'], ['d', 'Sai']].forEach(([v, l]) => {
+    const b = el('button', 'chip' + (v === filter ? ' on' : ''), l); b.type = 'button';
+    b.onclick = () => { filter = v; f.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); applyFilter(); };
+    f.append(b);
+  });
+  const cp = el('button', 'copy', 'Copiar escolhas'); cp.type = 'button'; cp.onclick = copy; f.append(cp);
+  counts();
+}
+function applyFilter() {
+  document.querySelectorAll('.card').forEach(c => {
+    const it = DATA.find(x => x.id === c.dataset.id), v = votes[it.id];
+    c.hidden = filter !== 'all' && (!votable(it) || (filter === 'none' ? !!v : v !== filter));
+  });
+  document.querySelectorAll('section').forEach(s => { s.hidden = ![...s.querySelectorAll('.card')].some(c => !c.hidden); });
+}
+function counts() {
+  const all = DATA.filter(votable), k = all.filter(x => votes[x.id] === 'k').length, d = all.filter(x => votes[x.id] === 'd').length;
+  document.getElementById('count').innerHTML = `<b class="k">${k} ficam</b><b class="d">${d} saem</b><b>${all.length - k - d} sem decisão</b>`;
+}
+function listText() {
+  const all = DATA.filter(votable), line = (x) => `- ${x.nome} (${x.id})`;
+  const k = all.filter(x => votes[x.id] === 'k'), d = all.filter(x => votes[x.id] === 'd'), n = all.filter(x => !votes[x.id]);
+  return `EFEITOS DO PIXELAR — escolhas\n\nFICAM (${k.length}):\n${k.map(line).join('\n') || '-'}\n\nSAEM (${d.length}):\n${d.map(line).join('\n') || '-'}\n\nSEM DECISÃO (${n.length}):\n${n.map(line).join('\n') || '-'}\n`;
+}
+function toast(t) { const e = document.getElementById('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('show'), 2400); }
+function copy() {
+  const txt = listText(), fb = document.getElementById('fallback');
+  const fallback = () => { fb.value = txt; fb.hidden = false; fb.focus(); fb.select(); toast('Selecione o texto abaixo e copie'); };
+  try { navigator.clipboard.writeText(txt).then(() => toast('Lista copiada: cole na conversa'), fallback); } catch (e) { fallback(); }
+}
+build(); applyFilter();
+</script>

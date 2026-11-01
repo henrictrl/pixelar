@@ -106,9 +106,17 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .dragging .drop-hint { opacity: 1; }
 
 /* boas-vindas: só um botão grande no centro */
-.welcome { position: absolute; top: var(--ui-t, 52px); right: 0; bottom: var(--ui-b, 120px); left: 0; display: grid; place-items: center; padding: 8px; }
+.welcome { position: absolute; top: var(--ui-t, 52px); right: 0; bottom: var(--ui-b, 120px); left: 0; display: grid; place-items: center; align-content: center; gap: 8px; padding: 8px; }
+/* logo (sol em pixel): mesma cor do texto, nítido em qualquer tamanho */
+.logo { display: block; fill: currentColor; flex: none; }
+.welcome-logo { color: var(--text); }
+.logo.big { width: 72px; height: 66px; }
+.logo.top { width: 22px; height: 20px; color: var(--text); }
+.about { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.about .logo.mini { width: 18px; height: 17px; color: var(--text); }
+.about .note { margin-top: 0 !important; }
 #app:not(.is-welcome) .welcome { display: none; }
-.upload-big { width: min(400px, 100%); height: min(280px, 100%); color: var(--text-2); display: grid; place-content: center; justify-items: center; gap: 16px; }
+.upload-big { width: min(400px, 100%); height: min(200px, 100%); color: var(--text-2); display: grid; place-content: center; justify-items: center; gap: 16px; }
 .upload-big .ic { width: 48px; height: 48px; }
 .is-welcome .dock .panel, .is-welcome .videobar, .is-welcome .canvas-wrap { display: none; }
 .is-welcome #subbarCenter { visibility: hidden; }
@@ -153,12 +161,26 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .panel.single .crumb { display: none; }
 
 /* ferramentas: grade sem rolagem. Fechado: 4 × 2 com nome. Aberto (celular): 8 ícones numa linha */
-.seg-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; flex: none; padding: 8px calc(var(--pad) - 10px); border-top: .5px solid var(--hair); }
+.seg-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; flex: none; padding: 8px calc(var(--pad) - 10px); border-top: .5px solid var(--hair); }
 .seg-row:empty { display: none; }
 .seg { height: 40px; padding: 0 2px; border-radius: 10px; color: var(--text-2); white-space: nowrap; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 5px; }
 .seg span { overflow: hidden; text-overflow: ellipsis; }
 .seg.on { color: var(--text); background: var(--fill-1); }
-.panel:not(.closed) .seg-row { grid-template-columns: repeat(8, 1fr); }
+.panel:not(.closed) .seg-row { grid-template-columns: repeat(9, 1fr); }
+/* ferramenta travada no dado: cadeado no canto */
+.seg { position: relative; }
+.seg-lock { position: absolute; top: 2px; right: 4px; color: var(--text-2); pointer-events: none; }
+.seg-lock .ic { width: 10px; height: 10px; }
+/* folha do dado: cada ferramenta com cadeado e o próprio dado */
+.dice-row { padding: 8px 8px 8px 14px; }
+.dice-row > span { flex: 1; min-width: 0; }
+.dice-lock { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border-radius: 8px; color: var(--text-2); background: var(--fill-1); }
+.dice-lock .ic { width: 16px; height: 16px; }
+.dice-lock.on { color: var(--accent-ink); background: var(--accent); }
+.dice-lock.on .ic { color: inherit; }
+.dice-one { width: 40px; height: 34px; display: grid; place-items: center; border-radius: 8px; color: var(--text); }
+.dice-one .ic { color: var(--text) !important; }
+.dice-one:active { background: var(--fill-1); }
 .seg .ic.lg { display: none; }
 .panel:not(.closed) .seg span, .panel:not(.closed) .seg .ic.sm { display: none; }
 .panel:not(.closed) .seg .ic.lg { display: block; }
@@ -353,7 +375,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
     .tab { height: 56px; }
     .panel { flex: 1; min-height: 0; }
     /* coluna: ferramentas sempre com nome; lista e detalhe usam a altura toda */
-    .seg-row, .panel:not(.closed) .seg-row { order: -2; grid-template-columns: repeat(4, 1fr); padding: 12px calc(var(--pad) - 6px); border-top: 0; border-bottom: .5px solid var(--hair); }
+    .seg-row, .panel:not(.closed) .seg-row { order: -2; grid-template-columns: repeat(3, 1fr); padding: 12px calc(var(--pad) - 6px); border-top: 0; border-bottom: .5px solid var(--hair); }
     .panel:not(.closed) .seg span { display: inline; }
     .seg .ic.sm, .panel:not(.closed) .seg .ic.sm { display: none; }
     .seg .ic.lg, .panel:not(.closed) .seg .ic.lg { display: block; }

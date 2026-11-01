@@ -50,6 +50,8 @@ const DEFAULT_STATE = {
     // camadas sobre a imagem (Paleta e Pixel vêm sempre antes): ordem, mesclagem e opacidade
     layers: { order: ['dbl', 'grad', 'fx', 'film', 'lens', 'grain', 'edge'], blend: {}, op: {} },
     crop: { aspect: 'original', rot: 0, flipH: false, flipV: false, zoom: 100, x: 0, y: 0 },
+    // pintura por números (último passo, ver paint.js): regiões ou pixels, com acabamento
+    paint: { mode: 'none', level: 'balanced', fill: 'full', progress: 50, order: 'color', numbers: true, lines: 35, smooth: 2, ink: '#9A9A9A', paper: '#FFFFFF', seed: 1 },
     anim: Object.assign({}, ANIM_DEFAULTS),
 };
 
@@ -681,8 +683,10 @@ const Engine = (() => {
         octx.clearRect(0, 0, W, H);
         if (usedGPU) { const g = PixelarGPU.region(); octx.drawImage(PixelarGPU.canvas, g.x, g.y, w, h, 0, 0, W, H); }
         else octx.drawImage(cpuCanvas, 0, 0, w, h, 0, 0, W, H);
+        const paintOn = st.paint && st.paint.mode !== 'none' && typeof PaintFX !== 'undefined';
         // contorno medido em pixels da arte: mesma espessura relativa na tela, nas miniaturas e em qualquer tamanho exportado
-        if (s.edge.size > 0 && (edgeLast || !usedGPU)) {
+        // (com Pintura ligada, ela desenha as próprias linhas)
+        if (s.edge.size > 0 && !paintOn && (edgeLast || !usedGPU)) {
             const thick = s.edge.size * displayScale * unit * (o.edgeScale || 1);
             const comp = COMP_OPS[(edgeLast && edgeLast.blend) || 'normal'];
             if (comp) octx.globalCompositeOperation = comp;
@@ -691,6 +695,8 @@ const Engine = (() => {
             else { if (!d) d = PixelarGPU.readPixels(); drawEdges(octx, d, w, h, px * displayScale, Object.assign({}, s.edge, { size: thick })); }
             octx.globalCompositeOperation = 'source-over';
         }
+        // pintura por números: último passo, sobre a imagem pronta, na resolução final
+        if (paintOn) PaintFX.apply(octx, out.canvas, W, H, st.paint);
         return { w, h, W, H, usedGPU, settings: s, unit };
     }
 
@@ -714,6 +720,6 @@ function analyzeMedia(media) {
         const stdL = Math.sqrt(v / n), meanSat = sumS / n;
         let sd = 0, nd = 0; for (let y = 0; y < h; y++) for (let x = 1; x < w; x++) { sd += Math.abs(L[y * w + x] - L[y * w + x - 1]); nd++; }
         const complexity = nd ? sd / nd : 0;
-        return { meanL, stdL, meanSat, complexity, isDark: meanL < 85, isBright: meanL > 170, isLowContrast: stdL < 30, isHighContrast: stdL > 70, isLowSat: meanSat < 0.15, isHighSat: meanSat > 0.55, isBusy: complexity > 18, isFlat: complexity < 6 };
+        return { W, H, meanL, stdL, meanSat, complexity, isDark: meanL < 85, isBright: meanL > 170, isLowContrast: stdL < 30, isHighContrast: stdL > 70, isLowSat: meanSat < 0.15, isHighSat: meanSat > 0.55, isBusy: complexity > 18, isFlat: complexity < 6 };
     } catch (e) { return null; }
 }

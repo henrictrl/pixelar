@@ -322,87 +322,252 @@ function randFxParams(id) {
     return params;
 }
 
-// grupos do dado (o que ele pode mudar); a pessoa liga e desliga em “O que o dado muda”
-const RANDOM_GROUPS = {
-    luz: 'Luz', palette: 'Paleta', grad: 'Degradê', pixel: 'Tamanho do pixel', dither: 'Padrão', edge: 'Contorno',
-    fx: 'Textura', grain: 'Grão', film: 'Filme', lens: 'Lente', anim: 'Movimento',
+// ============================================================
+// DADO — sorteio por RECEITAS
+// Antes: toda jogada aplicava uma paleta + pequenas variações em tudo (por isso parecia
+// "só trocar as cores"). Agora cada jogada escolhe uma receita (Pixel art, Analógico,
+// Impressão, Pintura por números…) que liga 1–3 ferramentas com estilos fortes e
+// devolve as outras ferramentas livres ao natural. Ferramentas travadas ficam como estão;
+// ajustes travados (segurar o ajuste) também. Cada ferramenta tem o próprio dado.
+// ============================================================
+const RANDOM_GROUPS = { luz: 'Luz', cor: 'Cor', pixel: 'Pixel', textura: 'Textura', filme: 'Filme', pintura: 'Pintura', dupla: 'Dupla', movimento: 'Movimento' };
+// partes do estado que cada ferramenta controla (o dado limpa só o que está livre)
+const GROUP_PATHS = {
+    luz: ['adj'], cor: ['color', 'grad'], pixel: ['pixel.size', 'pixel.group', 'pixel.groupRadius', 'pixel.groupTol', 'dither', 'edge'],
+    textura: ['fx'], filme: ['film', 'grain'], pintura: ['paint'], dupla: ['dbl'], movimento: [],
 };
-// Sorteia os controles manuais. Muta st. groups: grupos ligados; locks: caminhos travados ('adj.exposure'…).
-// A = análise da foto (analyzeMedia): puxa a luz para o lado que a foto precisa.
-function randomize(st, A, groups, locks) {
-    const on = (g) => groups.has(g), L = (p) => locks.has(p);
-    const set = (path, v) => { if (L(path)) return; const [a, b] = path.split('.'); st[a][b] = v; };
-    const chance = (p) => Math.random() < p;
-    const touched = [];
-    if (on('luz')) {
-        set('adj.exposure', Math.round(clampV(randNear(A ? (A.isDark ? 12 : A.isBright ? -12 : 0) : 0, 35), -60, 60)));
-        set('adj.brightness', Math.round(clampV(randNear(A ? (A.isDark ? 10 : A.isBright ? -10 : 0) : 0, 30), -55, 55)));
-        set('adj.contrast', Math.round(clampV(randNear(A ? (A.isLowContrast ? 14 : A.isHighContrast ? -14 : 0) : 0, 30), -55, 55)));
-        set('adj.shadows', Math.round(clampV(randNear(0, 30), -55, 55)));
-        set('adj.temperature', Math.round(clampV(randNear(0, 30), -55, 55)));
-        set('adj.saturation', Math.round(clampV(randNear(A ? (A.isLowSat ? 10 : A.isHighSat ? -10 : 0) : 0, 30), -55, 70)));
-        touched.push('luz');
-    }
-    if (on('pixel')) { set('pixel.size', 1 + Math.floor(Math.random() * 4)); touched.push('pixel ' + st.pixel.size); }
-    if (on('dither')) {
-        set('dither.mode', pick(DITHER_MODES));
-        const busy = A && A.isBusy;
-        set('dither.scale', Math.floor(Math.random() * (busy ? 2 : 3)) + 1);
-        set('dither.intensity', Math.floor(Math.random() * (busy ? 50 : 80)) + 30);
-        touched.push(DITHER_NAMES[st.dither.mode]);
-    }
-    if (on('palette') && !L('color.sel') && !L('color.palette')) {
-        const c = st.color, pal = randomPalette(pick([3, 4, 5, 6, 6, 8, 8, 12])).map(rgbHex);
-        // mapa de tons: a paleta (do escuro ao claro) se espalha pela luz da foto, então todas as cores aparecem
-        const n = pal.length, ramp = pal.map((_, i) => { const v = Math.round(18 + 219 * (n > 1 ? i / (n - 1) : 0.5)); return rgbToHex(v, v, v); });
-        Object.assign(c, { mode: 'random', invert: false, sel: String(n), base: pal.slice(), ref: ramp, hue: 0, sat: 0, light: 0 });
-        touched.push(n + ' cores');
-    }
-    if (on('edge')) {
-        set('edge.size', chance(0.5) ? 0 : Math.floor(Math.random() * 2) + 1);
-        set('edge.color', rgbToHex(Math.random() * 255, Math.random() * 255, Math.random() * 255));
-    }
-    if (on('fx') && !L('fx.id')) {
-        if (chance(A && A.isBusy ? 0.35 : 0.6)) {
-            const choice = pick(PixelarFX.listEffects());
-            st.fx.id = choice.id; st.fxParams[choice.id] = randFxParams(choice.id); set('fx.mix', 50 + Math.floor(Math.random() * 31));
-            touched.push(choice.nome);
-        } else st.fx.id = 'none';
-    }
-    if (on('grain') && !L('grain.amount')) {
-        const busy = A && A.isBusy;
-        if (chance(busy ? 0.3 : 0.45)) {
-            st.grain.amount = 10 + Math.floor(Math.random() * (busy ? 15 : 30));
-            set('grain.size', 70 + Math.floor(Math.random() * 90)); set('grain.rough', 25 + Math.floor(Math.random() * 45));
-            set('grain.bias', Math.floor(Math.random() * 50)); set('grain.speckle', chance(0.3) ? Math.floor(Math.random() * 30) : 0); set('grain.mono', chance(0.7));
-            touched.push('grão');
-        } else st.grain.amount = 0;
-    }
-    if (on('film') && !L('film.look')) {
-        if (chance(0.5)) {
-            const bw = ['noir', 'trix', 'kodak_pb', 'lumiere'];   // P&B sobre paleta de cores apaga a paleta
-            const id = pick(Object.keys(FILM_LOOKS).filter(k => !(st.color.sel !== 'all' && bw.includes(k))));
-            st.film.look = id; set('film.mix', 50 + Math.floor(Math.random() * 4) * 10);
-            if (id === 'vencido') st.film.vencido = Math.floor(Math.random() * 4);
-            if (id === 'lumiere') st.film.lumiereHue = Math.floor(Math.random() * 360);
-            touched.push(FILM_LOOKS[id].nome);
-        } else st.film.look = 'none';
-    }
-    if (on('lens')) {
-        LENS_KEYS.forEach(k => set('film.' + k, 0));
-        if (chance(0.4)) set('film.vignette', 15 + Math.floor(Math.random() * 40));
-        if (chance(0.25)) set('film.bloom', 10 + Math.floor(Math.random() * 30));
-        if (chance(0.2)) set('film.soft', Math.floor(Math.random() * 30));
-        if (chance(0.2)) set('film.leak', Math.floor(Math.random() * 50));
-        if (chance(0.15)) set('film.chroma', 10 + Math.floor(Math.random() * 30));
-    }
-    if (on('grad') && !L('grad.on')) {
-        if (chance(0.35)) { randGradAll(st.grad); touched.push('degradê'); } else st.grad.on = false;
-    }
-    if (on('anim')) randAnim(st.anim);
-    return touched;
+const RETRO_PALETTES = [
+    ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'],
+    ['#000000', '#55FFFF', '#FF55FF', '#FFFFFF'],
+    ['#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8', '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'],
+    ['#2B1B0E', '#6B4226', '#A67B5B', '#D9BF9A', '#F5EBDC'],
+    ['#2D1B69', '#FF6AD5', '#C774E8', '#AD8CFF', '#94D0FF'],
+    ['#0B0019', '#FF00E6', '#00F0FF', '#FFE600'],
+    ['#1D3557', '#FF5F7E', '#F7F1E3'],
+    ['#211E20', '#555568', '#A0A08B', '#E9EFEC'],
+    ['#1A1C2C', '#5D275D', '#B13E53', '#EF7D57', '#FFCD75', '#A7F070', '#38B764', '#257179', '#29366F', '#3B5DC9', '#41A6F6', '#73EFF7', '#F4F4F4', '#94B0C2', '#566C86', '#333C57'],
+    ['#332C50', '#46878F', '#94E344', '#E2F3E4'],
+];
+const DUO_SETS = [
+    ['#0A1A2F', '#5A82A5', '#F2EFE9'], ['#2A0845', '#FF6FB5', '#FFE3F1'], ['#1B1B3A', '#FF7B00', '#FFE8C2'], ['#0B2E2B', '#2EC4B6', '#E8FFF9'],
+    ['#140000', '#B3001B', '#FFD6D6'], ['#1C1405', '#C99A2E', '#FFF4D6'], ['#101820', '#F2AA4C', '#FDF6E3'], ['#1E0B36', '#00C2A8', '#F9F871'],
+];
+const FX_FAMILIES = {
+    print: ['riso', 'cmyk_halftone', 'duo_halftone', 'stipple', 'woodcut', 'photocopy', 'edge_ink', 'paper', 'emboss'],
+    screen: ['ascii', 'crt', 'lcd', 'led', 'bitmap', 'blueprint', 'glitch_blocks', 'vhs'],
+    color: ['warhol', 'prism_map', 'thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass'],
+    matter: ['lego', 'knit', 'mosaic_tiles', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort'],
+    bw: ['photocopy', 'woodcut', 'stipple', 'edge_ink', 'bitmap'],
+};
+const FILM_FAMILIES = { natural: 0, cinema: 1, loucas: 2, vintage: 3 };
+const BW_LOOKS = ['trix', 'noir', 'kodak_pb'];
+
+const rr = (a, b) => a + Math.random() * (b - a);              // real entre a e b
+const ri = (a, b) => Math.round(rr(a, b));                      // inteiro entre a e b
+const chanceP = (p) => Math.random() < p;
+// escolhe evitando repetir a escolha anterior da mesma chave (variedade de verdade)
+const lastPick = {};
+function pickFresh(list, key) {
+    if (list.length < 2) return list[0];
+    const prev = lastPick[key] || [];
+    const pool = list.filter(x => !prev.includes(x));
+    const v = pick(pool.length ? pool : list);
+    lastPick[key] = [v, ...prev].slice(0, Math.min(3, Math.floor(list.length / 2)));
+    return v;
 }
 
+// kit de uma jogada: set() respeita os ajustes travados
+function diceKit(st, A, locks) {
+    const L = (p) => locks.has(p);
+    const set = (path, v) => { if (L(path)) return; const ks = path.split('.'); let o = st; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = v; };
+    return { st, A: A || {}, L, set, touched: [] };
+}
+// volta a ferramenta ao natural (menos o que estiver travado)
+function resetGroup(k, g) {
+    (GROUP_PATHS[g] || []).forEach(path => {
+        const ks = path.split('.'), def = ks.reduce((o, x) => o[x], DEFAULT_STATE);
+        if (ks.length === 1 && def && typeof def === 'object' && !Array.isArray(def)) Object.keys(def).forEach(f => k.set(path + '.' + f, deepClone(def[f])));
+        else k.set(path, deepClone(def));
+    });
+    if (g === 'cor' && (k.L('color.palette') || k.L('color.sel'))) Object.keys(DEFAULT_STATE.grad).forEach(f => k.set('grad.' + f, deepClone(DEFAULT_STATE.grad[f])));
+}
+// tamanho do pixel pensado em "quantas células no lado maior" (fotos de 12 MP e de 1 MP ficam parecidas)
+function pxForCells(k, cells) { const long = Math.max(k.A.W || 1600, k.A.H || 1200); return Math.max(1, Math.min(64, Math.round(long / cells))); }
+// paleta espalhada pela luz da foto (do escuro ao claro): todas as cores aparecem
+function applyPalette(k, hexes) {
+    const c = k.st.color, n = hexes.length;
+    const pal = hexes.map(hexToRgb).sort((a, b) => luma(a) - luma(b)).map(rgbHex);
+    const ramp = pal.map((_, i) => { const v = Math.round(18 + 219 * (n > 1 ? i / (n - 1) : 0.5)); return rgbToHex(v, v, v); });
+    Object.assign(c, { mode: 'random', invert: false, sel: String(n), base: pal.slice(), ref: ramp, hue: 0, sat: 0, light: 0 });
+}
+function harmonicDuo(n) {
+    const h = Math.random(), off = pick([0.08, 0.15, 0.5, 0.42]);
+    const cols = [hslToRgb(h, rr(0.5, 0.8), rr(0.06, 0.16)), hslToRgb((h + off) % 1, rr(0.65, 1), rr(0.45, 0.6)), hslToRgb((h + off * 2) % 1, rr(0.4, 0.8), rr(0.85, 0.95))];
+    return (n === 2 ? [cols[0], cols[2]] : cols).map(rgbHex);
+}
+function texturePick(k, fam) {
+    const ids = (FX_FAMILIES[fam] || []).filter(id => PixelarFX.isTexture(id));
+    const all = PixelarFX.listEffects().map(f => f.id);
+    return pickFresh(ids.length ? ids : all, 'fx:' + fam);
+}
+function filmPick(fam) {
+    if (fam === 'pb') return pickFresh(BW_LOOKS.filter(id => FILM_LOOKS[id]), 'film:pb');
+    const g = FILM_LOOK_DEFS[FILM_FAMILIES[fam] !== undefined ? FILM_FAMILIES[fam] : Math.floor(Math.random() * FILM_LOOK_DEFS.length)];
+    return pickFresh(g[1].map(x => x[0]).filter(id => !BW_LOOKS.includes(id)), 'film:' + fam);
+}
+
+// ---------- o dado de cada ferramenta: estilo forte e coerente ----------
+const LUZ_STYLES = { natural: 'Luz natural', dramatico: 'Dramático', lavado: 'Lavado', quente: 'Quente', frio: 'Frio', vivo: 'Cores vivas', pb: 'P&B', noturno: 'Noturno' };
+const COR_STYLES = { paleta: 'Paleta', retro: 'Paleta retrô', foto: 'Cores da foto', duo: 'Duotone', degrade: 'Degradê', original: 'Cor original' };
+const PIXEL_STYLES = { leve: 'Pixel fino', grande: 'Pixel grande', mosaico: 'Mosaico', dither: 'Pontilhado', agrupar: 'Manchas' };
+const FILME_STYLES = { natural: 'Filme', cinema: 'Cinema', loucas: 'Cores loucas', vintage: 'Vintage', pb: 'Filme P&B', lente: 'Lente', grao: 'Grão' };
+const PINTURA_STYLES = { pintado: 'Pintura pronta', metade: 'Pintura pela metade', molde: 'Molde para pintar', clarinho: 'Pintura clarinha' };
+const TEX_STYLES = { print: 'Impressão', screen: 'Tela', color: 'Cor e luz', matter: 'Matéria', bw: 'Gravura' };
+
+const TOOL_DICE = {
+    luz(k, style) {
+        style = style || pickFresh(Object.keys(LUZ_STYLES), 'luz');
+        const A = k.A, e0 = A.isDark ? 16 : A.isBright ? -14 : 0, c0 = A.isLowContrast ? 12 : A.isHighContrast ? -10 : 0, s = (p, v) => k.set('adj.' + p, Math.round(v));
+        const n = (x) => rr(-x, x);
+        ({
+            natural: () => { s('exposure', e0 + n(10)); s('contrast', c0 + n(15)); s('saturation', n(15)); s('temperature', n(15)); s('shadows', n(15)); },
+            dramatico: () => { s('exposure', e0 - 6 + n(8)); s('contrast', rr(35, 65)); s('shadows', rr(-45, -15)); s('saturation', rr(-25, 15)); s('temperature', n(20)); },
+            lavado: () => { s('brightness', rr(12, 32)); s('contrast', rr(-45, -20)); s('saturation', rr(-45, -10)); s('shadows', rr(20, 45)); s('temperature', n(25)); },
+            quente: () => { s('exposure', e0); s('temperature', rr(35, 70)); s('saturation', rr(5, 30)); s('contrast', rr(5, 25)); },
+            frio: () => { s('exposure', e0); s('temperature', rr(-70, -35)); s('saturation', rr(-15, 10)); s('contrast', rr(5, 25)); s('shadows', n(12)); },
+            vivo: () => { s('exposure', e0); s('saturation', rr(40, 80)); s('contrast', rr(15, 40)); },
+            pb: () => { s('exposure', e0); s('saturation', -100); s('contrast', rr(20, 55)); s('shadows', n(25)); },
+            noturno: () => { s('exposure', rr(-45, -25)); s('contrast', rr(25, 50)); s('shadows', rr(-35, -10)); s('temperature', rr(-65, -35)); s('saturation', rr(-40, -15)); },
+        })[style]();
+        k.touched.push(LUZ_STYLES[style]); return style;
+    },
+    cor(k, style) {
+        const locked = k.L('color.palette') || k.L('color.sel');
+        style = style || pickFresh(['paleta', 'retro', 'foto', 'duo', 'degrade'], 'cor');
+        if (locked && style !== 'degrade') style = 'degrade';
+        const c = k.st.color;
+        if (style === 'paleta') applyPalette(k, randomPalette(pick([3, 4, 5, 6, 8, 10])).map(x => typeof x === 'string' ? x : rgbHex(x)));
+        else if (style === 'retro') applyPalette(k, pickFresh(RETRO_PALETTES, 'retro'));
+        else if (style === 'foto') Object.assign(c, { mode: 'original', sel: String(pick([3, 4, 5, 6, 8, 12, 16])), base: [], ref: [], hue: 0, sat: 0, light: 0, invert: false });
+        else if (style === 'duo') { const tri = chanceP(0.5); c.sel = tri ? 'tritone' : 'duotone'; const set = chanceP(0.5) ? pick(DUO_SETS) : harmonicDuo(3); c.duo = tri ? set.slice() : [set[0], set[2], set[1]]; }
+        else if (style === 'degrade') { randGradAll(k.st.grad); k.st.grad.blend = pick(['overlay', 'softlight', 'color', 'multiply', 'screen', 'source-atop']); k.st.grad.opacity = ri(35, 80); }
+        if (style !== 'degrade' && style !== 'original' && chanceP(0.18)) { randGradAll(k.st.grad); k.st.grad.blend = pick(['overlay', 'softlight']); k.st.grad.opacity = ri(25, 55); }
+        k.touched.push(COR_STYLES[style]); return style;
+    },
+    pixel(k, style) {
+        style = style || pickFresh(Object.keys(PIXEL_STYLES), 'pixel');
+        const s = k.set;
+        if (style === 'leve') s('pixel.size', pxForCells(k, ri(180, 320)));
+        else if (style === 'grande') { s('pixel.size', pxForCells(k, ri(48, 110))); if (chanceP(0.35)) { s('edge.size', 1); s('edge.color', '#141414'); s('edge.opacity', ri(40, 90)); } }
+        else if (style === 'mosaico') { s('pixel.size', pxForCells(k, ri(28, 60))); s('pixel.group', pick([25, 50])); s('edge.size', ri(1, 2)); s('edge.color', pick(['#141414', '#FFFFFF', '#2B2B2B'])); s('edge.opacity', ri(60, 100)); }
+        else if (style === 'dither') { s('pixel.size', pxForCells(k, ri(160, 360))); s('dither.mode', pickFresh(DITHER_MODES.filter(m => m !== 'none'), 'dither')); s('dither.scale', ri(1, 2)); s('dither.intensity', ri(80, 150)); s('dither.midOnly', chanceP(0.2)); }
+        else if (style === 'agrupar') { s('pixel.size', pxForCells(k, ri(220, 420))); s('pixel.group', pick([50, 75, 100])); s('pixel.groupRadius', pick([1, 2])); s('pixel.groupTol', ri(30, 70)); }
+        k.touched.push(style === 'dither' ? DITHER_NAMES[k.st.dither.mode] : PIXEL_STYLES[style]); return style;
+    },
+    textura(k, style) {
+        if (k.L('fx.id')) return null;
+        style = style || pickFresh(Object.keys(TEX_STYLES), 'tex');
+        const id = texturePick(k, style), def = PixelarFX.getEffectDef(id);
+        k.st.fx.id = id; k.st.fxParams[id] = randFxParams(id); k.set('fx.mix', ri(70, 100));
+        k.touched.push(def ? def.nome : TEX_STYLES[style]); return style;
+    },
+    filme(k, style) {
+        style = style || pickFresh(Object.keys(FILME_STYLES), 'filme');
+        const s = k.set, f = k.st.film;
+        if (['natural', 'cinema', 'loucas', 'vintage', 'pb'].includes(style) && !k.L('film.look')) {
+            const id = filmPick(style); f.look = id; s('film.mix', ri(75, 100));
+            if (id === 'vencido') f.vencido = ri(0, 3);
+            if (id === 'lumiere') f.lumiereHue = ri(0, 359);
+            k.touched.push(FILM_LOOKS[id].nome);
+        } else k.touched.push(FILME_STYLES[style]);
+        // lente: 1–3 efeitos fortes, sempre com cara de escolha
+        const lens = { natural: 0.5, cinema: 0.6, loucas: 0.9, vintage: 0.9, pb: 0.5, lente: 1, grao: 0.2 }[style];
+        if (chanceP(lens)) {
+            const opts = ['vignette', 'halation', 'bloom', 'leak', 'chroma', 'soft', 'dust', 'flash'], n = style === 'lente' ? ri(2, 3) : ri(1, 2);
+            const range = { vignette: [25, 70], halation: [25, 70], bloom: [20, 55], leak: [25, 70], chroma: [20, 60], soft: [15, 45], dust: [20, 60], flash: [20, 50] };
+            for (let i = 0; i < n; i++) { const kx = pick(opts); s('film.' + kx, ri(...range[kx])); }
+            if (f.leak) s('film.leakColor', pick(['#ff7319', '#ff3d6e', '#ffb000', '#ff5ac8']));
+        }
+        // grão
+        const g = { natural: 0.6, cinema: 0.7, loucas: 0.5, vintage: 0.8, pb: 0.9, lente: 0.3, grao: 1 }[style];
+        if (chanceP(g)) { s('grain.amount', style === 'grao' ? ri(35, 70) : ri(12, 35)); s('grain.size', ri(80, 200)); s('grain.rough', ri(25, 70)); s('grain.mono', chanceP(0.7)); if (chanceP(0.25)) s('grain.speckle', ri(10, 40)); }
+        return style;
+    },
+    pintura(k, style) {
+        style = style || pickFresh(['pintado', 'pintado', 'metade', 'molde', 'clarinho'], 'pintura');
+        const s = k.set, pixels = chanceP(0.3);
+        s('paint.mode', pixels ? 'pixels' : 'regions'); s('paint.level', pick(['easy', 'balanced', 'balanced', 'detailed']));
+        s('paint.fill', { pintado: 'full', metade: 'partial', molde: 'blank', clarinho: 'faded' }[style]);
+        s('paint.lines', style === 'pintado' ? ri(0, 40) : ri(45, 90)); s('paint.progress', ri(30, 70)); s('paint.order', pick(['color', 'random']));
+        s('paint.smooth', ri(1, 3)); s('paint.seed', ri(1, 999)); s('paint.numbers', true);
+        k.touched.push(PINTURA_STYLES[style] + (pixels ? ' (pixels)' : '')); return style;
+    },
+    dupla(k) {
+        const d = k.st.dbl, s = k.set;
+        const srcs = ['self', 'clouds', 'stars', 'light', 'leaves'].concat(typeof DblImage !== 'undefined' && DblImage.img ? ['image', 'image'] : []);
+        s('dbl.on', true); s('dbl.src', pickFresh(srcs, 'dbl')); s('dbl.blend', pick(['screen', 'overlay', 'softlight', 'multiply', 'lighten', 'add']));
+        s('dbl.op', ri(50, 90)); s('dbl.scale', ri(80, 180)); s('dbl.x', ri(-30, 30)); s('dbl.y', ri(-30, 30)); s('dbl.rot', chanceP(0.5) ? 0 : ri(-30, 30)); s('dbl.flip', chanceP(0.4));
+        s('dbl.mask', pick(['none', 'base-light', 'base-dark', 'center', 'bottom', 'side'])); s('dbl.maskLo', ri(35, 65)); s('dbl.maskSoft', ri(15, 50));
+        s('dbl.tone', pick(['color', 'color', 'mono', 'tint'])); s('dbl.tint', rgbHex(hslToRgb(Math.random(), 0.8, 0.6))); s('dbl.seed', ri(1, 999)); s('dbl.pre', chanceP(0.5));
+        k.touched.push('Dupla exposição'); return d.src;
+    },
+    movimento(k) { randAnim(k.st.anim); k.touched.push('Movimento'); return 'mov'; },
+};
+
+// receitas: [ferramenta, estilo (ou lista), probabilidade]
+const RECIPES = [
+    { id: 'pixelart', nome: 'Pixel art', steps: [['pixel', ['grande', 'grande', 'mosaico']], ['cor', ['paleta', 'retro', 'foto']], ['luz', ['vivo', 'natural', 'dramatico'], 0.7]] },
+    { id: '8bit', nome: '8-bit', steps: [['pixel', 'dither'], ['cor', ['retro', 'paleta']], ['luz', ['natural', 'dramatico'], 0.6]] },
+    { id: 'analogico', nome: 'Analógico', steps: [['filme', ['natural', 'cinema', 'vintage']], ['luz', ['natural', 'quente', 'lavado', 'frio'], 0.7]] },
+    { id: 'lomo', nome: 'Lomografia', steps: [['filme', 'loucas'], ['luz', ['vivo', 'dramatico'], 0.8]] },
+    { id: 'pb', nome: 'Preto e branco', steps: [['filme', ['pb', 'grao']], ['luz', 'pb'], ['textura', 'bw', 0.3]] },
+    { id: 'impressao', nome: 'Impressão', steps: [['textura', 'print'], ['luz', ['natural', 'dramatico', 'lavado'], 0.7], ['cor', ['paleta', 'duo'], 0.25]] },
+    { id: 'tela', nome: 'Tela e glitch', steps: [['textura', 'screen'], ['luz', ['vivo', 'dramatico', 'frio'], 0.8], ['filme', 'lente', 0.3]] },
+    { id: 'pop', nome: 'Pop art', steps: [['cor', ['duo', 'paleta']], ['luz', 'vivo'], ['textura', 'color', 0.45], ['pixel', 'agrupar', 0.3]] },
+    { id: 'pintura', nome: 'Pintura por números', steps: [['pintura'], ['luz', ['vivo', 'natural', 'quente'], 0.7], ['cor', ['foto', 'paleta'], 0.25]] },
+    { id: 'poster', nome: 'Pôster', steps: [['cor', ['foto', 'paleta', 'duo']], ['pixel', 'agrupar'], ['luz', ['dramatico', 'vivo']], ['filme', 'grao', 0.35]] },
+    { id: 'sonho', nome: 'Sonho', steps: [['dupla'], ['filme', ['lente', 'vintage']], ['luz', ['lavado', 'quente']], ['cor', 'degrade', 0.4]] },
+    { id: 'materia', nome: 'Arte e matéria', steps: [['textura', 'matter'], ['luz', ['natural', 'vivo'], 0.6]] },
+    { id: 'duotone', nome: 'Duotone', steps: [['cor', 'duo'], ['filme', 'grao', 0.5], ['pixel', 'dither', 0.3], ['luz', ['dramatico', 'natural'], 0.6]] },
+    { id: 'noturno', nome: 'Cinema noturno', steps: [['luz', 'noturno'], ['filme', 'cinema'], ['cor', 'degrade', 0.25]] },
+    { id: 'livre', nome: 'Mistura livre', steps: null },
+];
+const recentRecipes = [];
+
+// Sorteia tudo que está livre. groups: ferramentas livres; locks: ajustes travados ('adj.exposure'…).
+// A = análise da foto (analyzeMedia): a luz puxa para o lado que a foto precisa e o pixel usa o tamanho real.
+function randomize(st, A, groups, locks) {
+    const k = diceKit(st, A, locks), free = (g) => groups.has(g);
+    const usable = (r) => !r.steps || r.steps.some(([g, , p]) => free(g) && (p === undefined || p >= 1));
+    let pool = RECIPES.filter(r => usable(r) && !recentRecipes.includes(r.id));
+    if (!pool.length) pool = RECIPES.filter(usable);
+    if (!pool.length) return [];
+    const r = pick(pool);
+    recentRecipes.unshift(r.id); recentRecipes.length = Math.min(recentRecipes.length, 4);
+    // as ferramentas livres que a receita não usa voltam ao natural (nada de sobras da jogada anterior)
+    Object.keys(RANDOM_GROUPS).forEach(g => { if (free(g) && g !== 'movimento') resetGroup(k, g); });
+    let steps = r.steps;
+    if (!steps) {   // mistura livre: 2–3 ferramentas, cada uma com um estilo qualquer
+        const tools = ['luz', 'cor', 'pixel', 'textura', 'filme', 'pintura'].filter(free).sort(() => Math.random() - 0.5);
+        steps = tools.slice(0, ri(2, 3)).map(g => [g]);
+        if (!steps.some(x => x[0] === 'luz') && free('luz')) steps.push(['luz']);
+    }
+    k.touched.push(r.nome);
+    steps.forEach(([g, style, p]) => {
+        if (!free(g) || (p !== undefined && !chanceP(p))) return;
+        TOOL_DICE[g](k, Array.isArray(style) ? pick(style) : style);
+    });
+    if (free('movimento')) randAnim(st.anim);
+    return k.touched;
+}
+// dado de uma ferramenta só: limpa e sorteia um estilo dela, sem mexer no resto
+function randomizeTool(st, A, g, locks) {
+    const k = diceKit(st, A, locks);
+    if (!TOOL_DICE[g]) return [];
+    if (g !== 'movimento') resetGroup(k, g);
+    TOOL_DICE[g](k);
+    return k.touched;
+}
 function randGradColors(g) {
     const base = Math.random(), scheme = pick(['analogas', 'complementar', 'triade', 'mono', 'quente', 'fria', 'pastel', 'neon']);
     const qty = 2 + Math.floor(Math.random() * 3), out = [];

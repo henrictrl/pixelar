@@ -25,7 +25,7 @@ const video = $('sourceVideo');
 const M = { type: null, el: null, serial: 0, name: '', blob: null, url: null, duration: 0, trim: [0, 0], analysis: null };
 const prefs = {
     locks: new Set(store.get('locks', [])),
-    groups: new Set(store.get('dice', Object.keys(RANDOM_GROUPS)).filter(k => RANDOM_GROUPS[k])),
+    groups: new Set(store.get('dice2', Object.keys(RANDOM_GROUPS)).filter(k => RANDOM_GROUPS[k])),   // ferramentas livres para o dado (as outras ficam travadas)
     presets: store.get('presets', {}),
     palettes: store.get('palettes', {}),
     muted: store.get('muted', false),
@@ -459,6 +459,24 @@ const FILME_TOOL = { id: 'filme', label: 'Filme', controls: () => {
         resetAction('Filme', () => { st.film = fresh('film'); st.grain = fresh('grain'); }));
     return list;
 } };
+const PAINT_MODE_OPTS = [['none', 'Desligado'], ['regions', 'Regiões'], ['pixels', 'Pixels']];
+const PAINT_FILL_OPTS = [['full', 'Pintado'], ['partial', 'Pela metade'], ['faded', 'Clarinho'], ['blank', 'Para pintar']];
+const PINTURA_TOOL = { id: 'pintura', label: 'Pintura', controls: () => {
+    const p = st.paint;
+    // modo e acabamento em miniaturas: o resultado aparece antes de escolher
+    const list = [C('paint.mode', 'Modo', 'brush', PAINT_MODE_OPTS, { view: 'thumbs', variant: (s, v) => { s.paint.mode = v; } })];
+    if (p.mode === 'none') { list.push(resetAction('Pintura', () => { st.paint = fresh('paint'); })); return list; }
+    list.push(C('paint.fill', 'Acabamento', 'palette', PAINT_FILL_OPTS, { view: 'thumbs', variant: (s, v) => { s.paint.fill = v; } }),
+        C('paint.level', 'Detalhe', 'scale', [['easy', 'Fácil'], ['balanced', 'Equilibrado'], ['detailed', 'Detalhado']]));
+    if (p.fill === 'partial') list.push(R('paint.progress', 'Progresso', 'steps', 0, 100, { step: 5, fmt: (v) => v + '%' }),
+        C('paint.order', 'Ordem', 'swap', [['color', 'Por cor'], ['random', 'Aleatória']]),
+        A('Outra ordem', 'reset', () => { p.seed = 1 + Math.floor(Math.random() * 999); if (p.order !== 'random') p.order = 'random'; change(null, null, { dials: true }); }));
+    list.push(D('Traço'), R('paint.lines', 'Linhas', 'edge', 0, 100), K('paint.ink', 'Cor do traço'));
+    if (p.fill !== 'full') list.push(T('paint.numbers', 'Números', 'steps'), K('paint.paper', 'Cor do papel'));
+    if (p.mode === 'regions') list.push(R('paint.smooth', 'Arredondar', 'smooth', 0, 4));
+    list.push(resetAction('Pintura', () => { st.paint = fresh('paint'); }));
+    return list;
+} };
 const DUPLA_TOOL = { id: 'dupla', label: 'Dupla', controls: () => {
     const d = st.dbl;
     const list = [T('dbl.on', 'Ligado', 'layers', { onPick: (v) => { d.on = v; if (v && d.src === 'image' && !DblImage.img) d.src = 'self'; change(null, null, { dials: true }); } }),
@@ -505,10 +523,15 @@ const MOV_TOOL = { id: 'movimento', label: 'Movimento', controls: () => {
 
 const TABS = [
     { id: 'estilos', label: 'Estilos', icon: 'tab-styles', groups: () => [{ id: 'mine', label: 'Meus estilos', controls: () => [X('mine', 'Meus estilos', 'styles', editMine)] }] },
-    { id: 'editar', label: 'Editar', icon: 'tab-edit', groups: () => [CROP_TOOL, LUZ_TOOL, COR_TOOL, PIXEL_TOOL, TEXTURA_TOOL, FILME_TOOL, DUPLA_TOOL, MOV_TOOL] },
+    { id: 'editar', label: 'Editar', icon: 'tab-edit', groups: () => [CROP_TOOL, LUZ_TOOL, COR_TOOL, PIXEL_TOOL, TEXTURA_TOOL, FILME_TOOL, PINTURA_TOOL, DUPLA_TOOL, MOV_TOOL] },
     { id: 'exportar', label: 'Exportar', icon: 'tab-export', groups: () => [{ id: 'exp', label: 'Exportar', controls: () => [X('exp', 'Exportar', 'download', exportPanel)] }] },
 ];
-function groupControls(g) { return g.controls(); }
+function groupControls(g) {
+    const list = g.controls();
+    if (!RANDOM_GROUPS[g.id]) return list;
+    return [A('Sortear ' + g.label, 'dice', () => rollTool(g.id)),
+        T(null, 'Travar', 'lock', { get: () => !prefs.groups.has(g.id), onPick: (v) => setToolLock(g.id, v) }), ...list];
+}
 const gradBlend = () => st.grad.blend === 'source-atop' ? 'normal' : st.grad.blend;
 
 
@@ -542,7 +565,7 @@ function fxParamControls(id, hidden, names = {}) {
 // PAINEL
 // ============================================================
 // ícones pequenos das ferramentas
-const GROUP_ICONS = { crop: 'crop', luz: 'brightness', cor: 'palette', pixel: 'pixel', textura: 'pattern', filme: 'film', dupla: 'layers', movimento: 'wave' };
+const GROUP_ICONS = { crop: 'crop', luz: 'brightness', cor: 'palette', pixel: 'pixel', textura: 'pattern', filme: 'film', pintura: 'brush', dupla: 'layers', movimento: 'wave' };
 function tabGroups(t) { return typeof t.groups === 'function' ? t.groups() : t.groups; }
 function currentTab() { return TABS.find(t => t.id === ui.tab); }
 function currentGroup() { const gs = tabGroups(currentTab()); const gid = ui.group[ui.tab]; return gs.find(g => g.id === gid) || gs[0]; }
@@ -606,6 +629,10 @@ function buildPanel() {
         b.innerHTML = smallIcon(GROUP_ICONS[g.id]) + icon('t-' + g.id, 'lg') + '<span></span>'; b.lastChild.textContent = g.label;
         b.setAttribute('aria-expanded', String(on)); b.setAttribute('aria-label', g.label);
         b.onclick = () => { if (on) { setOpen(false); return; } ui.group[tab.id] = g.id; ui.view[tab.id + '/' + g.id] = 'list'; setOpen(true); };
+        if (RANDOM_GROUPS[g.id]) {
+            if (!prefs.groups.has(g.id)) { b.classList.add('locked'); b.append(h('span', 'seg-lock', icon('lock'))); }
+            onHold(b, () => setToolLock(g.id, prefs.groups.has(g.id)));
+        }
         seg.append(b);
     });
     if (!open) { dialEls = []; $('dials').innerHTML = ''; $('crumb').innerHTML = ''; buildEditor(null); panel.classList.remove('list', 'detail', 'single'); return; }
@@ -744,7 +771,7 @@ function onDialClick(c, d) {
     fitAnim(); buildPanel();
 }
 // controles cujo valor muda quais outros controles aparecem
-const DEPENDS = new Set(['dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot',
+const DEPENDS = new Set(['paint.mode', 'paint.fill', 'dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot',
     'grain.amount', 'pixel.group', 'edge.size', 'anim.dStyle', 'anim.dither', 'anim.fx', 'anim.grain', 'anim.film']);
 function grpDependsOn(key) { return DEPENDS.has(key); }
 // mover o recorte só faz sentido no eixo em que sobra imagem
@@ -1371,7 +1398,7 @@ function openMore() {
         const item = (ic, label, fn, sub) => { const b = h('button', 'menu-item', icon(ic) + `<span>${label}</span>` + (sub ? `<span class="sub">${sub}</span>` : '')); b.type = 'button'; b.onclick = () => { closeSheet(); setTimeout(fn, 200); }; list.append(b); };
         item('plus', 'Salvar estilo', saveUserPreset);
         item('file', 'Importar configurações', () => $('configInput').click(), 'PNG ou TXT');
-        item('dice', 'O que o dado muda', openRandomSettings);
+        item('dice', 'Dado: travar e sortear', openRandomSettings);
         item('reset', 'Restaurar tudo', () => { const before = snapshot(); st = freshState(); Engine.invalidate(); afterExternalChange(); commit(true); toast('Tudo restaurado', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); });
         // tema: Diurno ou Noturno (até escolher, segue o aparelho)
         const th = h('div', 'theme-switch'), dark = isDark();
@@ -1380,22 +1407,63 @@ function openMore() {
             b.onclick = () => { setTheme(v); th.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
             th.append(b);
         });
-        sh.append(list, th, h('p', 'note', 'Pixelar Studio · tudo roda no seu aparelho, nenhuma foto sai dele.'));
+        const about = h('div', 'about', logoSvg('mini')); about.append(h('p', 'note', 'Pixelar Studio · tudo roda no seu aparelho, nenhuma foto sai dele.'));
+        sh.append(list, th, about);
     });
 }
 function isDark() { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
 function setTheme(t) { if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t; store.set('theme', t); try { localStorage.setItem('pixelar.theme', t); } catch (e) {} }
+// segurar um botão (sem disparar o toque)
+function onHold(el, fn, ms = 550) {
+    let t = 0, held = false, at = null;
+    el.addEventListener('pointerdown', (e) => { held = false; at = { x: e.clientX, y: e.clientY }; clearTimeout(t); t = setTimeout(() => { held = true; fn(); if (navigator.vibrate) navigator.vibrate(10); }, ms); });
+    el.addEventListener('pointermove', (e) => { if (at && Math.hypot(e.clientX - at.x, e.clientY - at.y) > 8) clearTimeout(t); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => el.addEventListener(ev, () => { clearTimeout(t); at = null; }));
+    el.addEventListener('click', (e) => { if (held) { e.stopImmediatePropagation(); e.preventDefault(); held = false; } }, true);
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+// travar uma ferramenta inteira: o dado geral passa a deixá-la como está
+function setToolLock(id, locked, quiet) {
+    if (locked) prefs.groups.delete(id); else prefs.groups.add(id);
+    store.set('dice2', [...prefs.groups]);
+    if (!quiet) { toast(locked ? RANDOM_GROUPS[id] + ' travada: o dado não mexe nela' : RANDOM_GROUPS[id] + ' livre para o dado'); buildPanel(); }
+}
+// o dado de uma ferramenta só (funciona mesmo com ela travada: foi a pessoa que pediu)
+function rollTool(id) {
+    if (!M.el) return;
+    const before = snapshot();
+    try {
+        const touched = randomizeTool(st, M.analysis, id, prefs.locks);
+        Engine.invalidate(); afterExternalChange(); commit(true);
+        if (M.type === 'image' && anim.playing && !animOn()) stopAnim();
+        toast(touched.length ? touched.join(' · ') : RANDOM_GROUPS[id], { label: 'Desfazer', run: () => { restore(before); commit(true); } });
+    } catch (e) { console.error('[Pixelar] dado falhou:', e); restore(before); toast('Não foi possível sortear agora. Tente de novo.'); }
+}
+// segurar o dado: cada ferramenta com cadeado (fica como está) e o próprio dado
 function openRandomSettings() {
     openSheet((sh) => {
-        sheetHead(sh, 'O que o dado muda');
-        sh.append(h('p', 'note', 'Segure qualquer ajuste em Editar para travá-lo: o dado passa a deixá-lo como está. Segurar o dado abre esta lista.'));
-        const list = h('div', 'menu-list'); list.style.marginTop = '12px';
-        Object.entries(RANDOM_GROUPS).forEach(([k, label]) => list.append(switchRow(label, prefs.groups.has(k), (on) => { if (on) prefs.groups.add(k); else prefs.groups.delete(k); store.set('dice', [...prefs.groups]); })));
+        sheetHead(sh, 'Dado');
+        sh.append(h('p', 'note', 'O dado sorteia uma receita (Pixel art, Analógico, Impressão, Pintura…) usando só as ferramentas livres. Trave o que quer manter; o dado ao lado sorteia só aquela ferramenta.'));
+        const list = h('div', 'menu-list dice-list'); list.style.marginTop = '12px';
+        Object.entries(RANDOM_GROUPS).forEach(([k, label]) => {
+            const row = h('div', 'menu-item dice-row');
+            row.innerHTML = icon('t-' + k) + `<span>${label}</span>`;
+            const lk = h('button', 'dice-lock' + (prefs.groups.has(k) ? '' : ' on'), icon('lock') + '<span></span>'); lk.type = 'button';
+            const sync = () => { const locked = !prefs.groups.has(k); lk.classList.toggle('on', locked); lk.lastChild.textContent = locked ? 'Travada' : 'Livre'; lk.setAttribute('aria-pressed', String(locked)); };
+            lk.onclick = () => { setToolLock(k, prefs.groups.has(k), true); sync(); };
+            const dz = h('button', 'dice-one', icon('dice')); dz.type = 'button'; dz.title = 'Sortear só ' + label; dz.setAttribute('aria-label', dz.title);
+            dz.onclick = () => rollTool(k);
+            sync(); row.append(lk, dz); list.append(row);
+        });
         sh.append(list);
-        if (prefs.locks.size) { const b = h('button', 'pill', 'Destravar tudo'); b.type = 'button'; b.style.marginTop = '14px'; b.onclick = () => { prefs.locks.clear(); store.set('locks', []); refreshDials(); closeSheet(); toast('Tudo destravado'); }; sh.append(b); }
-    });
+        const acts = h('div', 'actions');
+        const all = h('button', 'pill', 'Sortear o que está livre'); all.type = 'button'; all.onclick = () => { closeSheet(); setTimeout(rollDice, 150); };
+        acts.append(all);
+        if (prefs.locks.size) { const b = h('button', 'pill', `Destravar ajustes (${prefs.locks.size})`); b.type = 'button'; b.onclick = () => { prefs.locks.clear(); store.set('locks', []); refreshDials(); b.remove(); toast('Ajustes destravados'); }; acts.append(b); }
+        sh.append(acts);
+        sh.append(h('p', 'note', 'Dica: segure uma ferramenta em Editar para travá-la, ou segure um ajuste para travar só ele.'));
+    }, () => buildPanel());
 }
-
 // ============================================================
 // CAMADAS: a ordem dos efeitos sobre a imagem, com mesclagem e opacidade
 // ============================================================
@@ -1802,12 +1870,12 @@ function stopAnim() {
     updateSubbarCenter();
 }
 // botão Tocar no topo: só existe quando há algo para animar na foto
-let subbarKey = '';
+let subbarKey = null;
 function updateSubbarCenter() {
     const show = M.type === 'image' && (anim.playing || animOn()), key = show ? (anim.playing ? 'pause' : 'play') : '';
     if (key === subbarKey) return; subbarKey = key;
     const c = $('subbarCenter'); c.innerHTML = '';
-    if (!show) return;
+    if (!show) { c.innerHTML = logoSvg('top'); return; }   // sem animação: o logo ocupa o centro do topo
     const b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(key)); b.type = 'button';
     b.title = anim.playing ? 'Parar animação' : 'Ver animação'; b.setAttribute('aria-label', b.title);
     b.onclick = togglePlay; c.append(b);
@@ -1920,6 +1988,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 if (document.documentElement.dataset.lite) Engine.workCap = 1280;
 buildTabbar(); selectTab(Object.keys(prefs.presets).length ? 'estilos' : 'editar'); updateHistoryButtons();
 $('btnWelcomeOpen').innerHTML = icon('upload') + '<span>Carregar imagem ou vídeo</span>';
+$('welcomeLogo').innerHTML = logoSvg('big'); updateSubbarCenter();
 if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
 // para o console e os testes
 window.Pixelar = { get state() { return st; }, set state(v) { st = normalizeState(v); Engine.invalidate(); afterExternalChange(); commit(true); }, openFile, media: M, ui, selectTab, goTo, flushThumbs: () => Thumbs.flush() };
