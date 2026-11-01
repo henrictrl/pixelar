@@ -340,7 +340,7 @@ const FX_GROUP_DEFS = [
     ['Cor e luz', ['thermal', 'channel_mixer', 'color_threshold', 'neon_trace', 'starlight', 'fluted_glass']],
     ['Tela', ['ascii', 'lcd', 'led', 'bitmap', 'blueprint', 'vhs']],
     ['Impressão', ['riso', 'cmyk_halftone', 'stipple', 'emboss']],
-    ['Pintura', ['oil', 'watercolor']],
+    ['Pintura', ['oil']],
     ['Forma e matéria', ['lego', 'stained_glass', 'smudge', 'warp', 'gooey_merge', 'pattern_refraction', 'pixel_sort']],
 ];
 function FX_GROUPS() {
@@ -1130,10 +1130,8 @@ const longSide = () => { const A = M.analysis || {}; return Math.max(A.W || 1600
 const BUILTIN_STYLES = {
     '16-bit': (s) => { s.pixel.size = Math.max(1, Math.round(longSide() / 240)); s.color.sel = '24'; s.dither.mode = 'bayer8'; s.dither.scale = 1; s.dither.intensity = 70; s.adj.saturation = 35; s.adj.contrast = 15; },
     'Óleo': (s) => { s.fx.id = 'oil'; s.adj.saturation = 10; },
-    'Aquarela': (s) => { s.fx.id = 'watercolor'; s.adj.brightness = 8; },
     'Celular 2010': (s) => { s.film.look = 'celular2010'; },
-    'Flash noturno': (s) => { s.film.look = 'flash_noturno'; },
-    'Vencido verde-rosa': (s) => { s.film.look = 'vencido_verde'; },
+    'Webcam 2000': (s) => { s.film.look = 'webcam'; },
 };
 const builtinState = (name) => { const s = freshState(); BUILTIN_STYLES[name](s); return s; };
 function styleThumb(strip, name, stateFn, del) {
@@ -1908,11 +1906,13 @@ let subbarKey = null;
 function updateSubbarCenter() {
     const show = M.type === 'image' && (anim.playing || animOn()), key = show ? (anim.playing ? 'pause' : 'play') : '';
     if (key === subbarKey) return; subbarKey = key;
-    const c = $('subbarCenter'); c.innerHTML = '';
-    if (!show) { c.innerHTML = logoSvg('top'); return; }   // sem animação: o logo ocupa o centro do topo
+    // o logo fica sempre no centro do topo; o tocar aparece à esquerda do desfazer
+    const c = $('subbarCenter'); if (!c.firstChild) c.innerHTML = logoSvg('top');
+    const slot = $('playSlot'); slot.innerHTML = '';
+    if (!show) return;
     const b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(key)); b.type = 'button';
     b.title = anim.playing ? 'Parar animação' : 'Ver animação'; b.setAttribute('aria-label', b.title);
-    b.onclick = togglePlay; c.append(b);
+    b.onclick = togglePlay; slot.append(b);
 }
 
 // ============================================================
@@ -2022,7 +2022,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 if (document.documentElement.dataset.lite) Engine.workCap = 1280;
 buildTabbar(); selectTab(Object.keys(prefs.presets).length ? 'estilos' : 'editar'); updateHistoryButtons();
 $('btnWelcomeOpen').innerHTML = icon('upload') + '<span>Carregar imagem ou vídeo</span>';
-$('welcomeLogo').innerHTML = logoSvg('big'); updateSubbarCenter();
+updateSubbarCenter();
 if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
 // para o console e os testes
 window.Pixelar = { get state() { return st; }, set state(v) { st = normalizeState(v); Engine.invalidate(); afterExternalChange(); commit(true); }, openFile, media: M, ui, selectTab, goTo, flushThumbs: () => Thumbs.flush() };

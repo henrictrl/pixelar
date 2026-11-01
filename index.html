@@ -14,9 +14,9 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/app.css?v=4.2.0">
+    <link rel="stylesheet" href="css/app.css?v=4.2.1">
     <script>
-        window.PIXELAR_V = '4.2.0';
+        window.PIXELAR_V = '4.2.1';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
         // aparelhos modestos: modo leve (sem desfoque de vidro, prévia mais leve; a exportação não muda)
@@ -28,6 +28,7 @@
         <!-- topo: abrir, desfazer/refazer, tocar, camadas e mais -->
         <header class="topbar" id="topbar">
             <button class="icon-btn" id="btnOpen" type="button" title="Abrir foto ou vídeo" aria-label="Abrir foto ou vídeo"></button>
+            <div class="play-slot" id="playSlot"></div>
             <button class="icon-btn" id="btnUndo" type="button" title="Desfazer" aria-label="Desfazer" disabled></button>
             <button class="icon-btn" id="btnRedo" type="button" title="Refazer" aria-label="Refazer" disabled></button>
             <div class="subbar-center" id="subbarCenter"></div>
@@ -47,7 +48,6 @@
             <div class="orig-badge" id="origBadge" hidden>ORIGINAL</div>
 
             <section class="welcome" id="welcome">
-                <div class="welcome-logo" id="welcomeLogo" aria-hidden="true"></div>
                 <button class="upload-big" id="btnWelcomeOpen" type="button" aria-label="Carregar imagem ou vídeo"></button>
             </section>
             <div class="drop-hint" id="dropHint">Solte para abrir</div>
@@ -85,15 +85,15 @@
     <input type="file" id="configInput" accept="image/png,text/plain,.txt" hidden>
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js?v=4.2.0"></script>
-    <script defer src="js/engine.js?v=4.2.0"></script>
-    <script defer src="js/paint.js?v=4.2.0"></script>
-    <script defer src="js/anim.js?v=4.2.0"></script>
-    <script defer src="js/config.js?v=4.2.0"></script>
-    <script defer src="js/media.js?v=4.2.0"></script>
-    <script defer src="js/export.js?v=4.2.0"></script>
-    <script defer src="js/icons.js?v=4.2.0"></script>
-    <script defer src="js/ui.js?v=4.2.0"></script>
+    <script defer src="js/gpu.js?v=4.2.1"></script>
+    <script defer src="js/engine.js?v=4.2.1"></script>
+    <script defer src="js/paint.js?v=4.2.1"></script>
+    <script defer src="js/anim.js?v=4.2.1"></script>
+    <script defer src="js/config.js?v=4.2.1"></script>
+    <script defer src="js/media.js?v=4.2.1"></script>
+    <script defer src="js/export.js?v=4.2.1"></script>
+    <script defer src="js/icons.js?v=4.2.1"></script>
+    <script defer src="js/ui.js?v=4.2.1"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
         if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {
