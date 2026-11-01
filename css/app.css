@@ -322,7 +322,7 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 
 /* camadas */
 .layer-list { display: flex; flex-direction: column; gap: 4px; }
-.layer { position: relative; display: grid; grid-template-columns: 40px 1fr; align-items: center; border-radius: 10px; background: var(--fill-1); }
+.layer { position: relative; display: grid; grid-template-columns: 40px 1fr 44px; align-items: center; border-radius: 10px; background: var(--fill-1); }
 .layer.base { grid-template-columns: 1fr; padding: 12px 14px; background: none; box-shadow: inset 0 0 0 .5px var(--hair); color: var(--text-2); }
 .layer .grip { height: 48px; display: grid; place-items: center; color: var(--text-3); touch-action: none; cursor: grab; }
 .layer .lmain { height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-right: 14px; text-align: left; min-width: 0; }
@@ -332,6 +332,10 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .layer .ldetail { min-width: 0; }
 .layer .ldetail .chips { padding: 0 14px; flex-wrap: wrap; gap: 8px; }   /* misturas quebram em linhas: nada sai da tela */
 .layer .ldetail .rl-head { padding: 0 14px; }
+.layer .ldel { width: 44px; height: 48px; display: grid; place-items: center; color: var(--text-2); }
+.layer .ldel .ic { width: 18px; height: 18px; }
+.layer .ldel:active { color: #ff3b30; }
+.layer.fixed .grip { cursor: default; }
 .layer .lfoot { display: flex; justify-content: flex-end; padding: 0 14px; }
 
 /* seletor de cor */

@@ -6,11 +6,11 @@ Interface flat, no estilo dos apps do iPhone (barras sólidas, sem vidro nem des
 
 - **Estilos**: as combinações que você salvou (“Salvar atual”), com a intensidade do estilo.
 - **Editar**: 9 ferramentas numa grade. Tocar numa ferramenta abre a lista dos ajustes dela (em seções, com o valor de cada um); tocar num ajuste abre o controle, com “‹ voltar”. Opções e miniaturas ficam em grade com rolagem vertical, nada escondido para os lados. Tocar na ferramenta aberta fecha e devolve o espaço à foto.
-  **Cortar** · **Luz** · **Cor** (paleta, duotone/tritone e degradê) · **Pixel** (tamanho, padrão, agrupar e contorno) · **Textura** · **Filme** (filme, grão e lente) · **Pintura** por números (regiões ou pixels; pintado, pela metade, clarinho ou molde para pintar) · **Dupla** exposição · **Movimento**.
+  **Cortar** · **Luz** · **Cor** (paleta, duotone/tritone e degradê) · **Pixel** (tamanho, padrão, agrupar e contorno) · **Textura** · **Filme** (filme, grão e lente) · **Pintura** (regiões ou pixels, com cores, detalhe, células, manchas mínimas, arredondar e linhas ajustáveis) · **Dupla** exposição · **Movimento**.
 - **Sortear** (o dado): cada jogada escolhe uma receita (Pixel art, 8-bit, Analógico, Lomografia, P&B, Impressão, Tela e glitch, Pop art, Pintura por números, Pôster, Sonho, Matéria, Duotone, Cinema noturno ou Mistura livre) e devolve ao natural as ferramentas que ela não usa. Cada ferramenta tem o próprio dado (“Sortear Cor”…) e pode ser travada (segurar a ferramenta, ou o cadeado na folha do dado). Segurar o dado abre essa folha; segurar um ajuste trava só ele.
 - **Exportar**: um painel só. Foto: PNG, JPEG, WebP ou SVG em Tela, Original (e 2×, 4K, 8K quando a imagem é redesenhada). GIF, MP4 e WebM aparecem quando algo se move. Vídeo: MP4, WebM ou GIF.
 
-Tocar na aba aberta fecha o painel dela. No topo: abrir, desfazer/refazer, tocar (só quando há movimento), **Camadas** (ordem, mesclagem e opacidade dos efeitos) e o menu. Segurar a foto mostra o original; pinça faz zoom. `Esc` fecha janelas.
+Tocar na aba aberta fecha o painel dela. No topo: abrir, desfazer/refazer, tocar (só quando há movimento), **Camadas** (ordem, mesclagem, opacidade e excluir cada efeito) e o menu. Segurar a foto mostra o original; pinça faz zoom. `Esc` fecha janelas.
 
 ## Como usar localmente
 
@@ -30,7 +30,7 @@ Depois abra `http://localhost:8000`. Para publicar, qualquer hospedagem estátic
 | `css/app.css` | Todo o visual (tema claro/escuro, celular e desktop) |
 | `js/gpu.js` | Motor WebGL2, catálogo de texturas (`PIXELAR_FX_LIST`) e shaders do filme |
 | `js/engine.js` | **Estado** (`DEFAULT_STATE`), filmes (`FILM_LOOK_DEFS`), compatibilidade (`normalizeState`) e o render. Também o fallback em CPU |
-| `js/paint.js` | Pintura por números (último passo do render; também gera o SVG vetorial do molde) |
+| `js/paint.js` | Pintura em regiões ou pixels (último passo do render; também gera o SVG vetorial) |
 | `js/anim.js` | Animação em loop e o dado: receitas (`RECIPES`), dado por ferramenta (`TOOL_DICE`, `randomizeTool`) |
 | `js/config.js` | Lê configurações salvas no PNG exportado ou no `.txt` (inclusive as da primeira versão) |
 | `js/media.js` | Abertura de vídeos (MP4/MOV/WebM, AVI de câmera, demais via FFmpeg) |
@@ -52,3 +52,7 @@ Tudo o que a imagem precisa está num único objeto de estado (`st`). O motor (`
 - Para **criar uma textura**, adicione um objeto em `PIXELAR_FX_LIST` (`gpu.js`) e o id num grupo de `FX_GROUP_DEFS` (`ui.js`).
 - Algo saiu do app? Mapeie o id antigo em `LOOK_ALIAS`, `DITHER_ALIAS` ou `FX_ALIAS` (`engine.js`) para arquivos antigos continuarem abrindo.
 - **Ao publicar mudanças, rode `python3 tools/versao.py X.Y.Z`**. Isso carimba a versão nos endereços de todos os arquivos e no `sw.js`. Sem isso, o navegador pode misturar arquivos novos e antigos (o servidor deixa cada arquivo em cache por 10 min) e o app quebra.
+
+### Texturas sem cor fixa
+
+Texturas de forma (Deformação, Fusão, ASCII, Pontilhado, Bitmap, Tela de bolso, Relevo…) usam as cores da própria imagem: a cor fica por conta da ferramenta Cor. Só as texturas cuja cor é o próprio efeito (Térmico, Canais, Limiar de cor, Traçado néon, Risografia, Meio-tom CMYK, Planta azul) definem cores.
