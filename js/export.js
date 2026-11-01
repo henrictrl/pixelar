@@ -333,11 +333,20 @@ const Exporter = (() => {
         const output = new MB.Output({ format: outFmt, target: new MB.BufferTarget() });
         const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 }, Media.encExtra()));
         output.addVideoTrack(vsrc, { frameRate: fps });
-        let asrc = null, at = null, audioTask = null, plan = null, waBuffer = null, aFirst = 0;
+        let asrc = null, at = null, audioTask = null, plan = null, waBuffer = null, aFirst = 0, copySrc = null;
         if (!job.mute) try {
             at = await input.getPrimaryAudioTrack();
             if (at) {
                 aFirst = await at.getFirstTimestamp().catch(() => 0);
+                // 0) cópia direta do áudio original, sem decodificar nem recodificar: o som sai idêntico e
+                //    funciona mesmo em navegadores sem codificador de áudio (Safari) ou sem AAC (Chrome no Linux/Android).
+                //    Opus dentro de MP4 não toca no iPhone/QuickTime: nesse caso tenta recodificar para AAC primeiro.
+                const acodec = await at.getCodec().catch(() => null);
+                const canCopy = acodec && typeof MB.EncodedAudioPacketSource === 'function' && outFmt.getSupportedAudioCodecs().includes(acodec);
+                const aacOk = job.format === 'mp4' && acodec === 'opus' && await MB.getFirstEncodableAudioCodec(['aac'], { numberOfChannels: Math.min(2, await at.getNumberOfChannels()), sampleRate: await at.getSampleRate() }).catch(() => null);
+                if (canCopy && !aacOk) { copySrc = new MB.EncodedAudioPacketSource(acodec); output.addAudioTrack(copySrc); asrc = copySrc; plan = 'copy'; }
+            }
+            if (at && !plan) {
                 // 1) o WebCodecs consegue decodificar? (testa meio segundo antes de começar)
                 if (await at.canDecode().catch(() => false)) {
                     try { if (window.__pixelarAudioFail === 'start') throw new DOMException('Internal audio decoder error (teste)', 'EncodingError'); for await (const wb of new MB.AudioBufferSink(at).buffers(tStart, Math.min(tEnd, tStart + 0.5))) { wb && 0; } plan = 'webcodecs'; }
@@ -354,7 +363,18 @@ const Exporter = (() => {
             }
         } catch (e) { console.warn('[Pixelar] áudio ignorado:', e); asrc = null; job.audioDropped = true; }
         await output.start();
-        if (asrc) audioTask = (async () => {
+        if (plan === 'copy') audioTask = (async () => {
+            const sink = new MB.EncodedPacketSink(at), cfg = await at.getDecoderConfig();
+            let first = true;
+            for await (const pkt of sink.packets()) {
+                if (job.cancelled) break;
+                if (pkt.timestamp < tStart - 1e-6) continue;          // antes do trecho escolhido
+                if (pkt.timestamp >= tEnd) break;                       // depois do trecho
+                await copySrc.add(pkt.clone({ timestamp: pkt.timestamp - tStart }), first ? { decoderConfig: cfg } : undefined);
+                first = false;
+            }
+        })();
+        else if (asrc) audioTask = (async () => {
             const from = Math.max(tStart, aFirst);
             if (plan === 'webaudio') return feedAudioBuffer(asrc, waBuffer, from - aFirst, tEnd - aFirst, job);   // o buffer do Web Audio começa no 1º som
             let added = 0;
