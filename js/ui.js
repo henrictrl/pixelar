@@ -1,4 +1,4 @@
-/* Pixelar Studio — interface.
+/* Pixelar — interface.
  * Uma única fonte de verdade: `st` (estado). Controles leem e escrevem nele por
  * caminho ('adj.exposure'), e toda mudança passa por change() → novo quadro,
  * histórico e miniaturas. Os painéis são descritos como dados (TABS) e montados
@@ -1562,7 +1562,7 @@ function openMore() {
             b.onclick = () => { setTheme(v); th.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
             th.append(b);
         });
-        const about = h('div', 'about', logoSvg('mini')); about.append(h('p', 'note', 'Pixelar Studio · tudo roda no seu aparelho, nenhuma foto sai dele.'));
+        const about = h('div', 'about', logoSvg('mini')); about.append(h('p', 'note', 'Pixelar · tudo roda no seu aparelho, nenhuma foto sai dele.'));
         sh.append(list, th, about);
     });
 }
