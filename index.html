@@ -9,13 +9,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Pixelar Studio — pixel art, dither, filmes analógicos e animações em fotos e vídeos, direto no navegador.">
     <title>Pixelar Studio</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%23111'/%3E%3Crect x='3' y='3' width='4' height='4' fill='%23FFCC00'/%3E%3Crect x='7' y='7' width='3' height='3' fill='%23fff'/%3E%3Crect x='10' y='10' width='3' height='3' fill='%23FFCC00'/%3E%3C/svg%3E">
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/app.css?v=3.9.2">
+    <link rel="stylesheet" href="css/app.css?v=4.0.0">
     <script>
-        window.PIXELAR_V = '3.9.2';
+        window.PIXELAR_V = '4.0.0';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
         // aparelhos modestos: modo leve (sem desfoque de vidro, prévia mais leve; a exportação não muda)
@@ -24,7 +25,6 @@
 </head>
 <body>
     <div id="app" class="is-welcome">
-        <!-- topo: abrir, desfazer/refazer, tocar, camadas, dado e mais -->
         <!-- topo: abrir, desfazer/refazer, tocar, camadas e mais -->
         <header class="topbar" id="topbar">
             <button class="icon-btn" id="btnOpen" type="button" title="Abrir foto ou vídeo" aria-label="Abrir foto ou vídeo"></button>
@@ -47,6 +47,7 @@
             <div class="orig-badge" id="origBadge" hidden>ORIGINAL</div>
 
             <section class="welcome" id="welcome">
+                <div class="welcome-logo" id="welcomeLogo" aria-hidden="true"></div>
                 <button class="upload-big" id="btnWelcomeOpen" type="button" aria-label="Carregar imagem ou vídeo"></button>
             </section>
             <div class="drop-hint" id="dropHint">Solte para abrir</div>
@@ -84,14 +85,15 @@
     <input type="file" id="configInput" accept="image/png,text/plain,.txt" hidden>
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js?v=3.9.2"></script>
-    <script defer src="js/engine.js?v=3.9.2"></script>
-    <script defer src="js/anim.js?v=3.9.2"></script>
-    <script defer src="js/config.js?v=3.9.2"></script>
-    <script defer src="js/media.js?v=3.9.2"></script>
-    <script defer src="js/export.js?v=3.9.2"></script>
-    <script defer src="js/icons.js?v=3.9.2"></script>
-    <script defer src="js/ui.js?v=3.9.2"></script>
+    <script defer src="js/gpu.js?v=4.0.0"></script>
+    <script defer src="js/engine.js?v=4.0.0"></script>
+    <script defer src="js/paint.js?v=4.0.0"></script>
+    <script defer src="js/anim.js?v=4.0.0"></script>
+    <script defer src="js/config.js?v=4.0.0"></script>
+    <script defer src="js/media.js?v=4.0.0"></script>
+    <script defer src="js/export.js?v=4.0.0"></script>
+    <script defer src="js/icons.js?v=4.0.0"></script>
+    <script defer src="js/ui.js?v=4.0.0"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
         if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {
