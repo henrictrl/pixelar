@@ -51,7 +51,7 @@ const DEFAULT_STATE = {
     layers: { order: ['dbl', 'grad', 'fx', 'film', 'lens', 'grain', 'edge'], blend: {}, op: {} },
     crop: { aspect: 'original', rot: 0, flipH: false, flipV: false, zoom: 100, x: 0, y: 0 },
     // pintura por números (último passo, ver paint.js): regiões ou pixels, com acabamento
-    paint: { mode: 'none', colors: 18, detail: 50, size: 44, minArea: 14, smooth: 2, lines: 20, ink: '#9A9A9A' },
+    paint: { mode: 'none', colors: 18, detail: 50, size: 44, minArea: 14, smooth: 2, lines: 0, ink: '#9A9A9A' },
     anim: Object.assign({}, ANIM_DEFAULTS),
 };
 
