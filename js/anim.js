@@ -477,7 +477,7 @@ const TOOL_DICE = {
         style = style || pickFresh(['regioes', 'regioes', 'pixels'], 'pintura');
         const s = k.set, pixels = style === 'pixels';
         s('paint.mode', pixels ? 'pixels' : 'regions'); s('paint.colors', pick([6, 10, 14, 18, 24, 32]));
-        s('paint.detail', ri(25, 85)); s('paint.size', ri(28, 90)); s('paint.minArea', ri(6, 30)); s('paint.smooth', ri(1, 3));
+        s('paint.detail', ri(25, 85)); s('paint.size', pick([24, 48, 80, 140, 220, 320])); s('paint.minArea', ri(6, 30)); s('paint.smooth', ri(1, 3));
         s('paint.lines', 0);   // cores lado a lado, sem linhas entre os blocos
         k.touched.push(pixels ? 'Pintura em pixels' : 'Pintura em regiões'); return style;
     },
