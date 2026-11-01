@@ -17,6 +17,7 @@ const URL = process.env.PIXELAR_URL || 'http://localhost:8765/';
     page.on('pageerror', e => console.error('ERRO', e.message));
     await page.goto(URL + '?galeria=' + Date.now());
     await page.addScriptTag({ url: URL + 'tools/estudo-filmes.js' });
+    await page.evaluate(() => ESTUDO_FX.forEach(fx => PIXELAR_FX_LIST.push(fx)));
     await page.waitForTimeout(800);
     const photos = [];
     for (const f of [A, B]) {
@@ -35,13 +36,7 @@ const URL = process.env.PIXELAR_URL || 'http://localhost:8765/';
             const items = [];
             const add = (sec, id, nome, mod, extra = {}) => items.push(Object.assign({ sec, id, nome, img: shot(mod) }, extra));
             add('ref', 'original', 'Foto original', () => {});
-            ESTUDO_FILMES.forEach(([g, l]) => l.forEach(([id, n, d, u]) => { FILM_LOOKS[id] = { id, nome: n, desc: d, group: g, u }; }));
-            const long = Math.max(an.W, an.H);
-            add('pedido', 'style.16bit', '16-bit', s => { s.pixel.size = Math.max(1, Math.round(long / 240)); s.color.sel = '24'; s.dither.mode = 'bayer8'; s.dither.scale = 1; s.dither.intensity = 70; s.adj.saturation = 35; s.adj.contrast = 15; }, { desc: 'Pixel + 24 cores da foto + pontilhado Bayer entre as cores.' });
-            add('pedido', 'fx.oil', 'Pintura a óleo', s => { s.fx.id = 'oil'; s.adj.saturation = 10; }, { desc: 'Textura nova: pincel, relevo da tinta, marcas do pincel e saturação ajustáveis.' });
-            add('pedido', 'fx.watercolor', 'Aquarela', s => { s.fx.id = 'watercolor'; s.adj.brightness = 8; }, { desc: 'Textura nova: aguada, escorrido, traço, granulado e papel ajustáveis.' });
-            ['celular2010', 'flash_noturno', 'vencido_verde'].forEach(id => add('pedido', 'film.' + id, FILM_LOOKS[id].nome, s => { s.film.look = id; }, { desc: FILM_LOOKS[id].desc }));
-            ESTUDO_FILMES.forEach(([g, l]) => l.forEach(([id, n, d]) => add('estudo', 'film.' + id, n, s => { s.film.look = id; }, { grupo: g, desc: d })));
+            ESTUDO_FX.forEach(fx => add('estudo', 'fx.' + fx.id, fx.nome, s => { s.fx.id = fx.id; }, { grupo: fx.grupo, desc: fx.desc }));
             return items;
         }));
     }

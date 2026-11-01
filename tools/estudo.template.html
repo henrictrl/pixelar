@@ -85,8 +85,7 @@ textarea.fallback { width: 100%; min-height: 160px; font: 12px var(--mono); marg
 const DATA = /*DATA*/null;
 const SECS = [
   ['ref', 'Referência', 'As fotos sem nenhum efeito.'],
-  ['pedido', 'Seus pedidos', 'Recriações das referências que você mandou. Já entram no app (Estilos → Prontos) e tudo continua editável: cores na ferramenta Cor, intensidade e ajustes em cada ferramenta. Pode marcar se quiser ajustar algum.', true],
-  ['estudo', 'Estudo de filmes e câmeras', 'Candidatos com diferenças fortes. Marque Fica nos que devem entrar no app.', true],
+  ['estudo', 'Estudo 2: processos fora do radar', 'Técnicas reais de química, câmeras, sensores e transmissão. Quando o processo tinge a imagem, a cor sai da cor dominante da própria foto, por isso muda de uma foto para a outra. Todos têm parâmetros editáveis no app.', true],
 ];
 const KEY = 'pixelar-estudo-filmes';
 let votes = {}; try { votes = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { votes = {}; }
