@@ -251,7 +251,23 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
 .panel.has-crumb.list .crumb { display: grid; }
 /* Estilos em barra: régua, ajustes e efeitos empilhados de baixo para cima, cada um numa linha */
 .panel.styles-bar .editor, .panel.styles-bar.single .editor { max-height: none; height: auto; overflow: visible; padding: 8px 0 6px; gap: 6px; justify-content: flex-end; }
-.panel.styles-bar .seg-row { display: none; }
+.panel.styles-bar .seg-row, .panel.edit-bar .seg-row { display: none; }
+.panel.edit-bar .editor, .panel.edit-bar.single .editor { max-height: none; height: auto; overflow: visible; padding: 8px 0 6px; gap: 6px; justify-content: flex-end; }
+.panel.edit-bar .dials, .panel.edit-bar .crumb { display: none; }
+/* linha das ferramentas (Editar): ícone grande e nome embaixo */
+.tool-row { display: flex; gap: 2px; padding: 2px calc(var(--pad) - 8px) 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.tool-row::-webkit-scrollbar { display: none; }
+.tool-btn { position: relative; flex: 1 1 0; min-width: 48px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 4px 6px; border-radius: 10px; color: var(--text-2); }
+.tool-btn .ic { width: 22px; height: 22px; }
+.tool-btn .t { font-size: 10px; white-space: nowrap; }
+.tool-btn.on { background: var(--fill-1); color: var(--text); }
+.set-btn { position: relative; }
+.set-btn.mod::after { content: ""; position: absolute; top: 5px; right: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.set-lock { position: absolute; top: 3px; left: 5px; color: var(--text-2); }
+.set-lock .ic { width: 10px; height: 10px; }
+.set-row .strip-group { font-size: 9px; margin: 0 2px; }
+.param-row.tall { max-height: 38vh; overflow-y: auto; overscroll-behavior: contain; }
+.param-custom { display: flex; flex-direction: column; gap: var(--gap); }
 .style-strip { padding-top: 4px; }
 .thumb.sel .pic::after { box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 0 4px var(--surface); }
 .thumb.sel .t { color: var(--accent-text); }
@@ -429,4 +445,9 @@ button:active:not(:disabled) { opacity: .45; transition: none; }
     .tab span { display: none; }
 }
 
+/* coluna lateral (computador): as barras crescem para baixo a partir das abas — ferramentas, ajustes e controle */
+@media (min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px) {
+    .panel.edit-bar .editor, .panel.styles-bar .editor { flex-direction: column-reverse; justify-content: flex-end; }
+    .panel.edit-bar .set-row, .panel.styles-bar .set-row, .panel.edit-bar .param-row, .panel.styles-bar .param-row { border-bottom: 0; border-top: .5px solid var(--hair); padding-top: 6px; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

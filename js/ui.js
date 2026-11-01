@@ -240,7 +240,7 @@ new ResizeObserver(() => fitView()).observe(viewport);
         const dx = e.clientX - start.x, dy = e.clientY - start.y;
         if (Math.abs(dx) + Math.abs(dy) > 6) { moved = true; clearTimeout(holdTimer); }
         if (view.zoom > 1 && moved) { view.x = start.vx + dx; view.y = start.vy + dy; applyView(); }
-        else if (currentGroup().id === 'crop' && moved && !isCropIdentity(st.crop)) { cropDrag(dx, dy, e); }
+        else if (ui.tab === 'editar' && ui.editTool === 'crop' && moved && !isCropIdentity(st.crop)) { cropDrag(dx, dy, e); }
     });
     const end = (e) => {
         if (!pts.has(e.pointerId)) return;
@@ -526,7 +526,7 @@ const TABS = [
 function groupControls(g) {
     const list = g.controls();
     if (!RANDOM_GROUPS[g.id]) return list;
-    return [A('Sortear ' + g.label, 'dice', () => rollTool(g.id)),
+    return [A(ui.tab === 'editar' ? 'Sortear' : 'Sortear ' + g.label, 'dice', () => rollTool(g.id)),
         T(null, 'Travar', 'lock', { get: () => !prefs.groups.has(g.id), onPick: (v) => setToolLock(g.id, v) }), ...list];
 }
 const gradBlend = () => st.grad.blend === 'source-atop' ? 'normal' : st.grad.blend;
@@ -594,6 +594,7 @@ function goTo(groupId, key) {
         selectTab('estilos'); return;
     }
     const tab = TABS.find(t => tabGroups(t).some(g => g.id === groupId)) || TABS[1], k = tab.id + '/' + groupId;
+    if (tab.id === 'editar') { ui.editTool = groupId; ui.editParam[groupId] = key || null; }
     ui.group[tab.id] = groupId; ui.open[tab.id] = true; ui.view[k] = key ? 'detail' : 'list'; if (key) ui.active[k] = key;
     if (panelCollapsed) setPanelCollapsed(false);
     lastPanelKey = null; selectTab(tab.id);
@@ -641,6 +642,8 @@ function buildPanel() {
         seg.append(b);
     });
     panel.classList.toggle('styles-bar', tab.id === 'estilos' && open);
+    panel.classList.toggle('edit-bar', tab.id === 'editar');
+    if (tab.id === 'editar') { if (!open) { ui.editTool = null; ui.open.editar = true; } buildEditBar(); return; }
     if (!open) { dialEls = []; $('dials').innerHTML = ''; $('crumb').innerHTML = ''; buildEditor(null); panel.classList.remove('list', 'detail', 'single'); return; }
     if (tab.id === 'estilos') { buildStylesBar(); return; }
     const controls = groupControls(grp).filter(c => !c.hidden);
@@ -813,6 +816,7 @@ function flashLabel(text, ms = 1100) {
 // ============================================================
 let lastEditorKey = null;
 function buildEditor(c) {
+    if (c && c.kind === 'custom' && ui.tab === 'editar') { buildEditBar(); return; }
     const ed = $('editor');
     // refazer o MESMO editor nunca volta a faixa para o começo: guarda e devolve a rolagem
     const key = c ? (c.key || c.id || (c.editor && c.editor.name) || c.label) + '|' + ui.tab : null;
@@ -1176,6 +1180,73 @@ function styleMixRuler(ed) {
     ed.append(styleRuler);
 }
 function syncStyleRuler() { if (styleRuler && styleRuler.isConnected && styleRuler._sync) styleRuler._sync(); }
+// Linhas de ajustes em barra (Estilos e Editar), de baixo para cima:
+//   [controle do ajuste aberto: régua, opções, miniaturas ou editor próprio]
+//   [botões dos ajustes: ícone e nome; divisórias viram rótulos finos]
+// Tocar num ajuste abre o controle; tocar de novo fecha. Segurar um ajuste trava-o para o dado.
+function paramRows(ed, controls, activeId, setActive, rebuild) {
+    const active = controls.find(c => c.kind !== 'divider' && ctrlId(c) === activeId);
+    if (active && ['range', 'choice', 'custom'].includes(active.kind)) {
+        const row = h('div', 'param-row' + (active.kind === 'custom' || (active.kind === 'choice' && active.view === 'thumbs') ? ' tall' : ''));
+        if (active.kind === 'range') row.append(makeRuler(active, { label: true }));
+        else if (active.kind === 'choice' && active.view === 'thumbs') { const st0 = makeThumbChoice(active); st0.addEventListener('click', () => setTimeout(rebuild, 0)); row.append(st0); }
+        else if (active.kind === 'choice') { const ch = makeChips(active); ch.addEventListener('click', () => setTimeout(rebuild, 0)); row.append(ch); }
+        else { const box = h('div', 'param-custom'); row.append(box); active.editor(box, active); }
+        ed.append(row);
+    }
+    if (!controls.length) return;
+    const row = h('div', 'set-row');
+    controls.forEach(c => {
+        if (c.kind === 'divider') { const g = h('span', 'strip-group'); g.textContent = c.label; row.append(g); return; }
+        const id = ctrlId(c), lockKey = c.lockKey || c.key;
+        const b = h('button', 'set-btn' + (id === activeId ? ' on' : '') + (c.kind === 'toggle' && ctrlValue(c) ? ' lit' : '') + ((c.kind === 'range' || c.kind === 'choice') && isModified(c) ? ' mod' : '')); b.type = 'button';
+        if (c.kind === 'color') { const sw = h('span', 'swatch'); sw.style.background = ctrlValue(c); b.append(sw); }
+        else b.insertAdjacentHTML('beforeend', smallIcon(c.icon) || smallIcon('fx'));
+        const t = h('span', 't'); t.textContent = c.label; b.append(t); b.title = c.label;
+        if (lockKey && prefs.locks.has(lockKey)) b.append(h('span', 'set-lock', icon('lock')));
+        b.onclick = () => {
+            if (['range', 'choice', 'custom'].includes(c.kind)) { setActive(activeId === id ? null : id); rebuild(); return; }
+            if (c.kind === 'toggle') { const nv = !ctrlValue(c); if (c.onPick) c.onPick(nv); else change(c.key, nv); flashLabel(c.label + (nv ? ' · ligado' : ' · desligado')); rebuild(); return; }
+            if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); const sw = b.querySelector('.swatch'); if (sw) sw.style.background = hex; if (final) rebuild(); }, c.label); return; }
+            if (c.kind === 'action') c.run();
+        };
+        if (lockKey && c.kind !== 'action' && c.key && !c.key.startsWith('_')) onHold(b, () => { toggleLock(lockKey); rebuild(); });
+        row.append(b);
+    });
+    ed.append(row);
+    requestAnimationFrame(() => centerIn(row, row.querySelector('.set-btn.on')));
+}
+// ============================================================
+// EDITAR EM BARRA: ferramentas numa linha; tocar abre os ajustes dela acima; tocar num ajuste abre o controle
+// ============================================================
+ui.editTool = null; ui.editParam = {};
+function buildEditBar() {
+    const ed = $('editor'), panel = $('panel');
+    panel.classList.add('single', 'edit-bar'); panel.classList.remove('list', 'detail', 'closed');
+    $('dials').hidden = true; $('dials').innerHTML = ''; dialEls = []; $('crumb').innerHTML = ''; $('segRow').innerHTML = ''; lastEditorKey = null;
+    ed.innerHTML = ''; ed.scrollTop = 0;
+    if (!M.el) return;
+    const tools = tabGroups(TABS.find(t => t.id === 'editar'));
+    const grp = tools.find(g => g.id === ui.editTool) || null;
+    ui.group.editar = grp ? grp.id : '';
+    if (grp) {
+        const controls = groupControls(grp).filter(c => !c.hidden);
+        paramRows(ed, controls, ui.editParam[grp.id] || null, (id) => { ui.editParam[grp.id] = id; }, buildEditBar);
+    }
+    const row = h('div', 'tool-row');
+    tools.forEach(g => {
+        const b = h('button', 'tool-btn' + (grp && grp.id === g.id ? ' on' : '')); b.type = 'button'; b.title = g.label;
+        b.innerHTML = icon('t-' + g.id) + '<span class="t"></span>'; b.lastChild.textContent = g.label;
+        b.setAttribute('aria-pressed', String(!!grp && grp.id === g.id));
+        b.onclick = () => { ui.editTool = ui.editTool === g.id ? null : g.id; fitAnim(); buildEditBar(); };
+        if (RANDOM_GROUPS[g.id]) {
+            if (!prefs.groups.has(g.id)) b.append(h('span', 'seg-lock', icon('lock')));
+            onHold(b, () => setToolLock(g.id, prefs.groups.has(g.id)));
+        }
+        row.append(b);
+    });
+    ed.append(row);
+}
 // ============================================================
 // ESTILOS EM BARRA: tudo em fileiras horizontais, empilhadas de baixo para cima
 //   [régua do ajuste]        ← abre ao tocar num ajuste (toque de novo fecha)
@@ -1234,33 +1305,7 @@ function buildStylesBar() {
     // o efeito selecionado precisa continuar aplicado (desfazer, dado…): senão a seleção fecha
     if (ui.styleSel) { const it = styleItems().find(isSel); if (!it || !it.on()) { ui.styleSel = null; ui.styleParam = null; } }
     const controls = ui.styleSel ? styleControls(ui.styleSel) : [];
-    const active = controls.find(c => ctrlId(c) === ui.styleParam);
-    // 1) régua (ou opções) do ajuste aberto
-    if (active && (active.kind === 'range' || active.kind === 'choice')) {
-        const row = h('div', 'param-row');
-        if (active.kind === 'range') row.append(makeRuler(active, { label: true }));
-        else { const ch = makeChips(active); ch.addEventListener('click', () => setTimeout(buildStylesBar, 0)); row.append(ch); }
-        ed.append(row);
-    }
-    // 2) botões dos ajustes
-    if (controls.length) {
-        const row = h('div', 'set-row');
-        controls.forEach(c => {
-            const id = ctrlId(c), b = h('button', 'set-btn' + (id === ui.styleParam ? ' on' : '') + (c.kind === 'toggle' && ctrlValue(c) ? ' lit' : '')); b.type = 'button';
-            if (c.kind === 'color') { const sw = h('span', 'swatch'); sw.style.background = ctrlValue(c); b.append(sw); }
-            else b.insertAdjacentHTML('beforeend', smallIcon(c.icon) || smallIcon('fx'));
-            const t = h('span', 't'); t.textContent = c.label; b.append(t); b.title = c.label;
-            b.onclick = () => {
-                if (c.kind === 'range' || c.kind === 'choice') { ui.styleParam = ui.styleParam === id ? null : id; buildStylesBar(); return; }
-                if (c.kind === 'toggle') { const nv = !ctrlValue(c); if (c.onPick) c.onPick(nv); else change(c.key, nv); buildStylesBar(); return; }
-                if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); const sw = b.querySelector('.swatch'); if (sw) sw.style.background = hex; }, c.label); return; }
-                if (c.kind === 'action') c.run();
-            };
-            row.append(b);
-        });
-        ed.append(row);
-        requestAnimationFrame(() => centerIn(row, row.querySelector('.set-btn.on')));
-    }
+    paramRows(ed, controls, ui.styleParam, (id) => { ui.styleParam = id; }, buildStylesBar);
     // 3) todos os efeitos numa linha só
     const strip = h('div', 'strip style-strip');
     styleItems().forEach(it => {
