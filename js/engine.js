@@ -371,8 +371,12 @@ const FILM_LOOK_DEFS = [
         ['celular2010', 'Celular 2010', 'Câmera de celular antiga: dourado, brilho difuso forte, luzes estouradas e risco do sensor.', { uTemp: 0.9, uTint: -0.3, uDream: 1.1, uBloom: 0.8, uExposure: 0.18, uContrast: 0.9, uFade: 0.18, uBase: [0.12, 0.1, 0.02], uSat: 0.8, uSplit: 0.6, uShadowTint: [0.5, 0.52, 0.42], uHighTint: [0.62, 0.58, 0.4], uSoft: 0.22, uSmear: 0.7, uJpeg: 0.2, uVignette: 0.35, uLowRes: 1.5, uGrain: 0.12 }],
         ['webcam', 'Webcam 2000', 'Webcam de computador: imagem grossa, compressão pesada, ruído de cor e contraste duro.', { uLowRes: 6, uJpeg: 1.0, uSat: 0.8, uContrast: 1.35, uChromaNoise: 0.9, uExposure: -0.15, uVignette: 0.6, uSharpen: 0.4 }],
     ]],
+    ['Química', [
+        ['vencido_quimica', 'Vencido (química)', 'Filme vencido de verdade: véu, uma camada de cor fraca, manchas e vazamento com a cor da própria foto.', {}, { fx: 'vencido_quimica' }],
+    ]],
     ['P&B e tingidos', [
         ['trix', 'Tri-X 400', 'O P&B do fotojornalismo: contraste marcante e grão vigoroso.', { uBW: 1, uBWMix: [0.3, 0.6, 0.1], uContrast: 1.3, uRoll: 0.1, uGrain: 0.4, uGrainSize: 1.3 }],
+        ['infra_pb', 'Infravermelho P&B', 'Filme infravermelho: folhagem branca, céu escuro e halo nas luzes.', {}, { fx: 'infra_pb' }],
         ['lumiere', 'Lumiere', 'Tingimento monocromático (matiz ajustável).', {}, { fx: 'lumiere' }],
         ['vencido', 'Filme vencido', 'Filme fora da validade (4 variações).', {}, { fx: 'vencido' }],
     ]],
