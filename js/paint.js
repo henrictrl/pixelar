@@ -13,7 +13,7 @@
  */
 'use strict';
 
-const PAINT_LIMITS = { colors: [2, 48], detail: [0, 100], size: [8, 200], minArea: [1, 80], smooth: [0, 4], lines: [0, 100] };
+const PAINT_LIMITS = { colors: [2, 64], detail: [0, 100], size: [4, 600], minArea: [1, 80], smooth: [0, 4], lines: [0, 100] };
 const clampP = (v, k) => Math.max(PAINT_LIMITS[k][0], Math.min(PAINT_LIMITS[k][1], Math.round(+v || 0)));
 
 const PaintFX = (() => {
@@ -107,8 +107,8 @@ const PaintFX = (() => {
     // ---------- análise (cacheada pelo conteúdo) ----------
     function analyze(src, W, H, p) {
         const pixels = p.mode === 'pixels';
-        // regiões: detalhe 0–100 → grade de 70 a 420 px no lado maior; pixels: células no lado maior
-        const G = pixels ? clampP(p.size, 'size') : Math.round(70 + clampP(p.detail, 'detail') * 3.5);
+        // regiões: detalhe 0–100 → grade de 60 a 600 px no lado maior; pixels: 4 a 600 células no lado maior
+        const G = pixels ? clampP(p.size, 'size') : Math.round(60 + clampP(p.detail, 'detail') * 5.4);
         const gw = W >= H ? G : Math.max(2, Math.round(G * W / H)), gh = H >= W ? G : Math.max(2, Math.round(G * H / W));
         if (gridC.width !== gw || gridC.height !== gh) { gridC.width = gw; gridC.height = gh; }
         gctx.clearRect(0, 0, gw, gh); gctx.imageSmoothingEnabled = true; gctx.imageSmoothingQuality = 'high';

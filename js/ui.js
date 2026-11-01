@@ -460,9 +460,9 @@ const PINTURA_TOOL = { id: 'pintura', label: 'Pintura', controls: () => {
     const list = [C('paint.mode', 'Modo', 'brush', PAINT_MODE_OPTS, { view: 'thumbs', variant: (s, v) => { s.paint.mode = v; } })];
     if (p.mode !== 'none') {
         // quantidade de cores, detalhe/tamanho e manchas: tudo ajustável
-        list.push(R('paint.colors', 'Cores', 'palette', 2, 48));
+        list.push(R('paint.colors', 'Cores', 'palette', 2, 64));
         if (regions) list.push(R('paint.detail', 'Detalhe', 'scale', 0, 100), R('paint.minArea', 'Manchas mínimas', 'size', 1, 80), R('paint.smooth', 'Arredondar', 'smooth', 0, 4));
-        else list.push(R('paint.size', 'Células', 'pixel', 8, 200));
+        else list.push(R('paint.size', 'Células', 'pixel', 4, 600));
         list.push(D('Traço'), R('paint.lines', 'Linhas', 'edge', 0, 100), K('paint.ink', 'Cor do traço'));
     }
     list.push(resetAction('Pintura', () => { st.paint = fresh('paint'); }));
