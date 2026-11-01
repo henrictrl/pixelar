@@ -1,4 +1,4 @@
-# Pixelar Studio
+# Pixelar
 
 Editor de pixel art, dither, filmes analógicos e animações para **fotos e vídeos**, direto no navegador. Nada é enviado para servidor: tudo roda no aparelho (WebGL2 + WebCodecs).
 
