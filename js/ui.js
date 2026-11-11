@@ -1010,16 +1010,33 @@ function makeThumbChoice(c) {
             if (c.onPick) c.onPick(val);
             change(c.key, val, { dials: grpDependsOn(c.key) || !!c.onPick });
             strip.querySelectorAll('.thumb').forEach(x => x.classList.toggle('on', x === t));
+            strip.querySelectorAll('.strip-fold').forEach(x => x._sync && x._sync());
             flashLabel(label);
             const n = $('editor').querySelector('.editor-note'); if (n) n.textContent = choiceNote(c);
         };
         strip.append(t); items.push(t);
     };
     if (c.groupsOf) {
-        // “Nenhum” abre o primeiro grupo (nada de uma linha só para ele)
-        c.groupsOf.forEach(([g, list], i) => { const t = h('span', 'strip-group'); t.textContent = g; strip.append(t); if (!i) add('none', 'Nenhum'); list.forEach(([id, nome]) => add(id, nome)); });
+        // grupos recolhidos por padrão (abertos só na sessão); “Nenhum” fica sempre à vista
+        const open = (ui.fold = ui.fold || {});
+        add('none', 'Nenhum');
+        c.groupsOf.forEach(([g, list]) => {
+            const k = c.key + '|' + g, hd = h('button', 'strip-fold'); hd.type = 'button';
+            const nm = h('span'); nm.textContent = g;
+            hd.append(nm, h('span', 'n', String(list.length))); strip.append(hd);
+            const first = items.length; list.forEach(([id, nome]) => add(id, nome));
+            const mine = items.slice(first);
+            hd._sync = () => {
+                const o = !!open[k];
+                hd.classList.toggle('open', o); hd.setAttribute('aria-expanded', String(o));
+                hd.classList.toggle('has', mine.some(t => t.classList.contains('on')));   // ponto = escolha dentro do grupo
+                mine.forEach(t => t.classList.toggle('fold', !o));
+            };
+            hd.onclick = () => { open[k] = !open[k]; hd._sync(); Thumbs.pump(); if (open[k]) requestAnimationFrame(() => centerIn(strip, mine[0])); };
+            hd._sync();
+        });
     } else c.options.forEach(([v, l]) => add(v, l));
-    requestAnimationFrame(() => centerIn(strip, strip.querySelector('.thumb.on')));
+    requestAnimationFrame(() => centerIn(strip, strip.querySelector('.thumb.on:not(.fold)')));
     return strip;
 }
 
