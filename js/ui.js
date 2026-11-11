@@ -1325,14 +1325,33 @@ function buildStylesBar() {
     paramRows(ed, controls, ui.styleParam, (id) => { ui.styleParam = id; }, buildStylesBar);
     // 3) todos os efeitos numa linha só
     const strip = h('div', 'strip style-strip');
+    // grupos recolhíveis: tudo recolhido por padrão; o que for aberto fica aberto durante a sessão
+    const open = (ui.fold = ui.fold || {}), groups = []; let cur = null;
     styleItems().forEach(it => {
-        if (it.group) { const g = h('span', 'strip-group'); g.textContent = it.group; strip.append(g); return; }
-        if (it.kind === 'add') { const a = h('button', 'thumb add'); a.type = 'button'; a.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`; a.onclick = saveUserPreset; strip.append(a); return; }
-        const t = h('button', 'thumb' + (it.on() ? ' on' : '') + (isSel(it) ? ' sel' : '')); t.type = 'button'; t.title = it.label;
-        const pic = h('span', 'pic'); t.append(pic, h('span', 't', '')); t.lastChild.textContent = it.label;
-        Thumbs.attach(pic, 'bar:' + it.kind + ':' + it.id, it.state, it.kind !== 'preset' && it.kind !== 'mine');
-        t.onclick = () => selectStyle(it);
-        strip.append(t);
+        if (it.group) {
+            const hd = h('button', 'strip-fold'); hd.type = 'button';
+            cur = { k: 'bar|' + it.group, hd, name: it.group, els: [], n: 0 }; groups.push(cur); strip.append(hd); return;
+        }
+        let el;
+        if (it.kind === 'add') { el = h('button', 'thumb add'); el.type = 'button'; el.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`; el.onclick = saveUserPreset; }
+        else {
+            el = h('button', 'thumb' + (it.on() ? ' on' : '') + (isSel(it) ? ' sel' : '')); el.type = 'button'; el.title = it.label;
+            const pic = h('span', 'pic'); el.append(pic, h('span', 't', '')); el.lastChild.textContent = it.label;
+            Thumbs.attach(pic, 'bar:' + it.kind + ':' + it.id, it.state, it.kind !== 'preset' && it.kind !== 'mine');
+            el.onclick = () => selectStyle(it); cur.n++;
+        }
+        cur.els.push(el); strip.append(el);
+    });
+    groups.forEach(g => {
+        const nm = h('span'); nm.textContent = g.name; g.hd.append(nm, h('span', 'n', String(g.n)));
+        const sync = () => {
+            const o = !!open[g.k];
+            g.hd.classList.toggle('open', o); g.hd.setAttribute('aria-expanded', String(o));
+            g.hd.classList.toggle('has', g.els.some(e => e.classList.contains('on')));   // ponto = efeito aplicado dentro do grupo
+            g.els.forEach(e => e.classList.toggle('fold', !o));
+        };
+        g.hd.onclick = () => { open[g.k] = !open[g.k]; sync(); Thumbs.pump(); if (open[g.k]) requestAnimationFrame(() => centerIn(strip, g.hd)); };
+        sync();
     });
     strip.addEventListener('scroll', () => { ui.styleScroll = strip.scrollLeft; }, { passive: true });
     ed.append(strip);
