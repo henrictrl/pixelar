@@ -2202,8 +2202,12 @@ $('btnOpen').innerHTML = icon('open'); $('btnCompare').innerHTML = icon('compare
 let panelCollapsed = false;
 const isSide = () => matchMedia('(min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px)').matches;
 // ---------- área livre para a imagem: entre o topo e a base (celular) ou ao lado da coluna. Medido, nunca estimado. ----------
+let lastSide = null;
 function updateInsets() {
     const W = app.clientWidth, H = app.clientHeight, side = isSide();
+    // celular ↔ computador: o painel muda de forma (linha de ferramentas ↔ coluna empilhada)
+    if (lastSide !== null && side !== lastSide) { lastSide = side; buildPanel(); }
+    lastSide = side;
     if (panelCollapsed && !side) { panelCollapsed = false; app.classList.remove('panel-collapsed'); }
     const top = $('topbar').offsetHeight;
     const vb = $('videoBar'), vbOn = !vb.hidden && !app.classList.contains('is-welcome');
