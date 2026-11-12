@@ -165,7 +165,8 @@ const Accent = (() => {
         root.setProperty('--acc-text-l', rgbHex(txtL));
     }
     // chamado depois de cada render; mede com calma (a cor segue a imagem, não cada quadro)
-    function schedule(src, delay = 250) { clearTimeout(timer); timer = setTimeout(() => { try { apply(pickFrom(src)); } catch (e) {} }, delay); }
+    // redesign “Sol”: o destaque é fixo (âmbar da marca) e não segue mais a foto
+    function schedule() {}
     return { schedule };
 })();
 
@@ -192,7 +193,7 @@ const Interact = { on: false, lowRes: false };
 let uiInsets = { t: 60, r: 8, b: 300, l: 8 };
 function fitView(resetZoom) {
     if (!lastRender) return;
-    const pad = innerWidth >= 900 ? 24 : 0;
+    const pad = isSide() ? 56 : 24;   // respiro em volta da foto (a moldura fina fica à vista)
     const vw = viewport.clientWidth - pad, vh = viewport.clientHeight - pad;
     const k = Math.min(vw / lastRender.W, vh / lastRender.H);
     view.fitW = Math.max(1, Math.floor(lastRender.W * k)); view.fitH = Math.max(1, Math.floor(lastRender.H * k));
@@ -271,7 +272,7 @@ function cropDrag(dx, dy, e) {
     Engine.invalidate(); requestRender();
 }
 function showOriginal(on) {
-    origCanvas.hidden = !on; $('origBadge').hidden = !on;
+    origCanvas.hidden = !on; $('origBadge').hidden = !on; $('btnCompare').classList.toggle('on', !!on); $('btnCompare').setAttribute('aria-pressed', String(!!on));
     if (on) renderMain();
 }
 
@@ -490,7 +491,7 @@ const DUPLA_TOOL = { id: 'dupla', label: 'Dupla', controls: () => {
         resetAction('Dupla exposição', () => { st.dbl = fresh('dbl'); }));
     return list;
 } };
-const MOV_TOOL = { id: 'movimento', label: 'Movimento', controls: () => {
+const MOV_TOOL = { id: 'movimento', label: 'Animar', controls: () => {
     const a = st.anim, list = [];
     if (M.type === 'video') list.push(T('anim.videoSync', 'Aplicar no vídeo', 'video'));
     list.push(C('anim.cycles', 'Velocidade', 'speed', [[1, 'Lenta'], [2, 'Média'], [3, 'Rápida'], [4, 'Muito rápida']]),
@@ -567,15 +568,407 @@ function tabGroups(t) { return typeof t.groups === 'function' ? t.groups() : t.g
 function currentTab() { return TABS.find(t => t.id === ui.tab); }
 function currentGroup() { const gs = tabGroups(currentTab()); const gid = ui.group[ui.tab]; return gs.find(g => g.id === gid) || gs[0]; }
 let dialEls = [];
+// ============================================================
+// PAINEL (redesign “Sol”): Estilos, Editar e Exportar montados no mesmo contêiner (#editor)
+//   Celular:     [ferramenta aberta: cabeçalho + lista] [linha das 7 ferramentas] [abas]
+//   Computador:  [abas] [ferramentas empilhadas, cada uma abre e fecha]
+// Cada ajuste é uma linha: nome, régua e valor. Nada de fileiras compridas na horizontal.
+// ============================================================
+let rows = [];            // linhas vivas: atualizam o valor sem remontar o painel
+ui.sec = {}; ui.exp = {}; ui.acc = new Set(['luz']); ui.styleCat = null; ui.styleGroup = {}; ui.styleAdjust = false;
+function refreshDials() { rows = rows.filter(r => r.el.isConnected); rows.forEach(r => r.sync()); }
+function rebuildDials() { buildPanel(); }
+function buildPanel() {
+    const tab = currentTab(), panel = $('panel'), ed = $('editor'), open = !!ui.open[tab.id];
+    // a remontagem nunca pula: guarda a rolagem de cada área rolável (pela chave) e do painel
+    const keep = [...ed.querySelectorAll('[data-scroll]')].map(x => [x.dataset.scroll, x.scrollTop, x.scrollLeft]);
+    const same = ed.dataset.tab === tab.id, top = ed.scrollTop;
+    ed.innerHTML = ''; rows = []; ed.dataset.tab = tab.id; panel.dataset.tab = tab.id;
+    panel.classList.toggle('closed', tab.id !== 'editar' && !open);
+    if (M.el) {
+        if (tab.id === 'editar') buildEditView(ed);
+        else if (open) (tab.id === 'estilos' ? buildStylesView : buildExportView)(ed);
+    }
+    keep.forEach(([k, t, l]) => { const x = ed.querySelector(`[data-scroll="${CSS.escape(k)}"]`); if (x) { x.scrollTop = t; x.scrollLeft = l; } });
+    if (same) ed.scrollTop = top;
+}
+
+// ---------- cabeçalho de uma ferramenta: nome e ações (sortear, travar, restaurar) ----------
+function headBtn(ic, label, run, on) {
+    const b = h('button', 'hbtn' + (on ? ' on' : ''), icon(ic)); b.type = 'button'; b.title = label; b.setAttribute('aria-label', label);
+    if (on !== undefined) b.setAttribute('aria-pressed', String(!!on));
+    b.onclick = run; return b;
+}
+function toolHead(title, { back, dice, lock, reset } = {}) {
+    const hd = h('div', 'thead');
+    if (back) { const b = h('button', 'tback', icon('back') + '<span></span>'); b.type = 'button'; b.lastChild.textContent = title; b.setAttribute('aria-label', 'Voltar'); b.onclick = back; hd.append(b); }
+    else if (title) { const t = h('h2', 'ttitle'); t.textContent = title; hd.append(t); }
+    hd.append(h('span', 'tfill'));
+    if (dice) hd.append(headBtn('dice', 'Sortear só ' + title, dice));
+    if (lock) hd.append(headBtn('lock', lock.on ? title + ' travada no dado' : 'Travar ' + title + ' no dado', lock.run, lock.on));
+    if (reset) hd.append(headBtn('reset', 'Restaurar ' + title, reset));
+    return hd;
+}
+// ajustes de uma ferramenta (o “Restaurar” vai para o cabeçalho)
+function splitReset(list) { const r = list.find(c => c.kind === 'action' && c.label === 'Restaurar'); return [list.filter(c => c !== r), r]; }
+function toolPanel(g, withTitle = true) {
+    const box = h('section', 'tool');
+    const [list, reset] = splitReset(g.controls().filter(c => !c.hidden));
+    const lockable = !!RANDOM_GROUPS[g.id], locked = lockable && !prefs.groups.has(g.id);
+    box.append(toolHead(withTitle ? g.label : '', {
+        dice: lockable ? () => rollTool(g.id) : null,
+        lock: lockable ? { on: locked, run: () => setToolLock(g.id, prefs.groups.has(g.id)) } : null,
+        reset: reset ? () => reset.run() : null,
+    }));
+    const body = h('div', 'tlist'); body.dataset.scroll = 'list:' + g.id;
+    fillList(body, list, g.id);
+    box.append(body);
+    return box;
+}
+// quantos ajustes a ferramenta tem mexidos (resumo e ponto na ferramenta)
+function toolCount(g) { try { return g.controls().filter(c => c.kind !== 'divider' && !c.hidden && isModified(c)).length; } catch (e) { return 0; } }
+
+// ---------- lista: seções, linhas e ações ----------
+// a primeira parte fica sempre aberta; as outras (Degradê, Agrupar, Contorno…) abrem ao tocar
+function fillList(list, controls, scope) {
+    const secs = [{ label: null, items: [] }];
+    controls.forEach(c => { if (c.kind === 'divider') secs.push({ label: c.label, items: [] }); else secs[secs.length - 1].items.push(c); });
+    let first = true;
+    secs.forEach(s => {
+        if (s.label) {
+            const k = scope + '|' + s.label, n = s.items.filter(isModified).length + s.items.filter(c => c.kind === 'toggle' && !c.key && ctrlValue(c)).length;
+            const open = ui.sec[k] !== undefined ? ui.sec[k] : n > 0;
+            const hd = h('button', 'sec' + (open ? ' open' : '') + (n ? ' mod' : '')); hd.type = 'button'; hd.setAttribute('aria-expanded', String(open));
+            hd.innerHTML = '<span class="sec-t"></span><span class="sec-v"></span>' + icon(open ? 'chev-d' : 'chev');
+            hd.firstChild.textContent = s.label; hd.children[1].textContent = n ? n + (n > 1 ? ' ajustes' : ' ajuste') : 'desligado';
+            hd.onclick = () => { ui.sec[k] = !open; fitAnim(); buildPanel(); };
+            list.append(hd);
+            if (!open) return;
+        }
+        appendItems(list, s.items, first); first = false;
+    });
+}
+function appendItems(list, items, firstSec) {
+    let acts = null;
+    items.forEach((c, i) => {
+        if (c.kind === 'action') {
+            if (!acts) { acts = h('div', 'acts'); list.append(acts); }
+            const b = h('button', 'act', smallIcon(c.icon) + '<span></span>'); b.type = 'button'; b.lastChild.textContent = c.label; b.onclick = () => c.run();
+            acts.append(b); return;
+        }
+        acts = null;
+        list.append(makeRow(c, firstSec && i === 0));
+    });
+}
+const lockKeyOf = (c) => (c.lockKey || c.key) && !(c.lockKey || c.key).startsWith('_') ? (c.lockKey || c.key) : null;
+function lockMark(el, c) {
+    const k = lockKeyOf(c); if (!k) return () => {};
+    const sync = () => el.classList.toggle('locked', prefs.locks.has(k));
+    onHold(el, () => { toggleLock(k); refreshDials(); });
+    return sync;
+}
+function makeRow(c, lead) {
+    if (c.kind === 'range') return makeFader(c);
+    if (c.kind === 'toggle') {
+        const b = h('button', 'row rtog'); b.type = 'button';
+        b.innerHTML = '<span class="rname"></span><span class="sw" aria-hidden="true"><i></i></span>'; b.firstChild.textContent = c.label;
+        const lk = lockMark(b, c);
+        const sync = () => { const on = !!ctrlValue(c); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); lk(); };
+        b.onclick = () => { const nv = !ctrlValue(c); if (c.onPick) c.onPick(nv); else change(c.key, nv, { dials: grpDependsOn(c.key) }); sync(); };
+        rows.push({ el: b, sync }); sync(); return b;
+    }
+    if (c.kind === 'color') {
+        const b = h('button', 'row rcolor'); b.type = 'button';
+        b.innerHTML = '<span class="rname"></span><span class="rval"></span><span class="swatch" aria-hidden="true"></span>'; b.firstChild.textContent = c.label;
+        const lk = lockMark(b, c);
+        const sync = () => { const v = ctrlValue(c) || '#000000'; b.querySelector('.swatch').style.background = v; b.children[1].textContent = String(v).toUpperCase(); lk(); };
+        b.onclick = () => pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); sync(); if (final && c.ensure) buildPanel(); }, c.label);
+        rows.push({ el: b, sync }); sync(); return b;
+    }
+    // escolhas e editores próprios: a linha abre e fecha o conteúdo logo abaixo
+    const thumbs = c.kind === 'choice' && c.view === 'thumbs';
+    const k = 'x:' + ctrlId(c), open = ui.exp[k] !== undefined ? ui.exp[k] : (thumbs || (lead && c.kind === 'choice'));
+    const wrap = h('div', 'rgroup' + (open ? ' open' : ''));
+    const b = h('button', 'row rpick'); b.type = 'button'; b.setAttribute('aria-expanded', String(open));
+    b.innerHTML = '<span class="rname"></span><span class="rval"></span>' + icon(open ? 'chev-d' : 'chev'); b.firstChild.textContent = c.label;
+    const lk = lockMark(b, c);
+    const sync = () => { b.children[1].textContent = c.kind === 'choice' ? valText(c, ctrlValue(c)) : ''; b.classList.toggle('mod', isModified(c)); lk(); };
+    b.onclick = () => { ui.exp[k] = !open; fitAnim(); buildPanel(); };
+    wrap.append(b);
+    if (open) {
+        const body = h('div', 'rbody');
+        if (thumbs) body.append(makeThumbChoice(c, true));
+        else if (c.kind === 'choice') body.append(makeChips(c));
+        else if (M.el) c.editor(body, c);
+        const n = c.kind === 'choice' ? choiceNote(c) : ''; if (n) body.append(h('div', 'editor-note', n));
+        wrap.append(body);
+    }
+    rows.push({ el: b, sync }); sync();
+    return wrap;
+}
+
+// ---------- régua de uma linha: arrastar na horizontal, tocar para pular, toque duplo volta ao padrão ----------
+function makeFader(c, opts = {}) {
+    const row = h('div', 'row fader'), name = h('span', 'rname'), track = h('span', 'ftrack'), val = h('span', 'fval');
+    const fill = h('i', 'ffill'), knob = h('i', 'fknob'), mid = h('i', 'fmid');
+    name.textContent = opts.label || c.label; track.append(fill, mid, knob); row.append(name, track, val);
+    track.tabIndex = 0; track.setAttribute('role', 'slider'); track.setAttribute('aria-label', c.label);
+    track.setAttribute('aria-valuemin', c.min); track.setAttribute('aria-valuemax', c.max);
+    const def = c.def !== undefined ? c.def : (c.key ? defP(c.key) : undefined);
+    const range = c.max - c.min || 1, step = c.step || 1;
+    const hasDef = typeof def === 'number' && def >= c.min && def <= c.max;
+    const get = () => { const x = c.get ? c.get() : getP(c.key); return typeof x === 'number' && isFinite(x) ? x : c.min; };
+    const q = (x) => clampN(+(Math.round((x - c.min) / step) * step + c.min).toFixed(6), c.min, c.max);
+    const fr = (x) => clampN((x - c.min) / range, 0, 1);
+    let v = get();
+    if (hasDef && def > c.min && def < c.max) mid.style.left = (fr(def) * 100) + '%'; else mid.remove();
+    const paint = () => {
+        const f = fr(v), d = hasDef ? fr(def) : 0, a = Math.min(f, d), b = Math.max(f, d);
+        knob.style.left = (f * 100) + '%'; fill.style.left = (a * 100) + '%'; fill.style.width = ((b - a) * 100) + '%';
+        row.classList.toggle('mod', hasDef ? Math.abs(v - def) > 1e-9 : true);
+        val.textContent = valText(c, v); track.setAttribute('aria-valuenow', v); track.setAttribute('aria-valuetext', val.textContent);
+    };
+    const lk = lockMark(name, c);
+    const emit = (final) => {
+        if (c.set) c.set(v, final);
+        else if (v !== getP(c.key)) { setP(c.key, v); if (c.key.startsWith('crop.')) Engine.invalidate(); requestRender(); Thumbs.stateChanged(); }
+        if (final && !c.set) { commit(); updateSubbarCenter(); if (grpDependsOn(c.key)) buildPanel(); else refreshDials(); }
+    };
+    const setTo = (nv) => {
+        nv = q(nv);
+        if (hasDef && nv !== def && Math.abs(nv - def) <= range * 0.012) nv = def;   // ímã no padrão
+        if (nv === v) return;
+        if (hasDef && Math.sign(v - def) !== Math.sign(nv - def) && navigator.vibrate) navigator.vibrate(4);
+        v = nv; paint(); emit(false);
+    };
+    const fromX = (x) => { const r = track.getBoundingClientRect(); return c.min + clampN((x - r.left) / r.width, 0, 1) * range; };
+    // gesto: horizontal arrasta; vertical rola a lista (o navegador cancela o toque)
+    let drag = null;
+    track.addEventListener('pointerdown', (e) => { if (e.button > 0) return; v = get(); drag = { x: e.clientX, y: e.clientY, id: e.pointerId, on: e.pointerType === 'mouse' }; if (drag.on) { try { track.setPointerCapture(e.pointerId); } catch (_) {} row.classList.add('drag'); setTo(fromX(e.clientX)); } });
+    track.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        if (!drag.on) {
+            const dx = Math.abs(e.clientX - drag.x), dy = Math.abs(e.clientY - drag.y);
+            if (dx < 5 && dy < 5) return;
+            if (dy > dx) { drag = null; return; }
+            drag.on = true; try { track.setPointerCapture(drag.id); } catch (_) {} row.classList.add('drag');
+        }
+        setTo(fromX(e.clientX));
+    });
+    track.addEventListener('pointerup', (e) => { if (!drag) return; const d = drag; drag = null; row.classList.remove('drag'); if (!d.on) setTo(fromX(e.clientX)); emit(true); });
+    track.addEventListener('pointercancel', () => { if (!drag) return; const d = drag; drag = null; row.classList.remove('drag'); if (d.on) emit(true); });
+    track.addEventListener('keydown', (e) => {
+        const big = e.shiftKey ? 10 : 1, m = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+        if (m) { e.preventDefault(); setTo(v + m * step * big); emit(true); }
+        else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); setTo(e.key === 'Home' ? c.min : c.max); emit(true); }
+    });
+    const reset = () => { if (!hasDef) return; v = def; paint(); emit(true); };
+    track.addEventListener('dblclick', reset); name.addEventListener('dblclick', reset);
+    const sync = () => { if (!drag) { v = get(); paint(); } lk(); };
+    rows.push({ el: row, sync }); paint(); lk();
+    return row;
+}
+
+// ---------- Editar ----------
+function buildEditView(ed) {
+    const tools = tabGroups(TABS.find(t => t.id === 'editar'));
+    if (isSide()) {
+        // computador: todas as ferramentas empilhadas; cada uma abre e fecha
+        tools.forEach(g => {
+            const open = ui.acc.has(g.id), n = toolCount(g);
+            const box = h('section', 'acc' + (open ? ' open' : ''));
+            const hd = h('button', 'acc-h' + (n ? ' mod' : '')); hd.type = 'button'; hd.setAttribute('aria-expanded', String(open));
+            hd.innerHTML = icon('t-' + g.id) + '<span class="acc-t"></span><span class="acc-s"></span>' + icon(open ? 'chev-d' : 'chev');
+            hd.children[1].textContent = g.label; hd.children[2].textContent = n ? n + (n > 1 ? ' ajustes' : ' ajuste') : '';
+            if (RANDOM_GROUPS[g.id] && !prefs.groups.has(g.id)) hd.children[2].textContent = (n ? hd.children[2].textContent + ' · ' : '') + 'travada';
+            hd.onclick = () => { if (open) ui.acc.delete(g.id); else { ui.acc.add(g.id); ui.editTool = g.id; } buildPanel(); };
+            if (RANDOM_GROUPS[g.id]) onHold(hd, () => setToolLock(g.id, prefs.groups.has(g.id)));
+            box.append(hd);
+            if (open) box.append(toolPanel(g, false));
+            ed.append(box);
+        });
+        return;
+    }
+    const grp = tools.find(g => g.id === ui.editTool) || null;
+    ui.group.editar = grp ? grp.id : '';
+    if (grp) ed.append(toolPanel(grp));
+    const row = h('div', 'tool-row');
+    tools.forEach(g => {
+        const on = !!grp && grp.id === g.id;
+        const b = h('button', 'tool-btn' + (on ? ' on' : '')); b.type = 'button'; b.title = g.label; b.setAttribute('aria-pressed', String(on));
+        b.innerHTML = icon('t-' + g.id) + '<span class="t"></span>'; b.lastChild.textContent = g.label;
+        if (toolCount(g)) b.append(h('span', 'dot'));
+        if (RANDOM_GROUPS[g.id]) { if (!prefs.groups.has(g.id)) b.append(h('span', 'tlock', icon('lock'))); onHold(b, () => setToolLock(g.id, prefs.groups.has(g.id))); }
+        b.onclick = () => { ui.editTool = on ? null : g.id; fitAnim(); buildPanel(); };
+        row.append(b);
+    });
+    ed.append(row);
+}
+
+// ---------- segmentado (uma escolha entre poucas) ----------
+function segmented(options, cur, onPick, label) {
+    const box = h('div', 'segm'); box.setAttribute('role', 'group'); if (label) box.setAttribute('aria-label', label);
+    box.style.setProperty('--n', options.length);
+    options.forEach(([v, l]) => {
+        const on = String(v) === String(cur), b = h('button', on ? 'on' : ''); b.type = 'button'; b.textContent = l; b.setAttribute('aria-pressed', String(on));
+        b.onclick = () => { box.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); onPick(v); };
+        box.append(b);
+    });
+    return box;
+}
+
+// ---------- Estilos: categoria, grupo e grade; o escolhido ganha a barra de intensidade ----------
+const STYLE_CATS = [['preset', 'Prontos'], ['fx', 'Texturas'], ['film', 'Filmes'], ['paint', 'Pintura'], ['mine', 'Meus']];
+const styleCatOf = (kind) => kind;
+function styleCatalog(cat) {
+    const all = styleItems();
+    const of = (kind) => all.filter(it => it.kind === kind);
+    if (cat === 'fx') { const items = of('fx'); return FX_GROUPS().map(([g, list]) => ({ name: g, items: list.map(([id]) => items.find(it => it.id === id)).filter(Boolean) })); }
+    if (cat === 'film') { const items = of('film'); return FILM_LOOK_DEFS.map(([g, list]) => ({ name: g, items: list.map(([id]) => items.find(it => it.id === id)).filter(Boolean) })); }
+    if (cat === 'mine') return [{ name: null, items: [{ kind: 'add' }, ...of('mine')] }];
+    return [{ name: null, items: of(cat) }];
+}
+function findStyleItem(sel) { return sel ? styleItems().find(it => it.kind === sel.kind && it.id === sel.id) : null; }
+function selectStyle(it) {
+    if (isSel(it)) { ui.styleSel = null; ui.styleAdjust = false; buildPanel(); return; }   // toque de novo: fecha
+    if (!it.on()) {
+        if (it.kind === 'preset' || it.kind === 'mine') applyPreset(it.label, it.kind === 'preset' ? builtinState(it.id) : prefs.presets[it.id]);
+        else { const s = it.state(); if (it.kind === 'fx') st.fx = s.fx; else if (it.kind === 'film') st.film = s.film; else st.paint = s.paint; change(null, null); }
+        flashLabel(it.label);
+    }
+    ui.styleSel = { kind: it.kind, id: it.id }; ui.styleAdjust = false; buildPanel();
+}
+function buildStylesView(ed) {
+    const selIt = findStyleItem(ui.styleSel);
+    if (ui.styleSel && (!selIt || !selIt.on())) { ui.styleSel = null; ui.styleAdjust = false; }
+    if (ui.styleSel && ui.styleAdjust) {
+        ed.append(toolHead(selIt.label, { back: () => { ui.styleAdjust = false; buildPanel(); } }));
+        const body = h('div', 'tlist'); body.dataset.scroll = 'adj:' + selIt.kind + ':' + selIt.id;
+        fillList(body, styleControls(ui.styleSel), 'style:' + selIt.kind);
+        ed.append(body); return;
+    }
+    const cat = ui.styleCat || (ui.styleSel ? styleCatOf(ui.styleSel.kind) : (Object.keys(prefs.presets).length ? 'mine' : 'fx'));
+    ui.styleCat = cat;
+    const top = h('div', 'shead');
+    top.append(segmented(STYLE_CATS, cat, (v) => { ui.styleCat = v; buildPanel(); }, 'Categoria'));
+    ed.append(top);
+    const groups = styleCatalog(cat);
+    let gi = 0;
+    if (groups.length > 1) {
+        const want = ui.styleGroup[cat];
+        gi = groups.findIndex(g => g.name === want);
+        if (gi < 0) gi = Math.max(0, groups.findIndex(g => g.items.some(it => it.on())));
+        const chips = h('div', 'sfilter');
+        groups.forEach((g, i) => {
+            const on = i === gi, b = h('button', 'fchip' + (on ? ' on' : '') + (g.items.some(it => it.on()) ? ' has' : '')); b.type = 'button'; b.setAttribute('aria-pressed', String(on));
+            b.textContent = g.name; b.onclick = () => { ui.styleGroup[cat] = g.name; buildPanel(); };
+            chips.append(b);
+        });
+        ed.append(chips);
+    }
+    const grid = h('div', 'sgrid'); grid.dataset.scroll = 'grid:' + cat + ':' + gi;
+    const items = (groups[gi] || { items: [] }).items;
+    items.forEach(it => {
+        if (it.kind === 'add') {
+            const a = h('button', 'thumb add'); a.type = 'button'; a.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`; a.onclick = saveUserPreset; grid.append(a); return;
+        }
+        const el = h('button', 'thumb' + (it.on() ? ' on' : '') + (isSel(it) ? ' sel' : '')); el.type = 'button'; el.title = it.label;
+        el.setAttribute('aria-pressed', String(it.on()));
+        const pic = h('span', 'pic'); el.append(pic, h('span', 't', '')); el.lastChild.textContent = it.label;
+        Thumbs.attach(pic, 'bar:' + it.kind + ':' + it.id, it.state, it.kind !== 'preset' && it.kind !== 'mine');
+        el.onclick = () => selectStyle(it);
+        grid.append(el);
+    });
+    if (cat === 'mine' && items.length === 1) grid.append(h('p', 'empty', 'Ajuste a foto como quiser e toque em “Salvar atual” para guardar a combinação aqui.'));
+    ed.append(grid);
+    // barra do escolhido: intensidade e “Ajustar”
+    if (selIt) {
+        const main = styleControls(ui.styleSel).find(c => c.kind === 'range');
+        const bar = h('div', 'sbar');
+        if (main) bar.append(makeFader(main, { label: selIt.label })); else { const n = h('span', 'rname'); n.textContent = selIt.label; bar.append(n); }
+        const adj = h('button', 'adjust', '<span>Ajustar</span>' + icon('chev')); adj.type = 'button';
+        adj.onclick = () => { ui.styleAdjust = true; fitAnim(); buildPanel(); };
+        bar.append(adj); ed.append(bar);
+    }
+}
+
+// ---------- Exportar ----------
+const rebuildExport = () => buildPanel();
+function expBlock(label, el) { const b = h('div', 'xblock'); const l = h('span', 'xlabel'); l.textContent = label; b.append(l, el); return b; }
+function exportPanel(ed) { buildExportView(ed); }
+function buildExportView(ed) {
+    const box = h('div', 'export'); ed.append(box);
+    const isVid = M.type === 'video', fk = isVid ? 'vFormat' : 'format', fmts = exportFormats();
+    if (!fmts.some(f => f[0] === exp[fk])) exp[fk] = fmts[0][0];
+    const f = exp[fk];
+    box.append(expBlock('Formato', segmented(fmts, f, (v) => { exp[fk] = v; saveExp(); buildPanel(); }, 'Formato')));
+    let label = 'Salvar vídeo', run, info = '', infoSub = '', extra = [];
+    if (!isVid && STILL.includes(f)) {
+        if (anim.playing) stopAnim();
+        const sizes = exportSizes(); if (!sizes.some(s => s.id === exp.size)) exp.size = 'orig';
+        const cur = sizes.find(s => s.id === exp.size) || sizes[0];
+        box.append(expBlock('Tamanho', segmented(sizes.map(s => [s.id, s.label]), exp.size, (v) => { exp.size = v; saveExp(); buildPanel(); }, 'Tamanho')));
+        info = sizeText(cur.res); infoSub = 'px · ' + f.toUpperCase();
+        label = 'Salvar imagem'; run = saveStill;
+        if (navigator.clipboard && window.ClipboardItem) extra.push(['Copiar imagem', 'photo', copyImage]);
+        extra.push(['Salvar ajustes', 'save', () => { Exporter.config(st); toast('Ajustes salvos num arquivo .txt'); }]);
+    } else if (f === 'gif') {
+        if (!isVid) ensureAnimPreview();
+        box.append(expBlock('Tamanho', segmented([[360, 'Pequeno'], [480, 'Médio'], [720, 'Grande']], exp.gifSize, (v) => { exp.gifSize = +v; saveExp(); buildPanel(); }, 'Tamanho')));
+        info = exp.gifSize + ' px'; infoSub = 'lado maior · GIF';
+        label = 'Salvar GIF';
+        run = () => isVid
+            ? (pauseVideo(), runExport('GIF', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: 'gif', res: exp.gifSize, fps: 15, mute: true, withAnim: st.anim.videoSync, trim: trimOf() })), 'gif'))
+            : runExport('GIF', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: 'gif', res: exp.gifSize, repeat: 1, key: 'main' + M.serial })), 'gif');
+    } else if (isVid) {
+        const H = video.videoHeight || 1080, vs = { screen: Math.min(720, H), orig: H, '2x': Math.min(2160, H * 2) };
+        const opts = [['screen', 'Tela'], ['orig', 'Original'], ...(reRendered() && H < 2160 ? [['2x', '2×']] : [])];
+        if (!opts.some(o => o[0] === exp.vSize)) exp.vSize = 'orig';
+        box.append(expBlock('Tamanho', segmented(opts, exp.vSize, (v) => { exp.vSize = v; saveExp(); buildPanel(); }, 'Tamanho')),
+            expBlock('Quadros por segundo', segmented([[24, '24'], [30, '30'], [60, '60']], exp.vFps, (v) => { exp.vFps = +v; saveExp(); }, 'Quadros por segundo')),
+            expBlock('Som', segmented([['on', 'Com som'], ['off', 'Sem som']], exp.audio ? 'on' : 'off', (v) => { exp.audio = v === 'on'; saveExp(); }, 'Som')));
+        info = (vs[exp.vSize] || H) + 'p'; infoSub = f.toUpperCase() + (trimOf() ? ' · trecho' : '');
+        run = () => { pauseVideo(); runExport('Vídeo', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: f, res: vs[exp.vSize] || H, fps: exp.vFps, mute: !exp.audio, withAnim: st.anim.videoSync, trim: trimOf() })), f); };
+    } else {
+        ensureAnimPreview();
+        box.append(expBlock('Tamanho', segmented([['screen', 'Tela'], ['max', 'Máxima']], exp.aSize, (v) => { exp.aSize = v; saveExp(); buildPanel(); }, 'Tamanho')),
+            expBlock('Repetir o loop', segmented([[1, '1×'], [3, '3×'], [5, '5×'], [10, '10×']], exp.aRepeat, (v) => { exp.aRepeat = +v; saveExp(); }, 'Repetir o loop')));
+        info = (exp.aSize === 'screen' ? 720 : 2160) + ' px'; infoSub = 'lado maior · ' + f.toUpperCase();
+        run = () => runExport('Vídeo', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: f, res: exp.aSize === 'screen' ? 720 : 2160, repeat: exp.aRepeat, key: 'main' + M.serial })), f);
+    }
+    const inf = h('div', 'xinfo'); inf.innerHTML = '<span class="xbig"></span><span class="xsub"></span>'; inf.firstChild.textContent = info; inf.lastChild.textContent = infoSub; box.append(inf);
+    const go = h('button', 'btn primary', icon('download') + '<span></span>'); go.type = 'button'; go.lastChild.textContent = label; go.onclick = run; box.append(go);
+    if (extra.length) { const two = h('div', 'xtwo'); extra.forEach(([l, ic, fn]) => { const b = h('button', 'btn', smallIcon(ic) + '<span></span>'); b.type = 'button'; b.lastChild.textContent = l; b.onclick = fn; two.append(b); }); box.append(two); }
+    if (!isVid && !animOn()) {
+        const n = h('p', 'xnote'); n.append('Para GIF ou vídeo, ligue algo em ');
+        const a = h('button', 'link', 'Animar'); a.type = 'button'; a.onclick = () => goTo('movimento'); n.append(a, '.');
+        box.append(n);
+    }
+}
+
+// ---------- progresso: o sol do logo acende linha a linha, de baixo para cima ----------
+function sunMeter() {
+    const bars = [[4, 1, 4], [2, 2, 8], [1, 3, 10], [1, 4, 10], [0, 5, 12], [0, 7, 12], [1, 9, 10], [3, 11, 6]];
+    const el = h('div', 'sun-meter');
+    el.innerHTML = `<svg viewBox="0 1 12 11" shape-rendering="crispEdges" aria-hidden="true">${bars.map(([x, y, w]) => `<rect x="${x}" y="${y}" width="${w}" height="1"/>`).join('')}</svg><span class="pct">0%</span>`;
+    const rs = [...el.querySelectorAll('rect')].reverse(), pct = el.querySelector('.pct');
+    return { el, set(p) { p = clampN(p || 0, 0, 1); const n = Math.round(p * rs.length); rs.forEach((r, i) => r.classList.toggle('on', i < n)); pct.textContent = Math.round(p * 100) + '%'; } };
+}
+
 
 // Abas embaixo, com o dado entre Editar e Exportar. Tocar na aba aberta fecha o painel dela.
 function buildTabbar() {
     const bar = $('tabbar'), dice = $('btnDice'); bar.innerHTML = '';
-    dice.innerHTML = icon('dice') + '<span>Sortear</span>';
+    dice.innerHTML = '<span class="key">' + icon('dice') + '</span><span>Sortear</span>';
     TABS.forEach(t => {
         const b = h('button', 'tab' + (t.id === ui.tab ? ' on' : ''), icon(t.icon) + `<span>${t.label}</span>`);
         b.type = 'button'; b.dataset.tab = t.id; b.title = t.label;
-        b.onclick = () => { if (panelCollapsed) setPanelCollapsed(false); if (ui.tab === t.id) setOpen(!ui.open[t.id]); else selectTab(t.id); };
+        b.onclick = () => {
+            if (panelCollapsed) setPanelCollapsed(false);
+            if (ui.tab !== t.id) { selectTab(t.id); return; }
+            if (t.id === 'editar') { if (!isSide()) { ui.editTool = null; fitAnim(); buildPanel(); } return; }
+            setOpen(!ui.open[t.id]);
+        };
         bar.append(b);
         if (t.id === 'editar') bar.append(dice);
     });
@@ -587,17 +980,15 @@ function fitAnim() { app.classList.add('fit-anim'); clearTimeout(app._fa); app._
 // abre uma ferramenta de Editar já com um ajuste escolhido (usado pelas Camadas e pela dupla exposição)
 const STYLE_KIND = { textura: 'fx', filme: 'film', pintura: 'paint' };
 function goTo(groupId, key) {
+    if (panelCollapsed) setPanelCollapsed(false);
     if (STYLE_KIND[groupId]) {
         const kind = STYLE_KIND[groupId], id = kind === 'fx' ? st.fx.id : kind === 'film' ? st.film.look : st.paint.mode;
-        ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleParam = key || null; ui.open.estilos = true;
-        if (panelCollapsed) setPanelCollapsed(false);
+        ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleAdjust = !!ui.styleSel; ui.styleCat = kind; ui.open.estilos = true;
         selectTab('estilos'); return;
     }
-    const tab = TABS.find(t => tabGroups(t).some(g => g.id === groupId)) || TABS[1], k = tab.id + '/' + groupId;
-    if (tab.id === 'editar') { ui.editTool = groupId; ui.editParam[groupId] = key || null; }
-    ui.group[tab.id] = groupId; ui.open[tab.id] = true; ui.view[k] = key ? 'detail' : 'list'; if (key) ui.active[k] = key;
-    if (panelCollapsed) setPanelCollapsed(false);
-    lastPanelKey = null; selectTab(tab.id);
+    ui.editTool = groupId; ui.acc.add(groupId); ui.open.editar = true;
+    if (key) ui.exp['x:' + key] = true;
+    selectTab('editar');
 }
 function selectTab(id) {
     if (!TABS.some(t => t.id === id)) id = TABS[0].id;
@@ -623,83 +1014,6 @@ function pickActive(controls, key) {
 const isThumbs = (c) => c && c.kind === 'choice' && c.view === 'thumbs';
 const isEditable = (c) => c && !isThumbs(c) && (c.kind === 'range' || c.kind === 'choice' || c.kind === 'custom');
 const listScroll = {};
-function buildPanel() {
-    const tab = currentTab(), grp = currentGroup(), groups = tabGroups(tab), open = !!ui.open[tab.id], k = panelKey();
-    lastPanelKey = k + (open ? '' : '#fechado');
-    const panel = $('panel'); panel.dataset.tab = tab.id; panel.classList.toggle('closed', !open);
-    // ferramentas: tocar abre; tocar na aberta fecha
-    const seg = $('segRow'); seg.innerHTML = '';
-    if (groups.length > 1 && tab.id !== 'estilos') groups.forEach(g => {
-        const on = open && g.id === grp.id;
-        const b = h('button', 'seg' + (on ? ' on' : '')); b.type = 'button'; b.dataset.group = g.id; b.title = g.label;
-        b.innerHTML = smallIcon(GROUP_ICONS[g.id]) + icon('t-' + g.id, 'lg') + '<span></span>'; b.lastChild.textContent = g.label;
-        b.setAttribute('aria-expanded', String(on)); b.setAttribute('aria-label', g.label);
-        b.onclick = () => { if (on) { setOpen(false); return; } ui.group[tab.id] = g.id; ui.view[tab.id + '/' + g.id] = 'list'; setOpen(true); };
-        if (RANDOM_GROUPS[g.id]) {
-            if (!prefs.groups.has(g.id)) { b.classList.add('locked'); b.append(h('span', 'seg-lock', icon('lock'))); }
-            onHold(b, () => setToolLock(g.id, prefs.groups.has(g.id)));
-        }
-        seg.append(b);
-    });
-    panel.classList.toggle('styles-bar', tab.id === 'estilos' && open);
-    panel.classList.toggle('edit-bar', tab.id === 'editar');
-    if (tab.id === 'editar') { if (!open) { ui.editTool = null; ui.open.editar = true; } buildEditBar(); return; }
-    if (!open) { dialEls = []; $('dials').innerHTML = ''; $('crumb').innerHTML = ''; buildEditor(null); panel.classList.remove('list', 'detail', 'single'); return; }
-    if (tab.id === 'estilos') { buildStylesBar(); return; }
-    const controls = groupControls(grp).filter(c => !c.hidden);
-    const active = pickActive(controls, k);
-    ui.active[k] = active && ctrlId(active);
-    // Estilos e Exportar: um editor só
-    const single = controls.length === 1 && controls[0].kind === 'custom';
-    const detail = !single && ui.view[k] === 'detail' && isEditable(active);
-    panel.classList.toggle('single', single); panel.classList.toggle('detail', detail); panel.classList.toggle('list', !single && !detail);
-    $('dials').hidden = single;
-    fillDials(controls);
-    buildCrumb(grp, detail ? active : null);
-    buildEditor(single || detail ? active : null);
-    if (!detail && !single) requestAnimationFrame(() => { $('dials').scrollTop = listScroll[k] || 0; });
-}
-// barra do detalhe: ‹ ferramenta | nome do ajuste
-function buildCrumb(grp, c) {
-    const box = $('crumb'); box.innerHTML = '';
-    if (!c && ui.tab === 'estilos' && grp.id !== 'mine') {
-        const back = h('button', 'back', icon('back') + '<span>Estilos</span>'); back.type = 'button'; back.setAttribute('aria-label', 'Voltar para Estilos');
-        back.onclick = () => { ui.group.estilos = 'mine'; lastEditorKey = null; fitAnim(); buildPanel(); };
-        const t = h('span', 'title'); t.textContent = grp.label;
-        box.append(back, t, h('span')); $('panel').classList.add('has-crumb'); return;
-    }
-    $('panel').classList.remove('has-crumb');
-    if (!c) return;
-    const back = h('button', 'back', icon('back') + '<span></span>'); back.type = 'button'; back.lastChild.textContent = grp.label;
-    back.setAttribute('aria-label', 'Voltar para ' + grp.label);
-    back.onclick = () => { ui.view[panelKey()] = 'list'; fitAnim(); buildPanel(); };
-    const t = h('span', 'title'); t.textContent = c.label;
-    box.append(back, t, h('span'));
-}
-// lista de ajustes: um bloco por controle, com o valor; divisórias com o nome da parte
-function fillDials(controls) {
-    const dials = $('dials'), aKey = panelKey(); dials.innerHTML = ''; dialEls = [];
-    if (dials.hidden) return;
-    controls.forEach(c => {
-        if (c.kind === 'divider') { const sep = h('span', 'dial-sep'); sep.textContent = c.label; dials.append(sep); return; }
-        // miniaturas (texturas, filmes, padrões) entram direto na lista: escolher é um toque só
-        if (isThumbs(c)) {
-            const box = h('div', 'dial-grid'), keep = ui.keepScroll; ui.keepScroll = true;
-            box.append(makeThumbChoice(c)); ui.keepScroll = keep;
-            const n = choiceNote(c); if (n) box.append(h('div', 'editor-note', n));
-            dials.append(box); return;
-        }
-        const d = makeDial(c, ctrlId(c) === ui.active[aKey]);
-        dials.append(d); dialEls.push({ c, el: d });
-    });
-}
-// Refaz só a lista (ex.: escolher um filme com parâmetros próprios) sem mexer no controle aberto
-function rebuildDials() {
-    const dials = $('dials'); if (dials.hidden) { refreshDials(); return; }
-    const y = dials.scrollTop;
-    fillDials(groupControls(currentGroup()).filter(c => !c.hidden));
-    dials.scrollTop = y;
-}
 // centraliza um item dentro da sua fileira sem rolar a página inteira
 function centerIn(row, el) { if (!row || !el) return; row.scrollLeft = el.offsetLeft - row.clientWidth / 2 + el.offsetWidth / 2; }
 // a opção escolhida fica à vista dentro do editor (as opções agora quebram em linhas e rolam na vertical)
@@ -718,74 +1032,11 @@ function isModified(c) {
 }
 function fmtVal(c, v) { if (c.fmt) return c.fmt(v); return Math.abs(v) >= 100 || Number.isInteger(v) ? Math.round(v) : (Math.round(v * 10) / 10); }
 
-// cada ajuste é só o nome, em texto (sem botões redondos); o dado de sortear é só o ícone
-function makeDial(c, active) {
-    const d = h('button', `dial kind-${c.kind}${active ? ' active' : ''}`); d.type = 'button';
-    if (c.kind === 'color') d.append(h('span', 'swatch'));
-    else if (c.icon) d.insertAdjacentHTML('beforeend', smallIcon(c.icon));
-    const nm = h('span', 'name'); nm.textContent = c.label; d.append(nm);
-    if (c.kind === 'toggle') d.append(h('span', 'tog'));
-    else if (c.kind === 'range' || c.kind === 'choice') d.append(h('span', 'val'));
-    d.title = c.label;
-    updateDial(d, c);
-    const lockKey = c.lockKey || c.key;
-    // segurar trava o ajuste para o dado
-    let lp = 0, longPressed = false;
-    let downAt = null;
-    d.addEventListener('pointerdown', (e) => {
-        longPressed = false; downAt = { x: e.clientX, y: e.clientY };
-        if (!lockKey || c.kind === 'action') return;
-        lp = setTimeout(() => { longPressed = true; toggleLock(lockKey); }, 500);
-    });
-    // arrastar a fileira não conta como segurar
-    d.addEventListener('pointermove', (e) => { if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 8) clearTimeout(lp); });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => d.addEventListener(ev, () => { clearTimeout(lp); downAt = null; }));
-    // depois de travar, o soltar do dedo não seleciona o ajuste
-    d.addEventListener('click', (e) => { if (longPressed) { e.stopImmediatePropagation(); e.preventDefault(); longPressed = false; } }, true);
-    d.addEventListener('contextmenu', (e) => { e.preventDefault(); });
-    d.addEventListener('click', () => { if (longPressed) return; onDialClick(c, d); });
-    d.addEventListener('dblclick', () => { if (c.kind === 'range' && c.key) { change(c.key, defP(c.key)); flashLabel(c.label + ' · padrão'); buildEditor(c); } });
-    return d;
-}
 // valor como aparece na lista
 function valText(c, v) {
     if (c.kind === 'choice') { const o = c.options.find(x => String(x[0]) === String(v)); return o ? o[1] : ''; }
     if (typeof v !== 'number') return '';
     const f = fmtVal(c, v); return c.min < 0 && c.max > 0 && v > 0 ? '+' + f : String(f);
-}
-function updateDial(d, c) {
-    const v = ctrlValue(c);
-    if (c.kind === 'toggle') d.classList.toggle('on', !!v);
-    else if (c.kind === 'color') d.querySelector('.swatch').style.background = v;
-    const vl = d.querySelector('.val'); if (vl) vl.textContent = valText(c, v);
-    d.classList.toggle('mod', (c.kind === 'range' || c.kind === 'choice') && isModified(c));
-    const lockKey = c.lockKey || c.key;
-    let lb = d.querySelector('.lock-badge');
-    if (lockKey && prefs.locks.has(lockKey)) { if (!lb) { lb = h('span', 'lock-badge', icon('lock')); d.append(lb); } } else if (lb) lb.remove();
-}
-function refreshDials() { dialEls.forEach(({ c, el }) => updateDial(el, c)); }
-function toggleLock(key) {
-    if (prefs.locks.has(key)) prefs.locks.delete(key); else prefs.locks.add(key);
-    store.set('locks', [...prefs.locks]);
-    refreshDials();
-    toast(prefs.locks.has(key) ? 'Travado: o aleatório não muda este ajuste' : 'Destravado');
-    if (navigator.vibrate) navigator.vibrate(10);
-}
-function onDialClick(c, d) {
-    const aKey = panelKey();
-    if (c.kind === 'action') { c.run(); return; }
-    if (c.kind === 'toggle') {
-        const nv = !ctrlValue(c);
-        if (c.onPick) c.onPick(nv); else change(c.key, nv, { rebuild: !!c.rebuild || grpDependsOn(c.key) });
-        if (!grpDependsOn(c.key)) { updateDial(d, c); }
-        flashLabel(c.label + (nv ? ' · ligado' : ' · desligado'));
-        return;
-    }
-    if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); if (final && c.ensure) refreshDials(); else updateDial(d, c); }, c.label); return; }
-    // abre o detalhe do ajuste (a lista guarda onde estava)
-    listScroll[aKey] = $('dials').scrollTop;
-    ui.active[aKey] = ctrlId(c); ui.view[aKey] = 'detail';
-    fitAnim(); buildPanel();
 }
 // controles cujo valor muda quais outros controles aparecem
 const DEPENDS = new Set(['paint.mode', 'dbl.src', 'dbl.mask', 'dbl.tone', 'dbl.on', 'grad.on', 'grad.type', 'color.sel', 'film.look', 'fx.id', 'dither.mode', 'crop.aspect', 'crop.zoom', 'crop.rot',
@@ -816,7 +1067,7 @@ function flashLabel(text, ms = 1100) {
 // ============================================================
 let lastEditorKey = null;
 function buildEditor(c) {
-    if (c && c.kind === 'custom' && ui.tab === 'editar') { buildEditBar(); return; }
+    if (c && c.kind === 'custom' && ui.tab === 'editar') { buildPanel(); return; }
     const ed = $('editor');
     // refazer o MESMO editor nunca volta a faixa para o começo: guarda e devolve a rolagem
     const key = c ? (c.key || c.id || (c.editor && c.editor.name) || c.label) + '|' + ui.tab : null;
@@ -998,8 +1249,8 @@ function makeChips(c) {
 }
 
 // ---------- miniaturas ao vivo ----------
-function makeThumbChoice(c) {
-    const strip = h('div', 'strip'), cur = String(ctrlValue(c));
+function makeThumbChoice(c, grid) {
+    const strip = h('div', grid ? 'tgrid' : 'strip'), cur = String(ctrlValue(c));
     const items = [];
     const add = (val, label) => {
         const t = h('button', 'thumb' + (String(val) === cur ? ' on' : '')); t.type = 'button';
@@ -1197,73 +1448,10 @@ function styleMixRuler(ed) {
     ed.append(styleRuler);
 }
 function syncStyleRuler() { if (styleRuler && styleRuler.isConnected && styleRuler._sync) styleRuler._sync(); }
-// Linhas de ajustes em barra (Estilos e Editar), de baixo para cima:
-//   [controle do ajuste aberto: régua, opções, miniaturas ou editor próprio]
-//   [botões dos ajustes: ícone e nome; divisórias viram rótulos finos]
-// Tocar num ajuste abre o controle; tocar de novo fecha. Segurar um ajuste trava-o para o dado.
-function paramRows(ed, controls, activeId, setActive, rebuild) {
-    const active = controls.find(c => c.kind !== 'divider' && ctrlId(c) === activeId);
-    if (active && ['range', 'choice', 'custom'].includes(active.kind)) {
-        const row = h('div', 'param-row' + (active.kind === 'custom' || (active.kind === 'choice' && active.view === 'thumbs') ? ' tall' : ''));
-        if (active.kind === 'range') row.append(makeRuler(active, { label: true }));
-        else if (active.kind === 'choice' && active.view === 'thumbs') { const st0 = makeThumbChoice(active); st0.addEventListener('click', () => setTimeout(rebuild, 0)); row.append(st0); }
-        else if (active.kind === 'choice') { const ch = makeChips(active); ch.addEventListener('click', () => setTimeout(rebuild, 0)); row.append(ch); }
-        else { const box = h('div', 'param-custom'); row.append(box); active.editor(box, active); }
-        ed.append(row);
-    }
-    if (!controls.length) return;
-    const row = h('div', 'set-row');
-    controls.forEach(c => {
-        if (c.kind === 'divider') { const g = h('span', 'strip-group'); g.textContent = c.label; row.append(g); return; }
-        const id = ctrlId(c), lockKey = c.lockKey || c.key;
-        const b = h('button', 'set-btn' + (id === activeId ? ' on' : '') + (c.kind === 'toggle' && ctrlValue(c) ? ' lit' : '') + ((c.kind === 'range' || c.kind === 'choice') && isModified(c) ? ' mod' : '')); b.type = 'button';
-        if (c.kind === 'color') { const sw = h('span', 'swatch'); sw.style.background = ctrlValue(c); b.append(sw); }
-        else b.insertAdjacentHTML('beforeend', smallIcon(c.icon) || smallIcon('fx'));
-        const t = h('span', 't'); t.textContent = c.label; b.append(t); b.title = c.label;
-        if (lockKey && prefs.locks.has(lockKey)) b.append(h('span', 'set-lock', icon('lock')));
-        b.onclick = () => {
-            if (['range', 'choice', 'custom'].includes(c.kind)) { setActive(activeId === id ? null : id); rebuild(); return; }
-            if (c.kind === 'toggle') { const nv = !ctrlValue(c); if (c.onPick) c.onPick(nv); else change(c.key, nv); flashLabel(c.label + (nv ? ' · ligado' : ' · desligado')); rebuild(); return; }
-            if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); const sw = b.querySelector('.swatch'); if (sw) sw.style.background = hex; if (final) rebuild(); }, c.label); return; }
-            if (c.kind === 'action') c.run();
-        };
-        if (lockKey && c.kind !== 'action' && c.key && !c.key.startsWith('_')) onHold(b, () => { toggleLock(lockKey); rebuild(); });
-        row.append(b);
-    });
-    ed.append(row);
-    requestAnimationFrame(() => centerIn(row, row.querySelector('.set-btn.on')));
-}
 // ============================================================
 // EDITAR EM BARRA: ferramentas numa linha; tocar abre os ajustes dela acima; tocar num ajuste abre o controle
 // ============================================================
 ui.editTool = null; ui.editParam = {};
-function buildEditBar() {
-    const ed = $('editor'), panel = $('panel');
-    panel.classList.add('single', 'edit-bar'); panel.classList.remove('list', 'detail', 'closed');
-    $('dials').hidden = true; $('dials').innerHTML = ''; dialEls = []; $('crumb').innerHTML = ''; $('segRow').innerHTML = ''; lastEditorKey = null;
-    ed.innerHTML = ''; ed.scrollTop = 0;
-    if (!M.el) return;
-    const tools = tabGroups(TABS.find(t => t.id === 'editar'));
-    const grp = tools.find(g => g.id === ui.editTool) || null;
-    ui.group.editar = grp ? grp.id : '';
-    if (grp) {
-        const controls = groupControls(grp).filter(c => !c.hidden);
-        paramRows(ed, controls, ui.editParam[grp.id] || null, (id) => { ui.editParam[grp.id] = id; }, buildEditBar);
-    }
-    const row = h('div', 'tool-row');
-    tools.forEach(g => {
-        const b = h('button', 'tool-btn' + (grp && grp.id === g.id ? ' on' : '')); b.type = 'button'; b.title = g.label;
-        b.innerHTML = icon('t-' + g.id) + '<span class="t"></span>'; b.lastChild.textContent = g.label;
-        b.setAttribute('aria-pressed', String(!!grp && grp.id === g.id));
-        b.onclick = () => { ui.editTool = ui.editTool === g.id ? null : g.id; fitAnim(); buildEditBar(); };
-        if (RANDOM_GROUPS[g.id]) {
-            if (!prefs.groups.has(g.id)) b.append(h('span', 'seg-lock', icon('lock')));
-            onHold(b, () => setToolLock(g.id, prefs.groups.has(g.id)));
-        }
-        row.append(b);
-    });
-    ed.append(row);
-}
 // ============================================================
 // ESTILOS EM BARRA: tudo em fileiras horizontais, empilhadas de baixo para cima
 //   [régua do ajuste]        ← abre ao tocar num ajuste (toque de novo fecha)
@@ -1288,74 +1476,20 @@ function styleItems() {
     return items;
 }
 const isSel = (it) => ui.styleSel && ui.styleSel.kind === it.kind && ui.styleSel.id === it.id;
-function selectStyle(it) {
-    if (isSel(it)) { ui.styleSel = null; ui.styleParam = null; buildStylesBar(); return; }   // toque de novo: fecha
-    if (!it.on()) {
-        if (it.kind === 'preset' || it.kind === 'mine') applyPreset(it.label, it.kind === 'preset' ? builtinState(it.id) : prefs.presets[it.id]);
-        else { const s = it.state(); if (it.kind === 'fx') st.fx = s.fx; else if (it.kind === 'film') st.film = s.film; else st.paint = s.paint; change(null, null); }
-        flashLabel(it.label);
-    }
-    ui.styleSel = { kind: it.kind, id: it.id }; ui.styleParam = null; buildStylesBar();
-}
 // ajustes do efeito selecionado (os mesmos das ferramentas, sem a escolha do efeito)
 function styleControls(sel) {
     const mixC = { kind: 'range', key: '_mix', label: 'Intensidade', icon: 'intensity', min: 0, max: 100, step: 1, def: 100, get: () => st.mix, set: (v, final) => { st.mix = v; requestRender(); if (final) commit(); } };
     const rm = (label, fn) => A('Remover', 'reset', () => { const before = snapshot(); fn(); ui.styleSel = null; ui.styleParam = null; Engine.invalidate(); afterExternalChange(); commit(true); toast(label + ' removido', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); });
     const clean = (list) => list.filter(c => c.kind !== 'divider' && !(c.kind === 'choice' && c.view === 'thumbs') && !(c.kind === 'action' && c.label === 'Restaurar') && !/^Sortear/.test(c.label) && c.label !== 'Travar');
     // o dado de um efeito troca o efeito: a seleção acompanha o novo
-    const roll = (g, kind, cur) => A('Sortear', 'dice', () => { rollTool(g); const id = cur(); ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleParam = null; buildStylesBar(); });
+    const roll = (g, kind, cur) => A('Sortear', 'dice', () => { rollTool(g); const id = cur(); ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleParam = null; buildPanel(); });
     if (sel.kind === 'fx') return [...clean(TEXTURA_TOOL.controls()), roll('textura', 'fx', () => st.fx.id), rm('Textura', () => { delete st.fxParams[st.fx.id]; st.fx = fresh('fx'); })];
     if (sel.kind === 'film') return [...clean(FILME_TOOL.controls()), roll('filme', 'film', () => st.film.look), rm('Filme', () => { Object.assign(st.film, { look: 'none', mix: 100 }); })];
     if (sel.kind === 'paint') return [...clean(PINTURA_TOOL.controls()), roll('pintura', 'paint', () => st.paint.mode), rm('Pintura', () => { st.paint = fresh('paint'); })];
     const list = [mixC];
-    if (sel.kind === 'mine') list.push(A('Apagar', 'close', () => { const name = sel.id, bak = prefs.presets[name]; delete prefs.presets[name]; store.set('presets', prefs.presets); ui.styleSel = null; buildStylesBar();
-        toast('Estilo apagado', { label: 'Desfazer', run: () => { prefs.presets[name] = bak; store.set('presets', prefs.presets); buildStylesBar(); } }); }));
+    if (sel.kind === 'mine') list.push(A('Apagar', 'close', () => { const name = sel.id, bak = prefs.presets[name]; delete prefs.presets[name]; store.set('presets', prefs.presets); ui.styleSel = null; buildPanel();
+        toast('Estilo apagado', { label: 'Desfazer', run: () => { prefs.presets[name] = bak; store.set('presets', prefs.presets); buildPanel(); } }); }));
     return list;
-}
-function buildStylesBar() {
-    const ed = $('editor'), panel = $('panel');
-    const old = ed.querySelector('.style-strip'); if (old) ui.styleScroll = old.scrollLeft;
-    panel.classList.add('single'); panel.classList.remove('list', 'detail');
-    $('dials').hidden = true; $('dials').innerHTML = ''; dialEls = []; $('crumb').innerHTML = ''; lastEditorKey = null;
-    ed.innerHTML = ''; ed.scrollTop = 0;
-    if (!M.el) return;
-    // o efeito selecionado precisa continuar aplicado (desfazer, dado…): senão a seleção fecha
-    if (ui.styleSel) { const it = styleItems().find(isSel); if (!it || !it.on()) { ui.styleSel = null; ui.styleParam = null; } }
-    const controls = ui.styleSel ? styleControls(ui.styleSel) : [];
-    paramRows(ed, controls, ui.styleParam, (id) => { ui.styleParam = id; }, buildStylesBar);
-    // 3) todos os efeitos numa linha só
-    const strip = h('div', 'strip style-strip');
-    // grupos recolhíveis: tudo recolhido por padrão; o que for aberto fica aberto durante a sessão
-    const open = (ui.fold = ui.fold || {}), groups = []; let cur = null;
-    styleItems().forEach(it => {
-        if (it.group) {
-            const hd = h('button', 'strip-fold'); hd.type = 'button';
-            cur = { k: 'bar|' + it.group, hd, name: it.group, els: [], n: 0 }; groups.push(cur); strip.append(hd); return;
-        }
-        let el;
-        if (it.kind === 'add') { el = h('button', 'thumb add'); el.type = 'button'; el.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`; el.onclick = saveUserPreset; }
-        else {
-            el = h('button', 'thumb' + (it.on() ? ' on' : '') + (isSel(it) ? ' sel' : '')); el.type = 'button'; el.title = it.label;
-            const pic = h('span', 'pic'); el.append(pic, h('span', 't', '')); el.lastChild.textContent = it.label;
-            Thumbs.attach(pic, 'bar:' + it.kind + ':' + it.id, it.state, it.kind !== 'preset' && it.kind !== 'mine');
-            el.onclick = () => selectStyle(it); cur.n++;
-        }
-        cur.els.push(el); strip.append(el);
-    });
-    groups.forEach(g => {
-        const nm = h('span'); nm.textContent = g.name; g.hd.append(nm, h('span', 'n', String(g.n)));
-        const sync = () => {
-            const o = !!open[g.k];
-            g.hd.classList.toggle('open', o); g.hd.setAttribute('aria-expanded', String(o));
-            g.hd.classList.toggle('has', g.els.some(e => e.classList.contains('on')));   // ponto = efeito aplicado dentro do grupo
-            g.els.forEach(e => e.classList.toggle('fold', !o));
-        };
-        g.hd.onclick = () => { open[g.k] = !open[g.k]; sync(); Thumbs.pump(); if (open[g.k]) requestAnimationFrame(() => centerIn(strip, g.hd)); };
-        sync();
-    });
-    strip.addEventListener('scroll', () => { ui.styleScroll = strip.scrollLeft; }, { passive: true });
-    ed.append(strip);
-    strip.scrollLeft = ui.styleScroll;
 }
 function editPalette(ed) {
     const pal = displayPalette(st.color), row = h('div', 'swatches');
@@ -1598,7 +1732,7 @@ function openMore() {
             b.onclick = () => { setTheme(v); th.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
             th.append(b);
         });
-        const about = h('div', 'about', logoSvg('mini')); about.append(h('p', 'note', 'Pixelar · tudo roda no seu aparelho, nenhuma foto sai dele.'));
+        const about = h('div', 'about', logoSvg('mini')); about.append(h('p', 'note', 'As fotos e vídeos ficam no seu aparelho.'));
         sh.append(list, th, about);
     });
 }
@@ -1806,60 +1940,13 @@ function exportFormats() {
     if (M.type === 'video') return [['mp4', 'MP4'], ['webm', 'WebM'], ['gif', 'GIF']];
     return [['png', 'PNG'], ['jpeg', 'JPEG'], ['webp', 'WebP'], ['svg', 'SVG'], ...(animOn() ? [['gif', 'GIF'], ['mp4', 'MP4'], ['webm', 'WebM']] : [])];
 }
-function exportRow(ed, rows, mainLabel, run, links = []) {
-    const top = h('div', 'chips exp-chips');
-    rows.forEach((r, i) => { if (i) top.append(h('span', 'chip-sep')); [...r.children].forEach(x => top.append(x)); });
-    // os grupos continuam independentes: cada chip só desmarca os do próprio grupo
-    const act = h('div', 'exp-actions');
-    const left = h('div', 'exp-links'), right = h('div', 'exp-links');
-    links.forEach(([l, fn], i) => { if (!fn) return; const a = h('button', 'link', l); a.type = 'button'; a.onclick = fn; (i ? right : left).append(a); });
-    const go = h('button', 'pill primary', icon('download') + `<span>${mainLabel}</span>`); go.type = 'button'; go.onclick = run;
-    act.append(left, go, right);
-    ed.append(top, act);
-}
 // chips de um grupo dentro de uma fileira compartilhada
 function chipGroupInline(options, cur, onPick) {
     const frag = h('div'); const btns = [];
     options.forEach(([v, l]) => { const b = h('button', 'chip' + (String(v) === String(cur) ? ' on' : ''), l); b.type = 'button'; b.onclick = () => { btns.forEach(x => x.classList.toggle('on', x === b)); onPick(v); }; btns.push(b); frag.append(b); });
     return frag;
 }
-const rebuildExport = () => { lastEditorKey = null; buildEditor(currentGroup().controls()[0]); };
 const trimOf = () => { const [a, b] = M.trim; return b - a >= M.duration - 0.05 ? null : [a, b]; };
-function exportPanel(ed) {
-    const isVid = M.type === 'video', fk = isVid ? 'vFormat' : 'format', fmts = exportFormats();
-    if (!fmts.some(f => f[0] === exp[fk])) exp[fk] = fmts[0][0];
-    const f = exp[fk], rows = [chipGroupInline(fmts, f, (v) => { exp[fk] = v; saveExp(); rebuildExport(); })];
-    let label = 'Salvar vídeo', run, links = [];
-    if (!isVid && STILL.includes(f)) {
-        if (anim.playing) stopAnim();
-        const sizes = exportSizes(); if (!sizes.some(s => s.id === exp.size)) exp.size = 'orig';
-        rows.push(chipGroupInline(sizes.map(s => [s.id, s.label]), exp.size, (v) => { exp.size = v; saveExp(); const s = sizes.find(x => x.id === v); flashLabel(sizeText(s.res)); }));
-        label = 'Salvar imagem'; run = saveStill;
-        links = [navigator.clipboard && window.ClipboardItem ? ['Copiar', copyImage] : ['', null], ['Config.', () => { Exporter.config(st); toast('Configurações salvas num arquivo .txt'); }]];
-    } else if (f === 'gif') {
-        if (!isVid) ensureAnimPreview();
-        rows.push(chipGroupInline([[360, 'Pequeno'], [480, 'Médio'], [720, 'Grande']], exp.gifSize, (v) => { exp.gifSize = +v; saveExp(); }));
-        label = 'Salvar GIF';
-        run = () => isVid
-            ? (pauseVideo(), runExport('GIF', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: 'gif', res: exp.gifSize, fps: 15, mute: true, withAnim: st.anim.videoSync, trim: trimOf() })), 'gif'))
-            : runExport('GIF', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: 'gif', res: exp.gifSize, repeat: 1, key: 'main' + M.serial })), 'gif');
-    } else if (isVid) {
-        const H = video.videoHeight || 1080, vs = { screen: Math.min(720, H), orig: H, '2x': Math.min(2160, H * 2) };
-        const opts = [['screen', 'Tela'], ['orig', 'Original'], ...(reRendered() && H < 2160 ? [['2x', '2×']] : [])];
-        if (!opts.some(o => o[0] === exp.vSize)) exp.vSize = 'orig';
-        rows.push(chipGroupInline(opts, exp.vSize, (v) => { exp.vSize = v; saveExp(); }),
-            chipGroupInline([[24, '24 q/s'], [30, '30 q/s'], [60, '60 q/s']], exp.vFps, (v) => { exp.vFps = +v; saveExp(); }),
-            chipGroupInline([['on', 'Com som'], ['off', 'Sem som']], exp.audio ? 'on' : 'off', (v) => { exp.audio = v === 'on'; saveExp(); }));
-        run = () => { pauseVideo(); runExport('Vídeo', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: f, res: vs[exp.vSize] || H, fps: exp.vFps, mute: !exp.audio, withAnim: st.anim.videoSync, trim: trimOf() })), f); };
-    } else {
-        ensureAnimPreview();
-        rows.push(chipGroupInline([['screen', 'Tela'], ['max', 'Máxima']], exp.aSize, (v) => { exp.aSize = v; saveExp(); }),
-            chipGroupInline([[1, '1×'], [3, '3×'], [5, '5×'], [10, '10×']], exp.aRepeat, (v) => { exp.aRepeat = +v; saveExp(); }));
-        run = () => runExport('Vídeo', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: f, res: exp.aSize === 'screen' ? 720 : 2160, repeat: exp.aRepeat, key: 'main' + M.serial })), f);
-    }
-    exportRow(ed, rows, label, run, links);
-    if (!isVid && !animOn()) ed.append(h('div', 'editor-note', 'GIF e vídeo surgem quando algo se move.'));
-}
 async function saveStill() {
     const s = exportSizes().find(x => x.id === exp.size) || exportSizes().find(x => x.id === 'orig');
     try {
@@ -1883,20 +1970,15 @@ function closeSheetFast() { const sh = $('sheet'); sh.classList.remove('show'); 
 function runExport(title, fn, ext) {
     closeSheetFast();
     const job = { cancelled: false, progress: () => {} };
-    let ringCanvas;
     openSheet((sh) => {
-        const ring = h('div', 'progress-ring');
-        ring.innerHTML = '<svg viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="60"/><circle class="fg" cx="66" cy="66" r="60"/></svg>';
-        ringCanvas = h('canvas'); ring.append(ringCanvas); const pct = h('div', 'pct', '0%'); ring.append(pct);
-        const fg = ring.querySelector('.fg'), Cc = 2 * Math.PI * 60; fg.style.strokeDasharray = Cc; fg.style.strokeDashoffset = Cc;
+        const sun = sunMeter();
         const sub = h('div', 'busy-sub', 'Preparando…');
-        const cancel = h('button', 'pill', 'Cancelar'); cancel.type = 'button'; cancel.style.cssText = 'display:flex;margin:16px auto 0';
+        const cancel = h('button', 'btn', 'Cancelar'); cancel.type = 'button'; cancel.style.cssText = 'display:flex;margin:16px auto 0;padding:0 24px';
         cancel.onclick = () => { job.cancelled = true; sub.textContent = 'Cancelando…'; };
-        sh.append(ring, h('div', 'busy-title', `Exportando ${title.toLowerCase()}`), sub, cancel);
-        const rctx = ringCanvas.getContext('2d'); const t0 = performance.now();
+        sh.append(sun.el, h('div', 'busy-title', `Exportando ${title.toLowerCase()}`), sub, cancel);
+        const t0 = performance.now();
         job.progress = (p, frame) => {
-            fg.style.strokeDashoffset = Cc * (1 - p); pct.textContent = Math.round(p * 100) + '%';
-            if (frame && frame.width) { const s = 108; if (ringCanvas.width !== s) { ringCanvas.width = s; ringCanvas.height = s; } const k = Math.max(s / frame.width, s / frame.height); rctx.imageSmoothingEnabled = false; rctx.drawImage(frame, (s - frame.width * k) / 2, (s - frame.height * k) / 2, frame.width * k, frame.height * k); }
+            sun.set(p);
             const el = (performance.now() - t0) / 1000; if (p > 0.03) sub.textContent = `faltam ~${Math.max(1, Math.round(el / p - el))} s`;
         };
     });
@@ -1986,16 +2068,13 @@ async function openVideo(file, token) {
 let busyEls = null;
 function showBusy(title, sub) {
     openSheet((sh) => {
-        const ring = h('div', 'progress-ring'); ring.innerHTML = '<svg viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="60"/><circle class="fg" cx="66" cy="66" r="60"/></svg>';
-        const pct = h('div', 'pct', ''); pct.style.color = 'var(--text)'; pct.style.textShadow = 'none'; ring.append(pct);
-        const fg = ring.querySelector('.fg'), Cc = 2 * Math.PI * 60; fg.style.strokeDasharray = Cc; fg.style.strokeDashoffset = Cc;
-        const s = h('div', 'busy-sub', sub || '');
-        sh.append(ring, h('div', 'busy-title', title), s);
-        busyEls = { fg, Cc, pct, s };
+        const sun = sunMeter(), s = h('div', 'busy-sub', sub || '');
+        sh.append(sun.el, h('div', 'busy-title', title), s);
+        busyEls = { sun, s };
     });
     ui.busy = true;
 }
-function updateBusy(p) { if (!busyEls) return; busyEls.fg.style.strokeDashoffset = busyEls.Cc * (1 - p); busyEls.pct.textContent = Math.round(p * 100) + '%'; }
+function updateBusy(p) { if (busyEls) busyEls.sun.set(p); }
 function setBusySub(t) { if (busyEls) busyEls.s.textContent = t; }
 
 // ---------- vídeo: tocar, linha do tempo e recorte ----------
@@ -2118,7 +2197,7 @@ function rollDice() {
 // ENTRADAS: botões, arquivo, arrastar, colar, teclado
 // ============================================================
 $('btnUndo').innerHTML = icon('undo'); $('btnRedo').innerHTML = icon('redo');
-$('btnOpen').innerHTML = icon('upload'); $('btnPanel').innerHTML = icon('sidebar'); $('btnLayers').innerHTML = icon('layers');
+$('btnOpen').innerHTML = icon('open'); $('btnCompare').innerHTML = icon('compare'); $('btnPanel').innerHTML = icon('sidebar'); $('btnLayers').innerHTML = icon('layers');
 // ---------- coluna lateral recolhível (só no computador e tablet deitado) ----------
 let panelCollapsed = false;
 const isSide = () => matchMedia('(min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px)').matches;
@@ -2156,6 +2235,13 @@ setPanelCollapsed(store.get('panelCollapsed', false), false);
 $('btnMore').innerHTML = icon('more');
 $('btnOpen').onclick = () => $('fileInput').click();
 $('btnWelcomeOpen').onclick = () => $('fileInput').click();
+// foto de exemplo (para experimentar sem escolher nada)
+$('btnSample').onclick = async () => {
+    try { const r = await fetch('exemplo.jpg'); if (!r.ok) throw 0; const b = await r.blob(); await openFile(new File([b], 'exemplo.jpg', { type: 'image/jpeg' })); }
+    catch (e) { toast('Não foi possível abrir a foto de exemplo'); }
+};
+// comparar: toque mostra o original, toque de novo volta
+$('btnCompare').onclick = () => { if (!M.el) return; compare.hold = !compare.hold; showOriginal(compare.hold); };
 $('btnLayers').onclick = openLayers;
 $('btnUndo').onclick = undo; $('btnRedo').onclick = redo;
 $('btnDice').onclick = rollDice;
@@ -2206,9 +2292,9 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 // modo leve: prévia processada numa base menor (a exportação sempre usa a resolução cheia)
 if (document.documentElement.dataset.lite) Engine.workCap = 1280;
 buildTabbar(); selectTab(Object.keys(prefs.presets).length ? 'estilos' : 'editar'); updateHistoryButtons();
-$('btnWelcomeOpen').innerHTML = icon('upload') + '<span>Carregar imagem ou vídeo</span>';
+$('btnWelcomeOpen').innerHTML = icon('open') + '<span>Abrir foto ou vídeo</span>';
 updateSubbarCenter();
 if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
 // para o console e os testes
-window.Pixelar = { get state() { return st; }, set state(v) { st = normalizeState(v); Engine.invalidate(); afterExternalChange(); commit(true); }, openFile, media: M, ui, selectTab, goTo, flushThumbs: () => Thumbs.flush() };
+window.Pixelar = { openMore, get state() { return st; }, set state(v) { st = normalizeState(v); Engine.invalidate(); afterExternalChange(); commit(true); }, openFile, media: M, ui, selectTab, goTo, flushThumbs: () => Thumbs.flush() };
 })();

@@ -2,14 +2,15 @@
 
 Editor de pixel art, dither, filmes analógicos e animações para **fotos e vídeos**, direto no navegador. Nada é enviado para servidor: tudo roda no aparelho (WebGL2 + WebCodecs).
 
-Interface flat, no estilo dos apps do iPhone (barras sólidas, sem vidro nem desfoque), com ícones em pixel e a fonte Departure Mono. Na barra de baixo:
+Interface “Sol” (v4.6): cores e formas tiradas do logo — âmbar sobre noite (ou o tema claro, Papel), linhas finas, cantos retos e a fonte Departure Mono em 11, 22 e 33 px. Ícones em pixel.
 
-- **Estilos**: uma linha só com todos os efeitos (Prontos · Texturas · Filmes · Pintura · Meus estilos). Tocar num efeito aplica e abre, logo acima, a linha de ajustes dele (ícone e nome); tocar num ajuste abre mais uma linha acima com a régua. Tocar de novo fecha — tudo funciona como liga/desliga.
-- **Editar**: no mesmo modelo de Estilos — uma linha com as 7 ferramentas (**Cortar** · **Luz** · **Cor** · **Pixel** · **Lente** · **Dupla** · **Movimento**); tocar numa ferramenta abre acima a linha de ajustes dela (com Sortear e Travar); tocar num ajuste abre mais uma linha acima com a régua, as opções, as miniaturas ou o editor próprio (paletas, cores do degradê). Tocar de novo fecha. Segurar um ajuste trava-o para o dado; segurar uma ferramenta trava a ferramenta.
-- **Sortear** (o dado): cada jogada escolhe uma receita (Pixel art, 8-bit, Analógico, Lomografia, P&B, Impressão, Tela e glitch, Pop art, Pintura por números, Pôster, Sonho, Matéria, Duotone, Cinema noturno ou Mistura livre) e devolve ao natural as ferramentas que ela não usa. Cada ferramenta tem o próprio dado (“Sortear Cor”…) e pode ser travada (segurar a ferramenta, ou o cadeado na folha do dado). Segurar o dado abre essa folha; segurar um ajuste trava só ele.
-- **Exportar**: um painel só. Foto: PNG, JPEG, WebP ou SVG em Tela, Original (e 2×, 4K, 8K quando a imagem é redesenhada). GIF, MP4 e WebM aparecem quando algo se move. Vídeo: MP4, WebM ou GIF.
+- **Início**: abrir uma foto ou vídeo, ou experimentar com a foto de exemplo (`exemplo.jpg`).
+- **Editar**: 7 ferramentas (**Cortar** · **Luz** · **Cor** · **Pixel** · **Lente** · **Dupla** · **Animar**). Tocar numa ferramenta abre a lista dela; cada ajuste é uma linha com nome, régua e valor (arrastar na horizontal, tocar para pular, toque duplo volta ao padrão). Partes extras (Degradê, Agrupar, Contorno…) abrem e fecham ao tocar. No cabeçalho: sortear só esta ferramenta, travar no dado e restaurar. No computador, as ferramentas ficam empilhadas na coluna.
+- **Estilos**: Prontos · Texturas · Filmes · Pintura · Meus, em grade. O escolhido ganha uma barra com a intensidade e “Ajustar”.
+- **Sortear** (o dado): igual ao anterior. Segurar o dado abre a folha de travas.
+- **Exportar**: formato e tamanho em seletores, com as dimensões finais à vista; copiar a imagem e salvar os ajustes num `.txt`.
 
-Tocar na aba aberta fecha o painel dela. No topo: abrir, desfazer/refazer, tocar (só quando há movimento), **Camadas** (ordem, mesclagem, opacidade e excluir cada efeito) e o menu. Segurar a foto mostra o original; pinça faz zoom. `Esc` fecha janelas.
+No topo: abrir, desfazer/refazer, tocar (quando algo se move), **comparar** com o original, **Camadas** e o menu. Segurar a foto também mostra o original; pinça faz zoom. `Esc` fecha janelas.
 
 ## Como usar localmente
 

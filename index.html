@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-    <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#FAF7F0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#141416" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Pixelar — pixel art, dither, filmes analógicos e animações em fotos e vídeos, direto no navegador.">
+    <meta name="description" content="Pixelar: editor de fotos e vídeos com pixel, padrões de dither, filmes e animação. Funciona no navegador, sem enviar nada.">
     <title>Pixelar</title>
     <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/app.css?v=4.5.4">
+    <link rel="stylesheet" href="css/app.css?v=4.6.0">
     <script>
-        window.PIXELAR_V = '4.5.4';
+        window.PIXELAR_V = '4.6.0';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
         // aparelhos modestos: modo leve (sem desfoque de vidro, prévia mais leve; a exportação não muda)
@@ -32,6 +32,7 @@
             <button class="icon-btn" id="btnUndo" type="button" title="Desfazer" aria-label="Desfazer" disabled></button>
             <button class="icon-btn" id="btnRedo" type="button" title="Refazer" aria-label="Refazer" disabled></button>
             <div class="subbar-center" id="subbarCenter"></div>
+            <button class="icon-btn" id="btnCompare" type="button" title="Comparar com o original" aria-label="Comparar com o original" aria-pressed="false"></button>
             <button class="icon-btn" id="btnLayers" type="button" title="Camadas" aria-label="Camadas"></button>
             <button class="icon-btn" id="btnMore" type="button" title="Mais opções" aria-label="Mais opções"></button>
             <button class="icon-btn only-wide" id="btnPanel" type="button" title="Mostrar ou esconder os controles" aria-label="Mostrar ou esconder os controles"></button>
@@ -48,7 +49,13 @@
             <div class="orig-badge" id="origBadge" hidden>ORIGINAL</div>
 
             <section class="welcome" id="welcome">
-                <button class="upload-big" id="btnWelcomeOpen" type="button" aria-label="Carregar imagem ou vídeo"></button>
+                <svg class="logo big" viewBox="0 1 12 11" shape-rendering="crispEdges" aria-hidden="true"><path d="M4 1h4v1h-4zM2 2h8v1h-8zM1 3h10v1h-10zM1 4h10v1h-10zM0 5h12v1h-12zM0 7h12v1h-12zM1 9h10v1h-10zM3 11h6v1h-6z"/></svg>
+                <h1 class="wordmark">Pixelar</h1>
+                <div class="welcome-actions">
+                    <button class="btn primary" id="btnWelcomeOpen" type="button"></button>
+                    <button class="btn" id="btnSample" type="button">Experimentar com uma foto de exemplo</button>
+                </div>
+                <p class="welcome-note">As fotos e vídeos ficam no seu aparelho.</p>
             </section>
             <div class="drop-hint" id="dropHint">Solte para abrir</div>
         </main>
@@ -65,10 +72,7 @@
                 <button class="icon-btn" id="btnVideoMute" type="button" aria-label="Som"></button>
             </div>
             <section class="panel" id="panel">
-                <div class="crumb" id="crumb"></div>
                 <div class="editor" id="editor"></div>
-                <div class="dials" id="dials"></div>
-                <div class="seg-row" id="segRow"></div>
             </section>
             <nav class="tabbar" id="tabbar" aria-label="Ferramentas">
                 <button class="tab tab-action" id="btnDice" type="button" title="Sortear (segure: o que o dado muda)" aria-label="Sortear"></button>
@@ -85,15 +89,15 @@
     <input type="file" id="configInput" accept="image/png,text/plain,.txt" hidden>
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js?v=4.5.4"></script>
-    <script defer src="js/engine.js?v=4.5.4"></script>
-    <script defer src="js/paint.js?v=4.5.4"></script>
-    <script defer src="js/anim.js?v=4.5.4"></script>
-    <script defer src="js/config.js?v=4.5.4"></script>
-    <script defer src="js/media.js?v=4.5.4"></script>
-    <script defer src="js/export.js?v=4.5.4"></script>
-    <script defer src="js/icons.js?v=4.5.4"></script>
-    <script defer src="js/ui.js?v=4.5.4"></script>
+    <script defer src="js/gpu.js?v=4.6.0"></script>
+    <script defer src="js/engine.js?v=4.6.0"></script>
+    <script defer src="js/paint.js?v=4.6.0"></script>
+    <script defer src="js/anim.js?v=4.6.0"></script>
+    <script defer src="js/config.js?v=4.6.0"></script>
+    <script defer src="js/media.js?v=4.6.0"></script>
+    <script defer src="js/export.js?v=4.6.0"></script>
+    <script defer src="js/icons.js?v=4.6.0"></script>
+    <script defer src="js/ui.js?v=4.6.0"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
         if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {

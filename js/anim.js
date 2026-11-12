@@ -320,7 +320,7 @@ function randFxParams(id) {
 // devolve as outras ferramentas livres ao natural. Ferramentas travadas ficam como estão;
 // ajustes travados (segurar o ajuste) também. Cada ferramenta tem o próprio dado.
 // ============================================================
-const RANDOM_GROUPS = { luz: 'Luz', cor: 'Cor', pixel: 'Pixel', textura: 'Textura', filme: 'Filme', pintura: 'Pintura', dupla: 'Dupla', movimento: 'Movimento' };
+const RANDOM_GROUPS = { luz: 'Luz', cor: 'Cor', pixel: 'Pixel', textura: 'Textura', filme: 'Filme', pintura: 'Pintura', dupla: 'Dupla', movimento: 'Animar' };
 // partes do estado que cada ferramenta controla (o dado limpa só o que está livre)
 const GROUP_PATHS = {
     luz: ['adj'], cor: ['color', 'grad'], pixel: ['pixel.size', 'pixel.group', 'pixel.groupRadius', 'pixel.groupTol', 'dither', 'edge'],
