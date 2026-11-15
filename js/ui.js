@@ -241,7 +241,7 @@ new ResizeObserver(() => fitView()).observe(viewport);
         const dx = e.clientX - start.x, dy = e.clientY - start.y;
         if (Math.abs(dx) + Math.abs(dy) > 6) { moved = true; clearTimeout(holdTimer); }
         if (view.zoom > 1 && moved) { view.x = start.vx + dx; view.y = start.vy + dy; applyView(); }
-        else if (ui.tab === 'editar' && ui.editTool === 'crop' && moved && !isCropIdentity(st.crop)) { cropDrag(dx, dy, e); }
+        else if (curSub() === 'crop' && ui.panelOpen && moved && !isCropIdentity(st.crop)) { cropDrag(dx, dy, e); }
     });
     const end = (e) => {
         if (!pts.has(e.pointerId)) return;
@@ -307,7 +307,7 @@ function change(path, v, { rebuild = false, soft = false, dials = false } = {}) 
     if (rebuild) buildPanel(); else if (dials) rebuildDials(); else refreshDials();
     Thumbs.stateChanged();
     if (anim.playing && !canAnimate()) stopAnim();
-    updateSubbarCenter();
+    updateSubbarCenter(); syncChrome();
 }
 // estado trocado por fora (aleatório, preset, desfazer): remonta tudo
 // keepEditor: mantém a faixa tocada intacta (só a fileira de botões é refeita)
@@ -374,42 +374,61 @@ function resetAction(label, fn) {
 }
 const fresh = (k) => deepClone(DEFAULT_STATE[k]);
 
-// ---------- ferramentas da aba Editar (uma fileira de ajustes cada; divisórias separam as partes) ----------
+// ============================================================
+// FERRAMENTAS (v5): Looks · Cortar · Luz · Cor · Pixel · Efeitos · Mover
+// Cada ferramenta mostra até ~5 ajustes principais; o resto fica em seções que abrem ao tocar
+// (“Mais ajustes”, “Degradê”, “Contorno”…). Seções com algo mexido abrem sozinhas.
+// ============================================================
+// listas enxutas: o que aparece nos seletores. Valores fora da lista continuam valendo
+// (arquivos antigos, o dado) e aparecem enquanto estiverem em uso.
+function shown(full, ids, cur) {
+    const out = full.filter(o => ids.includes(String(o[0])));
+    if (cur !== undefined && !out.some(o => String(o[0]) === String(cur))) { const x = full.find(o => String(o[0]) === String(cur)); if (x) out.push(x); }
+    return out;
+}
+const MORE = 'Mais ajustes';
+const CROP_SHOWN = ['original', '1:1', '4:5', '3:4', '9:16', '16:9', '21:9'];
+const COLOR_SHOWN = ['all', '2', '4', '8', '16', '32', '256', 'duotone', 'tritone'];
+const GRAD_SHOWN = ['linear', 'radial', 'conic', 'mirror'];
+const BLEND_SHOWN = ['normal', 'multiply', 'screen', 'overlay', 'color'];
+const DITHER_SHOWN = ['none', 'bayer8', 'halftone', 'scanlines', 'noise'];   // Xadrez vira a grade “Xadrez” do Bayer
+
 const CROP_TOOL = { id: 'crop', label: 'Cortar', controls: () => [
-    C('crop.aspect', 'Proporção', 'crop', CROP_OPTS, { onPick: () => { st.crop.x = 0; st.crop.y = 0; } }),
-    A('Girar', 'rotate', () => { st.crop.rot = (st.crop.rot + 90) % 360; Engine.invalidate(); change(null, null, { dials: true }); }),
-    T('crop.flipH', 'Espelhar ↔', 'flipH'), T('crop.flipV', 'Espelhar ↕', 'flipV'),
-    R('crop.zoom', 'Zoom', 'zoom', 100, 400, { step: 5 }), ...cropMoveControls(),
-    R('pixel.scale', 'Escala', 'scale', 20, 100),
+    C('crop.aspect', 'Proporção', 'crop', shown(CROP_OPTS, CROP_SHOWN, st.crop.aspect), { onPick: () => { st.crop.x = 0; st.crop.y = 0; } }),
+    R('crop.zoom', 'Zoom', 'zoom', 100, 400, { step: 5, fmt: (v) => (v / 100).toFixed(v % 100 ? 2 : 0).replace('.', ',') + '×' }), ...cropMoveControls(),
+    A('Girar 90°', 'rotate', () => { st.crop.rot = (st.crop.rot + 90) % 360; Engine.invalidate(); change(null, null, { dials: true }); }),
+    T('crop.flipH', 'Espelhar na horizontal', 'flipH'), T('crop.flipV', 'Espelhar na vertical', 'flipV'),
+    D(MORE), R('pixel.scale', 'Resolução', 'scale', 20, 100, { fmt: (v) => v + '%' }),
     resetAction('Corte', () => { st.crop = fresh('crop'); st.pixel.scale = 100; }),
 ] };
 const LUZ_TOOL = { id: 'luz', label: 'Luz', controls: () => [
-    R('adj.exposure', 'Exposição', 'exposure', -100, 100), R('adj.brightness', 'Brilho', 'brightness', -100, 100), R('adj.contrast', 'Contraste', 'contrast', -100, 100),
+    R('adj.exposure', 'Exposição', 'exposure', -100, 100), R('adj.contrast', 'Contraste', 'contrast', -100, 100),
     R('adj.shadows', 'Sombras', 'shadows', -100, 100), R('adj.temperature', 'Temperatura', 'temp', -100, 100), R('adj.saturation', 'Saturação', 'saturation', -100, 100),
-    T('adj.shadowsInverted', 'Inverter sombras', 'invert'),
+    D(MORE), R('adj.brightness', 'Brilho', 'brightness', -100, 100), T('adj.shadowsInverted', 'Inverter sombras', 'invert'),
     resetAction('Luz', () => { st.adj = fresh('adj'); }),
 ] };
 const COR_TOOL = { id: 'cor', label: 'Cor', controls: () => {
     const c = st.color, g = st.grad, duo = c.sel === 'duotone' || c.sel === 'tritone';
-    const list = [C('color.sel', 'Cores', 'palette', COLOR_OPTS, { onPick: pickColorCount })];
+    const list = [C('color.sel', 'Cores', 'palette', shown(COLOR_OPTS, COLOR_SHOWN, c.sel), { onPick: pickColorCount })];
     if (duo) {
         list.push(K('color.duo.0', 'Sombras'), K('color.duo.1', c.sel === 'tritone' ? 'Meios-tons' : 'Luzes'));
         if (c.sel === 'tritone') list.push(K('color.duo.2', 'Luzes'));
-        list.push(X('duolib', 'Prontas', 'styles', editDuoLibrary));
+        list.push(X('duolib', 'Combinações prontas', 'styles', editDuoLibrary));
     } else {
-        list.push(X('library', 'Prontas', 'styles', editPaletteLibrary));
+        list.push(X('library', 'Paletas prontas', 'styles', editPaletteLibrary));
         if (c.sel !== 'all') list.push(X('palette', 'Editar cores', 'color', editPalette, { lockKey: 'color.palette' }),
-            R('color.hue', 'Girar cores', 'hue', -180, 180), R('color.sat', 'Cores vivas', 'saturation', -100, 100), R('color.light', 'Clarear cores', 'light', -100, 100),
-            A('Embaralhar', 'swap', paletteShuffleOrder), A('Da foto', 'photo', paletteFromPhoto), A('Salvar paleta', 'save', savePalette));
+            A('Cores da foto', 'photo', paletteFromPhoto), A('Embaralhar', 'swap', paletteShuffleOrder), A('Salvar paleta', 'save', savePalette));
     }
-    list.push(T('color.invert', 'Inverter', 'invert', { onPick: toggleInvert }));
-    list.push(D('Degradê'), T('grad.on', 'Ligado', 'gradient'));
+    list.push(D(MORE));
+    if (!duo && c.sel !== 'all') list.push(R('color.hue', 'Girar cores', 'hue', -180, 180), R('color.sat', 'Cores vivas', 'saturation', -100, 100), R('color.light', 'Clarear cores', 'light', -100, 100));
+    list.push(T('color.invert', 'Inverter (negativo)', 'invert', { onPick: toggleInvert }));
+    list.push(D('Degradê'), T('grad.on', 'Degradê ligado', 'gradient'));
     if (g.on) {
-        list.push(X('gradcolors', 'Cores', 'palette', editGradColors), C('grad.type', 'Forma', 'gradient', GRAD_TYPE_OPTS),
-            C('_grad.blend', 'Mistura', 'layers', BLEND_OPTS, { get: () => gradBlend(), onPick: (v) => { st.grad.blend = v === 'normal' ? 'source-atop' : v; change(null, null); } }),
+        list.push(X('gradcolors', 'Cores do degradê', 'palette', editGradColors), C('grad.type', 'Forma', 'gradient', shown(GRAD_TYPE_OPTS, GRAD_SHOWN, g.type)),
+            C('_grad.blend', 'Mistura', 'layers', shown(BLEND_OPTS, BLEND_SHOWN, gradBlend()), { get: () => gradBlend(), onPick: (v) => { st.grad.blend = v === 'normal' ? 'source-atop' : v; change(null, null); } }),
             R('grad.opacity', 'Opacidade', 'opacity', 0, 100));
-        if (GRAD_ANGLE_SHAPES.has(g.type)) list.push(R('grad.angle', 'Ângulo', 'angle', 0, 360, { step: 5 }));
-        if (GRAD_CENTER_SHAPES.has(g.type)) list.push(R('grad.cx', 'Centro X', 'center', 0, 100), R('grad.cy', 'Centro Y', 'center', 0, 100));
+        if (GRAD_ANGLE_SHAPES.has(g.type)) list.push(R('grad.angle', 'Ângulo', 'angle', 0, 360, { step: 5, fmt: (v) => v + '°' }));
+        if (GRAD_CENTER_SHAPES.has(g.type)) list.push(R('grad.cx', 'Centro ↔', 'center', 0, 100), R('grad.cy', 'Centro ↕', 'center', 0, 100));
         list.push(R('grad.scale', 'Escala', 'scale', 10, 400, { step: 5 }), R('grad.repeat', 'Repetir', 'repeat', 1, 8), T('grad.mirror', 'Espelhar', 'mirror'),
             R('grad.steps', 'Faixas', 'steps', 0, 30), R('grad.pos', 'Posição', 'position', 0, 100), R('grad.smooth', 'Suavidade', 'smooth', 0, 100), R('grad.noise', 'Ruído', 'noise', 0, 100));
     }
@@ -417,119 +436,160 @@ const COR_TOOL = { id: 'cor', label: 'Cor', controls: () => {
     return list;
 } };
 const PIXEL_TOOL = { id: 'pixel', label: 'Pixel', controls: () => {
-    const list = [R('pixel.size', 'Tamanho do pixel', 'pixel', 1, 64),
-        C('dither.mode', 'Padrão', 'pattern', DITHER_OPTS, { view: 'thumbs', detail: true, variant: (s, v) => { s.dither.mode = v; if (v !== 'none' && s.dither.intensity < 40) s.dither.intensity = 100; } })];
-    if (st.dither.mode !== 'none') list.push(R('dither.scale', 'Escala do padrão', 'scale', 1, 10), R('dither.intensity', 'Intensidade', 'intensity', 0, 200),
-        R('dither.opacity', 'Opacidade', 'opacity', 0, 100), T('dither.midOnly', 'Só meios-tons', 'mid'));
+    const dm = st.dither.mode, shape = dm === 'checkerboard' ? 'bayer8' : dm;
+    const list = [R('pixel.size', 'Tamanho', 'pixel', 1, 64, { fmt: (v) => v + ' px' }),
+        C('dither.mode', 'Padrão', 'pattern', shown(DITHER_OPTS, DITHER_SHOWN, shape), { view: 'thumbs', detail: true, get: () => shape,
+            variant: (s, v) => { s.dither.mode = v; if (v !== 'none' && s.dither.intensity < 40) s.dither.intensity = 100; } })];
+    if (dm !== 'none') {
+        if (shape === 'bayer8') list.push(C('_dgrid', 'Grade', 'pattern', [['bayer8', 'Fina'], ['checkerboard', 'Xadrez']], { get: () => st.dither.mode, onPick: (v) => { st.dither.mode = v; change(null, null, { dials: true }); } }));
+        list.push(R('dither.scale', 'Escala do padrão', 'scale', 1, 10, { fmt: (v) => v + '×' }), R('dither.intensity', 'Intensidade', 'intensity', 0, 200),
+            D(MORE), R('dither.opacity', 'Opacidade', 'opacity', 0, 100), T('dither.midOnly', 'Só nos meios-tons', 'mid'));
+    }
     list.push(D('Agrupar'), R('pixel.group', 'Força', 'styles', 0, 100, { step: 25, fmt: (v) => v ? Math.round(v / 25) + '×' : '0' }));
     if (st.pixel.group > 0) list.push(C('pixel.groupRadius', 'Alcance', 'scale', [[1, 'Perto'], [2, 'Longe']]), R('pixel.groupTol', 'Semelhança', 'contrast', 0, 100));
-    list.push(D('Contorno'), R('edge.size', 'Espessura', 'edge', 0, 10));
-    if (st.edge.size > 0) list.push(R('edge.opacity', 'Opacidade', 'opacity', 0, 100), K('edge.color', 'Cor'));
+    list.push(D('Contorno'), R('edge.size', 'Espessura', 'edge', 0, 10, { fmt: (v) => v + ' px' }));
+    if (st.edge.size > 0) list.push(R('edge.opacity', 'Opacidade', 'opacity', 0, 100), K('edge.color', 'Cor do contorno'));
     list.push(resetAction('Pixel', () => { const sc = st.pixel.scale; st.pixel = fresh('pixel'); st.pixel.scale = sc; st.dither = fresh('dither'); st.edge = fresh('edge'); }));
     return list;
 } };
-const TEXTURA_TOOL = { id: 'textura', label: 'Textura', controls: () => {
-    const list = [C('fx.id', 'Textura', 'fx', FX_OPTS(), { view: 'thumbs', groupsOf: FX_GROUPS(), variant: (s, v) => { s.fx.id = v; if (s.fx.mix < 30) s.fx.mix = 100; } })];
-    if (st.fx.id !== 'none') list.push(R('fx.mix', 'Intensidade', 'intensity', 0, 100), ...fxParamControls(st.fx.id, []));
-    list.push(resetAction('Textura', () => { if (st.fx.id !== 'none') delete st.fxParams[st.fx.id]; st.fx = fresh('fx'); }));
-    return list;
-} };
-const FX_OPTS = () => [['none', 'Nenhum'], ...PixelarFX.listEffects().map(f => [f.id, f.nome])];
-const FILME_TOOL = { id: 'filme', label: 'Filme', controls: () => {
-    const look = FILM_LOOKS[st.film.look];
-    const list = [C('film.look', 'Filme', 'film', FILM_OPTS, { view: 'thumbs', groupsOf: FILM_LOOK_DEFS, variant: (s, v) => { s.film.look = v; if (v !== 'none' && s.film.mix < 30) s.film.mix = 100; } })];
-    if (look) list.push(R('film.mix', 'Intensidade', 'intensity', 0, 100));
-    if (look && look.fx === 'lumiere') list.push(R('film.lumiereHue', 'Matiz', 'hue', 0, 360));
-    if (look && look.fx === 'vencido') list.push(C('film.vencido', 'Variação', 'film', [[0, 'Quente'], [1, 'Névoa magenta'], [2, 'Frio'], [3, 'Desbotado']]));
-    if (look && look.fx) list.push(...fxParamControls(look.fx, ['uVariant', 'uHue'], FILM_FX_LABELS[look.fx]));
-    if (look && !look.fx) list.push(R('film.grainAmt', 'Grão do filme', 'grain', 0, 200, { step: 5 }));
-    list.push(resetAction('Filme', () => { Object.assign(st.film, { look: 'none', mix: 100, grainAmt: 100 }); }));
-    return list;
-} };
-// Lente e grão (Editar): ajustes de câmera que valem com ou sem filme
-const LENTE_TOOL = { id: 'lente', label: 'Lente', controls: () => {
-    const list = [R('grain.amount', 'Grão', 'grain', 0, 100)];
-    if (st.grain.amount > 0) list.push(R('grain.size', 'Tamanho', 'size', 10, 400, { step: 5 }), R('grain.rough', 'Aspereza', 'rough', 0, 100),
-        R('grain.bias', 'Sombras ↔ luzes', 'bias', -100, 100), R('grain.speckle', 'Manchas', 'speckle', 0, 100), T('grain.mono', 'Monocromático', 'mono'));
-    list.push(D('Lente'),
-        R('film.vignette', 'Vinheta', 'vignette', 0, 100), K('film.vigColor', 'Cor da vinheta', { ensure: () => { if (!st.film.vignette) st.film.vignette = 50; } }),
-        R('film.bloom', 'Brilho difuso', 'bloom', 0, 100), R('film.halation', 'Halação', 'halation', 0, 100),
-        R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100),
-        R('film.leak', 'Vazamento', 'leak', 0, 100), K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }),
-        resetAction('Lente', () => { const f = fresh('film'); LENS_KEYS.concat(['vigColor', 'leakColor']).forEach(k => { st.film[k] = f[k]; }); st.grain = fresh('grain'); }));
-    return list;
-} };
-const PAINT_MODE_OPTS = [['none', 'Desligado'], ['regions', 'Regiões'], ['pixels', 'Pixels']];
-const PINTURA_TOOL = { id: 'pintura', label: 'Pintura', controls: () => {
-    const p = st.paint, regions = p.mode === 'regions';
-    const list = [C('paint.mode', 'Modo', 'brush', PAINT_MODE_OPTS, { view: 'thumbs', variant: (s, v) => { s.paint.mode = v; } })];
-    if (p.mode !== 'none') {
-        // quantidade de cores, detalhe/tamanho e manchas: tudo ajustável
+
+// ---------- Efeitos: quatro seções (Texturas · Filmes · Câmera · Dupla) ----------
+// A galeria mostra famílias; as outras texturas e filmes continuam no app como “Variação” da família
+// mais próxima (e o dado ainda pode chegar nelas). Nada foi apagado do motor.
+const FX_FAMILIES = [
+    ['thermal', 'Térmico', ['thermal', 'color_threshold', 'channel_mixer', 'neon_trace']],
+    ['riso', 'Riso', ['riso', 'blueprint']],
+    ['cmyk', 'Meio-tom', ['cmyk_halftone']],
+    ['stipple', 'Pontilhado', ['stipple', 'starlight']],
+    ['bitmap', 'Bitmap', ['bitmap', 'emboss']],
+    ['ascii', 'ASCII', ['ascii']],
+    ['lcd', 'Tela de bolso', ['lcd', 'led']],
+    ['vhs', 'Fita', ['vhs']],
+    ['fluted', 'Vidro', ['fluted_glass', 'pattern_refraction', 'warp']],
+    ['sort', 'Pixel sort', ['pixel_sort', 'smudge', 'gooey_merge']],
+    ['lego', 'Blocos', ['lego']],
+    ['glass', 'Vitral', ['stained_glass']],
+    ['paint', 'Pintura', ['paint:regions', 'paint:pixels', 'oil']],
+];
+const FILM_FAMILIES = [
+    ['gold', 'Gold 200', ['gold200', 'techni3']],
+    ['cinestill', 'CineStill', ['cinestill']],
+    ['trix', 'Tri-X', ['trix', 'infra_pb', 'lumiere']],
+    ['cel', 'Celular 2010', ['celular2010']],
+    ['webcam', 'Webcam', ['webcam']],
+    ['vencido', 'Vencido', ['vencido_quimica', 'vencido']],
+];
+const PAINT_NAMES = { 'paint:regions': 'Regiões', 'paint:pixels': 'Pixels' };
+const texName = (v) => PAINT_NAMES[v] || ((typeof PixelarFX !== 'undefined' && PixelarFX.getEffectDef(v)) || {}).nome || v;
+const filmName = (v) => (FILM_LOOKS[v] || {}).nome || v;
+const famOf = (fams, v) => fams.find(f => f[2].includes(v)) || null;
+function currentTexture(s = st) { return s.paint.mode !== 'none' ? 'paint:' + s.paint.mode : s.fx.id; }
+// textura e pintura ocupam o mesmo lugar: escolher uma desliga a outra
+function applyTextureTo(s, v) {
+    if (v.startsWith('paint:')) { if (s.fx.id !== 'none') s.fx = deepClone(DEFAULT_STATE.fx); s.paint.mode = v.slice(6); return; }
+    s.paint.mode = 'none';
+    if (v === 'none') { s.fx = deepClone(DEFAULT_STATE.fx); return; }
+    s.fx.id = v; if (s.fx.mix < 30) s.fx.mix = 100;
+}
+function applyFilmTo(s, v) { s.film.look = v; if (v !== 'none' && s.film.mix < 30) s.film.mix = 100; }
+function removeTexture() {
+    const before = snapshot(), cur = currentTexture();
+    if (cur.startsWith('paint:')) st.paint = fresh('paint'); else { delete st.fxParams[st.fx.id]; st.fx = fresh('fx'); }
+    ui.fxAdjust = false; Engine.invalidate(); afterExternalChange(); commit(true);
+    toast('Textura removida', { label: 'Desfazer', run: () => { restore(before); commit(true); } });
+}
+function removeFilm() {
+    const before = snapshot(); Object.assign(st.film, { look: 'none', mix: 100, grainAmt: 100 });
+    ui.fxAdjust = false; Engine.invalidate(); afterExternalChange(); commit(true);
+    toast('Filme removido', { label: 'Desfazer', run: () => { restore(before); commit(true); } });
+}
+function textureControls() {
+    const cur = currentTexture(), fam = famOf(FX_FAMILIES, cur), list = [];
+    if (fam && fam[2].length > 1) list.push(C('_texvar', 'Variação', 'fx', fam[2].map(v => [v, texName(v)]), { get: () => currentTexture(), onPick: (v) => { applyTextureTo(st, v); Engine.invalidate(); change(null, null, { dials: true }); } }));
+    if (cur.startsWith('paint:')) {
+        const regions = st.paint.mode === 'regions';
         list.push(R('paint.colors', 'Cores', 'palette', 2, 64));
-        if (regions) list.push(R('paint.detail', 'Detalhe', 'scale', 0, 100), R('paint.minArea', 'Manchas mínimas', 'size', 1, 80), R('paint.smooth', 'Arredondar', 'smooth', 0, 4));
-        else list.push(R('paint.size', 'Células', 'pixel', 4, 600));
-        list.push(D('Traço'), R('paint.lines', 'Linhas', 'edge', 0, 100), K('paint.ink', 'Cor do traço'));
-    }
-    list.push(resetAction('Pintura', () => { st.paint = fresh('paint'); }));
+        if (regions) list.push(R('paint.detail', 'Detalhe', 'scale', 0, 100), D(MORE), R('paint.minArea', 'Manchas mínimas', 'size', 1, 80), R('paint.smooth', 'Arredondar', 'smooth', 0, 4));
+        else list.push(R('paint.size', 'Células', 'pixel', 4, 600), D(MORE));
+        list.push(R('paint.lines', 'Traço', 'edge', 0, 100), K('paint.ink', 'Cor do traço'));
+    } else if (cur !== 'none') list.push(R('fx.mix', 'Intensidade', 'intensity', 0, 100, { fmt: (v) => v + '%' }), ...fxParamControls(cur, []));
+    return list;
+}
+function filmControls() {
+    const look = FILM_LOOKS[st.film.look], fam = famOf(FILM_FAMILIES, st.film.look), list = [];
+    if (fam && fam[2].length > 1) list.push(C('_filmvar', 'Variação', 'film', fam[2].map(v => [v, filmName(v)]), { get: () => st.film.look, onPick: (v) => { applyFilmTo(st, v); change(null, null, { dials: true }); } }));
+    if (!look) return list;
+    list.push(R('film.mix', 'Intensidade', 'intensity', 0, 100, { fmt: (v) => v + '%' }));
+    if (look.fx === 'lumiere') list.push(R('film.lumiereHue', 'Matiz', 'hue', 0, 360, { fmt: (v) => v + '°' }));
+    if (look.fx === 'vencido') list.push(C('film.vencido', 'Tom', 'film', [[0, 'Quente'], [1, 'Névoa magenta'], [2, 'Frio'], [3, 'Desbotado']]));
+    if (look.fx) list.push(...fxParamControls(look.fx, ['uVariant', 'uHue'], FILM_FX_LABELS[look.fx]));
+    else list.push(R('film.grainAmt', 'Grão do filme', 'grain', 0, 200, { step: 5 }));
+    return list;
+}
+// Câmera: grão e lente (valem com ou sem filme)
+const CAMERA_TOOL = { id: 'camera', label: 'Câmera', controls: () => {
+    const list = [R('grain.amount', 'Grão', 'grain', 0, 100)];
+    if (st.grain.amount > 0) list.push(R('grain.size', 'Tamanho do grão', 'size', 10, 400, { step: 5 }), T('grain.mono', 'Grão sem cor', 'mono'));
+    list.push(R('film.vignette', 'Vinheta', 'vignette', 0, 100), R('film.bloom', 'Brilho difuso', 'bloom', 0, 100), R('film.halation', 'Halação', 'halation', 0, 100),
+        R('film.leak', 'Vazamento de luz', 'leak', 0, 100), R('film.chroma', 'Aberração', 'chroma', 0, 100),
+        D(MORE), K('film.vigColor', 'Cor da vinheta', { ensure: () => { if (!st.film.vignette) st.film.vignette = 50; } }),
+        K('film.leakColor', 'Cor do vazamento', { ensure: () => { if (!st.film.leak) st.film.leak = 50; } }),
+        R('film.soft', 'Suavidade', 'soft', 0, 100), R('film.distort', 'Distorção', 'distort', -100, 100));
+    if (st.grain.amount > 0) list.push(R('grain.rough', 'Aspereza do grão', 'rough', 0, 100), R('grain.bias', 'Grão: sombras ↔ luzes', 'bias', -100, 100), R('grain.speckle', 'Manchas', 'speckle', 0, 100));
+    list.push(resetAction('Câmera', () => { const f = fresh('film'); LENS_KEYS.concat(['vigColor', 'leakColor']).forEach(k => { st.film[k] = f[k]; }); st.grain = fresh('grain'); }));
     return list;
 } };
 const DUPLA_TOOL = { id: 'dupla', label: 'Dupla', controls: () => {
     const d = st.dbl;
-    const list = [T('dbl.on', 'Ligado', 'layers', { onPick: (v) => { d.on = v; if (v && d.src === 'image' && !DblImage.img) d.src = 'self'; change(null, null, { dials: true }); } }),
-        A('Escolher foto', 'upload', () => $('dblInput').click()),
-        C('dbl.src', 'Fonte', 'image', DBL_SRC_OPTS, { onPick: (v) => { d.on = true; if (v === 'image' && !DblImage.img) setTimeout(() => $('dblInput').click(), 50); } })];
+    const list = [T('dbl.on', 'Dupla exposição', 'layers', { onPick: (v) => { d.on = v; if (v && d.src === 'image' && !DblImage.img) d.src = 'self'; change(null, null, { dials: true }); } }),
+        C('dbl.src', 'Segunda imagem', 'image', DBL_SRC_OPTS, { onPick: (v) => { d.on = true; if (v === 'image' && !DblImage.img) setTimeout(() => $('dblInput').click(), 50); } }),
+        A('Escolher foto', 'upload', () => $('dblInput').click())];
     if (!d.on) return list;
     if (['clouds', 'light', 'leaves'].includes(d.src)) list.push(A('Outra variação', 'reset', () => { d.seed = 1 + Math.floor(Math.random() * 999); change(null, null); }));
-    list.push(C('dbl.blend', 'Mistura', 'layers', DBL_BLEND_OPTS), R('dbl.op', 'Opacidade', 'opacity', 0, 100), T('dbl.pre', 'Antes da paleta', 'palette'),
+    list.push(C('dbl.blend', 'Mistura', 'layers', shown(DBL_BLEND_OPTS, [...BLEND_SHOWN, 'add'], d.blend)), R('dbl.op', 'Opacidade', 'opacity', 0, 100),
         D('Posição'), R('dbl.scale', 'Tamanho', 'scale', 20, 400, { step: 5 }), R('dbl.x', 'Horizontal', 'move', -100, 100), R('dbl.y', 'Vertical', 'move', -100, 100),
-        R('dbl.rot', 'Girar', 'rotate', -180, 180), T('dbl.flip', 'Espelhar', 'flipH'),
+        R('dbl.rot', 'Girar', 'rotate', -180, 180, { fmt: (v) => v + '°' }), T('dbl.flip', 'Espelhar', 'flipH'),
         D('Máscara'), C('dbl.mask', 'Máscara', 'contrast', DBL_MASK_OPTS));
     if (d.mask !== 'none') list.push(R('dbl.maskLo', 'Limite', 'mid', 0, 100), R('dbl.maskSoft', 'Suavidade', 'soft', 0, 100), T('dbl.maskInv', 'Inverter máscara', 'invert'));
-    list.push(D('Cor'), C('dbl.tone', 'Tom', 'palette', DBL_TONE_OPTS));
+    list.push(D('Cor da segunda imagem'), C('dbl.tone', 'Tom', 'palette', DBL_TONE_OPTS));
     if (d.tone === 'tint') list.push(K('dbl.tint', 'Cor do tom'));
-    list.push(R('dbl.contrast', 'Contraste', 'contrast', -100, 100), R('dbl.bright', 'Brilho', 'brightness', -100, 100), R('dbl.sat', 'Saturação', 'saturation', -100, 100),
+    list.push(R('dbl.contrast', 'Contraste', 'contrast', -100, 100), R('dbl.bright', 'Brilho', 'brightness', -100, 100), R('dbl.sat', 'Saturação', 'saturation', -100, 100), T('dbl.pre', 'Aplicar antes da paleta', 'palette'),
         resetAction('Dupla exposição', () => { st.dbl = fresh('dbl'); }));
     return list;
 } };
-const MOV_TOOL = { id: 'movimento', label: 'Animar', controls: () => {
+const MOV_TOOL = { id: 'movimento', label: 'Mover',
+    note: () => {
+        const has = st.dither.mode !== 'none' || st.fx.id !== 'none' || st.grain.amount > 0 || st.film.look !== 'none';
+        if (!has) return 'Nada se move ainda. Ligue um padrão (em Pixel), uma textura, um filme ou grão (em Efeitos) e eles ganham movimento aqui.';
+        const parts = describeAnimation(Engine.readSettings(st), readAnim(st));
+        return parts.length ? 'Em movimento: ' + parts.join(' + ') + '. Toque em ▶ no canto da foto para ver.' : 'Ainda parado: escolha um movimento abaixo (por exemplo “cores girando” na textura).';
+    },
+    controls: () => {
     const a = st.anim, list = [];
     if (M.type === 'video') list.push(T('anim.videoSync', 'Aplicar no vídeo', 'video'));
-    list.push(C('anim.cycles', 'Velocidade', 'speed', [[1, 'Lenta'], [2, 'Média'], [3, 'Rápida'], [4, 'Muito rápida']]),
-        C('anim.direction', 'Sentido', 'direction', [['forward', 'Para frente'], ['reverse', 'Para trás']]),
-        C('anim.duration', 'Duração do loop', 'clock', [[1, '1 s'], [2, '2 s'], [3, '3 s'], [4, '4 s'], [6, '6 s'], [8, '8 s']]),
-        C('anim.fps', 'Quadros/s', 'fps', [[12, '12'], [24, '24'], [30, '30'], [50, '50'], [60, '60']]));
     // só o que existe na imagem pode se mover
     const has = { dither: st.dither.mode !== 'none', fx: st.fx.id !== 'none', grain: st.grain.amount > 0 || !!(FILM_LOOKS[st.film.look] && !FILM_LOOKS[st.film.look].fx), film: st.film.look !== 'none' };
-    if (Object.values(has).some(Boolean)) list.push(D('O que se move'));
     if (has.dither) {
-        list.push(T('anim.dither', 'Padrão', 'pattern'));
+        list.push(T('anim.dither', 'Mover o padrão', 'pattern'));
         if (a.dither) {
             const sig = DITHER_SIGNATURE[st.dither.mode], style = a.dStyle === 'auto' ? (sig ? sig.style : 'auto') : a.dStyle;
             list.push(C('anim.dStyle', 'Movimento do padrão', 'wave', DITHER_STYLE_OPTS.map(k => [k, k === 'auto' ? 'Próprio do padrão' : DITHER_STYLES[k].nome])));
-            if (a.dStyle !== 'auto' && ['drift', 'wave', 'sweep'].includes(style)) list.push(R('anim.dAngle', 'Direção', 'angle', 0, 315, { step: 45 }));
+            if (a.dStyle !== 'auto' && ['drift', 'wave', 'sweep'].includes(style)) list.push(R('anim.dAngle', 'Direção', 'angle', 0, 315, { step: 45, fmt: (v) => v + '°' }));
             if (['wave', 'ripple', 'sweep', 'spiral'].includes(style)) list.push(R('anim.dWave', 'Comprimento', 'wave', 8, 400, { step: 4 }));
         }
     }
-    if (has.fx) { list.push(T('anim.fx', 'Textura', 'fx')); if (a.fx) list.push(C('anim.fxStyle', 'Movimento da textura', 'wave', opts(FX_STYLE_NAMES))); }
-    if (has.grain) { list.push(T('anim.grain', 'Grão', 'grain')); if (a.grain) list.push(C('anim.grainStyle', 'Movimento do grão', 'wave', opts(GRAIN_ANIM_NAMES))); }
-    if (has.film) { list.push(T('anim.film', 'Filme', 'film')); if (a.film) list.push(C('anim.filmStyle', 'Movimento do filme', 'wave', opts(FILM_ANIM_NAMES))); }
+    if (has.fx) { list.push(T('anim.fx', 'Mover a textura', 'fx')); if (a.fx) list.push(C('anim.fxStyle', 'Movimento da textura', 'wave', opts(FX_STYLE_NAMES))); }
+    if (has.grain) { list.push(T('anim.grain', 'Mover o grão', 'grain')); if (a.grain) list.push(C('anim.grainStyle', 'Movimento do grão', 'wave', opts(GRAIN_ANIM_NAMES))); }
+    if (has.film) { list.push(T('anim.film', 'Mover o filme', 'film')); if (a.film) list.push(C('anim.filmStyle', 'Movimento do filme', 'wave', opts(FILM_ANIM_NAMES))); }
+    list.push(D('Ritmo'),
+        C('anim.cycles', 'Velocidade', 'speed', [[1, 'Lenta'], [2, 'Média'], [3, 'Rápida'], [4, 'Muito rápida']]),
+        C('anim.duration', 'Duração do loop', 'clock', [[1, '1 s'], [2, '2 s'], [3, '3 s'], [4, '4 s'], [6, '6 s'], [8, '8 s']]),
+        C('anim.direction', 'Sentido', 'direction', [['forward', 'Para frente'], ['reverse', 'Para trás']]),
+        C('anim.fps', 'Quadros por segundo', 'fps', [[12, '12'], [24, '24'], [30, '30'], [50, '50'], [60, '60']]));
     list.push(resetAction('Movimento', () => { st.anim = Object.assign(fresh('anim'), { videoSync: a.videoSync }); }));
     return list;
 } };
-
-const TABS = [
-    // Estilos: a tela inicial tem fileiras horizontais (Prontos, Texturas, Filmes, Pintura, Meus estilos);
-    // tocar num efeito aplica e abre as configurações dele (com “‹ Estilos” para voltar)
-    { id: 'estilos', label: 'Estilos', icon: 'tab-styles', groups: () => [{ id: 'mine', label: 'Estilos', controls: () => [X('mine', 'Estilos', 'styles', () => {})] }, TEXTURA_TOOL, FILME_TOOL, PINTURA_TOOL] },
-    { id: 'editar', label: 'Editar', icon: 'tab-edit', groups: () => [CROP_TOOL, LUZ_TOOL, COR_TOOL, PIXEL_TOOL, LENTE_TOOL, DUPLA_TOOL, MOV_TOOL] },
-    { id: 'exportar', label: 'Exportar', icon: 'tab-export', groups: () => [{ id: 'exp', label: 'Exportar', controls: () => [X('exp', 'Exportar', 'download', exportPanel)] }] },
-];
-function groupControls(g) {
-    const list = g.controls();
-    if (!RANDOM_GROUPS[g.id]) return list;
-    return [A(ui.tab === 'editar' ? 'Sortear' : 'Sortear ' + g.label, 'dice', () => rollTool(g.id)),
-        T(null, 'Travar', 'lock', { get: () => !prefs.groups.has(g.id), onPick: (v) => setToolLock(g.id, v) }), ...list];
-}
+// sorteio por seção dos Efeitos (o mesmo dado das ferramentas antigas)
 const gradBlend = () => st.grad.blend === 'source-atop' ? 'normal' : st.grad.blend;
 
 
@@ -559,73 +619,11 @@ function fxParamControls(id, hidden, names = {}) {
     return list;
 }
 
-// ============================================================
-// PAINEL
-// ============================================================
-// ícones pequenos das ferramentas
-const GROUP_ICONS = { crop: 'crop', luz: 'brightness', cor: 'palette', pixel: 'pixel', lente: 'vignette', textura: 'pattern', filme: 'film', pintura: 'brush', dupla: 'layers', movimento: 'wave' };
-function tabGroups(t) { return typeof t.groups === 'function' ? t.groups() : t.groups; }
-function currentTab() { return TABS.find(t => t.id === ui.tab); }
-function currentGroup() { const gs = tabGroups(currentTab()); const gid = ui.group[ui.tab]; return gs.find(g => g.id === gid) || gs[0]; }
-let dialEls = [];
-// ============================================================
-// PAINEL (redesign “Sol”): Estilos, Editar e Exportar montados no mesmo contêiner (#editor)
-//   Celular:     [ferramenta aberta: cabeçalho + lista] [linha das 7 ferramentas] [abas]
-//   Computador:  [abas] [ferramentas empilhadas, cada uma abre e fecha]
-// Cada ajuste é uma linha: nome, régua e valor. Nada de fileiras compridas na horizontal.
-// ============================================================
 let rows = [];            // linhas vivas: atualizam o valor sem remontar o painel
 ui.sec = {}; ui.exp = {}; ui.acc = new Set(['luz']); ui.styleCat = null; ui.styleGroup = {}; ui.styleAdjust = false;
 function refreshDials() { rows = rows.filter(r => r.el.isConnected); rows.forEach(r => r.sync()); }
 function rebuildDials() { buildPanel(); }
-function buildPanel() {
-    const tab = currentTab(), panel = $('panel'), ed = $('editor'), open = !!ui.open[tab.id];
-    // a remontagem nunca pula: guarda a rolagem de cada área rolável (pela chave) e do painel
-    const keep = [...ed.querySelectorAll('[data-scroll]')].map(x => [x.dataset.scroll, x.scrollTop, x.scrollLeft]);
-    const same = ed.dataset.tab === tab.id, top = ed.scrollTop;
-    ed.innerHTML = ''; rows = []; ed.dataset.tab = tab.id; panel.dataset.tab = tab.id;
-    panel.classList.toggle('closed', tab.id !== 'editar' && !open);
-    if (M.el) {
-        if (tab.id === 'editar') buildEditView(ed);
-        else if (open) (tab.id === 'estilos' ? buildStylesView : buildExportView)(ed);
-    }
-    keep.forEach(([k, t, l]) => { const x = ed.querySelector(`[data-scroll="${CSS.escape(k)}"]`); if (x) { x.scrollTop = t; x.scrollLeft = l; } });
-    if (same) ed.scrollTop = top;
-}
-
-// ---------- cabeçalho de uma ferramenta: nome e ações (sortear, travar, restaurar) ----------
-function headBtn(ic, label, run, on) {
-    const b = h('button', 'hbtn' + (on ? ' on' : ''), icon(ic)); b.type = 'button'; b.title = label; b.setAttribute('aria-label', label);
-    if (on !== undefined) b.setAttribute('aria-pressed', String(!!on));
-    b.onclick = run; return b;
-}
-function toolHead(title, { back, dice, lock, reset } = {}) {
-    const hd = h('div', 'thead');
-    if (back) { const b = h('button', 'tback', icon('back') + '<span></span>'); b.type = 'button'; b.lastChild.textContent = title; b.setAttribute('aria-label', 'Voltar'); b.onclick = back; hd.append(b); }
-    else if (title) { const t = h('h2', 'ttitle'); t.textContent = title; hd.append(t); }
-    hd.append(h('span', 'tfill'));
-    if (dice) hd.append(headBtn('dice', 'Sortear só ' + title, dice));
-    if (lock) hd.append(headBtn('lock', lock.on ? title + ' travada no dado' : 'Travar ' + title + ' no dado', lock.run, lock.on));
-    if (reset) hd.append(headBtn('reset', 'Restaurar ' + title, reset));
-    return hd;
-}
-// ajustes de uma ferramenta (o “Restaurar” vai para o cabeçalho)
 function splitReset(list) { const r = list.find(c => c.kind === 'action' && c.label === 'Restaurar'); return [list.filter(c => c !== r), r]; }
-function toolPanel(g, withTitle = true) {
-    const box = h('section', 'tool');
-    const [list, reset] = splitReset(g.controls().filter(c => !c.hidden));
-    const lockable = !!RANDOM_GROUPS[g.id], locked = lockable && !prefs.groups.has(g.id);
-    box.append(toolHead(withTitle ? g.label : '', {
-        dice: lockable ? () => rollTool(g.id) : null,
-        lock: lockable ? { on: locked, run: () => setToolLock(g.id, prefs.groups.has(g.id)) } : null,
-        reset: reset ? () => reset.run() : null,
-    }));
-    const body = h('div', 'tlist'); body.dataset.scroll = 'list:' + g.id;
-    fillList(body, list, g.id);
-    box.append(body);
-    return box;
-}
-// quantos ajustes a ferramenta tem mexidos (resumo e ponto na ferramenta)
 function toolCount(g) { try { return g.controls().filter(c => c.kind !== 'divider' && !c.hidden && isModified(c)).length; } catch (e) { return 0; } }
 
 // ---------- lista: seções, linhas e ações ----------
@@ -640,7 +638,7 @@ function fillList(list, controls, scope) {
             const open = ui.sec[k] !== undefined ? ui.sec[k] : n > 0;
             const hd = h('button', 'sec' + (open ? ' open' : '') + (n ? ' mod' : '')); hd.type = 'button'; hd.setAttribute('aria-expanded', String(open));
             hd.innerHTML = '<span class="sec-t"></span><span class="sec-v"></span>' + icon(open ? 'chev-d' : 'chev');
-            hd.firstChild.textContent = s.label; hd.children[1].textContent = n ? n + (n > 1 ? ' ajustes' : ' ajuste') : 'desligado';
+            hd.firstChild.textContent = s.label; hd.children[1].textContent = n ? n + (n > 1 ? ' ajustes' : ' ajuste') : '';
             hd.onclick = () => { ui.sec[k] = !open; fitAnim(); buildPanel(); };
             list.append(hd);
             if (!open) return;
@@ -769,42 +767,6 @@ function makeFader(c, opts = {}) {
     return row;
 }
 
-// ---------- Editar ----------
-function buildEditView(ed) {
-    const tools = tabGroups(TABS.find(t => t.id === 'editar'));
-    if (isSide()) {
-        // computador: todas as ferramentas empilhadas; cada uma abre e fecha
-        tools.forEach(g => {
-            const open = ui.acc.has(g.id), n = toolCount(g);
-            const box = h('section', 'acc' + (open ? ' open' : ''));
-            const hd = h('button', 'acc-h' + (n ? ' mod' : '')); hd.type = 'button'; hd.setAttribute('aria-expanded', String(open));
-            hd.innerHTML = icon('t-' + g.id) + '<span class="acc-t"></span><span class="acc-s"></span>' + icon(open ? 'chev-d' : 'chev');
-            hd.children[1].textContent = g.label; hd.children[2].textContent = n ? n + (n > 1 ? ' ajustes' : ' ajuste') : '';
-            if (RANDOM_GROUPS[g.id] && !prefs.groups.has(g.id)) hd.children[2].textContent = (n ? hd.children[2].textContent + ' · ' : '') + 'travada';
-            hd.onclick = () => { if (open) ui.acc.delete(g.id); else { ui.acc.add(g.id); ui.editTool = g.id; } buildPanel(); };
-            if (RANDOM_GROUPS[g.id]) onHold(hd, () => setToolLock(g.id, prefs.groups.has(g.id)));
-            box.append(hd);
-            if (open) box.append(toolPanel(g, false));
-            ed.append(box);
-        });
-        return;
-    }
-    const grp = tools.find(g => g.id === ui.editTool) || null;
-    ui.group.editar = grp ? grp.id : '';
-    if (grp) ed.append(toolPanel(grp));
-    const row = h('div', 'tool-row');
-    tools.forEach(g => {
-        const on = !!grp && grp.id === g.id;
-        const b = h('button', 'tool-btn' + (on ? ' on' : '')); b.type = 'button'; b.title = g.label; b.setAttribute('aria-pressed', String(on));
-        b.innerHTML = icon('t-' + g.id) + '<span class="t"></span>'; b.lastChild.textContent = g.label;
-        if (toolCount(g)) b.append(h('span', 'dot'));
-        if (RANDOM_GROUPS[g.id]) { if (!prefs.groups.has(g.id)) b.append(h('span', 'tlock', icon('lock'))); onHold(b, () => setToolLock(g.id, prefs.groups.has(g.id))); }
-        b.onclick = () => { ui.editTool = on ? null : g.id; fitAnim(); buildPanel(); };
-        row.append(b);
-    });
-    ed.append(row);
-}
-
 // ---------- segmentado (uma escolha entre poucas) ----------
 function segmented(options, cur, onPick, label) {
     const box = h('div', 'segm'); box.setAttribute('role', 'group'); if (label) box.setAttribute('aria-label', label);
@@ -815,135 +777,6 @@ function segmented(options, cur, onPick, label) {
         box.append(b);
     });
     return box;
-}
-
-// ---------- Estilos: categoria, grupo e grade; o escolhido ganha a barra de intensidade ----------
-const STYLE_CATS = [['preset', 'Prontos'], ['fx', 'Texturas'], ['film', 'Filmes'], ['paint', 'Pintura'], ['mine', 'Meus']];
-const styleCatOf = (kind) => kind;
-function styleCatalog(cat) {
-    const all = styleItems();
-    const of = (kind) => all.filter(it => it.kind === kind);
-    if (cat === 'fx') { const items = of('fx'); return FX_GROUPS().map(([g, list]) => ({ name: g, items: list.map(([id]) => items.find(it => it.id === id)).filter(Boolean) })); }
-    if (cat === 'film') { const items = of('film'); return FILM_LOOK_DEFS.map(([g, list]) => ({ name: g, items: list.map(([id]) => items.find(it => it.id === id)).filter(Boolean) })); }
-    if (cat === 'mine') return [{ name: null, items: [{ kind: 'add' }, ...of('mine')] }];
-    return [{ name: null, items: of(cat) }];
-}
-function findStyleItem(sel) { return sel ? styleItems().find(it => it.kind === sel.kind && it.id === sel.id) : null; }
-function selectStyle(it) {
-    if (isSel(it)) { ui.styleSel = null; ui.styleAdjust = false; buildPanel(); return; }   // toque de novo: fecha
-    if (!it.on()) {
-        if (it.kind === 'preset' || it.kind === 'mine') applyPreset(it.label, it.kind === 'preset' ? builtinState(it.id) : prefs.presets[it.id]);
-        else { const s = it.state(); if (it.kind === 'fx') st.fx = s.fx; else if (it.kind === 'film') st.film = s.film; else st.paint = s.paint; change(null, null); }
-        flashLabel(it.label);
-    }
-    ui.styleSel = { kind: it.kind, id: it.id }; ui.styleAdjust = false; buildPanel();
-}
-function buildStylesView(ed) {
-    const selIt = findStyleItem(ui.styleSel);
-    if (ui.styleSel && (!selIt || !selIt.on())) { ui.styleSel = null; ui.styleAdjust = false; }
-    if (ui.styleSel && ui.styleAdjust) {
-        ed.append(toolHead(selIt.label, { back: () => { ui.styleAdjust = false; buildPanel(); } }));
-        const body = h('div', 'tlist'); body.dataset.scroll = 'adj:' + selIt.kind + ':' + selIt.id;
-        fillList(body, styleControls(ui.styleSel), 'style:' + selIt.kind);
-        ed.append(body); return;
-    }
-    const cat = ui.styleCat || (ui.styleSel ? styleCatOf(ui.styleSel.kind) : (Object.keys(prefs.presets).length ? 'mine' : 'fx'));
-    ui.styleCat = cat;
-    const top = h('div', 'shead');
-    top.append(segmented(STYLE_CATS, cat, (v) => { ui.styleCat = v; buildPanel(); }, 'Categoria'));
-    ed.append(top);
-    const groups = styleCatalog(cat);
-    let gi = 0;
-    if (groups.length > 1) {
-        const want = ui.styleGroup[cat];
-        gi = groups.findIndex(g => g.name === want);
-        if (gi < 0) gi = Math.max(0, groups.findIndex(g => g.items.some(it => it.on())));
-        const chips = h('div', 'sfilter');
-        groups.forEach((g, i) => {
-            const on = i === gi, b = h('button', 'fchip' + (on ? ' on' : '') + (g.items.some(it => it.on()) ? ' has' : '')); b.type = 'button'; b.setAttribute('aria-pressed', String(on));
-            b.textContent = g.name; b.onclick = () => { ui.styleGroup[cat] = g.name; buildPanel(); };
-            chips.append(b);
-        });
-        ed.append(chips);
-    }
-    const grid = h('div', 'sgrid'); grid.dataset.scroll = 'grid:' + cat + ':' + gi;
-    const items = (groups[gi] || { items: [] }).items;
-    items.forEach(it => {
-        if (it.kind === 'add') {
-            const a = h('button', 'thumb add'); a.type = 'button'; a.innerHTML = `<span class="pic">${icon('plus')}</span><span class="t">Salvar atual</span>`; a.onclick = saveUserPreset; grid.append(a); return;
-        }
-        const el = h('button', 'thumb' + (it.on() ? ' on' : '') + (isSel(it) ? ' sel' : '')); el.type = 'button'; el.title = it.label;
-        el.setAttribute('aria-pressed', String(it.on()));
-        const pic = h('span', 'pic'); el.append(pic, h('span', 't', '')); el.lastChild.textContent = it.label;
-        Thumbs.attach(pic, 'bar:' + it.kind + ':' + it.id, it.state, it.kind !== 'preset' && it.kind !== 'mine');
-        el.onclick = () => selectStyle(it);
-        grid.append(el);
-    });
-    if (cat === 'mine' && items.length === 1) grid.append(h('p', 'empty', 'Ajuste a foto como quiser e toque em “Salvar atual” para guardar a combinação aqui.'));
-    ed.append(grid);
-    // barra do escolhido: intensidade e “Ajustar”
-    if (selIt) {
-        const main = styleControls(ui.styleSel).find(c => c.kind === 'range');
-        const bar = h('div', 'sbar');
-        if (main) bar.append(makeFader(main, { label: selIt.label })); else { const n = h('span', 'rname'); n.textContent = selIt.label; bar.append(n); }
-        const adj = h('button', 'adjust', '<span>Ajustar</span>' + icon('chev')); adj.type = 'button';
-        adj.onclick = () => { ui.styleAdjust = true; fitAnim(); buildPanel(); };
-        bar.append(adj); ed.append(bar);
-    }
-}
-
-// ---------- Exportar ----------
-const rebuildExport = () => buildPanel();
-function expBlock(label, el) { const b = h('div', 'xblock'); const l = h('span', 'xlabel'); l.textContent = label; b.append(l, el); return b; }
-function exportPanel(ed) { buildExportView(ed); }
-function buildExportView(ed) {
-    const box = h('div', 'export'); ed.append(box);
-    const isVid = M.type === 'video', fk = isVid ? 'vFormat' : 'format', fmts = exportFormats();
-    if (!fmts.some(f => f[0] === exp[fk])) exp[fk] = fmts[0][0];
-    const f = exp[fk];
-    box.append(expBlock('Formato', segmented(fmts, f, (v) => { exp[fk] = v; saveExp(); buildPanel(); }, 'Formato')));
-    let label = 'Salvar vídeo', run, info = '', infoSub = '', extra = [];
-    if (!isVid && STILL.includes(f)) {
-        if (anim.playing) stopAnim();
-        const sizes = exportSizes(); if (!sizes.some(s => s.id === exp.size)) exp.size = 'orig';
-        const cur = sizes.find(s => s.id === exp.size) || sizes[0];
-        box.append(expBlock('Tamanho', segmented(sizes.map(s => [s.id, s.label]), exp.size, (v) => { exp.size = v; saveExp(); buildPanel(); }, 'Tamanho')));
-        info = sizeText(cur.res); infoSub = 'px · ' + f.toUpperCase();
-        label = 'Salvar imagem'; run = saveStill;
-        if (navigator.clipboard && window.ClipboardItem) extra.push(['Copiar imagem', 'photo', copyImage]);
-        extra.push(['Salvar ajustes', 'save', () => { Exporter.config(st); toast('Ajustes salvos num arquivo .txt'); }]);
-    } else if (f === 'gif') {
-        if (!isVid) ensureAnimPreview();
-        box.append(expBlock('Tamanho', segmented([[360, 'Pequeno'], [480, 'Médio'], [720, 'Grande']], exp.gifSize, (v) => { exp.gifSize = +v; saveExp(); buildPanel(); }, 'Tamanho')));
-        info = exp.gifSize + ' px'; infoSub = 'lado maior · GIF';
-        label = 'Salvar GIF';
-        run = () => isVid
-            ? (pauseVideo(), runExport('GIF', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: 'gif', res: exp.gifSize, fps: 15, mute: true, withAnim: st.anim.videoSync, trim: trimOf() })), 'gif'))
-            : runExport('GIF', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: 'gif', res: exp.gifSize, repeat: 1, key: 'main' + M.serial })), 'gif');
-    } else if (isVid) {
-        const H = video.videoHeight || 1080, vs = { screen: Math.min(720, H), orig: H, '2x': Math.min(2160, H * 2) };
-        const opts = [['screen', 'Tela'], ['orig', 'Original'], ...(reRendered() && H < 2160 ? [['2x', '2×']] : [])];
-        if (!opts.some(o => o[0] === exp.vSize)) exp.vSize = 'orig';
-        box.append(expBlock('Tamanho', segmented(opts, exp.vSize, (v) => { exp.vSize = v; saveExp(); buildPanel(); }, 'Tamanho')),
-            expBlock('Quadros por segundo', segmented([[24, '24'], [30, '30'], [60, '60']], exp.vFps, (v) => { exp.vFps = +v; saveExp(); }, 'Quadros por segundo')),
-            expBlock('Som', segmented([['on', 'Com som'], ['off', 'Sem som']], exp.audio ? 'on' : 'off', (v) => { exp.audio = v === 'on'; saveExp(); }, 'Som')));
-        info = (vs[exp.vSize] || H) + 'p'; infoSub = f.toUpperCase() + (trimOf() ? ' · trecho' : '');
-        run = () => { pauseVideo(); runExport('Vídeo', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: f, res: vs[exp.vSize] || H, fps: exp.vFps, mute: !exp.audio, withAnim: st.anim.videoSync, trim: trimOf() })), f); };
-    } else {
-        ensureAnimPreview();
-        box.append(expBlock('Tamanho', segmented([['screen', 'Tela'], ['max', 'Máxima']], exp.aSize, (v) => { exp.aSize = v; saveExp(); buildPanel(); }, 'Tamanho')),
-            expBlock('Repetir o loop', segmented([[1, '1×'], [3, '3×'], [5, '5×'], [10, '10×']], exp.aRepeat, (v) => { exp.aRepeat = +v; saveExp(); }, 'Repetir o loop')));
-        info = (exp.aSize === 'screen' ? 720 : 2160) + ' px'; infoSub = 'lado maior · ' + f.toUpperCase();
-        run = () => runExport('Vídeo', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: f, res: exp.aSize === 'screen' ? 720 : 2160, repeat: exp.aRepeat, key: 'main' + M.serial })), f);
-    }
-    const inf = h('div', 'xinfo'); inf.innerHTML = '<span class="xbig"></span><span class="xsub"></span>'; inf.firstChild.textContent = info; inf.lastChild.textContent = infoSub; box.append(inf);
-    const go = h('button', 'btn primary', icon('download') + '<span></span>'); go.type = 'button'; go.lastChild.textContent = label; go.onclick = run; box.append(go);
-    if (extra.length) { const two = h('div', 'xtwo'); extra.forEach(([l, ic, fn]) => { const b = h('button', 'btn', smallIcon(ic) + '<span></span>'); b.type = 'button'; b.lastChild.textContent = l; b.onclick = fn; two.append(b); }); box.append(two); }
-    if (!isVid && !animOn()) {
-        const n = h('p', 'xnote'); n.append('Para GIF ou vídeo, ligue algo em ');
-        const a = h('button', 'link', 'Animar'); a.type = 'button'; a.onclick = () => goTo('movimento'); n.append(a, '.');
-        box.append(n);
-    }
 }
 
 // ---------- progresso: o sol do logo acende linha a linha, de baixo para cima ----------
@@ -957,53 +790,367 @@ function sunMeter() {
 
 
 // Abas embaixo, com o dado entre Editar e Exportar. Tocar na aba aberta fecha o painel dela.
-function buildTabbar() {
-    const bar = $('tabbar'), dice = $('btnDice'); bar.innerHTML = '';
-    dice.innerHTML = '<span class="key">' + icon('dice') + '</span><span>Sortear</span>';
-    TABS.forEach(t => {
-        const b = h('button', 'tab' + (t.id === ui.tab ? ' on' : ''), icon(t.icon) + `<span>${t.label}</span>`);
-        b.type = 'button'; b.dataset.tab = t.id; b.title = t.label;
-        b.onclick = () => {
-            if (panelCollapsed) setPanelCollapsed(false);
-            if (ui.tab !== t.id) { selectTab(t.id); return; }
-            if (t.id === 'editar') { if (!isSide()) { ui.editTool = null; fitAnim(); buildPanel(); } return; }
-            setOpen(!ui.open[t.id]);
-        };
-        bar.append(b);
-        if (t.id === 'editar') bar.append(dice);
-    });
-}
-// painel da aba aberto ou fechado; a imagem acompanha o espaço que sobra
-function setOpen(on) { ui.open[ui.tab] = !!on; fitAnim(); buildPanel(); }
-// a foto acompanha suavemente quando o painel muda de altura
 function fitAnim() { app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400); }
 // abre uma ferramenta de Editar já com um ajuste escolhido (usado pelas Camadas e pela dupla exposição)
-const STYLE_KIND = { textura: 'fx', filme: 'film', pintura: 'paint' };
-function goTo(groupId, key) {
-    if (panelCollapsed) setPanelCollapsed(false);
-    if (STYLE_KIND[groupId]) {
-        const kind = STYLE_KIND[groupId], id = kind === 'fx' ? st.fx.id : kind === 'film' ? st.film.look : st.paint.mode;
-        ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleAdjust = !!ui.styleSel; ui.styleCat = kind; ui.open.estilos = true;
-        selectTab('estilos'); return;
-    }
-    ui.editTool = groupId; ui.acc.add(groupId); ui.open.editar = true;
-    if (key) ui.exp['x:' + key] = true;
-    selectTab('editar');
+// ============================================================
+// PAINEL (v5.1): quatro grupos na barra principal, cada um com as suas partes.
+//   Looks · Ajustar (Cortar, Luz, Cor) · Pixel · Efeitos (Texturas, Filmes, Câmera, Dupla, Mover)
+// Celular — tudo na horizontal para a foto não encolher:
+//   [partes do grupo · sortear · restaurar] [o ajuste escolhido: régua, opções ou miniaturas] [ícones dos ajustes, rolando de lado]
+// Computador — coluna à direita com a lista completa (há espaço de sobra na vertical).
+// Tocar no grupo aberto recolhe o painel (a foto ganha a tela).
+// ============================================================
+const SUBS = {
+    looks: { label: 'Looks', icon: 't-looks', gallery: 'looks' },
+    crop: { label: 'Cortar', icon: 't-crop', tool: CROP_TOOL },
+    luz: { label: 'Luz', icon: 't-luz', tool: LUZ_TOOL, dice: 'luz' },
+    cor: { label: 'Cor', icon: 't-cor', tool: COR_TOOL, dice: 'cor' },
+    pixel: { label: 'Pixel', icon: 't-pixel', tool: PIXEL_TOOL, dice: 'pixel' },
+    texturas: { label: 'Texturas', icon: 't-textura', gallery: 'tex', dice: 'textura' },
+    filmes: { label: 'Filmes', icon: 't-filme', gallery: 'film', dice: 'filme' },
+    camera: { label: 'Câmera', icon: 't-lente', tool: CAMERA_TOOL },
+    dupla: { label: 'Dupla', icon: 't-dupla', tool: DUPLA_TOOL, dice: 'dupla' },
+    mover: { label: 'Mover', icon: 't-movimento', tool: MOV_TOOL, dice: 'movimento' },
+};
+const GROUPS = [
+    { id: 'looks', label: 'Looks', icon: 't-looks', subs: ['looks'] },
+    { id: 'ajustar', label: 'Ajustar', icon: 'tab-edit', subs: ['crop', 'luz', 'cor'] },
+    { id: 'pixel', label: 'Pixel', icon: 't-pixel', subs: ['pixel'] },
+    { id: 'efeitos', label: 'Efeitos', icon: 't-efeitos', subs: ['texturas', 'filmes', 'camera', 'dupla', 'mover'] },
+];
+ui.group = 'looks'; ui.sub = { looks: 'looks', ajustar: 'luz', pixel: 'pixel', efeitos: 'texturas' };
+ui.panelOpen = true; ui.fxAdjust = false; ui.muted = {}; ui.active = {};
+const groupDef = (id) => GROUPS.find(g => g.id === id) || GROUPS[0];
+const groupOfSub = (sub) => GROUPS.find(g => g.subs.includes(sub)) || GROUPS[0];
+const curSub = () => { const g = groupDef(ui.group); return g.subs.includes(ui.sub[g.id]) ? ui.sub[g.id] : g.subs[0]; };
+// nomes antigos (receita, dupla exposição, console) → parte nova
+const SUB_ALIAS = { textura: 'texturas', pintura: 'texturas', filme: 'filmes', lente: 'camera', movimento: 'mover', estilos: 'looks', efeitos: 'texturas', ajustar: 'luz' };
+const subOf = (x) => SUBS[x] ? x : (SUB_ALIAS[x] || 'looks');
+// uma parte tem algo ligado? (ponto âmbar)
+function subUsed(id) {
+    try {
+        switch (id) {
+            case 'crop': return !isCropIdentity(st.crop) || st.pixel.scale !== 100;
+            case 'luz': return toolCount(LUZ_TOOL) > 0;
+            case 'cor': return st.color.sel !== 'all' || st.color.invert || st.grad.on;
+            case 'pixel': return st.pixel.size > 1 || st.dither.mode !== 'none' || st.pixel.group > 0 || st.edge.size > 0;
+            case 'texturas': return currentTexture() !== 'none';
+            case 'filmes': return st.film.look !== 'none';
+            case 'camera': return st.grain.amount > 0 || LENS_KEYS.some(k => st.film[k]);
+            case 'dupla': return !!st.dbl.on;
+            case 'mover': return M.type === 'image' && animOn();
+        }
+    } catch (e) {}
+    return false;
 }
-function selectTab(id) {
-    if (!TABS.some(t => t.id === id)) id = TABS[0].id;
-    const was = ui.tab; ui.tab = id;
-    if (id !== 'editar') ui.open[id] = true;      // Estilos e Exportar abrem ao entrar; Editar lembra se havia ferramenta aberta
-    document.querySelectorAll('#tabbar .tab[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
-    $('panel').dataset.tab = id;
-    if (was === 'exportar' && id !== 'exportar') stopAnim();
-    buildPanel(); updateSubbarCenter();
+const groupUsed = (g) => g.id !== 'looks' && g.subs.some(subUsed);
+const compact = () => !isSide();
+
+// ---------- barra principal ----------
+function buildNav() {
+    const nav = $('nav'); nav.innerHTML = '';
+    nav.style.setProperty('--n', GROUPS.length);
+    GROUPS.forEach(g => {
+        const on = g.id === ui.group, b = h('button', 'nav-btn' + (on ? ' on' : '') + (on && !ui.panelOpen ? ' shut' : ''));
+        b.type = 'button'; b.title = g.label; b.setAttribute('aria-pressed', String(on));
+        b.innerHTML = icon(g.icon) + '<span class="t"></span>'; b.lastChild.textContent = g.label;
+        if (groupUsed(g)) b.append(h('i', 'dot'));
+        b.onclick = () => selectGroup(g.id, true);
+        nav.append(b);
+    });
+}
+// só os pontos e a receita (chamado a cada mudança; barato)
+function syncChrome() {
+    [...$('nav').children].forEach((b, i) => {
+        const used = groupUsed(GROUPS[i]), dot = b.querySelector('.dot');
+        if (used && !dot) b.append(h('i', 'dot')); else if (!used && dot) dot.remove();
+    });
+    $('phead').querySelectorAll('[data-sub]').forEach(b => b.classList.toggle('has', subUsed(b.dataset.sub)));
+    updateRecipeBadge();
+}
+function selectGroup(id, fromNav) {
+    if (!M.el) return;
+    if (fromNav && id === ui.group) ui.panelOpen = !ui.panelOpen;
+    else { ui.group = groupDef(id).id; ui.panelOpen = true; ui.fxAdjust = false; }
+    fitAnim(); buildPanel();
+}
+function selectSub(sub) {
+    sub = subOf(sub); const g = groupOfSub(sub);
+    ui.group = g.id; ui.sub[g.id] = sub; ui.panelOpen = true; ui.fxAdjust = false;
+    fitAnim(); buildPanel();
+}
+// atalho usado pela receita, pela exportação e pela dupla exposição: abre a parte certa (e o ajuste)
+function goTo(x, key) {
+    const sub = subOf(x), g = groupOfSub(sub);
+    ui.group = g.id; ui.sub[g.id] = sub; ui.panelOpen = true;
+    ui.fxAdjust = (sub === 'texturas' && currentTexture() !== 'none') || (sub === 'filmes' && st.film.look !== 'none');
+    if (key) { ui.exp['x:' + key] = true; ui.active[sub] = key; }
+    fitAnim(); buildPanel();
+}
+const selectTool = (id) => goTo(id);      // nomes antigos (console e testes)
+const selectTab = (id) => goTo(id);
+
+// ---------- cabeçalho: partes do grupo (ou “voltar”) + sortear, restaurar, recolher ----------
+function buildHead(sub, acts, back) {
+    const hd = $('phead'); hd.innerHTML = '';
+    const g = groupDef(ui.group);
+    if (back) {
+        const b = h('button', 'pback', icon('back') + '<span></span>'); b.type = 'button'; b.lastChild.textContent = back.label; b.setAttribute('aria-label', 'Voltar'); b.onclick = back.run; hd.append(b);
+    } else if (g.subs.length > 1) {
+        const tabs = h('div', 'subtabs'); tabs.setAttribute('role', 'tablist');
+        g.subs.forEach(s => {
+            const on = s === sub, b = h('button', 'subtab' + (on ? ' on' : '') + (subUsed(s) ? ' has' : '')); b.type = 'button'; b.dataset.sub = s;
+            b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(on)); b.textContent = SUBS[s].label;
+            b.onclick = () => { if (!on) selectSub(s); };
+            tabs.append(b);
+        });
+        hd.append(tabs);
+        requestAnimationFrame(() => { const x = tabs.querySelector('.on'); if (x && (x.offsetLeft < tabs.scrollLeft || x.offsetLeft + x.offsetWidth > tabs.scrollLeft + tabs.clientWidth)) tabs.scrollLeft = x.offsetLeft - 12; });
+    } else { const t = h('h2', 'ptitle'); t.textContent = SUBS[sub].label; hd.append(t); }
+    hd.append(h('span', 'pfill'));
+    acts.filter(Boolean).forEach(([ic, label, run]) => {
+        const b = h('button', 'hbtn', icon(ic)); b.type = 'button'; b.title = label; b.setAttribute('aria-label', label); b.onclick = run; hd.append(b);
+    });
+    const x = h('button', 'hbtn pclose', icon('chev-d')); x.type = 'button'; x.title = 'Recolher o painel'; x.setAttribute('aria-label', x.title);
+    x.onclick = () => { ui.panelOpen = false; fitAnim(); buildPanel(); };
+    hd.append(x);
+}
+
+function buildPanel() {
+    const ed = $('editor'), sub = curSub();
+    const key = ui.group + '|' + sub + '|' + ui.fxAdjust + '|' + (compact() ? 'c' : 'l'), same = ed.dataset.key === key, top = ed.scrollTop;
+    const keep = [...ed.querySelectorAll('[data-scroll]')].map(x => [x.dataset.scroll, x.scrollTop, x.scrollLeft]);
+    ed.innerHTML = ''; rows = []; ed.dataset.key = key;
+    app.classList.toggle('panel-closed', !ui.panelOpen);
+    app.classList.toggle('compact', compact());
+    app.dataset.tool = sub;
+    buildNav(); updateRecipeBadge(); buildRecipeDock();
+    if (!M.el) { $('phead').innerHTML = ''; return; }
+    const S = SUBS[sub];
+    if (S.gallery) buildGallerySub(ed, sub);
+    else buildToolSub(ed, sub);
+    keep.forEach(([k, tp, l]) => { const x = ed.querySelector(`[data-scroll="${CSS.escape(k)}"]`); if (x) { x.scrollTop = tp; x.scrollLeft = l; } });
+    if (same) ed.scrollTop = top;
+}
+function rebuildDials() { buildPanel(); }
+
+// ---------- parte com lista de ajustes ----------
+function buildToolSub(ed, sub) {
+    const S = SUBS[sub], g = S.tool, [list, reset] = splitReset(g.controls().filter(c => !c.hidden));
+    buildHead(sub, [
+        S.dice ? ['dice', 'Sortear ' + S.label, () => rollTool(S.dice)] : null,
+        reset ? ['reset', 'Restaurar ' + S.label, () => reset.run()] : null,
+    ]);
+    const note = g.note && g.note();
+    if (compact()) { compactList(ed, list, sub, note); return; }
+    if (note) ed.append(h('p', 'pnote', note));
+    fillList(ed, list, g.id);
+}
+
+// ============================================================
+// CELULAR: ajuste escolhido em cima, ícones de todos os ajustes numa faixa que rola de lado
+// ============================================================
+const PIC = (name) => ICON_PATHS['sm-' + name] ? icon('sm-' + name, 'pi') : ICON_PATHS[name] ? icon(name, 'pi') : icon('sm-styles', 'pi');
+// nomes curtos para a faixa de ícones (o nome inteiro aparece na régua e no toque longo)
+const SHORT = { 'Espelhar na horizontal': 'Espelhar ↔', 'Espelhar na vertical': 'Espelhar ↕', 'Movimento da textura': 'Movimento', 'Movimento do padrão': 'Movimento', 'Movimento do grão': 'Mov. grão', 'Movimento do filme': 'Mov. filme',
+    'Mover a textura': 'Textura', 'Mover o padrão': 'Padrão', 'Mover o grão': 'Grão', 'Mover o filme': 'Filme', 'Quadros por segundo': 'Quadros/s', 'Duração do loop': 'Duração', 'Inverter (negativo)': 'Inverter',
+    'Combinações prontas': 'Prontas', 'Paletas prontas': 'Paletas', 'Cores do degradê': 'Cores', 'Degradê ligado': 'Degradê', 'Vazamento de luz': 'Vazamento', 'Cor do vazamento': 'Cor vaz.', 'Cor da vinheta': 'Cor vinh.',
+    'Tamanho do grão': 'Tamanho', 'Grão sem cor': 'Sem cor', 'Aspereza do grão': 'Aspereza', 'Grão: sombras ↔ luzes': 'Sombra↔luz', 'Escala do padrão': 'Escala', 'Só nos meios-tons': 'Meios-tons', 'Cor do contorno': 'Cor',
+    'Aplicar antes da paleta': 'Antes', 'Segunda imagem': 'Imagem', 'Dupla exposição': 'Ligada', 'Inverter máscara': 'Inverter', 'Inverter sombras': 'Inverter', 'Aplicar no vídeo': 'No vídeo', 'Manchas mínimas': 'Manchas' };
+const editableC = (c) => c && (c.kind === 'range' || c.kind === 'choice' || c.kind === 'custom');
+function compactList(ed, list, scope, note) {
+    const ctrls = list.filter(c => c.kind !== 'divider');
+    let cur = ctrls.find(c => editableC(c) && ctrlId(c) === ui.active[scope]);
+    if (!cur) cur = ctrls.find(c => editableC(c) && c.kind !== 'custom') || ctrls.find(editableC);
+    // 1) o ajuste escolhido
+    const box = h('div', 'crow'); box.dataset.scroll = 'crow:' + scope + ':' + (cur ? ctrlId(cur) : '');
+    // aviso (Mover parado): ocupa a linha até a pessoa tocar num ajuste
+    const showNote = note && (!cur || (!ui.active[scope] && !list.some(c => c.kind === 'toggle')));
+    if (showNote) { box.append(h('p', 'cnote', note)); cur = null; }
+    if (cur) {
+        if (cur.kind === 'range') box.append(makeFader(cur));
+        else if (cur.kind === 'choice' && cur.view === 'thumbs') { box.classList.add('tall'); box.append(makeThumbChoice(cur, false)); }
+        else if (cur.kind === 'choice') { const lab = h('span', 'clabel'); lab.textContent = cur.label; box.append(lab, makeChips(cur)); }
+        else { box.classList.add('tall', 'custom'); const lab = h('span', 'clabel'); lab.textContent = cur.label; const body = h('div', 'cbody'); box.append(lab, body); if (M.el) cur.editor(body, cur); }
+    }
+    ed.append(box);
+    // 2) todos os ajustes como ícones
+    const strip = h('div', 'pstrip'); strip.dataset.scroll = 'pstrip:' + scope;
+    list.forEach(c => {
+        if (c.kind === 'divider') { const s = h('span', 'psep'); s.title = c.label; strip.append(s); return; }
+        const isCur = c === cur, b = h('button', 'pbtn' + (isCur ? ' on' : '')); b.type = 'button'; b.title = c.label;
+        const pic = c.kind === 'color' ? `<span class="pswatch" style="background:${ctrlValue(c) || '#000'}"></span>` : PIC(c.icon || 'styles');
+        b.innerHTML = pic + '<span class="pl"></span>'; b.lastChild.textContent = SHORT[c.label] || c.label;
+        const mod = c.kind === 'toggle' ? !!ctrlValue(c) : isModified(c);
+        if (mod) b.classList.add('mod');
+        if (c.kind === 'toggle') b.classList.add('tog');
+        if (c.kind === 'action') b.classList.add('pact');
+        const lk = lockKeyOf(c); if (lk && prefs.locks.has(lk)) b.classList.add('locked');
+        if (lk) onHold(b, () => { toggleLock(lk); buildPanel(); });
+        b.onclick = () => {
+            if (c.kind === 'action') { c.run(); return; }
+            if (c.kind === 'toggle') { const nv = !ctrlValue(c); if (c.onPick) c.onPick(nv); else change(c.key, nv, { dials: true }); buildPanel(); return; }
+            if (c.kind === 'color') { pickColor(ctrlValue(c), (hex, final) => { if (c.ensure) c.ensure(); change(c.key, hex, { soft: !final }); if (final) buildPanel(); }, c.label); return; }
+            ui.active[scope] = ctrlId(c); buildPanel();
+        };
+        strip.append(b);
+    });
+    ed.append(strip);
+    requestAnimationFrame(() => { const x = strip.querySelector('.pbtn.on'); if (x && (x.offsetLeft < strip.scrollLeft || x.offsetLeft + x.offsetWidth > strip.scrollLeft + strip.clientWidth)) strip.scrollLeft = x.offsetLeft - strip.clientWidth / 2 + x.offsetWidth / 2; });
+}
+
+// ============================================================
+// GALERIAS (Looks, Texturas, Filmes): o escolhido ganha a régua de intensidade e “Ajustar”
+// celular: miniaturas numa faixa que rola de lado; computador: grade
+// ============================================================
+function galleryTile(box, { key, label, state, live = true, on, onPick, detail }) {
+    const el = h('button', 'thumb' + (on ? ' on' : '')); el.type = 'button'; el.title = label; el.setAttribute('aria-pressed', String(!!on));
+    const pic = h('span', 'pic'), t = h('span', 't'); t.textContent = label; el.append(pic, t);
+    if (state) Thumbs.attach(pic, key, state, live, !!detail);
+    el.onclick = onPick; box.append(el); return el;
+}
+function actionTile(box, label, ic, run, cls = '') {
+    const el = h('button', 'thumb tact ' + cls); el.type = 'button'; el.title = label;
+    el.innerHTML = `<span class="pic">${icon(ic)}</span><span class="t"></span>`; el.lastChild.textContent = label;
+    el.onclick = run; box.append(el); return el;
+}
+function gridHead(box, text) { const x = h('p', 'ghead'); x.textContent = text; box.append(x); }
+function selBar(ed, c, name, adjust, extra) {
+    const bar = h('div', 'selbar');
+    if (c) bar.append(makeFader(c, { label: name })); else { const n = h('span', 'selname'); n.textContent = name; bar.append(n); }
+    if (extra) bar.append(extra);
+    if (adjust) { const b = h('button', 'seladj', '<span>Ajustar</span>' + icon('chev')); b.type = 'button'; b.title = 'Ajustar ' + name; b.onclick = adjust; bar.append(b); }
+    ed.append(bar);
+}
+function buildGallerySub(ed, sub) {
+    const S = SUBS[sub];
+    if (S.gallery === 'looks') return buildLooks(ed);
+    const isTex = S.gallery === 'tex', fams = isTex ? FX_FAMILIES : FILM_FAMILIES;
+    const cur = isTex ? currentTexture() : st.film.look, curFam = famOf(fams, cur);
+    const remove = isTex ? removeTexture : removeFilm;
+    const acts = [['dice', 'Sortear ' + S.label.toLowerCase(), () => { rollTool(S.dice); ui.fxAdjust = false; buildPanel(); }], cur !== 'none' ? ['close', 'Remover', remove] : null];
+    const name = cur === 'none' ? '' : (isTex ? texName(cur) : filmName(cur));
+    // ajustar o escolhido: os ajustes dele, com “voltar”
+    if (ui.fxAdjust && cur !== 'none') {
+        buildHead(sub, acts, { label: curFam ? curFam[1] : name, run: () => { ui.fxAdjust = false; buildPanel(); } });
+        const list = isTex ? textureControls() : filmControls();
+        const note = !isTex && FILM_LOOKS[cur] && FILM_LOOKS[cur].desc;
+        if (compact()) { compactList(ed, list, 'fx:' + sub, ''); return; }
+        if (note) ed.append(h('p', 'pnote', note));
+        fillList(ed, list, 'fx:' + sub); return;
+    }
+    ui.fxAdjust = false;
+    buildHead(sub, acts);
+    const open = () => { ui.fxAdjust = true; fitAnim(); buildPanel(); };
+    if (cur !== 'none') selBar(ed, cur.startsWith('paint:') ? null : { kind: 'range', key: isTex ? 'fx.mix' : 'film.mix', label: name, min: 0, max: 100, step: 1, fmt: (v) => v + '%' }, name, open);
+    else if (compact()) ed.append(h('p', 'cnote', isTex ? 'Escolha uma textura. Toque de novo nela para ajustar.' : 'Escolha um filme. Toque de novo nele para ajustar.'));
+    const box = h('div', compact() ? 'tstrip' : 'tgrid'); box.dataset.scroll = 'g:' + sub;
+    const none = actionTile(box, isTex ? 'Nenhuma' : 'Nenhum', 'close', () => { if (cur !== 'none') remove(); }, cur === 'none' ? 'on none' : 'none');
+    none.setAttribute('aria-pressed', String(cur === 'none'));
+    fams.forEach(([fid, label, vars]) => {
+        const on = curFam && curFam[0] === fid, first = on ? cur : vars[0];
+        galleryTile(box, {
+            key: (isTex ? 'tex:' : 'film:') + first, label, on,
+            state: () => { const s = deepClone(st); (isTex ? applyTextureTo : applyFilmTo)(s, first); return s; },
+            onPick: () => {
+                if (on) { open(); return; }   // tocar de novo no escolhido: ajustar
+                (isTex ? applyTextureTo : applyFilmTo)(st, first); Engine.invalidate(); change(null, null, { rebuild: true }); flashLabel(label);
+            },
+        });
+    });
+    ed.append(box);
+    if (compact()) requestAnimationFrame(() => { const x = box.querySelector('.thumb.on'); if (x) box.scrollLeft = x.offsetLeft - box.clientWidth / 2 + x.offsetWidth / 2; });
+}
+function buildLooks(ed) {
+    buildHead('looks', [['dice', 'Sortear uma combinação nova', rollDice], ['plus', 'Salvar o look atual', saveUserPreset]]);
+    const sel = ui.lastPreset, mine = sel && prefs.presets[sel];
+    if (sel && (mine || BUILTIN_STYLES[sel] || sel === 'Original')) {
+        const mixC = { kind: 'range', key: '_mix', label: 'Intensidade', min: 0, max: 100, step: 1, def: 100, fmt: (v) => v + '%', get: () => st.mix, set: (v, final) => { st.mix = v; requestRender(); if (final) commit(); } };
+        let del = null;
+        if (mine) {
+            del = h('button', 'hbtn', icon('close')); del.type = 'button'; del.title = 'Apagar ' + sel; del.setAttribute('aria-label', del.title);
+            del.onclick = () => { const bak = prefs.presets[sel]; delete prefs.presets[sel]; store.set('presets', prefs.presets); ui.lastPreset = null; buildPanel();
+                toast('Look apagado', { label: 'Desfazer', run: () => { prefs.presets[sel] = bak; store.set('presets', prefs.presets); buildPanel(); } }); };
+        }
+        selBar(ed, sel === 'Original' ? null : mixC, sel, null, del);
+    } else if (compact()) ed.append(h('p', 'cnote', 'Toque num look. O sol do topo sorteia combinações novas.'));
+    const box = h('div', compact() ? 'tstrip' : 'tgrid'); box.dataset.scroll = 'g:looks';
+    actionTile(box, 'Sortear', 'dice', rollDice, 'dice');
+    galleryTile(box, { key: 'look:original', label: 'Original', state: () => presetApplyState(freshState()), live: false, on: sel === 'Original', onPick: () => { applyPreset('Original', freshState()); buildPanel(); } });
+    Object.keys(BUILTIN_STYLES).forEach(n => galleryTile(box, { key: 'look:' + n, label: n, state: () => presetApplyState(builtinState(n)), live: false, on: sel === n, onPick: () => { applyPreset(n, builtinState(n)); buildPanel(); } }));
+    if (!compact()) gridHead(box, 'Meus looks'); else box.append(h('span', 'tsep'));
+    Object.keys(prefs.presets).forEach(n => galleryTile(box, { key: 'mine:' + n, label: n, state: () => presetApplyState(prefs.presets[n]), live: false, on: sel === n, onPick: () => { applyPreset(n, prefs.presets[n]); buildPanel(); } }));
+    actionTile(box, 'Salvar atual', 'plus', saveUserPreset, 'add');
+    ed.append(box);
+    if (compact()) requestAnimationFrame(() => { const x = box.querySelector('.thumb.on'); if (x) box.scrollLeft = x.offsetLeft - box.clientWidth / 2 + x.offsetWidth / 2; });
+}
+
+// ---------- Exportar: folha por cima (celular) ou janela (computador) ----------
+ui.expKind = 'image';
+function openExport() {
+    if (!M.el) return;
+    openSheet((sh) => { sh.classList.add('export-sheet'); fillExport(sh); }, () => { if (M.type === 'image' && anim.playing && curSub() !== 'mover') stopAnim(); });
+}
+function expBlock(label, el) { const b = h('div', 'xblock'); const l = h('span', 'xlabel'); l.textContent = label; b.append(l, el); return b; }
+function fillExport(sh) {
+    sh.innerHTML = '<div class="grabber"></div>'; sheetHead(sh, 'Exportar');
+    const box = h('div', 'export'); sh.append(box);
+    const isVid = M.type === 'video', moving = !isVid && animOn();
+    const re = () => fillExport(sh);
+    if (!moving) ui.expKind = 'image';
+    if (moving) box.append(segmented([['image', 'Imagem'], ['anim', 'Animação']], ui.expKind, (v) => { ui.expKind = v; re(); }, 'O que exportar'));
+    const fmts = isVid ? [['mp4', 'MP4'], ['webm', 'WebM'], ['gif', 'GIF']] : ui.expKind === 'anim' ? [['gif', 'GIF'], ['mp4', 'MP4'], ['webm', 'WebM']] : [['png', 'PNG'], ['jpeg', 'JPEG'], ['webp', 'WebP'], ['svg', 'SVG']];
+    const fk = isVid ? 'vFormat' : 'format';
+    if (!fmts.some(f => f[0] === exp[fk])) exp[fk] = fmts[0][0];
+    const f = exp[fk];
+    const inf = h('div', 'xinfo'); inf.innerHTML = '<span class="xbig"></span><span class="xsub"></span>'; box.append(inf);
+    box.append(expBlock('Formato', segmented(fmts, f, (v) => { exp[fk] = v; saveExp(); re(); }, 'Formato')));
+    let label = 'Salvar vídeo', run, info = '', infoSub = '', extra = [];
+    if (!isVid && STILL.includes(f)) {
+        if (anim.playing) stopAnim();
+        const sizes = exportSizes(); if (!sizes.some(s => s.id === exp.size)) exp.size = 'orig';
+        const cur = sizes.find(s => s.id === exp.size) || sizes[0];
+        box.append(expBlock('Tamanho', segmented(sizes.map(s => [s.id, s.label]), exp.size, (v) => { exp.size = v; saveExp(); re(); }, 'Tamanho')));
+        info = sizeText(cur.res); infoSub = 'px · ' + f.toUpperCase();
+        label = 'Salvar imagem'; run = () => { closeSheet(); saveStill(); };
+        if (navigator.clipboard && window.ClipboardItem) extra.push(['Copiar', 'photo', () => { closeSheet(); copyImage(); }]);
+        extra.push(['Salvar ajustes', 'save', () => { Exporter.config(st); toast('Ajustes salvos num arquivo .txt'); }]);
+    } else if (f === 'gif') {
+        if (!isVid) ensureAnimPreview();
+        box.append(expBlock('Tamanho', segmented([[360, 'Pequeno'], [480, 'Médio'], [720, 'Grande']], exp.gifSize, (v) => { exp.gifSize = +v; saveExp(); re(); }, 'Tamanho')));
+        info = exp.gifSize + ' px'; infoSub = 'lado maior · GIF';
+        label = 'Salvar GIF';
+        run = () => isVid
+            ? (pauseVideo(), runExport('GIF', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: 'gif', res: exp.gifSize, fps: 15, mute: true, withAnim: st.anim.videoSync, trim: trimOf() })), 'gif'))
+            : runExport('GIF', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: 'gif', res: exp.gifSize, repeat: 1, key: 'main' + M.serial })), 'gif');
+    } else if (isVid) {
+        const H = video.videoHeight || 1080, vs = { screen: Math.min(720, H), orig: H, '2x': Math.min(2160, H * 2) };
+        const opts = [['screen', 'Tela'], ['orig', 'Original'], ...(reRendered() && H < 2160 ? [['2x', '2×']] : [])];
+        if (!opts.some(o => o[0] === exp.vSize)) exp.vSize = 'orig';
+        box.append(expBlock('Tamanho', segmented(opts, exp.vSize, (v) => { exp.vSize = v; saveExp(); re(); }, 'Tamanho')),
+            expBlock('Quadros por segundo', segmented([[24, '24'], [30, '30'], [60, '60']], exp.vFps, (v) => { exp.vFps = +v; saveExp(); }, 'Quadros por segundo')),
+            expBlock('Som', segmented([['on', 'Com som'], ['off', 'Sem som']], exp.audio ? 'on' : 'off', (v) => { exp.audio = v === 'on'; saveExp(); }, 'Som')));
+        info = (vs[exp.vSize] || H) + 'p'; infoSub = f.toUpperCase() + (trimOf() ? ' · trecho' : '');
+        run = () => { pauseVideo(); runExport('Vídeo', (job) => Exporter.video(st, M.blob, Object.assign(job, { format: f, res: vs[exp.vSize] || H, fps: exp.vFps, mute: !exp.audio, withAnim: st.anim.videoSync, trim: trimOf() })), f); };
+    } else {
+        ensureAnimPreview();
+        box.append(expBlock('Tamanho', segmented([['screen', 'Tela'], ['max', 'Máxima']], exp.aSize, (v) => { exp.aSize = v; saveExp(); re(); }, 'Tamanho')),
+            expBlock('Repetir o loop', segmented([[1, '1×'], [3, '3×'], [5, '5×'], [10, '10×']], exp.aRepeat, (v) => { exp.aRepeat = +v; saveExp(); }, 'Repetir o loop')));
+        info = (exp.aSize === 'screen' ? 720 : 2160) + ' px'; infoSub = 'lado maior · ' + f.toUpperCase();
+        run = () => runExport('Vídeo', (job) => Exporter.animation(st, M.el, Object.assign(job, { format: f, res: exp.aSize === 'screen' ? 720 : 2160, repeat: exp.aRepeat, key: 'main' + M.serial })), f);
+    }
+    inf.firstChild.textContent = info; inf.lastChild.textContent = infoSub;
+    const go = h('button', 'btn primary', icon('download') + '<span></span>'); go.type = 'button'; go.lastChild.textContent = label; go.onclick = run; box.append(go);
+    if (extra.length) { const two = h('div', 'xtwo'); extra.forEach(([l, ic, fn]) => { const b = h('button', 'btn', smallIcon(ic) + '<span></span>'); b.type = 'button'; b.lastChild.textContent = l; b.onclick = fn; two.append(b); }); box.append(two); }
+    if (!isVid && !moving) {
+        const n = h('p', 'xnote'); n.append('GIF e vídeo aparecem quando algo se move: veja ');
+        const a = h('button', 'link', 'Mover'); a.type = 'button'; a.onclick = () => { closeSheet(); goTo('mover'); }; n.append(a, '.');
+        box.append(n);
+    }
 }
 
 // Ao remontar a MESMA ferramenta (depois de um toque), tudo fica exatamente onde estava:
 // fileira de ajustes, faixa de miniaturas e ferramentas. Ao trocar, o ajuste ativo fica à vista.
-let lastPanelKey = null;
-function panelKey() { return ui.tab + '/' + currentGroup().id; }
 const isCtrl = (c) => c.kind !== 'divider';
 function pickActive(controls, key) {
     return controls.find(c => isCtrl(c) && ctrlId(c) === ui.active[key])
@@ -1063,27 +1210,16 @@ function flashLabel(text, ms = 1100) {
 }
 
 // ============================================================
-// EDITORES
+// EDITORES: os editores próprios (paleta, cores do degradê…) se redesenham remontando o painel
 // ============================================================
+function buildEditor() { buildPanel(); }
 let lastEditorKey = null;
-function buildEditor(c) {
-    if (c && c.kind === 'custom' && ui.tab === 'editar') { buildPanel(); return; }
-    const ed = $('editor');
-    // refazer o MESMO editor nunca volta a faixa para o começo: guarda e devolve a rolagem
-    const key = c ? (c.key || c.id || (c.editor && c.editor.name) || c.label) + '|' + ui.tab : null;
-    const prev = key && key === lastEditorKey ? ed.scrollTop : null;
-    lastEditorKey = key;
-    ed.innerHTML = ''; ed.scrollTop = 0;
-    if (!c) return;
-    if (prev !== null) { ui.keepScroll = true; buildEditorInner(ed, c); ui.keepScroll = false; ed.scrollTop = prev; return; }
-    buildEditorInner(ed, c);
-}
-function buildEditorInner(ed, c) {
-    if (c.kind === 'range') { ed.append(makeRuler(c)); return; }
-    // nota só abaixo dos chips (as miniaturas já ocupam a altura toda do editor)
-    if (c.kind === 'choice') { if (c.view === 'thumbs') { ed.append(makeThumbChoice(c)); return; } ed.append(makeChips(c)); const n = choiceNote(c); if (n) ed.append(h('div', 'editor-note', n)); return; }
-    if (c.kind === 'custom') { if (M.el) c.editor(ed, c); return; }
-    ed.append(h('div', 'editor-note', c.kind === 'toggle' ? 'Toque para ligar ou desligar.' : ''));
+let dialEls = [];
+// segurar o nome de um ajuste: o dado passa a deixá-lo como está
+function toggleLock(k) {
+    if (prefs.locks.has(k)) prefs.locks.delete(k); else prefs.locks.add(k);
+    store.set('locks', [...prefs.locks]);
+    toast(prefs.locks.has(k) ? 'Ajuste travado: o sorteio não mexe nele' : 'Ajuste livre para o sorteio');
 }
 function choiceNote(c) {
     if (c.key === 'film.look') { const l = FILM_LOOKS[st.film.look]; return l ? l.desc : 'Escolha um filme: a prévia usa a sua foto com os ajustes atuais.'; }
@@ -1421,11 +1557,21 @@ function applyPreset(name, ps) {
 })();
 // estilos prontos: combinações das ferramentas normais (tudo continua editável depois de aplicar)
 const longSide = () => { const A = M.analysis || {}; return Math.max(A.W || 1600, A.H || 1200); };
+// Looks prontos: combinações das ferramentas normais (tudo continua editável depois de aplicar)
+const GB_PAL = ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'];
 const BUILTIN_STYLES = {
     '16-bit': (s) => { s.pixel.size = Math.max(1, Math.round(longSide() / 240)); s.color.sel = '24'; s.dither.mode = 'bayer8'; s.dither.scale = 1; s.dither.intensity = 70; s.adj.saturation = 35; s.adj.contrast = 15; },
-    'Óleo': (s) => { s.fx.id = 'oil'; s.adj.saturation = 10; },
+    'Game Boy': (s) => { s.pixel.size = Math.max(1, Math.round(longSide() / 160)); s.color.base = GB_PAL.slice(); s.color.ref = GB_PAL.slice(); s.color.sel = '4'; s.color.mode = 'preset'; s.dither.mode = 'bayer8'; s.dither.intensity = 60; s.adj.contrast = 20; },
+    'Riso': (s) => { s.fx.id = 'riso'; s.adj.contrast = 10; },
+    'Jornal': (s) => { s.fx.id = 'cmyk_halftone'; s.adj.saturation = -20; s.adj.contrast = 15; },
+    'Térmico': (s) => { s.fx.id = 'thermal'; },
+    'Terminal': (s) => { s.fx.id = 'ascii'; },
+    '1-bit': (s) => { s.fx.id = 'bitmap'; },
+    'Tri-X': (s) => { s.film.look = 'trix'; s.grain.amount = 25; },
+    'CineStill': (s) => { s.film.look = 'cinestill'; s.film.halation = 30; },
     'Celular 2010': (s) => { s.film.look = 'celular2010'; },
     'Webcam 2000': (s) => { s.film.look = 'webcam'; },
+    'Vencido': (s) => { s.film.look = 'vencido_quimica'; },
 };
 const builtinState = (name) => { const s = freshState(); BUILTIN_STYLES[name](s); return s; };
 function styleThumb(strip, name, stateFn, del) {
@@ -1448,49 +1594,6 @@ function styleMixRuler(ed) {
     ed.append(styleRuler);
 }
 function syncStyleRuler() { if (styleRuler && styleRuler.isConnected && styleRuler._sync) styleRuler._sync(); }
-// ============================================================
-// EDITAR EM BARRA: ferramentas numa linha; tocar abre os ajustes dela acima; tocar num ajuste abre o controle
-// ============================================================
-ui.editTool = null; ui.editParam = {};
-// ============================================================
-// ESTILOS EM BARRA: tudo em fileiras horizontais, empilhadas de baixo para cima
-//   [régua do ajuste]        ← abre ao tocar num ajuste (toque de novo fecha)
-//   [ajustes do efeito]      ← botões com ícone e nome; abre ao selecionar um efeito
-//   [todos os efeitos]       ← Prontos · Texturas · Filmes · Pintura · Meus estilos, numa linha só
-//   [Estilos Editar Sortear Exportar]
-// ============================================================
-ui.styleSel = null; ui.styleParam = null; ui.styleScroll = 0;
-function styleItems() {
-    const items = [], G = (label) => items.push({ group: label });
-    G('Prontos');
-    Object.keys(BUILTIN_STYLES).forEach(n => items.push({ kind: 'preset', id: n, label: n, state: () => presetApplyState(builtinState(n)), on: () => ui.lastPreset === n }));
-    G('Texturas');
-    FX_GROUPS().forEach(([, list]) => list.forEach(([id, nome]) => items.push({ kind: 'fx', id, label: nome, state: () => { const s = deepClone(st); s.fx.id = id; if (s.fx.mix < 30) s.fx.mix = 100; return s; }, on: () => st.fx.id === id })));
-    G('Filmes');
-    FILM_LOOK_DEFS.forEach(([, list]) => list.forEach(([id, nome]) => items.push({ kind: 'film', id, label: nome, state: () => { const s = deepClone(st); s.film.look = id; if (s.film.mix < 30) s.film.mix = 100; return s; }, on: () => st.film.look === id })));
-    G('Pintura');
-    PAINT_MODE_OPTS.slice(1).forEach(([id, nome]) => items.push({ kind: 'paint', id, label: nome, state: () => { const s = deepClone(st); s.paint.mode = id; return s; }, on: () => st.paint.mode === id }));
-    G('Meus estilos');
-    items.push({ kind: 'add' });
-    Object.keys(prefs.presets).forEach(n => items.push({ kind: 'mine', id: n, label: n, state: () => presetApplyState(prefs.presets[n]), on: () => ui.lastPreset === n }));
-    return items;
-}
-const isSel = (it) => ui.styleSel && ui.styleSel.kind === it.kind && ui.styleSel.id === it.id;
-// ajustes do efeito selecionado (os mesmos das ferramentas, sem a escolha do efeito)
-function styleControls(sel) {
-    const mixC = { kind: 'range', key: '_mix', label: 'Intensidade', icon: 'intensity', min: 0, max: 100, step: 1, def: 100, get: () => st.mix, set: (v, final) => { st.mix = v; requestRender(); if (final) commit(); } };
-    const rm = (label, fn) => A('Remover', 'reset', () => { const before = snapshot(); fn(); ui.styleSel = null; ui.styleParam = null; Engine.invalidate(); afterExternalChange(); commit(true); toast(label + ' removido', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); });
-    const clean = (list) => list.filter(c => c.kind !== 'divider' && !(c.kind === 'choice' && c.view === 'thumbs') && !(c.kind === 'action' && c.label === 'Restaurar') && !/^Sortear/.test(c.label) && c.label !== 'Travar');
-    // o dado de um efeito troca o efeito: a seleção acompanha o novo
-    const roll = (g, kind, cur) => A('Sortear', 'dice', () => { rollTool(g); const id = cur(); ui.styleSel = id !== 'none' ? { kind, id } : null; ui.styleParam = null; buildPanel(); });
-    if (sel.kind === 'fx') return [...clean(TEXTURA_TOOL.controls()), roll('textura', 'fx', () => st.fx.id), rm('Textura', () => { delete st.fxParams[st.fx.id]; st.fx = fresh('fx'); })];
-    if (sel.kind === 'film') return [...clean(FILME_TOOL.controls()), roll('filme', 'film', () => st.film.look), rm('Filme', () => { Object.assign(st.film, { look: 'none', mix: 100 }); })];
-    if (sel.kind === 'paint') return [...clean(PINTURA_TOOL.controls()), roll('pintura', 'paint', () => st.paint.mode), rm('Pintura', () => { st.paint = fresh('paint'); })];
-    const list = [mixC];
-    if (sel.kind === 'mine') list.push(A('Apagar', 'close', () => { const name = sel.id, bak = prefs.presets[name]; delete prefs.presets[name]; store.set('presets', prefs.presets); ui.styleSel = null; buildPanel();
-        toast('Estilo apagado', { label: 'Desfazer', run: () => { prefs.presets[name] = bak; store.set('presets', prefs.presets); buildPanel(); } }); }));
-    return list;
-}
 function editPalette(ed) {
     const pal = displayPalette(st.color), row = h('div', 'swatches');
     if (!pal.length) { ed.append(h('div', 'editor-note', 'A paleta aparece depois que a imagem for processada.')); requestAnimationFrame(() => { if (st.color.base.length) buildEditor({ kind: 'custom', editor: editPalette }); }); return; }
@@ -1710,21 +1813,27 @@ function ask(title, def, cb) {
 }
 function saveUserPreset() {
     if (!M.el) return;
-    ask('Nome do estilo', 'Meu estilo ' + (Object.keys(prefs.presets).length + 1), (name) => {
+    ask('Nome do look', 'Meu look ' + (Object.keys(prefs.presets).length + 1), (name) => {
         const s = deepClone(st); delete s.crop; prefs.presets[name] = s; store.set('presets', prefs.presets);
-        toast('Salvo em Meus estilos', { label: 'Ver', run: () => selectTab('estilos') });
-        if (ui.tab === 'estilos') { lastEditorKey = null; buildPanel(); }
+        toast('Salvo em Looks', { label: 'Ver', run: () => selectTool('looks') });
+        ui.lastPreset = name; buildPanel();
     });
 }
 
 function openMore() {
     openSheet((sh) => {
+        sheetHead(sh, 'Menu');
         const list = h('div', 'menu-list');
-        const item = (ic, label, fn, sub) => { const b = h('button', 'menu-item', icon(ic) + `<span>${label}</span>` + (sub ? `<span class="sub">${sub}</span>` : '')); b.type = 'button'; b.onclick = () => { closeSheet(); setTimeout(fn, 200); }; list.append(b); };
-        item('plus', 'Salvar estilo', saveUserPreset);
-        item('file', 'Importar configurações', () => $('configInput').click(), 'PNG ou TXT');
-        item('dice', 'Dado: travar e sortear', openRandomSettings);
-        item('reset', 'Restaurar tudo', () => { const before = snapshot(); st = freshState(); Engine.invalidate(); afterExternalChange(); commit(true); toast('Tudo restaurado', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); });
+        const item = (ic, label, fn, sub, needMedia) => {
+            const b = h('button', 'menu-item', icon(ic) + `<span>${label}</span>` + (sub ? `<span class="sub">${sub}</span>` : '')); b.type = 'button';
+            if (needMedia && !M.el) b.disabled = true;
+            b.onclick = () => { closeSheet(); setTimeout(fn, 200); }; list.append(b);
+        };
+        item('open', 'Abrir foto ou vídeo', () => $('fileInput').click());
+        item('plus', 'Salvar look', saveUserPreset, '', true);
+        item('file', 'Importar ajustes', () => $('configInput').click(), 'PNG ou TXT', true);
+        item('lock', 'Travas do sorteio', openRandomSettings, 'segure o logo');
+        item('reset', 'Restaurar tudo', () => { const before = snapshot(); st = freshState(); ui.lastPreset = null; ui.muted = {}; Engine.invalidate(); afterExternalChange(); commit(true); toast('Tudo restaurado', { label: 'Desfazer', run: () => { restore(before); commit(true); } }); }, '', true);
         // tema: Diurno ou Noturno (até escolher, segue o aparelho)
         const th = h('div', 'theme-switch'), dark = isDark();
         [['light', 'Diurno', 'sun'], ['dark', 'Noturno', 'moon']].forEach(([v, l, ic]) => {
@@ -1732,7 +1841,7 @@ function openMore() {
             b.onclick = () => { setTheme(v); th.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
             th.append(b);
         });
-        const about = h('div', 'about', logoSvg('mini')); about.append(h('p', 'note', 'As fotos e vídeos ficam no seu aparelho.'));
+        const about = h('div', 'about', logoSvg('mini')); about.append(h('p', 'note', 'Pixelar ' + (window.PIXELAR_V || '') + ' · as fotos e vídeos ficam no seu aparelho. Dica: toque no sol do topo para uma combinação surpresa.'));
         sh.append(list, th, about);
     });
 }
@@ -1786,7 +1895,7 @@ function openRandomSettings() {
         acts.append(all);
         if (prefs.locks.size) { const b = h('button', 'pill', `Destravar ajustes (${prefs.locks.size})`); b.type = 'button'; b.onclick = () => { prefs.locks.clear(); store.set('locks', []); refreshDials(); b.remove(); toast('Ajustes destravados'); }; acts.append(b); }
         sh.append(acts);
-        sh.append(h('p', 'note', 'Dica: segure uma ferramenta em Editar para travá-la, ou segure um ajuste para travar só ele.'));
+        sh.append(h('p', 'note', 'Dica: segure uma ferramenta na barra para travá-la, ou segure o nome de um ajuste para travar só ele.'));
     }, () => buildPanel());
 }
 // ============================================================
@@ -1826,91 +1935,176 @@ const layerBlend = (id) => { const d = LAYER_DEFS[id]; return d.getB ? d.getB() 
 const setLayerBlend = (id, v) => { const d = LAYER_DEFS[id]; if (d.setB) d.setB(v); else if (v === 'normal') delete st.layers.blend[id]; else st.layers.blend[id] = v; };
 const layerOp = (id) => { const d = LAYER_DEFS[id]; return d.getO ? d.getO() : (st.layers.op[id] === undefined ? 100 : st.layers.op[id]); };
 const setLayerOp = (id, v) => { const d = LAYER_DEFS[id]; if (d.setO) d.setO(v); else if (v >= 100) delete st.layers.op[id]; else st.layers.op[id] = v; };
-let layersOpen = null;
-function openLayers() {
-    if (!M.el) return;
+// ============================================================
+// RECEITA (substitui as Camadas): tudo o que está aplicado, em linguagem de gente.
+//  - ligar/desligar sem perder os ajustes (desligar guarda; ligar devolve)
+//  - tocar abre os detalhes: mistura e opacidade (efeitos por cima) e “Abrir em …”
+//  - os efeitos por cima da foto podem ser arrastados para mudar a ordem
+// ============================================================
+const sumOf = (g, max = 3) => { try { return g.controls().filter(c => c.kind !== 'divider' && !c.hidden && c.kind !== 'action' && isModified(c)).slice(0, max).map(c => c.kind === 'toggle' ? c.label : c.label + ' ' + valText(c, ctrlValue(c))).join(' · '); } catch (e) { return ''; } };
+const RECIPE_BASE = [
+    { id: 'crop', label: 'Cortar', icon: 't-crop', tool: 'crop', paths: ['crop', 'pixel.scale'], on: () => !isCropIdentity(st.crop) || st.pixel.scale !== 100, sum: () => sumOf(CROP_TOOL) },
+    { id: 'luz', label: 'Luz', icon: 't-luz', tool: 'luz', paths: ['adj'], on: () => toolCount(LUZ_TOOL) > 0, sum: () => sumOf(LUZ_TOOL) },
+    { id: 'cor', label: 'Cor', icon: 't-cor', tool: 'cor', paths: ['color'], on: () => st.color.sel !== 'all' || st.color.invert, sum: () => [st.color.sel !== 'all' ? (COLOR_OPTS.find(o => o[0] === st.color.sel) || [, st.color.sel])[1] + (isNaN(+st.color.sel) ? '' : ' cores') : '', st.color.invert ? 'Negativo' : ''].filter(Boolean).join(' · ') },
+    { id: 'pixel', label: 'Pixel', icon: 't-pixel', tool: 'pixel', paths: ['pixel.size', 'pixel.group', 'dither'], on: () => st.pixel.size > 1 || st.dither.mode !== 'none' || st.pixel.group > 0, sum: () => [st.pixel.size > 1 ? 'Pixel ' + st.pixel.size + ' px' : '', st.dither.mode !== 'none' ? DITHER_NAMES[st.dither.mode] : '', st.pixel.group ? 'Agrupar' : ''].filter(Boolean).join(' · ') },
+];
+const RECIPE_LAYER = {   // ícone, ferramenta e partes do estado de cada efeito por cima (a ordem vem de st.layers.order)
+    dbl: { icon: 't-dupla', tool: 'dupla', paths: ['dbl'] }, grad: { icon: 't-cor', tool: 'cor', key: 'grad.on', paths: ['grad'] },
+    fx: { icon: 't-textura', tool: 'textura', paths: ['fx'] }, film: { icon: 't-filme', tool: 'filme', paths: ['film.look', 'film.mix'] },
+    lens: { icon: 't-lente', tool: 'lente', paths: LENS_KEYS.map(k => 'film.' + k) }, grain: { icon: 't-lente', tool: 'lente', paths: ['grain'] },
+    edge: { icon: 't-pixel', tool: 'pixel', key: 'edge.size', paths: ['edge'] },
+};
+const RECIPE_TAIL = [
+    { id: 'paint', label: 'Pintura', icon: 't-pintura', tool: 'pintura', paths: ['paint'], on: () => st.paint.mode !== 'none', sum: () => (PAINT_NAMES['paint:' + st.paint.mode] || '') + ' · sempre por cima' },
+    { id: 'anim', label: 'Movimento', icon: 't-movimento', tool: 'movimento', paths: ['anim.dither', 'anim.fx', 'anim.grain', 'anim.film'], on: () => M.type === 'image' && animOn(), sum: () => describeAnimation(Engine.readSettings(st), readAnim(st)).join(' + ') },
+];
+// lista na ordem de aplicação: base, efeitos por cima (reordenáveis), pintura e movimento
+function recipeItems() {
     st.layers = normalizeLayers(st.layers);
+    const layered = st.layers.order.map(id => {
+        const d = LAYER_DEFS[id], x = RECIPE_LAYER[id]; if (!d || !x) return null;
+        return Object.assign({ id, label: d.label, layer: true, on: d.on, sum: () => { const b = layerBlend(id), o = layerOp(id); return [d.sub(), b !== 'normal' ? (BLEND_OPTS.find(q => q[0] === b) || [, b])[1] : '', o < 100 ? Math.round(o) + '%' : ''].filter(Boolean).join(' · '); } }, x);
+    }).filter(Boolean);
+    return [...RECIPE_BASE, ...layered, ...RECIPE_TAIL].map(it => {
+        const on = it.on();
+        if (on && ui.muted[it.id]) delete ui.muted[it.id];   // ligado por outro caminho: o guardado perde a vez
+        return Object.assign({}, it, { active: on, muted: !on && !!ui.muted[it.id] });
+    }).filter(it => it.active || it.muted);
+}
+function recipeCount() { try { return recipeItems().filter(it => it.active).length; } catch (e) { return 0; } }
+function updateRecipeBadge() {
+    const n = M.el ? recipeCount() : 0, b = $('recipeCount');
+    b.hidden = !n; b.textContent = n;
+    $('btnRecipe').title = n ? `Receita: ${n} ${n > 1 ? 'itens aplicados' : 'item aplicado'}` : 'Receita: nada aplicado ainda';
+}
+// desligar guarda as partes do estado; ligar devolve
+function setMuted(it, mute) {
+    const before = snapshot();
+    if (mute) { ui.muted[it.id] = it.paths.map(p => [p, deepClone(getP(p))]); it.paths.forEach(p => setP(p, deepClone(defP(p)))); }
+    else if (ui.muted[it.id]) { ui.muted[it.id].forEach(([p, v]) => setP(p, v)); delete ui.muted[it.id]; }
+    Engine.invalidate(); afterExternalChange(); commit(true);
+    if (mute) toast(it.label + ' desligado', { label: 'Desfazer', run: () => { restore(before); commit(true); } }, 2200);
+}
+function removeItem(it, after) {
+    const before = snapshot();
+    delete ui.muted[it.id];
+    if (it.layer) { LAYER_OFF[it.id](); delete st.layers.blend[it.id]; delete st.layers.op[it.id]; }
+    else it.paths.forEach(p => setP(p, deepClone(defP(p))));
+    if (it.id === 'paint') st.paint = fresh('paint');
+    Engine.invalidate(); afterExternalChange(); commit(true);
+    if (after) after();
+    toast(it.label + ' removido', { label: 'Desfazer', run: () => { restore(before); commit(true); if (after) after(); } });
+}
+function recipeSwitch(it, onChange) {
+    const sw = h('button', 'rswitch' + (it.active ? ' on' : '')); sw.type = 'button';
+    sw.setAttribute('aria-label', (it.active ? 'Desligar ' : 'Ligar ') + it.label); sw.setAttribute('aria-pressed', String(it.active));
+    sw.innerHTML = '<i></i>';
+    sw.onclick = (e) => { e.stopPropagation(); setMuted(it, it.active); if (onChange) onChange(); };
+    return sw;
+}
+let recipeOpen = null;
+function openRecipe() {
+    if (!M.el) return;
     openSheet((sh) => {
-        sh.classList.add('layers-sheet');
-        sheetHead(sh, 'Camadas');
-        const list = h('div', 'layer-list');
+        sh.classList.add('recipe-sheet');
+        const list = h('div', 'recipe-list');
         const draw = () => {
             list.innerHTML = '';
-            // a ordem de aplicação é de cima para baixo: a de baixo fica por cima na imagem
-            const active = st.layers.order.filter(id => LAYER_DEFS[id].on());
-            const base = h('div', 'layer base'); base.innerHTML = `<span class="lname">Foto, paleta e pixel</span>`; list.append(base);
-            if (!active.length && st.paint.mode === 'none') list.append(h('p', 'note', 'Nenhum efeito por cima da foto ainda. Textura, filme, lente, grão, contorno, degradê e pintura aparecem aqui.'));
-            active.forEach((id) => {
-                const d = LAYER_DEFS[id], row = h('div', 'layer' + (layersOpen === id ? ' open' : '')); row.dataset.id = id;
-                const grip = h('span', 'grip', icon('grip')); grip.setAttribute('aria-label', 'Arrastar para reordenar');
-                const nm = h('button', 'lmain'); nm.type = 'button';
-                const bl = layerBlend(id), op = layerOp(id);
-                nm.innerHTML = `<span class="lname"></span><span class="lsub"></span>`;
-                nm.querySelector('.lname').textContent = d.label;
-                nm.querySelector('.lsub').textContent = [d.sub(), bl !== 'normal' ? BLEND_OPTS.find(b => b[0] === bl)[1] : '', op < 100 ? Math.round(op) + '%' : ''].filter(Boolean).join(' · ');
-                nm.onclick = () => { layersOpen = layersOpen === id ? null : id; draw(); };
-                const del = h('button', 'ldel', icon('close')); del.type = 'button'; del.title = 'Excluir ' + d.label; del.setAttribute('aria-label', del.title);
-                del.onclick = () => { if (layersOpen === id) layersOpen = null; deleteLayer(id, d.label, draw); };
-                row.append(grip, nm, del);
-                if (layersOpen === id) {
-                    const det = h('div', 'ldetail');
-                    const chips = h('div', 'chips');
-                    BLEND_OPTS.forEach(([v, l]) => { const b = h('button', 'chip' + (v === bl ? ' on' : ''), l); b.type = 'button'; b.onclick = () => { setLayerBlend(id, v); change(null, null, { soft: false }); chips.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); updateSub(); }; chips.append(b); });
-                    const updateSub = () => { const b2 = layerBlend(id), o2 = layerOp(id); nm.querySelector('.lsub').textContent = [d.sub(), b2 !== 'normal' ? BLEND_OPTS.find(b => b[0] === b2)[1] : '', o2 < 100 ? Math.round(o2) + '%' : ''].filter(Boolean).join(' · '); };
-                    const ruler = makeRuler({ key: '_layer.' + id, label: 'Opacidade', min: 0, max: 100, step: 1, def: 100, get: () => layerOp(id), set: (v, final) => { setLayerOp(id, v); requestRender(); updateSub(); if (final) { commit(); Thumbs.stateChanged(); } } }, { label: 'Opacidade' });
-                    ruler.classList.add('compact');
-                    const go = h('button', 'link', 'Editar'); go.type = 'button';
-                    go.onclick = () => { const [g, key] = d.go; closeSheet(); goTo(g, key); };
-                    const foot = h('div', 'lfoot'); foot.append(go);
-                    det.append(chips, ruler, foot);
+            sh.querySelectorAll('.head').forEach(x => x.remove());
+            const items = recipeItems(), n = items.filter(i => i.active).length;
+            const hd = h('div', 'head'); hd.append(h('h2', '', 'Receita'));
+            const sub = h('span', 'head-sub'); sub.textContent = n ? n + (n > 1 ? ' itens' : ' item') : ''; hd.append(sub, h('span', 'pfill'));
+            const x = h('button', 'icon-btn', icon('close')); x.type = 'button'; x.setAttribute('aria-label', 'Fechar'); x.onclick = closeSheet; hd.append(x);
+            sh.insertBefore(hd, list);
+            if (!items.length) { list.append(h('p', 'note', 'Nada aplicado ainda. Tudo o que você ligar (luz, cor, pixel, texturas, filmes, câmera, movimento) aparece aqui, na ordem em que é aplicado.')); return; }
+            let shownLayerHead = false;
+            items.forEach(it => {
+                if (it.layer && !shownLayerHead) { shownLayerHead = true; list.append(h('p', 'rsec', 'Por cima da foto · arraste para reordenar')); }
+                const row = h('div', 'rrow' + (it.active ? '' : ' off') + (recipeOpen === it.id ? ' open' : '') + (it.layer ? ' layer' : '')); row.dataset.id = it.id;
+                const ic = h('span', 'ricon' + (it.layer ? ' grip' : ''), icon(it.layer ? 'grip' : it.icon));
+                if (it.layer) { ic.setAttribute('aria-label', 'Arrastar para reordenar'); ic.title = 'Arrastar para reordenar'; }
+                const main = h('button', 'rmain'); main.type = 'button';
+                main.innerHTML = '<span class="rname"></span><span class="rsum"></span>';
+                main.firstChild.textContent = it.label; main.lastChild.textContent = it.active ? (it.sum() || 'Ligado') : 'Desligado';
+                main.onclick = () => { recipeOpen = recipeOpen === it.id ? null : it.id; draw(); };
+                row.append(ic, main, recipeSwitch(it, draw));
+                if (recipeOpen === it.id) {
+                    const det = h('div', 'rdetail');
+                    if (it.layer && it.active) {
+                        const bl = layerBlend(it.id);
+                        if (LAYER_DEFS[it.id].getB || true) {
+                            const chips = h('div', 'chips');
+                            shown(BLEND_OPTS, BLEND_SHOWN, bl).forEach(([v, l]) => { const b = h('button', 'chip' + (v === bl ? ' on' : ''), l); b.type = 'button'; b.onclick = () => { setLayerBlend(it.id, v); change(null, null); draw(); }; chips.append(b); });
+                            det.append(h('span', 'xlabel', 'Mistura'), chips);
+                        }
+                        det.append(makeFader({ kind: 'range', key: '_layer.' + it.id, label: 'Opacidade', min: 0, max: 100, step: 1, def: 100, fmt: (v) => Math.round(v) + '%', get: () => layerOp(it.id), set: (v, final) => { setLayerOp(it.id, v); requestRender(); if (final) { commit(); Thumbs.stateChanged(); main.lastChild.textContent = it.sum(); } } }));
+                    }
+                    const acts = h('div', 'ractions');
+                    const go = h('button', 'btn', icon(SUBS[subOf(it.tool)].icon) + '<span></span>'); go.type = 'button'; go.lastChild.textContent = 'Abrir em ' + SUBS[subOf(it.tool)].label;
+                    go.onclick = () => { closeSheet(); goTo(it.tool, it.key); };
+                    const del = h('button', 'btn', icon('close') + '<span>Remover</span>'); del.type = 'button';
+                    del.onclick = () => { if (recipeOpen === it.id) recipeOpen = null; removeItem(it, draw); };
+                    acts.append(go, del); det.append(acts);
                     row.append(det);
                 }
                 list.append(row);
-                dragRow(grip, row, list);
+                if (it.layer) dragRow(ic, row, list);
             });
-            // Pintura: sempre por último (sobre tudo), sem mistura; só dá para excluir
-            if (st.paint.mode !== 'none') {
-                const row = h('div', 'layer fixed'), nm = h('div', 'lmain');
-                nm.innerHTML = '<span class="lname">Pintura</span><span class="lsub"></span>';
-                nm.querySelector('.lsub').textContent = (st.paint.mode === 'pixels' ? 'Pixels' : 'Regiões') + ' · sempre por cima';
-                const del = h('button', 'ldel', icon('close')); del.type = 'button'; del.title = 'Excluir Pintura'; del.setAttribute('aria-label', del.title);
-                del.onclick = () => deleteLayer('paint', 'Pintura', draw);
-                row.append(h('span', 'grip', smallIcon('brush')), nm, del); list.append(row);
-            }
         };
         // arrastar pela alça: a fila se reorganiza ao vivo; ao soltar, a nova ordem vale
         const dragRow = (grip, row, box) => {
             grip.addEventListener('pointerdown', (e) => {
                 e.preventDefault(); try { grip.setPointerCapture(e.pointerId); } catch (_) {}
-                const rows = () => [...box.querySelectorAll('.layer:not(.base)')];
+                const rws = () => [...box.querySelectorAll('.rrow.layer')];
                 const y0 = e.clientY; row.classList.add('dragging');
                 const move = (ev) => {
                     row.style.transform = `translateY(${ev.clientY - y0}px)`;
                     const r = row.getBoundingClientRect(), mid = r.top + r.height / 2;
-                    const others = rows().filter(x => x !== row);
+                    const others = rws().filter(x => x !== row);
                     const after = others.find(x => { const q = x.getBoundingClientRect(); return mid < q.top + q.height / 2; });
                     const before = row.getBoundingClientRect().top;
-                    if (after) { if (row.nextElementSibling !== after) box.insertBefore(row, after); } else if (box.lastElementChild !== row) box.append(row);
+                    const last = others[others.length - 1];
+                    if (after) { if (row.nextElementSibling !== after) box.insertBefore(row, after); } else if (last && last.nextElementSibling !== row) last.after(row);
                     const shift = row.getBoundingClientRect().top - before; if (shift) { const cur = parseFloat(row.style.transform.replace(/[^-\d.]/g, '')) || 0; row.style.transform = `translateY(${cur - shift}px)`; }
                 };
                 const up = () => {
                     grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up);
                     row.classList.remove('dragging'); row.style.transform = '';
-                    // nova ordem das ativas; as desligadas guardam o lugar que tinham
-                    const act = rows().map(x => x.dataset.id), old = st.layers.order;
-                    let k = 0; const next = old.map(id => LAYER_DEFS[id].on() ? act[k++] : id);
+                    const act = rws().map(x => x.dataset.id), old = st.layers.order;
+                    const set = new Set(act); let k = 0; const next = old.map(id => set.has(id) ? act[k++] : id);
                     if (JSON.stringify(next) !== JSON.stringify(old)) { st.layers.order = next; change(null, null); if (navigator.vibrate) navigator.vibrate(6); }
                     draw();
                 };
                 grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
             });
         };
-        draw();
         sh.append(list);
+        draw();
     });
-    $('sheetBackdrop').classList.add('clear');
 }
-
+// computador: a receita fica fixa no pé do painel (compacta; “Organizar” abre a completa)
+ui.recipeDock = store.get('recipeDock', true);
+function buildRecipeDock() {
+    const box = $('precipe'); box.innerHTML = '';
+    if (!M.el || !isSide()) return;
+    const items = recipeItems(), n = items.filter(i => i.active).length;
+    const hd = h('div', 'rdock-h');
+    const tg = h('button', 'rdock-t', icon(ui.recipeDock ? 'chev-d' : 'chev') + '<span></span>'); tg.type = 'button'; tg.lastChild.textContent = 'Receita' + (n ? ' · ' + n : '');
+    tg.setAttribute('aria-expanded', String(ui.recipeDock)); tg.onclick = () => { ui.recipeDock = !ui.recipeDock; store.set('recipeDock', ui.recipeDock); buildRecipeDock(); };
+    const org = h('button', 'link', 'Organizar'); org.type = 'button'; org.onclick = openRecipe;
+    hd.append(tg, h('span', 'pfill'), org); box.append(hd);
+    if (!ui.recipeDock) return;
+    if (!items.length) { box.append(h('p', 'rdock-empty', 'Nada aplicado ainda.')); return; }
+    const list = h('div', 'rdock-list');
+    items.forEach(it => {
+        const row = h('div', 'rdrow' + (it.active ? '' : ' off'));
+        const main = h('button', 'rmain', icon(it.icon) + '<span class="rname"></span><span class="rsum"></span>'); main.type = 'button';
+        main.children[1].textContent = it.label; main.children[2].textContent = it.active ? (it.sum() || 'Ligado') : 'Desligado';
+        main.onclick = () => goTo(it.tool, it.key);
+        row.append(main, recipeSwitch(it)); list.append(row);
+    });
+    box.append(list);
+}
 // ============================================================
 // EXPORTAR (aba): um painel só — formato, tamanho e salvar. A folha só aparece durante a exportação.
 // GIF e vídeo de uma foto só aparecem quando algo se move (nada de 60 quadros iguais).
@@ -2035,7 +2229,7 @@ function setMedia(type, el, name) {
     M.analysis = analyzeMedia(el);
     Thumbs.setSource(el, true);
     lastRender = null; view.zoom = 1; view.x = view.y = 0;
-    hist.stack = []; hist.i = -1;
+    hist.stack = []; hist.i = -1; ui.muted = {};
     stage.classList.remove('developing'); void stage.offsetWidth; stage.classList.add('developing');
     renderMain(); fitView(true); pushHistory();
     buildPanel(); updateSubbarCenter();
@@ -2165,20 +2359,17 @@ function stopAnim() {
     anim.playing = false; cancelAnimationFrame(anim.raf); requestRender();
     updateSubbarCenter();
 }
-// botão Tocar no topo: só existe quando há algo para animar na foto
+// botão Tocar no pé da foto: só existe quando há algo para animar na foto
 let subbarKey = null;
 function updateSubbarCenter() {
     const show = M.type === 'image' && (anim.playing || animOn()), key = show ? (anim.playing ? 'pause' : 'play') : '';
     if (key === subbarKey) return; subbarKey = key;
-    // o logo fica sempre no centro do topo; o tocar aparece à esquerda do desfazer
-    const c = $('subbarCenter'); if (!c.firstChild) c.innerHTML = logoSvg('top');
     const slot = $('playSlot'); slot.innerHTML = '';
     if (!show) return;
-    const b = h('button', 'icon-btn' + (anim.playing ? ' on' : ''), icon(key)); b.type = 'button';
+    const b = h('button', 'float-btn' + (anim.playing ? ' on' : ''), icon(key)); b.type = 'button';
     b.title = anim.playing ? 'Parar animação' : 'Ver animação'; b.setAttribute('aria-label', b.title);
     b.onclick = togglePlay; slot.append(b);
 }
-
 // ============================================================
 // DADO: sorteia os ajustes manuais (o que a pessoa deixou ligado e não travou)
 // ============================================================
@@ -2194,70 +2385,48 @@ function rollDice() {
 }
 
 // ============================================================
+// ============================================================
 // ENTRADAS: botões, arquivo, arrastar, colar, teclado
 // ============================================================
-$('btnUndo').innerHTML = icon('undo'); $('btnRedo').innerHTML = icon('redo');
-$('btnOpen').innerHTML = icon('open'); $('btnCompare').innerHTML = icon('compare'); $('btnPanel').innerHTML = icon('sidebar'); $('btnLayers').innerHTML = icon('layers');
-// ---------- coluna lateral recolhível (só no computador e tablet deitado) ----------
-let panelCollapsed = false;
 const isSide = () => matchMedia('(min-width: 900px), (orientation: landscape) and (max-height: 540px) and (min-width: 560px)').matches;
-// ---------- área livre para a imagem: entre o topo e a base (celular) ou ao lado da coluna. Medido, nunca estimado. ----------
-let lastSide = null;
-function updateInsets() {
-    const W = app.clientWidth, H = app.clientHeight, side = isSide();
-    // celular ↔ computador: o painel muda de forma (linha de ferramentas ↔ coluna empilhada)
-    if (lastSide !== null && side !== lastSide) { lastSide = side; buildPanel(); }
-    lastSide = side;
-    if (panelCollapsed && !side) { panelCollapsed = false; app.classList.remove('panel-collapsed'); }
-    const top = $('topbar').offsetHeight;
-    const vb = $('videoBar'), vbOn = !vb.hidden && !app.classList.contains('is-welcome');
-    let r = 0, b = 0;
-    if (side) { if (!panelCollapsed) r = W - $('dock').offsetLeft; if (vbOn) b = H - vb.getBoundingClientRect().top; }
-    else b = H - $('dock').offsetTop;
-    uiInsets = { t: top, r, b, l: 0 };
-    const st = app.style, px = (v) => Math.round(v) + 'px';
-    // --ui-*: área livre (avisos, rótulos, boas-vindas); --vp-*: onde a imagem fica
-    [['t', top], ['r', r], ['b', b], ['l', 0]].forEach(([k, v]) => { st.setProperty('--ui-' + k, px(v)); st.setProperty('--vp-' + k, px(v)); });
-    fitView(); Accent.schedule(outCanvas, 300);
-}
+$('btnMenu').innerHTML = icon('more');
+$('btnUndo').innerHTML = icon('undo'); $('btnRedo').innerHTML = icon('redo');
+$('btnCompare').innerHTML = icon('compare');
+$('btnRecipe').insertAdjacentHTML('afterbegin', icon('recipe'));
+$('btnExport').innerHTML = icon('download') + '<span>Exportar</span>';
+$('btnLogo').innerHTML = logoSvg('top');
+$('btnWelcomeOpen').innerHTML = icon('open') + '<span>Abrir foto ou vídeo</span>';
+// celular ↔ computador: a receita fixa só existe no computador; a foto se reencaixa
 {
-    const ro = new ResizeObserver(() => updateInsets());
-    ['topbar', 'dock', 'videoBar'].forEach(id => ro.observe($(id)));
-    addEventListener('resize', updateInsets);
-    new MutationObserver(updateInsets).observe($('videoBar'), { attributes: true, attributeFilter: ['hidden'] });
+    let lastSide = isSide();
+    addEventListener('resize', () => { const s = isSide(); if (s !== lastSide) { lastSide = s; buildPanel(); } });
 }
-function setPanelCollapsed(on, save = true) {
-    panelCollapsed = !!on && isSide();
-    app.classList.toggle('panel-collapsed', panelCollapsed);
-    $('btnPanel').classList.toggle('on', !panelCollapsed);
-    if (save) store.set('panelCollapsed', panelCollapsed);
-    app.classList.add('fit-anim'); clearTimeout(app._fa); app._fa = setTimeout(() => app.classList.remove('fit-anim'), 400);
-    updateInsets();
-}
-$('btnPanel').onclick = () => setPanelCollapsed(!panelCollapsed);
-setPanelCollapsed(store.get('panelCollapsed', false), false);
-$('btnMore').innerHTML = icon('more');
-$('btnOpen').onclick = () => $('fileInput').click();
+// o painel recolhe com um puxão para baixo no cabeçalho (celular)
+(() => {
+    const hd = $('phead'); let y0 = null;
+    hd.addEventListener('pointerdown', (e) => { if (isSide() || e.target.closest('button')) return; y0 = e.clientY; });
+    hd.addEventListener('pointermove', (e) => { if (y0 !== null && e.clientY - y0 > 36) { y0 = null; ui.panelOpen = false; fitAnim(); buildPanel(); } });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => hd.addEventListener(ev, () => { y0 = null; }));
+})();
+$('btnMenu').onclick = openMore;
 $('btnWelcomeOpen').onclick = () => $('fileInput').click();
 // foto de exemplo (para experimentar sem escolher nada)
 $('btnSample').onclick = async () => {
     try { const r = await fetch('exemplo.jpg'); if (!r.ok) throw 0; const b = await r.blob(); await openFile(new File([b], 'exemplo.jpg', { type: 'image/jpeg' })); }
     catch (e) { toast('Não foi possível abrir a foto de exemplo'); }
 };
-// comparar: toque mostra o original, toque de novo volta
+// comparar: toque mostra o original, toque de novo volta (segurar a foto faz o mesmo enquanto segura)
 $('btnCompare').onclick = () => { if (!M.el) return; compare.hold = !compare.hold; showOriginal(compare.hold); };
-$('btnLayers').onclick = openLayers;
+$('btnRecipe').onclick = openRecipe;
+$('btnExport').onclick = openExport;
 $('btnUndo').onclick = undo; $('btnRedo').onclick = redo;
-$('btnDice').onclick = rollDice;
-// segurar o dado: o que ele muda
-(() => {
-    const b = $('btnDice'); let t = 0, held = false;
-    b.addEventListener('pointerdown', () => { held = false; clearTimeout(t); t = setTimeout(() => { held = true; openRandomSettings(); }, 550); });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => clearTimeout(t)));
-    b.addEventListener('click', (e) => { if (held) { e.stopImmediatePropagation(); held = false; } }, true);
-    b.addEventListener('contextmenu', (e) => e.preventDefault());
-})();
-$('btnMore').onclick = openMore;
+// o sol do logo: toque sorteia uma combinação nova; segurar abre as travas do sorteio
+$('btnLogo').onclick = () => {
+    if (!M.el) return;
+    const b = $('btnLogo'); b.classList.remove('roll'); void b.offsetWidth; b.classList.add('roll');
+    rollDice();
+};
+onHold($('btnLogo'), () => { if (M.el) openRandomSettings(); });
 $('fileInput').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; openFile(f); };
 // dupla exposição: a segunda foto é reduzida (até 2048 px) e fica no motor, não no estado
 $('dblInput').onchange = async (e) => {
@@ -2268,17 +2437,17 @@ $('dblInput').onchange = async (e) => {
     const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
     DblImage.img = c; DblImage.key++; DblImage.aspect = c.width / c.height; DblImage.name = f.name;
     st.dbl.on = true; st.dbl.src = 'image';
-    if (M.el) goTo('dupla', 'dbl.src');
+    if (M.el) goTo('dupla');
     afterExternalChange(); commit(true); Thumbs.refreshAll();
     toast('Segunda foto na dupla exposição');
 };
 $('configInput').onchange = async (e) => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     const s = parseMeta(await f.slice(Math.max(0, f.size - 60000)).text().catch(() => ''));
-    if (!s) { toast('Este arquivo não tem configurações do Pixelar'); return; }
+    if (!s) { toast('Este arquivo não tem ajustes do Pixelar'); return; }
     if (!M.el) { toast('Abra uma foto ou vídeo primeiro'); return; }
     const before = snapshot(); s.crop = deepClone(st.crop); st = s; afterExternalChange(); commit(true);
-    toast('Configurações importadas', { label: 'Desfazer', run: () => { restore(before); commit(true); } });
+    toast('Ajustes importados', { label: 'Desfazer', run: () => { restore(before); commit(true); } });
 };
 let dragDepth = 0;
 window.addEventListener('dragenter', (e) => { if ([...(e.dataTransfer.types || [])].includes('Files')) { dragDepth++; app.classList.add('dragging'); } });
@@ -2286,8 +2455,17 @@ window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth -
 window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; app.classList.remove('dragging'); const f = e.dataTransfer.files[0]; if (f) openFile(f); });
 window.addEventListener('paste', (e) => { const it = [...(e.clipboardData.items || [])].find(i => i.kind === 'file'); if (it) { e.preventDefault(); openFile(it.getAsFile()); } });
-// atalhos de teclado saíram do app (curadoria): só o Esc, que fecha folhas e janelas
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+// teclado (computador): Esc fecha; 1–4 escolhem o grupo; Ctrl/⌘+Z desfaz; espaço segurado mostra o original
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeSheet(); return; }
+    if (e.target.closest && e.target.closest('input, textarea')) return;
+    if (!$('sheet').hidden || !M.el) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const n = +e.key; if (n >= 1 && n <= GROUPS.length) { selectGroup(GROUPS[n - 1].id); return; }
+    if (e.key === ' ' && !e.repeat && !e.target.closest('button, [role="slider"]')) { e.preventDefault(); compare.hold = true; showOriginal(true); }
+});
+document.addEventListener('keyup', (e) => { if (e.key === ' ' && compare.hold) { compare.hold = false; showOriginal(false); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { stopAnim(); pauseVideo(); } });
 
 // ============================================================
@@ -2295,10 +2473,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sto
 // ============================================================
 // modo leve: prévia processada numa base menor (a exportação sempre usa a resolução cheia)
 if (document.documentElement.dataset.lite) Engine.workCap = 1280;
-buildTabbar(); selectTab(Object.keys(prefs.presets).length ? 'estilos' : 'editar'); updateHistoryButtons();
-$('btnWelcomeOpen').innerHTML = icon('open') + '<span>Abrir foto ou vídeo</span>';
-updateSubbarCenter();
+buildPanel(); updateHistoryButtons(); updateSubbarCenter();
 if (!PixelarGPU.isAvailable()) console.warn('WebGL2 indisponível: usando o processador (mais lento).');
 // para o console e os testes
-window.Pixelar = { openMore, get state() { return st; }, set state(v) { st = normalizeState(v); Engine.invalidate(); afterExternalChange(); commit(true); }, openFile, media: M, ui, selectTab, goTo, flushThumbs: () => Thumbs.flush() };
+window.Pixelar = { selectGroup, selectSub, openMore, get state() { return st; }, set state(v) { st = normalizeState(v); Engine.invalidate(); afterExternalChange(); commit(true); }, openFile, media: M, ui, selectTab, selectTool, goTo, openRecipe, openExport, flushThumbs: () => Thumbs.flush() };
 })();

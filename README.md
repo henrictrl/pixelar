@@ -2,15 +2,16 @@
 
 Editor de pixel art, dither, filmes analógicos e animações para **fotos e vídeos**, direto no navegador. Nada é enviado para servidor: tudo roda no aparelho (WebGL2 + WebCodecs).
 
-Interface “Sol” (v4.6): cores e formas tiradas do logo — âmbar sobre noite (ou o tema claro, Papel), linhas finas, cantos retos e a fonte Departure Mono em 11, 22 e 33 px. Ícones em pixel.
+Interface v5 (refeita do zero em nov/2026, mesma marca “Sol”: âmbar sobre noite ou papel, linhas finas, cantos retos, Departure Mono em 11/22/33 px, ícones em pixel). Espaço em grade de 4 px, toques de no mínimo 44 px.
 
-- **Início**: abrir uma foto ou vídeo, ou experimentar com a foto de exemplo (`exemplo.jpg`).
-- **Editar**: 7 ferramentas (**Cortar** · **Luz** · **Cor** · **Pixel** · **Lente** · **Dupla** · **Animar**). Tocar numa ferramenta abre a lista dela; cada ajuste é uma linha com nome, régua e valor (arrastar na horizontal, tocar para pular, toque duplo volta ao padrão). Partes extras (Degradê, Agrupar, Contorno…) abrem e fecham ao tocar. No cabeçalho: sortear só esta ferramenta, travar no dado e restaurar. No computador, as ferramentas ficam empilhadas na coluna.
-- **Estilos**: Prontos · Texturas · Filmes · Pintura · Meus, em grade. O escolhido ganha uma barra com a intensidade e “Ajustar”.
-- **Sortear** (o dado): igual ao anterior. Segurar o dado abre a folha de travas.
-- **Exportar**: formato e tamanho em seletores, com as dimensões finais à vista; copiar a imagem e salvar os ajustes num `.txt`.
-
-No topo: abrir, desfazer/refazer, tocar (quando algo se move), **comparar** com o original, **Camadas** e o menu. Segurar a foto também mostra o original; pinça faz zoom. `Esc` fecha janelas.
+- **Topo**: Menu · Desfazer · Refazer · **o sol** (toque = combinação surpresa; segure = travas do sorteio) · **Receita** (com contador) · **Exportar**.
+- **Ferramentas** (uma barra só; no celular fica no pé da tela, no computador vira coluna à esquerda): **Looks · Cortar · Luz · Cor · Pixel · Efeitos · Mover**. Ponto âmbar = ferramenta em uso; tocar na ferramenta aberta recolhe o painel (a foto ganha a tela). Teclas 1–7 no computador.
+- **Painel**: cabeçalho com nome, sortear esta ferramenta e restaurar; até ~5 ajustes principais e o resto em seções que abrem ao tocar (“Mais ajustes”, “Degradê”, “Contorno”…). Cada ajuste é uma linha com régua (arrastar, tocar para pular, toque duplo volta ao padrão).
+- **Looks**: Sortear, Original, 12 combinações prontas e os seus looks; o escolhido ganha a régua de intensidade.
+- **Efeitos**: Texturas · Filmes · Câmera (grão e lente) · Dupla. A galeria mostra famílias (13 texturas, 6 filmes); as outras ficam como **Variação** da família (ex.: Térmico → Limiar de cor, Canais, Traçado néon). Nada saiu do motor e o dado ainda chega em todas.
+- **Receita** (substitui as Camadas): tudo o que está aplicado, com resumo legível, ligar/desligar sem perder os ajustes, mistura e opacidade dos efeitos por cima e arrastar para reordenar. No computador fica fixa no pé do painel.
+- **Exportar**: folha (celular) ou janela (computador) com a dimensão final em destaque, formato, tamanho, salvar, copiar e salvar ajustes; Imagem | Animação quando algo se move.
+- No pé da foto: **Comparar** (ou segure a foto / espaço no computador) e **Tocar** quando há movimento.
 
 ## Como usar localmente
 
@@ -36,7 +37,7 @@ Depois abra `http://localhost:8000`. Para publicar, qualquer hospedagem estátic
 | `js/media.js` | Abertura de vídeos (MP4/MOV/WebM, AVI de câmera, demais via FFmpeg) |
 | `js/export.js` | PNG/JPEG/WebP/SVG, animação e vídeo (MP4/WebM/GIF) |
 | `js/icons.js` | Ícones em pixel (desenhos de 12 × 12 em texto) |
-| `js/ui.js` | Interface: ferramentas (`TABS`), régua, miniaturas, camadas, linha do tempo, exportação |
+| `js/ui.js` | Interface: ferramentas (`TOOLS`, `LUZ_TOOL`…), famílias de efeitos (`FX_FAMILIES`, `FILM_FAMILIES`), looks (`BUILTIN_STYLES`), régua, miniaturas, receita, linha do tempo, exportação |
 | `vendor/` | mediabunny 1.57.0 completo (MPL-2.0) e o worker do FFmpeg, carregados só quando necessário |
 | `sw.js` | Cache offline (abre instantâneo nas próximas visitas) |
 | `icons/logo.svg` | Logo (sol em pixel). `tools/icones.py` gera os PNGs do app a partir dele |
@@ -50,7 +51,9 @@ Tudo o que a imagem precisa está num único objeto de estado (`st`). O motor (`
 - Para **mudar o layout**, mexa só em `ui.js`/`app.css`. O processamento não é afetado.
 - Para **criar um controle**, adicione uma linha na ferramenta certa em `ui.js` (`LUZ_TOOL`, `FILME_TOOL`…), por exemplo `R('adj.exposure', 'Exposição', 'exposure', -100, 100)`. `D('Nome')` cria uma divisória.
 - Para **criar um filme**, adicione uma linha num dos 4 grupos de `FILM_LOOK_DEFS` (`engine.js`).
-- Para **criar uma textura**, adicione um objeto em `PIXELAR_FX_LIST` (`gpu.js`) e o id num grupo de `FX_GROUP_DEFS` (`ui.js`).
+- Para **criar uma textura**, adicione um objeto em `PIXELAR_FX_LIST` (`gpu.js`) e o id numa família de `FX_FAMILIES` (`ui.js`): como família nova (aparece na galeria) ou como variação de uma existente.
+- Para **criar um look**, adicione uma linha em `BUILTIN_STYLES` (`ui.js`).
+- Listas curtas nos seletores (`CROP_SHOWN`, `COLOR_SHOWN`…): valores fora delas continuam valendo e aparecem enquanto estiverem em uso.
 - Algo saiu do app? Mapeie o id antigo em `LOOK_ALIAS`, `DITHER_ALIAS` ou `FX_ALIAS` (`engine.js`) para arquivos antigos continuarem abrindo.
 - **Ao publicar mudanças, rode `python3 tools/versao.py X.Y.Z`**. Isso carimba a versão nos endereços de todos os arquivos e no `sw.js`. Sem isso, o navegador pode misturar arquivos novos e antigos (o servidor deixa cada arquivo em cache por 10 min) e o app quebra.
 

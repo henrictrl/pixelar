@@ -14,28 +14,31 @@
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="preload" href="DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/app.css?v=4.6.1">
+    <link rel="stylesheet" href="css/app.css?v=5.1.0">
     <script>
-        window.PIXELAR_V = '4.6.1';
+        window.PIXELAR_V = '5.1.0';
         // tema antes do primeiro desenho (evita piscar)
         try { const t = localStorage.getItem('pixelar.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
-        // aparelhos modestos: modo leve (sem desfoque de vidro, prévia mais leve; a exportação não muda)
+        // aparelhos modestos: modo leve (prévia mais leve; a exportação não muda)
         try { const n = navigator, apple = /^Apple/.test(n.vendor || ''); if (!apple && ((n.deviceMemory && n.deviceMemory <= 4) || (n.hardwareConcurrency && n.hardwareConcurrency <= 4)) || /[?&]lite=1/.test(location.search)) document.documentElement.dataset.lite = '1'; } catch (e) {}
     </script>
 </head>
 <body>
+    <!--
+        Estrutura v5 (uma grade só, duas formas):
+          celular:     topo / palco / vídeo / painel / ferramentas
+          computador:  topo em cima; ferramentas à esquerda, palco no meio, painel à direita
+    -->
     <div id="app" class="is-welcome">
-        <!-- topo: abrir, desfazer/refazer, tocar, camadas e mais -->
+        <!-- topo: menu, desfazer, refazer · logo (sortear tudo) · receita, exportar -->
         <header class="topbar" id="topbar">
-            <button class="icon-btn" id="btnOpen" type="button" title="Abrir foto ou vídeo" aria-label="Abrir foto ou vídeo"></button>
-            <div class="play-slot" id="playSlot"></div>
+            <button class="icon-btn" id="btnMenu" type="button" title="Menu" aria-label="Menu"></button>
             <button class="icon-btn" id="btnUndo" type="button" title="Desfazer" aria-label="Desfazer" disabled></button>
             <button class="icon-btn" id="btnRedo" type="button" title="Refazer" aria-label="Refazer" disabled></button>
-            <div class="subbar-center" id="subbarCenter"></div>
-            <button class="icon-btn" id="btnCompare" type="button" title="Comparar com o original" aria-label="Comparar com o original" aria-pressed="false"></button>
-            <button class="icon-btn" id="btnLayers" type="button" title="Camadas" aria-label="Camadas"></button>
-            <button class="icon-btn" id="btnMore" type="button" title="Mais opções" aria-label="Mais opções"></button>
-            <button class="icon-btn only-wide" id="btnPanel" type="button" title="Mostrar ou esconder os controles" aria-label="Mostrar ou esconder os controles"></button>
+            <span class="top-fill"></span>
+            <button class="logo-btn" id="btnLogo" type="button" title="Surpreender: nova combinação (segure para travar ferramentas)" aria-label="Surpreender: nova combinação"></button>
+            <button class="icon-btn recipe-btn" id="btnRecipe" type="button" title="Receita: o que está aplicado" aria-label="Receita"><span class="badge" id="recipeCount" hidden></span></button>
+            <button class="cta" id="btnExport" type="button" title="Exportar"></button>
         </header>
 
         <main class="stage" id="stage">
@@ -45,39 +48,44 @@
                     <canvas id="origCanvas" hidden></canvas>
                 </div>
             </div>
+            <!-- botões flutuantes no pé da foto (ao alcance do polegar) -->
+            <button class="float-btn" id="btnCompare" type="button" title="Comparar com o original (ou segure a foto)" aria-label="Comparar com o original" aria-pressed="false"></button>
+            <div class="float-slot" id="playSlot"></div>
             <div class="param-label" id="paramLabel" aria-live="polite"></div>
             <div class="orig-badge" id="origBadge" hidden>ORIGINAL</div>
 
             <section class="welcome" id="welcome">
                 <svg class="logo big" viewBox="0 1 12 11" shape-rendering="crispEdges" aria-hidden="true"><path d="M4 1h4v1h-4zM2 2h8v1h-8zM1 3h10v1h-10zM1 4h10v1h-10zM0 5h12v1h-12zM0 7h12v1h-12zM1 9h10v1h-10zM3 11h6v1h-6z"/></svg>
                 <h1 class="wordmark">Pixelar</h1>
+                <p class="welcome-sub">Pixel, dither, filmes e movimento para fotos e vídeos.</p>
                 <div class="welcome-actions">
                     <button class="btn primary" id="btnWelcomeOpen" type="button"></button>
-                    <button class="btn" id="btnSample" type="button">Experimentar com uma foto de exemplo</button>
+                    <button class="btn" id="btnSample" type="button">Experimentar com a foto de exemplo</button>
                 </div>
-                <p class="welcome-note">As fotos e vídeos ficam no seu aparelho.</p>
+                <p class="welcome-note">Nada sai do seu aparelho. Arraste, cole ou abra um arquivo.</p>
             </section>
             <div class="drop-hint" id="dropHint">Solte para abrir</div>
         </main>
 
-        <!-- base: vídeo, painel da ferramenta (abre e fecha), ferramentas e abas -->
-        <div class="dock" id="dock">
-            <div class="videobar" id="videoBar" hidden>
-                <button class="icon-btn" id="btnVideoPlay" type="button" aria-label="Tocar vídeo"></button>
-                <div class="filmstrip" id="filmstrip">
-                    <div class="strip-frames" id="stripFrames"></div>
-                    <div class="trim" id="trimBox"><span class="handle l" id="trimL"></span><span class="handle r" id="trimR"></span></div>
-                    <div class="playhead" id="playhead"></div>
-                </div>
-                <button class="icon-btn" id="btnVideoMute" type="button" aria-label="Som"></button>
+        <div class="videobar" id="videoBar" hidden>
+            <button class="icon-btn" id="btnVideoPlay" type="button" aria-label="Tocar vídeo"></button>
+            <div class="filmstrip" id="filmstrip">
+                <div class="strip-frames" id="stripFrames"></div>
+                <div class="trim" id="trimBox"><span class="handle l" id="trimL"></span><span class="handle r" id="trimR"></span></div>
+                <div class="playhead" id="playhead"></div>
             </div>
-            <section class="panel" id="panel">
-                <div class="editor" id="editor"></div>
-            </section>
-            <nav class="tabbar" id="tabbar" aria-label="Ferramentas">
-                <button class="tab tab-action" id="btnDice" type="button" title="Sortear (segure: o que o dado muda)" aria-label="Sortear"></button>
-            </nav>
+            <button class="icon-btn" id="btnVideoMute" type="button" aria-label="Som"></button>
         </div>
+
+        <!-- painel da ferramenta: cabeçalho fixo e corpo que rola -->
+        <section class="panel" id="panel" aria-live="off">
+            <div class="phead" id="phead"></div>
+            <div class="pbody" id="editor"></div>
+            <div class="precipe" id="precipe"></div>
+        </section>
+
+        <!-- ferramentas: barra no pé (celular) ou coluna à esquerda (computador) -->
+        <nav class="nav" id="nav" aria-label="Ferramentas"></nav>
     </div>
 
     <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
@@ -89,21 +97,19 @@
     <input type="file" id="configInput" accept="image/png,text/plain,.txt" hidden>
     <video id="sourceVideo" playsinline muted preload="auto" hidden></video>
 
-    <script defer src="js/gpu.js?v=4.6.1"></script>
-    <script defer src="js/engine.js?v=4.6.1"></script>
-    <script defer src="js/paint.js?v=4.6.1"></script>
-    <script defer src="js/anim.js?v=4.6.1"></script>
-    <script defer src="js/config.js?v=4.6.1"></script>
-    <script defer src="js/media.js?v=4.6.1"></script>
-    <script defer src="js/export.js?v=4.6.1"></script>
-    <script defer src="js/icons.js?v=4.6.1"></script>
-    <script defer src="js/ui.js?v=4.6.1"></script>
+    <script defer src="js/gpu.js?v=5.1.0"></script>
+    <script defer src="js/engine.js?v=5.1.0"></script>
+    <script defer src="js/paint.js?v=5.1.0"></script>
+    <script defer src="js/anim.js?v=5.1.0"></script>
+    <script defer src="js/config.js?v=5.1.0"></script>
+    <script defer src="js/media.js?v=5.1.0"></script>
+    <script defer src="js/export.js?v=5.1.0"></script>
+    <script defer src="js/icons.js?v=5.1.0"></script>
+    <script defer src="js/ui.js?v=5.1.0"></script>
     <script>
         // cache offline (desligado em localhost para não atrapalhar o desenvolvimento; ?sw=1 força)
         if ('serviceWorker' in navigator && (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /[?&]sw=1/.test(location.search))) {
             addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {}));
-            // versão nova ativada: recarrega uma única vez para usar o conjunto novo inteiro —
-            // só se a página era controlada por uma versão anterior e nenhuma mídia foi aberta ainda
             const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (reloaded || !hadController || (window.Pixelar && window.Pixelar.media && window.Pixelar.media.el)) return;
