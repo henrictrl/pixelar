@@ -149,7 +149,11 @@ const Media = (() => {
     async function pickVideoCodec(MB, format, width, height, bitrate, fps) {
         const pref = ['avc', 'vp9', 'av1', 'hevc', 'vp8'];
         const list = format.getSupportedVideoCodecs().filter(c => pref.includes(c)).sort((a, b) => pref.indexOf(a) - pref.indexOf(b));
-        return MB.getFirstEncodableVideoCodec(list, { width, height, quality: new MB.Quality({ bitrate }), frameRate: fps });
+        const opts = { width, height, quality: new MB.Quality({ bitrate }), frameRate: fps };
+        let c = await MB.getFirstEncodableVideoCodec(list, opts);
+        // o nível certo para o fps (ex.: 4.2 em 1080p60) não existe neste aparelho: volta ao nível antigo, mas mantém o H.264
+        if (c !== list[0] && list[0] === 'avc' && globalThis.__pixelarMbFps) { const keep = globalThis.__pixelarMbFps; globalThis.__pixelarMbFps = 0; const c2 = await MB.getFirstEncodableVideoCodec(['avc'], opts); if (c2) return c2; globalThis.__pixelarMbFps = keep; }
+        return c;
     }
     async function pickAudioCodec(MB, format, channels, sampleRate) {
         const pref = ['aac', 'opus'], list = format.getSupportedAudioCodecs().filter(c => pref.includes(c)).sort((a, b) => pref.indexOf(a) - pref.indexOf(b));

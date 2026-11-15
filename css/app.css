@@ -551,3 +551,7 @@ img, canvas, svg { -webkit-user-drag: none; }
     .phead { margin-bottom: var(--s1); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+/* ---------- celular: salvar na fototeca depois de exportar ---------- */
+.save-sheet .btn { width: 100%; margin-top: var(--s2); }
+.save-sheet .xtwo { margin-top: 0; }
+.save-sheet .xinfo { padding-top: 0; }

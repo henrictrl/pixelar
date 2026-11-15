@@ -2187,10 +2187,40 @@ function runExport(title, fn, ext) {
         if (e && e.message === 'cancelado') toast('Exportação cancelada'); else { console.error(e); toast((e && e.message) || 'Falha na exportação'); }
     }).finally(() => { ui.busy = false; requestRender(); });
 }
+// ---------- celular: salvar direto na fototeca ----------
+// O navegador não grava na fototeca sozinho; o caminho é a folha de compartilhar do sistema
+// (no iPhone: “Salvar imagem” / “Salvar vídeo”). Ela só abre com um toque, então ao terminar a
+// exportação aparece um botão grande para isso — e o download comum fica como segunda opção.
+const SHARE_SAVE = (() => {
+    try { return matchMedia('(pointer: coarse)').matches && !!navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'x.png', { type: 'image/png' })] }); } catch (e) { return false; }
+})();
+let pendingSave = null, skipHook = false;
+window.__pixelarDownloadHook = (blob, name) => {
+    if (!SHARE_SAVE || skipHook || !/^(image\/(png|jpeg|webp|gif)|video\/)/.test(blob.type || '')) return false;
+    pendingSave = { blob, name }; return true;
+};
+function fileOf(blob, name) { return new File([blob], name, { type: blob.type || 'application/octet-stream' }); }
+function openSaveSheet({ blob, name }) {
+    const file = fileOf(blob, name), isVid = /^video\//.test(blob.type), mb = (blob.size / 1048576).toFixed(blob.size > 1048576 ? 1 : 2).replace('.', ',');
+    openSheet((sh) => {
+        sh.classList.add('save-sheet');
+        sheetHead(sh, 'Pronto');
+        const info = h('div', 'xinfo'); info.innerHTML = '<span class="xbig"></span><span class="xsub"></span>';
+        info.firstChild.textContent = isVid ? 'Vídeo' : (/gif/.test(blob.type) ? 'GIF' : 'Imagem'); info.lastChild.textContent = mb + ' MB · ' + name.split('.').pop().toUpperCase();
+        const go = h('button', 'btn primary', icon('download') + '<span></span>'); go.type = 'button'; go.lastChild.textContent = 'Salvar na fototeca';
+        go.onclick = () => navigator.share({ files: [file] }).then(() => { closeSheet(); toast(isVid ? 'Vídeo enviado' : 'Imagem enviada'); }).catch((e) => { if (e && e.name !== 'AbortError') toast('Não deu para abrir o compartilhar. Use “Baixar arquivo”.'); });
+        const dl = h('button', 'btn', smallIcon('save') + '<span>Baixar arquivo</span>'); dl.type = 'button';
+        dl.onclick = () => { skipHook = true; try { Exporter.download(blob, name); } finally { skipHook = false; } closeSheet(); };
+        const two = h('div', 'xtwo'); two.style.gridTemplateColumns = '1fr';
+        two.append(dl);
+        sh.append(info, go, two, h('p', 'note', isVid ? 'Na janela que abrir, toque em “Salvar vídeo”.' : 'Na janela que abrir, toque em “Salvar imagem”.'));
+    });
+}
 function doneToast(blob, ext) {
     if (!blob) return;
-    const mime = blob.type || 'application/octet-stream';
-    const file = new File([blob], `pixelar.${ext === 'jpeg' ? 'jpg' : ext}`, { type: mime });
+    if (pendingSave && pendingSave.blob === blob) { const p = pendingSave; pendingSave = null; openSaveSheet(p); return; }
+    pendingSave = null;
+    const file = fileOf(blob, `pixelar.${ext === 'jpeg' ? 'jpg' : ext}`);
     const canShare = navigator.canShare && navigator.canShare({ files: [file] });
     toast(`Pronto! ${(blob.size / 1048576).toFixed(blob.size > 1048576 ? 1 : 2)} MB salvos`, canShare ? { label: 'Compartilhar', run: () => navigator.share({ files: [file] }).catch(() => {}) } : null, 5000);
 }

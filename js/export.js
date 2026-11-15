@@ -65,7 +65,17 @@ const Exporter = (() => {
 
     function config(st) { const blob = new Blob([metaString(st)], { type: 'text/plain' }); download(blob, 'pixelar_config.txt'); return blob; }
 
-    const bitrateFor = (h, fps) => Math.round(Math.min(Math.max((h || 1080) * (h || 1080) * (16 / 9) * fps * 0.15, 6e6), 60e6));
+    // Taxa de bits pelo tamanho REAL do quadro e pelo conteúdo. Grão, ruído, padrões e texturas mudam a cada
+    // quadro e são o pior caso para o H.264: com pouca taxa, o codificador por hardware (Chrome no Mac) passa
+    // alguns quadros em blocos grossos até se recuperar — era o “glitch” que aparecia no meio do vídeo.
+    function busyFrames(st) {
+        if (!st) return true;
+        const film = typeof FILM_LOOKS !== 'undefined' && FILM_LOOKS[st.film.look];
+        return st.grain.amount > 0 || !!film || st.dither.mode !== 'none' || st.fx.id !== 'none' || st.paint.mode !== 'none';
+    }
+    const bitrateFor = (W, H, fps, st) => Math.round(Math.min(Math.max(W * H * fps * (busyFrames(st) ? 0.4 : 0.22), 8e6), 80e6));
+    // o nível do H.264 também precisa caber a quantidade de quadros por segundo (1080p60 = nível 4.2)
+    const setFpsHint = (fps) => { globalThis.__pixelarMbFps = fps; };
 
     // ---------- animação em loop a partir de imagem ----------
     async function animation(st, media, job) {
@@ -86,12 +96,12 @@ const Exporter = (() => {
         const bg = '#000000';   // vídeo não tem transparência
         if (MB) {
             const outFmt = job.format === 'webm' ? new MB.WebMOutputFormat() : new MB.Mp4OutputFormat({ fastStart: 'in-memory' });
-            const bitrate = Math.min(80e6, Math.max(8e6, bitrateFor(H, fps) * 1.5));
+            const bitrate = bitrateFor(W, H, fps, st); setFpsHint(fps);
             const vcodec = await Media.pickVideoCodec(MB, outFmt, W, H, bitrate, fps);
             if (vcodec) {
                 const enc = document.createElement('canvas'); enc.width = W; enc.height = H; const ectx = enc.getContext('2d');
                 const output = new MB.Output({ format: outFmt, target: new MB.BufferTarget() });
-                const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 }, Media.encExtra()));
+                const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 1 }, Media.encExtra()));
                 output.addVideoTrack(vsrc, { frameRate: fps });
                 let audioTask = null;
                 if (audio) { const a = await audio(MB, outFmt, output); audioTask = a; }
@@ -128,7 +138,7 @@ const Exporter = (() => {
         }
         const rec = document.createElement('canvas'); rec.width = frameCanvas.width; rec.height = frameCanvas.height; const rctx = rec.getContext('2d');
         const stream = rec.captureStream(fps), chunks = [];
-        const mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrateFor(rec.height, fps) });
+        const mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrateFor(rec.width, rec.height, fps, null) });
         mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
         const done = new Promise(res => { mr.onstop = res; });
         mr.start(500);
@@ -328,10 +338,10 @@ const Exporter = (() => {
         const r0 = renderWith(last, 0); const W = Media.evenDim(r0.W), H = Media.evenDim(r0.H);
         const enc = document.createElement('canvas'); enc.width = W; enc.height = H; const ectx = enc.getContext('2d');
         const outFmt = job.format === 'webm' ? new MB.WebMOutputFormat() : new MB.Mp4OutputFormat({ fastStart: 'in-memory' });
-        const bitrate = bitrateFor(job.res, fps);
+        const bitrate = bitrateFor(W, H, fps, st); setFpsHint(fps);
         const vcodec = await Media.pickVideoCodec(MB, outFmt, W, H, bitrate, fps); if (!vcodec) throw new Error('Sem codificador de vídeo para ' + job.format);
         const output = new MB.Output({ format: outFmt, target: new MB.BufferTarget() });
-        const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 2 }, Media.encExtra()));
+        const vsrc = new MB.CanvasSource(enc, Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate, bitrateMode: 'variable' }), keyFrameInterval: 1 }, Media.encExtra()));
         output.addVideoTrack(vsrc, { frameRate: fps });
         let asrc = null, at = null, audioTask = null, plan = null, waBuffer = null, aFirst = 0, copySrc = null;
         if (!job.mute) try {
