@@ -2272,6 +2272,7 @@ async function openVideo(file, token) {
         const note = (t) => { if (!busySheet) { busySheet = true; showBusy('Preparando vídeo', t); } else setBusySub(t); };
         blob = await Media.prepareVideoBlob(file, progress, note);
         if (busySheet) { ui.busy = false; closeSheet(); }
+        if (blob.pixelarAudioLost) setTimeout(() => toast('Vídeo aberto sem som: não foi possível converter o áudio deste arquivo.'), 600);
     } catch (e) { ui.busy = false; closeSheet(); console.error(e); toast('Não foi possível abrir este vídeo (formato ou codec não suportado)'); return; }
     if (token !== loadToken) return;
     if (M.url) URL.revokeObjectURL(M.url);

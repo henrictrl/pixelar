@@ -54,17 +54,20 @@ const Media = (() => {
         const h264 = document.createElement('video').canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"') !== '';
         const outName = h264 ? 'saida.mp4' : 'saida.webm', inName = 'entrada.' + ext;
         const vArgs = h264 ? ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '14'] : ['-c:v', 'libvpx', '-deadline', 'realtime', '-cpu-used', '8', '-b:v', '12M', '-crf', '6'];
-        const aArgs = h264 ? ['-c:a', 'aac', '-b:a', '192k'] : ['-c:a', 'libopus', '-b:a', '192k'];
+        const aArgs = [...(h264 ? ['-c:a', 'aac', '-b:a', '192k'] : ['-c:a', 'libopus', '-b:a', '192k']), '-af', 'aresample=async=1'];
         const common = ['-pix_fmt', 'yuv420p', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2'];
         await ff.writeFile(inName, new Uint8Array(await file.arrayBuffer()));
         const onProg = ({ progress: p }) => progress(0.4 + Math.max(0, Math.min(1, p)) * 0.6);
         ff.on('progress', onProg);
         try {
             let code = await ff.exec(['-i', inName, '-map', '0:v:0', '-map', '0:a:0?', ...vArgs, ...common, ...aArgs, ...(h264 ? ['-movflags', '+faststart'] : []), outName]);
-            if (code !== 0) code = await ff.exec(['-i', inName, '-map', '0:v:0', ...vArgs, ...common, '-an', outName]);
+            let mute = false;
+            if (code !== 0) { mute = true; code = await ff.exec(['-i', inName, '-map', '0:v:0', ...vArgs, ...common, '-an', outName]); }
             if (code !== 0) throw new Error('FFmpeg não conseguiu converter o arquivo');
             const data = await ff.readFile(outName);
-            return new Blob([data.buffer], { type: h264 ? 'video/mp4' : 'video/webm' });
+            const blob = new Blob([data.buffer], { type: h264 ? 'video/mp4' : 'video/webm' });
+            if (mute) blob.pixelarAudioLost = true;
+            return blob;
         } finally { ff.off('progress', onProg); try { await ff.deleteFile(inName); } catch (e) {} try { await ff.deleteFile(outName); } catch (e) {} }
     }
 
@@ -84,7 +87,7 @@ const Media = (() => {
                 else if (id === 'strf' && streams.length) {
                     const s = streams[streams.length - 1];
                     if (s.type === 'vids') { s.width = dv.getInt32(body + 4, true); s.height = Math.abs(dv.getInt32(body + 8, true)); s.compression = fcc(body + 16); }
-                    else if (s.type === 'auds') { s.format = dv.getUint16(body, true); s.channels = dv.getUint16(body + 2, true); s.sampleRate = dv.getUint32(body + 4, true); s.blockAlign = dv.getUint16(body + 12, true); s.bits = dv.getUint16(body + 14, true); s.samplesPerBlock = size >= 20 && s.format === 0x11 ? dv.getUint16(body + 18, true) : 0; if (s.format === 0xFFFE && size >= 26) s.format = dv.getUint16(body + 24, true); }
+                    else if (s.type === 'auds') { s.format = dv.getUint16(body, true); s.channels = dv.getUint16(body + 2, true); s.sampleRate = dv.getUint32(body + 4, true); s.blockAlign = dv.getUint16(body + 12, true); s.bits = dv.getUint16(body + 14, true); s.samplesPerBlock = size >= 20 && (s.format === 0x11 || s.format === 0x02) ? dv.getUint16(body + 18, true) : 0; if (s.format === 0xFFFE && size >= 26) s.format = dv.getUint16(body + 24, true); }
                 } else if (inMovi && /^\d\d(dc|db|wb)$/.test(id)) {
                     if (!vS) { vS = streams.find(s => s.type === 'vids'); aS = streams.find(s => s.type === 'auds'); }
                     const st = streams[+id.slice(0, 2)];
@@ -132,15 +135,68 @@ const Media = (() => {
             for (let b = 0; b < nB; b++) {
                 const base = b * block, pred = [], idx = [];
                 for (let c = 0; c < ch; c++) { pred[c] = dv.getInt16(base + 4 * c, true); idx[c] = Math.min(88, src[base + 4 * c + 2]); out[c][b * spb] = pred[c] / 32768; }
-                let nib = 0; const ds = base + 4 * ch;
-                for (let s = 1; s < spb; s++) for (let c = 0; c < ch; c++) {
-                    const byte = src[ds + (nib >> 1)], code = (nib & 1) ? (byte >> 4) : (byte & 15); nib++;
+                // dados em grupos de 4 bytes (8 amostras) por canal, alternando os canais
+                const ds = base + 4 * ch, groups = Math.floor((spb - 1) / 8);
+                for (let g = 0; g < groups; g++) for (let c = 0; c < ch; c++) for (let k = 0; k < 8; k++) {
+                    const bo = ds + (g * ch + c) * 4 + (k >> 1); if (bo >= base + block) break;
+                    const byte = src[bo], code = (k & 1) ? (byte >> 4) : (byte & 15);
                     const step = IMA_STEPS[idx[c]]; let diff = step >> 3; if (code & 1) diff += step >> 2; if (code & 2) diff += step >> 1; if (code & 4) diff += step;
-                    pred[c] = Math.max(-32768, Math.min(32767, pred[c] + ((code & 8) ? -diff : diff))); idx[c] = Math.max(0, Math.min(88, idx[c] + IMA_IDX[code])); out[c][b * spb + s] = pred[c] / 32768;
+                    pred[c] = Math.max(-32768, Math.min(32767, pred[c] + ((code & 8) ? -diff : diff))); idx[c] = Math.max(0, Math.min(88, idx[c] + IMA_IDX[code])); out[c][b * spb + 1 + g * 8 + k] = pred[c] / 32768;
+                }
+            }
+        } else if (fmt === 0x02) {   // MS ADPCM (comum em AVI gravado no Windows)
+            const block = a.blockAlign, spb = a.samplesPerBlock || ((block - 7 * ch) * 8) / (4 * ch) + 2, nB = Math.floor(total / block);
+            const C1 = [256, 512, 0, 192, 240, 460, 392], C2 = [0, -256, 0, 64, 0, -208, -232], AD = [230, 230, 230, 230, 307, 409, 512, 614, 768, 614, 512, 409, 307, 230, 230, 230];
+            out = Array.from({ length: ch }, () => new Float32Array(nB * spb));
+            for (let b = 0; b < nB; b++) {
+                const base = b * block, c1 = [], c2 = [], d = [], s1 = [], s2 = [];
+                for (let c = 0; c < ch; c++) { const pi = Math.min(6, src[base + c]); c1[c] = C1[pi]; c2[c] = C2[pi]; d[c] = dv.getInt16(base + ch + 2 * c, true); s1[c] = dv.getInt16(base + 3 * ch + 2 * c, true); s2[c] = dv.getInt16(base + 5 * ch + 2 * c, true); out[c][b * spb] = s2[c] / 32768; out[c][b * spb + 1] = s1[c] / 32768; }
+                let nib = 0; const ds = base + 7 * ch;
+                for (let k = 2; k < spb; k++) for (let c = 0; c < ch; c++) {
+                    const bo = ds + (nib >> 1); if (bo >= base + block) break;
+                    const code = (nib & 1) ? (src[bo] & 15) : (src[bo] >> 4); nib++;
+                    let v = ((s1[c] * c1[c] + s2[c] * c2[c]) >> 8) + (code >= 8 ? code - 16 : code) * d[c];
+                    v = Math.max(-32768, Math.min(32767, v)); s2[c] = s1[c]; s1[c] = v; d[c] = Math.max(16, (AD[code] * d[c]) >> 8); out[c][b * spb + k] = v / 32768;
                 }
             }
         } else return null;
         return { channels: out.slice(0, 2), sampleRate: a.sampleRate };
+    }
+    // áudio comprimido no AVI (MP3/MP2): o Web Audio lê o fluxo cru concatenado
+    async function decodeAviAudioWeb(avi) {
+        const a = avi.audio; if (!a || !a.chunks.length || ![0x50, 0x55].includes(a.format)) return null;
+        const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
+        let total = 0; for (const [, s] of a.chunks) total += s;
+        const src = new Uint8Array(total); let p = 0; for (const [o, s] of a.chunks) { src.set(avi.u8.subarray(o, o + s), p); p += s; }
+        try {
+            const ctx = new OAC(Math.min(2, a.channels || 2), 1, a.sampleRate || 44100);
+            const ab = await new Promise((res, rej) => { const r = ctx.decodeAudioData(src.buffer, res, rej); if (r && r.then) r.then(res, rej); });
+            return { channels: Array.from({ length: Math.min(2, ab.numberOfChannels) }, (_, i) => ab.getChannelData(i)), sampleRate: ab.sampleRate };
+        } catch (e) { console.warn('[Pixelar] Web Audio não leu o áudio do AVI:', e); return null; }
+    }
+    // PCM float → WAV 16 bits (entrada pequena para o FFmpeg só recodificar o som)
+    function pcmToWav(pcm) {
+        const ch = pcm.channels.length, n = pcm.channels[0].length, buf = new ArrayBuffer(44 + n * ch * 2), dv = new DataView(buf);
+        const str = (o, t) => { for (let i = 0; i < t.length; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+        str(0, 'RIFF'); dv.setUint32(4, 36 + n * ch * 2, true); str(8, 'WAVEfmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, ch, true);
+        dv.setUint32(24, pcm.sampleRate, true); dv.setUint32(28, pcm.sampleRate * ch * 2, true); dv.setUint16(32, ch * 2, true); dv.setUint16(34, 16, true); str(36, 'data'); dv.setUint32(40, n * ch * 2, true);
+        for (let i = 0, o = 44; i < n; i++) for (let c = 0; c < ch; c++, o += 2) dv.setInt16(o, Math.max(-1, Math.min(1, pcm.channels[c][i])) * 32767, true);
+        return new Uint8Array(buf);
+    }
+    // junta o som a um MP4 só de imagem (vídeo copiado, áudio em AAC) — usado quando o navegador não tem codificador de áudio
+    // ou o AVI traz um codec de áudio que o app não lê sozinho (MS ADPCM, AC3, AAC…)
+    async function muxAudioWithFFmpeg(videoBlob, audioBytes, audioExt, progress, note) {
+        note('Adicionando o som com FFmpeg (a 1ª vez baixa ~31 MB)…');
+        const ff = await loadFFmpeg((p) => progress(0.85 + p * 0.1));
+        const aName = 'som.' + audioExt;
+        await ff.writeFile('imagem.mp4', new Uint8Array(await videoBlob.arrayBuffer()));
+        await ff.writeFile(aName, audioBytes);
+        try {
+            const code = await ff.exec(['-i', 'imagem.mp4', '-i', aName, '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-af', 'aresample=async=1', '-movflags', '+faststart', 'final.mp4']);
+            if (code !== 0) throw new Error('FFmpeg não juntou o áudio');
+            const data = await ff.readFile('final.mp4');
+            return new Blob([data.buffer], { type: 'video/mp4' });
+        } finally { for (const f of ['imagem.mp4', aName, 'final.mp4']) { try { await ff.deleteFile(f); } catch (e) {} } }
     }
     const evenDim = (n) => Math.max(2, n - (n % 2));
     // Safari (Mac e todos os navegadores do iPhone): o codificador H.264 no modo 'quality' retém os quadros
@@ -161,7 +217,7 @@ const Media = (() => {
         const direct = await MB.getFirstEncodableAudioCodec(list, Object.assign({ sampleRate }, opt)); if (direct) return { codec: direct, transform: undefined };
         const rs = await MB.getFirstEncodableAudioCodec(list, Object.assign({ sampleRate: 48000 }, opt)); return rs ? { codec: rs, transform: { sampleRate: 48000 } } : null;
     }
-    async function transcodeAviMjpeg(file, progress) {
+    async function transcodeAviMjpeg(file, progress, note) {
         const MB = await loadMediabunny(), avi = parseAvi(await file.arrayBuffer());
         if (!/^(MJPG|MJPEG|AVRN|LJPG|JPEG|DMB1|MJLS)/.test(avi.compression) || !avi.video.length) throw new Error('codec ' + avi.compression);
         const first = avi.video.find(([, s]) => s > 0);
@@ -172,8 +228,10 @@ const Media = (() => {
         const output = new MB.Output({ format: fmt, target: new MB.BufferTarget() });
         const vsrc = new MB.VideoSampleSource(Object.assign({ codec: vcodec, quality: new MB.Quality({ bitrate }), keyFrameInterval: 1, sizeChangeBehavior: 'fill' }, encExtra()));
         output.addVideoTrack(vsrc, { frameRate: avi.fps });
-        const pcm = decodeAviAudio(avi); let asrc = null;
-        if (pcm) { const ac = await pickAudioCodec(MB, fmt, pcm.channels.length, pcm.sampleRate); if (ac) { asrc = new MB.AudioSampleSource({ codec: ac.codec, quality: new MB.Quality({ bitrate: 192000 }), transform: ac.transform }); output.addAudioTrack(asrc); } }
+        const hasAudio = !!(avi.audio && avi.audio.chunks.some(([, s]) => s > 0));
+        let pcm = null; try { pcm = decodeAviAudio(avi) || await decodeAviAudioWeb(avi); } catch (e) { console.warn('[Pixelar] áudio do AVI:', e); }
+        let asrc = null;
+        if (pcm && pcm.channels[0].length) { const ac = await pickAudioCodec(MB, fmt, pcm.channels.length, pcm.sampleRate).catch(() => null); if (ac) { asrc = new MB.AudioSampleSource({ codec: ac.codec, quality: new MB.Quality({ bitrate: 192000 }), transform: ac.transform }); output.addAudioTrack(asrc); } }
         await output.start();
         const enc = document.createElement('canvas'); enc.width = W; enc.height = H; const ectx = enc.getContext('2d');
         const audioTask = (async () => { if (!asrc) return; const n = pcm.channels[0].length, CH = pcm.sampleRate; for (let off = 0; off < n; off += CH) { const len = Math.min(CH, n - off), data = new Float32Array(len * pcm.channels.length); pcm.channels.forEach((c, i) => data.set(c.subarray(off, off + len), i * len)); const s = new MB.AudioSample({ data, format: 'f32-planar', numberOfChannels: pcm.channels.length, sampleRate: pcm.sampleRate, timestamp: off / pcm.sampleRate }); await asrc.add(s); s.close(); } })();
@@ -185,10 +243,14 @@ const Media = (() => {
             if (bmp) { ectx.drawImage(bmp, 0, 0, W, H); bmp.close(); lastGood = true; }
             if (!lastGood) continue;
             const sample = new MB.VideoSample(enc, { timestamp: i / avi.fps, duration: 1 / avi.fps }); await vsrc.add(sample); sample.close();
-            if (i % 5 === 0) progress(i / N);
+            if (i % 5 === 0) progress(i / N * (hasAudio && !asrc ? 0.85 : 1));
         }
         await audioTask; await output.finalize();
-        return new Blob([output.target.buffer], { type: 'video/mp4' });
+        const blob = new Blob([output.target.buffer], { type: 'video/mp4' });
+        if (!hasAudio || asrc) return blob;
+        // som presente mas sem caminho nativo: FFmpeg junta (WAV já decodificado, ou o próprio AVI)
+        try { return await muxAudioWithFFmpeg(blob, pcm ? pcmToWav(pcm) : avi.u8, pcm ? 'wav' : 'avi', progress, note); }
+        catch (e) { console.warn('[Pixelar] não deu para juntar o som:', e); blob.pixelarAudioLost = true; return blob; }
     }
 
     const NATIVE_VIDEO_EXT = ['mp4', 'm4v', 'webm', 'mov', 'ogv', 'ogg', 'mkv'];
@@ -208,7 +270,7 @@ const Media = (() => {
     async function prepareVideoBlob(file, progress, note) {
         const ext = fileExt(file);
         if (ext !== 'avi' && await canPlayNatively(file)) return file;
-        if (ext === 'avi') { try { note('Convertendo AVI…'); return await transcodeAviMjpeg(file, progress); } catch (e) { console.warn('AVI nativo falhou, tentando FFmpeg:', e); } }
+        if (ext === 'avi') { try { note('Convertendo AVI…'); return await transcodeAviMjpeg(file, progress, note); } catch (e) { console.warn('AVI nativo falhou, tentando FFmpeg:', e); } }
         return transcodeWithFFmpeg(file, progress, note);
     }
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
