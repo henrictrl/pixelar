@@ -5,6 +5,38 @@
 'use strict';
 
 const Media = (() => {
+    // Safari 26+: o AudioEncoder de AAC entrega um "description" (AudioSpecificConfig) errado
+    // (WebKit bug 302253). O MP4 sai com faixa de áudio que nenhum player lê: vídeo mudo na prévia e na exportação.
+    // Aqui o AudioEncoder é embrulhado para reescrever esse cabeçalho a partir da configuração real.
+    (function fixSafariAac() {
+        if (!/^Apple/.test(navigator.vendor || '') || typeof AudioEncoder === 'undefined' || AudioEncoder.__pixelarAac) return;
+        const RATES = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+        const asc = (rate, ch) => {   // AAC-LC: objeto 2 (5 bits) + índice de taxa (4) + canais (4) + 3 bits zerados
+            const fi = RATES.indexOf(rate), c = Math.max(1, Math.min(7, ch | 0));
+            if (fi >= 0) return new Uint8Array([(2 << 3) | (fi >> 1), ((fi & 1) << 7) | (c << 3)]);
+            // taxa fora da tabela: índice 15 + 24 bits explícitos
+            const v = [2, 5, 15, 4, rate, 24, c, 4, 0, 3];
+            let acc = 0n, n = 0; for (let i = 0; i < v.length; i += 2) { acc = (acc << BigInt(v[i + 1])) | BigInt(v[i]); n += v[i + 1]; }
+            acc <<= BigInt((8 - n % 8) % 8); n += (8 - n % 8) % 8; const out = new Uint8Array(n / 8);
+            for (let i = out.length - 1; i >= 0; i--) { out[i] = Number(acc & 255n); acc >>= 8n; } return out;
+        };
+        const Orig = AudioEncoder;
+        class PixelarAudioEncoder extends Orig {
+            constructor(init) {
+                const box = { cfg: null }, out = init.output;
+                super(Object.assign({}, init, { output: (chunk, meta) => {
+                    const c = box.cfg;
+                    if (c && meta && meta.decoderConfig && /^mp4a\.40\.2$/i.test(c.codec || '') && !(c.aac && c.aac.format === 'adts'))
+                        meta = Object.assign({}, meta, { decoderConfig: Object.assign({}, meta.decoderConfig, { codec: 'mp4a.40.2', sampleRate: c.sampleRate, numberOfChannels: c.numberOfChannels, description: asc(c.sampleRate, c.numberOfChannels) }) });
+                    out(chunk, meta);
+                } }));
+                this.__box = box;
+            }
+            configure(c) { this.__box.cfg = c; return super.configure(c); }
+        }
+        PixelarAudioEncoder.__pixelarAac = true;
+        window.AudioEncoder = PixelarAudioEncoder;
+    })();
     let mbPromise = null;
     function loadMediabunny() {
         if (window.Mediabunny) return Promise.resolve(window.Mediabunny);
