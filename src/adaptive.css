@@ -1,0 +1,530 @@
+/* ==========================================================================
+   PIXELAR STUDIO — ADAPTIVE UI LAYER
+   - Desktop (>1180px): Pure Desktop Studio (untouched)
+   - iPhone (<=740px): Modelo D Glass Pro + Área Livre Inteligente
+   - iPad 10 (741..1180px): Layout 5 Darkroom (Sessão + Régua Larga)
+   ========================================================================== */
+
+#pxAdaptiveRoot { display: none; -webkit-tap-highlight-color: transparent; }
+
+body[data-layout="iphone"] #pxAdaptiveRoot,
+body[data-layout="ipad"] #pxAdaptiveRoot {
+  display: block;
+}
+
+/* Hide desktop chrome cleanly when in iPhone or iPad purpose-built layouts */
+body[data-layout="iphone"] #studio,
+body[data-layout="ipad"] #studio {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+}
+body[data-layout="iphone"] .topbar,
+body[data-layout="iphone"] .panel-left,
+body[data-layout="iphone"] .panel-right,
+body[data-layout="iphone"] .tool-rail,
+body[data-layout="iphone"] .filmstrip,
+body[data-layout="iphone"] .stage-hud,
+body[data-layout="ipad"] .topbar,
+body[data-layout="ipad"] .panel-left,
+body[data-layout="ipad"] .panel-right,
+body[data-layout="ipad"] .tool-rail,
+body[data-layout="ipad"] .filmstrip,
+body[data-layout="ipad"] .stage-hud {
+  display: none !important;
+}
+
+body[data-layout="iphone"] .stage-col,
+body[data-layout="ipad"] .stage-col {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+body[data-layout="iphone"] .viewport,
+body[data-layout="ipad"] .viewport {
+  width: 100%;
+  height: 100%;
+  background: #060608;
+  touch-action: none;
+}
+body[data-layout="iphone"] .stage-pill.top-center {
+  top: calc(env(safe-area-inset-top, 10px) + 52px);
+}
+body[data-layout="ipad"] .stage-pill.top-center {
+  top: calc(env(safe-area-inset-top, 8px) + 56px);
+}
+
+/* Video playback bar floats cleanly above docks on iPhone & iPad */
+body[data-layout="iphone"] .video-bar {
+  position: fixed;
+  left: 12px; right: 12px;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 196px);
+  z-index: 26;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 16, 21, 0.80);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+}
+body[data-layout="ipad"] .video-bar {
+  position: fixed;
+  left: 96px; right: 20px;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 168px);
+  z-index: 26;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 16, 21, 0.84);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+}
+
+/* Shared Glass Surface (Apple HIG specular top rim + deep blur) */
+.px-glass {
+  background: rgba(17, 17, 22, 0.78);
+  backdrop-filter: blur(24px) saturate(1.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 42px rgba(0, 0, 0, 0.54);
+}
+.px-nosb::-webkit-scrollbar { display: none; }
+.px-nosb { scrollbar-width: none; }
+
+/* ==========================================================================
+   TACTILE PRECISION RULER (SHARED BETWEEN IPHONE MODELO D & IPAD 5)
+   ========================================================================== */
+.px-ruler-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 2px 12px 6px;
+}
+.px-ruler-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.px-ruler-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+.px-ruler-val {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(253, 175, 0, 0.24);
+  cursor: pointer;
+}
+.px-ruler-track {
+  position: relative;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  touch-action: none;
+  cursor: ew-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.px-ruler-ticks {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
+  will-change: transform;
+}
+.px-ruler-ticks i {
+  display: block;
+  width: 1.5px;
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.22);
+  flex-shrink: 0;
+}
+.px-ruler-ticks i.maj {
+  height: 17px;
+  background: rgba(255, 255, 255, 0.54);
+}
+.px-ruler-ticks i.zero {
+  width: 2px;
+  height: 20px;
+  background: rgba(253, 175, 0, 0.70);
+}
+.px-ruler-needle {
+  position: absolute;
+  top: 4px; bottom: 4px; left: 50%;
+  width: 2.5px;
+  transform: translateX(-50%);
+  border-radius: 99px;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(253, 175, 0, 0.65);
+  pointer-events: none;
+}
+
+/* Horizontal Pill & Thumbnail Carousels */
+.px-hstrip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 4px 12px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.px-chip {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.1s ease;
+}
+.px-chip:active { transform: scale(0.96); }
+.px-chip.icon-sq { width: 30px; padding: 0; }
+.px-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.px-chip.mod::after {
+  content: "";
+  width: 5px; height: 5px; border-radius: 99px;
+  background: var(--accent);
+}
+.px-chip.accent-solid {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+/* Unified Thumbnail Card (10px radius for ALL items including Original & Limpar) */
+.px-thumb-card {
+  flex-shrink: 0;
+  width: 74px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(18, 18, 24, 0.90);
+  border: 1.5px solid rgba(255, 255, 255, 0.11);
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.1s ease;
+}
+.px-thumb-card:active { transform: scale(0.96); }
+.px-thumb-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.px-thumb-card canvas,
+.px-thumb-card img.px-thumb-img {
+  width: 100%;
+  height: 50px;
+  object-fit: cover;
+  display: block;
+  background: #0d0d10;
+}
+.px-thumb-action-box {
+  width: 100%;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+  color: var(--text-2);
+}
+.px-thumb-card.active .px-thumb-action-box {
+  background: linear-gradient(180deg, rgba(253, 175, 0, 0.16), rgba(253, 175, 0, 0.05));
+  color: var(--accent);
+}
+.px-thumb-card .px-tn {
+  padding: 4px 5px 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.px-thumb-card.active .px-tn { color: var(--accent); }
+
+/* Reparented Advanced 2D Widget Host (Curve, HSL, Wheels, Lab Sub-Modules, Chemistry) */
+.px-adv-host {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 6px 12px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-overflow-scrolling: touch;
+}
+.px-adv-host .acc-section { border-bottom: 0; }
+.px-adv-host .acc-head { display: none !important; }
+.px-adv-host .acc-body { display: flex !important; padding: 4px 0 4px !important; }
+
+/* ==========================================================================
+   IPHONE — MODELO D (PHOTOMATOR / APPLE GLASS PRO + ÁREA LIVRE INTELIGENTE)
+   ========================================================================== */
+.m-top-pills {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 10px) + 8px);
+  left: 12px;
+  right: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+.m-top-pills.glass-dragging { opacity: 0.16; }
+.m-pill {
+  pointer-events: auto;
+  height: 36px;
+  padding: 0 5px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.m-icon-btn {
+  height: 30px;
+  padding: 0 9px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-1);
+  transition: background 0.14s ease, color 0.14s ease, transform 0.1s ease;
+}
+.m-icon-btn.icon-only { width: 30px; padding: 0; }
+.m-icon-btn:active { background: rgba(255, 255, 255, 0.14); transform: scale(0.95); }
+.m-icon-btn.active { color: var(--accent); background: var(--accent-soft); }
+.m-icon-btn.export {
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0 12px;
+}
+
+.m-glass-dock {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 8px);
+  z-index: 30;
+  border-radius: 22px;
+  overflow: hidden;
+  transition: opacity 0.16s ease, transform 0.18s var(--ease);
+}
+.m-glass-dock.glass-dragging {
+  opacity: 0.22;
+  transform: translateY(4px) scale(0.99);
+}
+.m-dock-handle {
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+.m-dock-handle span {
+  width: 36px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.26);
+}
+.m-dock-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+.m-glass-dock[data-dock="pill"] .m-dock-body { display: none; }
+.m-dock-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 5px 6px 6px;
+  gap: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.m-glass-dock[data-dock="pill"] .m-dock-tabs { border-top: 0; padding-top: 0; }
+.m-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 2px;
+  border-radius: 13px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: background 0.14s ease, color 0.14s ease, transform 0.1s ease;
+}
+.m-tab-btn:active { transform: scale(0.95); }
+.m-tab-btn.active {
+  color: var(--accent);
+  background: rgba(253, 175, 0, 0.15);
+}
+
+/* ==========================================================================
+   IPAD 10 — LAYOUT 5 (DARKROOM IPAD: SESSÃO LATERAL + RÉGUA LARGA DE PRECISÃO)
+   ========================================================================== */
+.ip-topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: calc(env(safe-area-inset-top, 0px) + 50px);
+  padding: env(safe-area-inset-top, 0px) 16px 0;
+  z-index: 30;
+  background: rgba(14, 14, 18, 0.88);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ip-topbar-group { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ip-title { font-size: 13px; font-weight: 700; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+
+.ip-session {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 50px);
+  left: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 160px);
+  width: 78px;
+  z-index: 25;
+  background: rgba(14, 14, 18, 0.94);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  gap: 8px;
+  overflow-y: auto;
+}
+.ip-session.collapsed { display: none; }
+.ip-session-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.ip-sess-item {
+  width: 58px; height: 50px; border-radius: 10px;
+  overflow: hidden; border: 2px solid transparent;
+  background: #0b0b0e; flex-shrink: 0; opacity: 0.72;
+  transition: opacity 0.14s ease, border-color 0.14s ease;
+}
+.ip-sess-item.active { opacity: 1; border-color: var(--accent); }
+.ip-sess-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ip-sess-add {
+  width: 58px; height: 42px; border-radius: 10px;
+  border: 1.5px dashed var(--border-strong); color: var(--text-2);
+  display: grid; place-items: center; flex-shrink: 0; margin-top: auto;
+}
+.ip-sess-add:hover { border-color: var(--accent); color: var(--accent); }
+
+.ip-dock {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 30;
+  padding: 8px 18px calc(env(safe-area-inset-bottom, 8px) + 8px);
+  background: rgba(15, 15, 20, 0.92);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  border-top: 1px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ip-dock-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ip-tab-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.1s ease;
+}
+.ip-tab-btn:active { transform: scale(0.96); }
+.ip-tab-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* iPad 5 Floating Glass Popover for 2D Widgets (Curva, HSL, Rodas, Lab Sub-Modules, Química) */
+.ip-popover {
+  position: fixed;
+  right: 20px;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 178px);
+  width: min(360px, calc(100vw - 32px));
+  max-height: 48vh;
+  z-index: 35;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.ip-popover-head {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.ip-popover .px-adv-host {
+  max-height: calc(48vh - 46px);
+  border-top: 0;
+}
+
+@media (max-width: 900px) {
+  .ip-session { display: none; }
+  .ip-session.force-open { display: flex; }
+  body[data-layout="ipad"] .video-bar { left: 16px; right: 16px; }
+}

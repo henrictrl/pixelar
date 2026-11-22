@@ -1,0 +1,8 @@
+.DS_Store
+__pycache__/
+*.pyc
+Pixelar-Xcode/
+*.app/
+macos/AppIcon.icns
+macos/AppIcon_1024.png
+presentations/assets/

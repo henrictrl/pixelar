@@ -1,13 +1,13 @@
 {
-  "name": "Pixelar",
+  "name": "Pixelar Studio",
   "short_name": "Pixelar",
-  "description": "Pixel art, dither, filmes analógicos e animações para fotos e vídeos.",
+  "description": "Estúdio fotográfico e de vídeo em WebGL2: filmes analógicos 35mm, vencidos, laboratório criativo, geometria padrão Lightroom e resgate Sony Cyber-shot AVI.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#09090B",
+  "theme_color": "#09090B",
   "icons": [
     {
       "src": "icons/icon-192.png",
