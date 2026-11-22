@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(ROOT, "assets")
 os.makedirs(ASSETS_DIR, exist_ok=True)
 
-SOURCE_PHOTO = "/Users/henriquemarinhos/Pictures/cyber/fotos/2026 09 setembro/DSC06519.JPG"
+SOURCE_PHOTO = os.path.join(ROOT, "pinacoteca_source.jpg")
 FALLBACK_SAMPLE = os.path.join(os.path.dirname(ROOT), "src", "samples.js")
 
 # Darkroom Editorial Palette
@@ -546,14 +546,14 @@ def build_keynote_pdf(photos, out_path):
     draw_clipped_image(c, photos["gold"], 636, 172, 580, 404, r=9, border=C_BORDER)
     # Inset Original badge
     draw_clipped_image(c, photos["orig"], 652, 188, 148, 98, r=6, border=C_AMBER)
-    draw_pill(c, 660, 195, "ORIGINAL CCD", bg=colors.HexColor("#0D0D11"), fg=C_AMBER, border=C_AMBER, size=7.5, h=16, pad_x=7)
+    draw_pill(c, 660, 195, "ORIGINAL", bg=colors.HexColor("#0D0D11"), fg=C_AMBER, border=C_AMBER, size=7.5, h=16, pad_x=7)
     # Caption bar inside hero card
     c.setFont("Helvetica-Bold", 11.5)
     c.setFillColor(C_TEXT1)
-    c.drawString(640, 142, "Viveiro · Sony Cyber-shot CCD  →  Kodak Gold 200")
+    c.drawString(640, 142, "Pinacoteca · Octógono  →  Kodak Gold 200")
     c.setFont("Courier", 9.5)
     c.setFillColor(C_TEXT3)
-    c.drawString(640, 124, "4320 × 3240 px  ·  Halação Película + Roll-off Analógico + Grão Orgânico")
+    c.drawString(640, 124, "Arquitetura & Claraboia  ·  Halação Película + Roll-off Analógico + Grão Orgânico")
     c.setFont("Courier-Bold", 9)
     c.setFillColor(C_AMBER)
     c.drawRightString(1214, 142, "GPU 60 FPS")
@@ -629,8 +629,8 @@ def build_keynote_pdf(photos, out_path):
 
     # 4-up Real Contact Sheet of Viveiro
     films = [
-        ("orig", "Original · Cyber-shot CCD", "Referência sem edição · sensor 14 MP"),
-        ("gold", "Kodak Gold 200", "Realces âmbar, verdes quentes, bloom suave"),
+        ("orig", "Original · Pinacoteca", "Referência sem edição · luz natural"),
+        ("gold", "Kodak Gold 200", "Realces âmbar, tijolos quentes, bloom suave"),
         ("vencido", "Vencido Viva · Emulsão", "Véu químico, manchas orgânicas e light leak"),
         ("cinestill", "CineStill 800T", "Sombras tungstênio + halação vermelha"),
     ]
@@ -1024,10 +1024,10 @@ def build_executive_pdf(photos, out_path):
     # Visual 4-Panel Before / After Contact Strip
     c.setFont("Courier-Bold", 8.5)
     c.setFillColor(C_AMBER)
-    c.drawString(34, H - 144, "TRANSFORMAÇÕES REAIS EM TEMPO REAL  (AMOSTRA: VIVEIRO · SONY CYBER-SHOT CCD)")
+    c.drawString(34, H - 144, "TRANSFORMAÇÕES REAIS EM TEMPO REAL  (AMOSTRA: PINACOTECA · OCTÓGONO)")
 
     strip = [
-        ("orig", "Original CCD"),
+        ("orig", "Original"),
         ("gold", "Kodak Gold 200"),
         ("riso", "Lab · Risograph"),
         ("pixel", "Lab · Pixel Art 8c"),

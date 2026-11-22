@@ -275,16 +275,30 @@ body[data-layout="ipad"] .video-bar {
 .px-thumb-card.active .px-tn { color: var(--accent); }
 
 /* Reparented Advanced 2D Widget Host (Curve, HSL, Wheels, Lab Sub-Modules, Chemistry) */
-.px-adv-host {
-  max-height: 240px;
-  overflow-y: auto;
-  padding: 6px 12px 10px;
+.px-adv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.px-adv-host {
+  max-height: 42dvh;
+  overflow-y: auto;
+  padding: 8px 12px 12px;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .px-adv-host .acc-section { border-bottom: 0; }
 .px-adv-host .acc-head { display: none !important; }
-.px-adv-host .acc-body { display: flex !important; padding: 4px 0 4px !important; }
+.px-adv-host .acc-body { display: flex !important; padding: 4px 0 6px !important; }
+.px-adv-host .mini-chip { height: 28px; padding: 0 10px; font-size: 11px; border-radius: 7px; }
+.px-adv-host .pal-btn { padding: 7px 8px; }
 
 /* ==========================================================================
    IPHONE — MODELO D (PHOTOMATOR / APPLE GLASS PRO + ÁREA LIVRE INTELIGENTE)
@@ -331,7 +345,10 @@ body[data-layout="ipad"] .video-bar {
 .m-icon-btn.export {
   background: var(--accent);
   color: var(--accent-ink);
-  padding: 0 12px;
+  padding: 0 11px;
+}
+@media (max-width: 400px) {
+  .m-icon-btn .m-hide-sm { display: none; }
 }
 
 .m-glass-dock {
@@ -403,7 +420,7 @@ body[data-layout="ipad"] .video-bar {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: calc(env(safe-area-inset-top, 0px) + 50px);
-  padding: env(safe-area-inset-top, 0px) 16px 0;
+  padding: env(safe-area-inset-top, 0px) 14px 0;
   z-index: 30;
   background: rgba(14, 14, 18, 0.88);
   backdrop-filter: blur(20px) saturate(1.3);
@@ -412,10 +429,15 @@ body[data-layout="ipad"] .video-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  overflow: hidden;
 }
-.ip-topbar-group { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.ip-title { font-size: 13px; font-weight: 700; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+.ip-topbar-group { display: flex; align-items: center; gap: 6px; min-width: 0; flex-shrink: 0; }
+.ip-topbar-group.left { flex: 1 1 auto; }
+.ip-title { font-size: 13px; font-weight: 700; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; min-width: 0; }
+@media (max-width: 920px) {
+  .ip-title { display: none; }
+}
 
 .ip-session {
   position: fixed;
@@ -472,14 +494,18 @@ body[data-layout="ipad"] .video-bar {
 .ip-dock-tabs {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: safe center;
+  gap: 6px;
   padding-top: 5px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.ip-dock-tabs::-webkit-scrollbar { display: none; }
 .ip-tab-btn {
+  flex-shrink: 0;
   height: 32px;
-  padding: 0 14px;
+  padding: 0 13px;
   border-radius: 99px;
   font-size: 12px;
   font-weight: 600;

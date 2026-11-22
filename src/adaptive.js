@@ -126,13 +126,13 @@
     if (qMode === 'iphone' || qMode === 'ipad' || qMode === 'desktop') return qMode;
     if (window.__PIXELAR_DEVICE === 'iphone') return 'iphone';
     if (window.__PIXELAR_DEVICE === 'ipad') return 'ipad';
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const w = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+    const h = Math.min(window.innerHeight, document.documentElement.clientHeight || window.innerHeight);
     const isTouch = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
-    const isIpadOS = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIpadOS) return 'ipad';
+    // Phone screen dimensions ALWAYS win first (even if iOS Safari has "Desktop Website" enabled!)
     if (w <= 740 || (isTouch && Math.min(w, h) <= 500)) return 'iphone';
-    if ((isTouch && w <= 1280) || w <= 1024) return 'ipad';
+    const isIpadOS = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIpadOS || (isTouch && w <= 1366) || w <= 1040) return 'ipad';
     return 'desktop';
   }
 
@@ -443,7 +443,7 @@
     pumpAdThumbs();
   }
 
-  function buildLabCarousel(container, onOpenAdvanced) {
+  function buildLabCarousel(container, onOpenAdvanced, hideCardsStrip = false) {
     ensureThumbCacheForMedia();
     const st = App.getState();
 
@@ -485,16 +485,20 @@
 
     (window.LAB_PRESET_CATS || []).forEach((c) => {
       const cb = document.createElement('button');
-      cb.className = 'px-chip' + (state.labCat === c.id ? ' active' : '');
+      cb.className = 'px-chip' + (!hideCardsStrip && state.labCat === c.id ? ' active' : '');
       cb.textContent = c.label;
       cb.onclick = () => {
         state.labCat = c.id;
+        state.advSection = null;
+        if (state.dock === 'expanded') state.dock = 'compact';
         scrollMem.labStrip = { x: 0, y: 0 };
         renderAdaptiveUI();
       };
       topRow.appendChild(cb);
     });
     container.appendChild(topRow);
+
+    if (hideCardsStrip) return;
 
     // Horizontal Lab Presets Strip (uniform 10px card rounding for Limpar + all Lab recipes)
     const strip = document.createElement('div');
@@ -604,7 +608,8 @@
 
     const btnSplit = document.createElement('button');
     btnSplit.className = 'm-icon-btn' + (view.mode === 'split' ? ' active' : '');
-    btnSplit.innerHTML = `${pxIco('px-split', 13)}<span>Cortina</span>`;
+    btnSplit.setAttribute('aria-label', 'Comparar Cortina');
+    btnSplit.innerHTML = `${pxIco('px-split', 13)}<span class="m-hide-sm">Cortina</span>`;
     btnSplit.onclick = () => {
       App.setViewMode(view.mode === 'split' ? 'single' : 'split');
       renderAdaptiveUI();
@@ -646,11 +651,11 @@
     const body = document.createElement('div');
     body.className = 'm-dock-body';
 
-    const openPhoneAdv = (secKey) => {
+    const openPhoneAdv = (secKey, advTitle = '') => {
       if (state.advSection === secKey && state.dock === 'expanded') {
-        state.advSection = null; state.dock = 'compact';
+        state.advSection = null; state.advTitle = ''; state.dock = 'compact';
       } else {
-        state.advSection = secKey; state.dock = 'expanded';
+        state.advSection = secKey; state.advTitle = advTitle; state.dock = 'expanded';
       }
       renderAdaptiveUI();
       setTimeout(() => App.fitViewport(false), 40);
@@ -662,22 +667,22 @@
       const merged = [...SLIDER_GROUPS.light, ...SLIDER_GROUPS.color];
       const extras = [
         mkQuickChip('Auto Luz', false, () => App.autoTone(), 'px-light'),
-        mkQuickChip('Curva', state.advSection === 'curve', () => openPhoneAdv('curve'), 'px-curve'),
-        mkQuickChip('HSL', state.advSection === 'hsl', () => openPhoneAdv('hsl'), 'px-sliders'),
-        mkQuickChip('Rodas', state.advSection === 'grade', () => openPhoneAdv('grade'), 'px-color'),
+        mkQuickChip('Curva', state.advSection === 'curve', () => openPhoneAdv('curve', 'Curva de Tons RGB'), 'px-curve'),
+        mkQuickChip('HSL', state.advSection === 'hsl', () => openPhoneAdv('hsl', 'Misturador HSL (8 Cores)'), 'px-sliders'),
+        mkQuickChip('Rodas', state.advSection === 'grade', () => openPhoneAdv('grade', 'Color Grading (3-Vias)'), 'px-color'),
       ];
       buildSliderPanel(body, 'lightcolor', merged, extras, onDragState);
     } else if (state.phoneTab === 'optics') {
       const extras = [
-        mkQuickChip('Química & Vencido', state.advSection === 'film', () => openPhoneAdv('film'), 'px-optics'),
+        mkQuickChip('Química & Vencido', state.advSection === 'film', () => openPhoneAdv('film', 'Química do Filme & Vencido'), 'px-optics'),
       ];
       buildSliderPanel(body, 'optics', SLIDER_GROUPS.optics, extras, onDragState);
     } else if (state.phoneTab === 'lab') {
-      buildLabCarousel(body, (secKey) => openPhoneAdv(secKey));
+      buildLabCarousel(body, (secKey, t) => openPhoneAdv(secKey, t), state.dock === 'expanded' && !!state.advSection);
     } else if (state.phoneTab === 'crop') {
       const extras = [
-        mkQuickChip('Proporções', state.advSection === 'crop_frame', () => openPhoneAdv('crop_frame'), 'px-crop'),
-        mkQuickChip('Lente', state.advSection === 'crop_lens', () => openPhoneAdv('crop_lens'), 'px-optics'),
+        mkQuickChip('Proporções', state.advSection === 'crop_frame', () => openPhoneAdv('crop_frame', 'Corte, Proporção & Grade'), 'px-crop'),
+        mkQuickChip('Lente', state.advSection === 'crop_lens', () => openPhoneAdv('crop_lens', 'Correção de Lente'), 'px-optics'),
         mkQuickChip('−90°', false, () => { st.crop.rot = (st.crop.rot + 270) % 360; window.StudioGPU.invalidate(); App.render(); App.commit(true); }, 'px-rot-l'),
         mkQuickChip('+90°', false, () => { st.crop.rot = (st.crop.rot + 90) % 360; window.StudioGPU.invalidate(); App.render(); App.commit(true); }, 'px-rot-r'),
         mkQuickChip('Esp. H', !!st.crop.flipH, () => { st.crop.flipH = !st.crop.flipH; App.render(); App.commit(true); renderAdaptiveUI(); }, 'px-flip-h'),
@@ -687,6 +692,24 @@
     }
 
     if (state.dock === 'expanded' && state.advSection) {
+      const advHead = document.createElement('div');
+      advHead.className = 'px-adv-head';
+      const advLbl = document.createElement('span');
+      advLbl.textContent = state.advTitle || 'Ajustes';
+      const advClose = document.createElement('button');
+      advClose.className = 'px-chip icon-sq';
+      advClose.style.height = '24px';
+      advClose.style.width = '24px';
+      advClose.setAttribute('aria-label', 'Fechar painel');
+      advClose.innerHTML = pxIco('px-close', 10);
+      advClose.onclick = () => {
+        state.advSection = null; state.advTitle = ''; state.dock = 'compact';
+        renderAdaptiveUI();
+        setTimeout(() => App.fitViewport(false), 30);
+      };
+      advHead.append(advLbl, advClose);
+      body.appendChild(advHead);
+
       const host = document.createElement('div');
       host.className = 'px-adv-host';
       host.dataset.scrollKey = 'advHost';
@@ -747,7 +770,7 @@
     top.className = 'ip-topbar';
 
     const leftG = document.createElement('div');
-    leftG.className = 'ip-topbar-group';
+    leftG.className = 'ip-topbar-group left';
     const sessToggle = document.createElement('button');
     sessToggle.className = 'px-chip' + (state.ipadSessionOpen ? ' active' : '');
     sessToggle.innerHTML = `${LOGO_SVG}<span>Sessão</span>`;
