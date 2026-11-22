@@ -455,17 +455,8 @@
     remix.className = 'px-chip accent-solid';
     remix.innerHTML = `${pxIco('px-shuffle', 12)}<span>Remix</span>`;
     remix.onclick = () => {
-      const list = window.LAB_PRESETS || [];
-      if (!list.length) return;
-      const pick = list[Math.floor(Math.random() * list.length)];
-      st.lab = window.mergeState(window.deepClone(window.DEFAULT_STATE.lab), pick.lab);
-      st.lab.presetId = pick.id;
-      if (st.lab.fxId !== 'none') {
-        st.lab.fxParam = Math.max(0, Math.min(100, (st.lab.fxParam ?? 50) + Math.round((Math.random() - 0.5) * 34)));
-      }
       App.haptic('medium');
-      App.commit(true); App.sync(); App.render();
-      App.notify('Remix Lab: ' + pick.name);
+      App.proceduralRemix('lab');
     };
     topRow.appendChild(remix);
 
@@ -667,6 +658,7 @@
       const merged = [...SLIDER_GROUPS.light, ...SLIDER_GROUPS.color];
       const extras = [
         mkQuickChip('Auto Luz', false, () => App.autoTone(), 'px-light'),
+        mkQuickChip('Remix', false, () => { App.haptic('medium'); App.proceduralRemix('studio'); }, 'px-shuffle'),
         mkQuickChip('Curva', state.advSection === 'curve', () => openPhoneAdv('curve', 'Curva de Tons RGB'), 'px-curve'),
         mkQuickChip('HSL', state.advSection === 'hsl', () => openPhoneAdv('hsl', 'Misturador HSL (8 Cores)'), 'px-sliders'),
         mkQuickChip('Rodas', state.advSection === 'grade', () => openPhoneAdv('grade', 'Color Grading (3-Vias)'), 'px-color'),
@@ -786,7 +778,8 @@
     const btnSplit = mkQuickChip('Cortina', view.mode === 'split', () => { App.setViewMode(view.mode === 'split' ? 'single' : 'split'); renderAdaptiveUI(); }, 'px-split');
     const btnSide = mkQuickChip('Lado a Lado', view.mode === 'side', () => { App.setViewMode(view.mode === 'side' ? 'single' : 'side'); renderAdaptiveUI(); }, 'px-side');
     const btnAuto = mkQuickChip('Auto Luz', false, () => App.autoTone(), 'px-light');
-    midG.append(btnSplit, btnSide, btnAuto);
+    const btnRemix = mkQuickChip('Remix', false, () => { App.haptic('medium'); App.proceduralRemix('studio'); }, 'px-shuffle');
+    midG.append(btnSplit, btnSide, btnAuto, btnRemix);
 
     const rightG = document.createElement('div');
     rightG.className = 'ip-topbar-group';

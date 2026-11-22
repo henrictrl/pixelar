@@ -1603,21 +1603,9 @@
       topActions.className = 'lab-top-actions';
       const remixBtn = document.createElement('button');
       remixBtn.className = 'lab-remix-btn';
-      remixBtn.innerHTML = `${pxIco('px-shuffle', 12)}<span>Remix</span>`;
-      remixBtn.title = 'Gera uma combinação criativa instantânea no Lab';
-      remixBtn.onclick = () => {
-        const list = window.LAB_PRESETS || [];
-        if (!list.length) return;
-        const pick = list[Math.floor(Math.random() * list.length)];
-        st.lab = window.mergeState(window.deepClone(window.DEFAULT_STATE.lab), pick.lab);
-        st.lab.presetId = pick.id;
-        if (st.lab.fxId !== 'none') {
-          st.lab.fxParam = Math.max(0, Math.min(100, (st.lab.fxParam ?? 50) + Math.round((Math.random() - 0.5) * 34)));
-          st.lab.fxScale = Math.max(15, Math.min(85, (st.lab.fxScale ?? 50) + Math.round((Math.random() - 0.5) * 20)));
-        }
-        syncAllUI(); requestRender(); commit(true);
-        toast('Remix Lab: ' + pick.name);
-      };
+      remixBtn.innerHTML = `${pxIco('px-shuffle', 12)}<span>Remix Procedural</span>`;
+      remixBtn.title = 'Gera uma edição procedural inteligente analisando a foto (parâmetros editáveis)';
+      remixBtn.onclick = () => runProceduralRemix('lab');
       const clearLabBtn = document.createElement('button');
       clearLabBtn.className = 'mini-chip';
       clearLabBtn.style.height = '27px';
@@ -2337,6 +2325,21 @@
   }
 
   // =========================================================================
+  // SMART PROCEDURAL RANDOMIZATION (HISTOGRAM + SAFE RANGES + INCOMPATIBILITY MATRIX)
+  // =========================================================================
+  function runProceduralRemix(scope = 'studio') {
+    if (!window.StudioProcedural) return;
+    const src = getActiveSource();
+    const res = window.StudioProcedural.generate(src, st.crop, { scope });
+    st = res.state;
+    window.StudioGPU.invalidate();
+    commit(true);
+    syncAllUI();
+    requestRender();
+    toast(res.summary);
+  }
+
+  // =========================================================================
   // VIEWPORT INTERACTIONS
   // =========================================================================
   let dragPan = null;
@@ -2387,6 +2390,7 @@
   $('btnUndo').onclick = undo;
   $('btnRedo').onclick = redo;
   $('btnAutoTone').onclick = runAutoTone;
+  if ($('btnProceduralRemix')) $('btnProceduralRemix').onclick = () => runProceduralRemix('studio');
   $('btnResetAll').onclick = () => {
     st = window.freshState();
     window.StudioGPU.invalidate();
@@ -2727,6 +2731,7 @@
     else if (e.key === '0') fitViewport(true);
     else if (e.key.toLowerCase() === 'f') toggleFocusMode();
     else if (e.key.toLowerCase() === 'g' && $('btnToggleStrip')) $('btnToggleStrip').click();
+    else if (e.key.toLowerCase() === 'r') runProceduralRemix('studio');
     else if (e.key.toLowerCase() === 'c') {
       view.mode = view.mode === 'split' ? 'single' : 'split';
       document.querySelectorAll('.seg-btn[data-view]').forEach(x => x.classList.toggle('active', x.dataset.view === view.mode));
@@ -2746,6 +2751,7 @@
     undo,
     redo,
     autoTone: runAutoTone,
+    proceduralRemix: runProceduralRemix,
     resetAll: () => $('btnResetAll').click(),
     toggleFocus: toggleFocusMode,
     toggleStrip: () => $('btnToggleStrip') && $('btnToggleStrip').click(),
