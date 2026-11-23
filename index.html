@@ -386,9 +386,13 @@ input[type="text"], input[type="search"] { user-select: text; }
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .video-play-btn:hover { filter: brightness(1.08); }
-.video-scrub { flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; }
-.video-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.video-scrub { flex: 1 1 0%; min-width: 0; width: 100%; accent-color: var(--accent); cursor: pointer; height: 6px; }
+.video-time { flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .video-badge {
+  flex-shrink: 0;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 2px 7px; border-radius: 4px;
   background: var(--accent-soft); border: 1px solid var(--accent-mid);
   color: var(--accent); font-family: var(--font-mono); font-size: 10px; font-weight: 600;
@@ -810,28 +814,71 @@ body[data-layout="ipad"] .stage-pill.top-center {
   top: calc(env(safe-area-inset-top, 8px) + 56px);
 }
 
-/* Video playback bar floats cleanly above docks on iPhone & iPad */
+/* Video playback bar floats cleanly above docks on iPhone & iPad (never overlaps or overflows margins) */
+body[data-layout="iphone"],
+body[data-layout="ipad"] {
+  overflow: hidden;
+  max-width: 100vw;
+}
 body[data-layout="iphone"] .video-bar {
   position: fixed;
-  left: 12px; right: 12px;
-  bottom: calc(env(safe-area-inset-bottom, 8px) + 196px);
-  z-index: 26;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(16, 16, 21, 0.80);
-  backdrop-filter: blur(20px) saturate(1.3);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
-}
-body[data-layout="ipad"] .video-bar {
-  position: fixed;
-  left: 96px; right: 20px;
-  bottom: calc(env(safe-area-inset-bottom, 8px) + 168px);
-  z-index: 26;
+  left: 10px;
+  right: 10px;
+  width: auto;
+  max-width: calc(100vw - 20px);
+  box-sizing: border-box;
+  overflow: hidden;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 216px);
+  z-index: 31;
+  height: 42px;
+  padding: 6px 10px;
+  gap: 8px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(16, 16, 21, 0.84);
   backdrop-filter: blur(20px) saturate(1.3);
   -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: opacity 0.16s ease;
+}
+body[data-layout="iphone"] .video-bar.glass-dragging {
+  opacity: 0.16;
+  pointer-events: none;
+}
+body[data-layout="iphone"] .video-play-btn {
+  width: 28px;
+  height: 28px;
+}
+body[data-layout="iphone"] .video-time {
+  font-size: 10.5px;
+}
+body[data-layout="iphone"] .video-badge {
+  display: none !important;
+}
+body[data-layout="ipad"] .video-bar {
+  position: fixed;
+  left: 94px;
+  right: 16px;
+  width: auto;
+  max-width: calc(100vw - 110px);
+  box-sizing: border-box;
+  overflow: hidden;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 178px);
+  z-index: 31;
+  height: 44px;
+  padding: 6px 12px;
+  gap: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 16, 21, 0.86);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+body[data-layout="ipad"] .video-badge {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Shared Glass Surface (Apple HIG specular top rim + deep blur) */
@@ -1303,7 +1350,7 @@ body[data-layout="ipad"] .video-bar {
 @media (max-width: 900px) {
   .ip-session { display: none; }
   .ip-session.force-open { display: flex; }
-  body[data-layout="ipad"] .video-bar { left: 16px; right: 16px; }
+  body[data-layout="ipad"] .video-bar { left: 16px; right: 16px; max-width: calc(100vw - 32px); }
 }
   </style>
 </head>
@@ -6631,6 +6678,7 @@ window.StudioVideo = (function () {
       fitViewport(true);
       resetLazyThumbs();
       highlightFilmstrip('');
+      if (window.__PX_ADAPTIVE && window.__PX_ADAPTIVE.onMediaChange) window.__PX_ADAPTIVE.onMediaChange();
       toast(`AVI carregado (${avi.frames.length} frames · ${media.w}×${media.h}). Clique em Exportar para converter!`);
     } catch (e) {
       toast(e.message || 'Erro ao abrir arquivo .AVI');
@@ -6662,6 +6710,7 @@ window.StudioVideo = (function () {
       fitViewport(true);
       resetLazyThumbs();
       highlightFilmstrip('');
+      if (window.__PX_ADAPTIVE && window.__PX_ADAPTIVE.onMediaChange) window.__PX_ADAPTIVE.onMediaChange();
       toast(`Vídeo carregado: ${media.name}`);
     };
     v.onseeked = () => { if (!media.playing && media.kind === 'video') renderNow(); };
@@ -9503,6 +9552,8 @@ window.StudioVideo = (function () {
     const onDragState = (isDragging) => {
       dock.classList.toggle('glass-dragging', isDragging);
       topBar.classList.toggle('glass-dragging', isDragging);
+      const vb = document.getElementById('videoBar');
+      if (vb) vb.classList.toggle('glass-dragging', isDragging);
     };
 
     const body = document.createElement('div');
@@ -9791,10 +9842,66 @@ window.StudioVideo = (function () {
     restoreScrollPositions();
   }
 
+  // Keep #videoBar outside .stage-col stacking context on mobile/iPad & positioned strictly above the live dock
+  function syncVideoBarPosition() {
+    const vb = document.getElementById('videoBar');
+    if (!vb) return;
+    if (state.layout === 'desktop') {
+      const stageCol = document.querySelector('.stage-col');
+      const strip = document.getElementById('filmstrip');
+      if (stageCol && vb.parentElement !== stageCol) {
+        if (strip && strip.parentElement === stageCol) stageCol.insertBefore(vb, strip);
+        else stageCol.appendChild(vb);
+      }
+      vb.style.bottom = '';
+      vb.style.top = '';
+      vb.style.left = '';
+      vb.style.right = '';
+      vb.classList.remove('glass-dragging');
+      return;
+    }
+
+    // Move #videoBar onto document.body so it is NEVER trapped behind #mGlassDock / #ipDock by .stage-col's stacking context!
+    if (vb.parentElement !== document.body) {
+      document.body.appendChild(vb);
+    }
+    if (vb.hidden) return;
+
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    if (state.layout === 'iphone') {
+      const topEl = document.getElementById('mGlassTop');
+      const dockEl = document.getElementById('mGlassDock');
+      const topBot = topEl ? topEl.getBoundingClientRect().bottom : 58;
+      const dockTop = dockEl ? dockEl.getBoundingClientRect().top : (vh - 180);
+      const barH = vb.getBoundingClientRect().height || 42;
+      vb.style.left = '10px';
+      vb.style.right = '10px';
+      if (dockTop - barH - 12 < topBot + 8) {
+        // When expanded sheet is tall, float video controls cleanly right below the top glass pills
+        vb.style.top = Math.round(topBot + 8) + 'px';
+        vb.style.bottom = 'auto';
+      } else {
+        vb.style.top = 'auto';
+        vb.style.bottom = Math.max(12, Math.round(window.innerHeight - dockTop + 8)) + 'px';
+      }
+    } else if (state.layout === 'ipad') {
+      const dockEl = document.getElementById('ipDock');
+      const sessEl = document.getElementById('ipSession');
+      const dockTop = dockEl ? dockEl.getBoundingClientRect().top : (vh - 170);
+      const sessW = (sessEl && getComputedStyle(sessEl).display !== 'none') ? sessEl.getBoundingClientRect().width : 0;
+      vb.style.top = 'auto';
+      vb.style.bottom = Math.max(12, Math.round(window.innerHeight - dockTop + 8)) + 'px';
+      vb.style.left = (sessW ? Math.round(sessW + 16) : 16) + 'px';
+      vb.style.right = '16px';
+    }
+  }
+
   function renderAdaptiveUI() {
     if (state.layout === 'iphone') renderIphoneUI();
     else if (state.layout === 'ipad') renderIpadUI();
     else { restoreBorrowedSection(); root.innerHTML = ''; }
+    syncVideoBarPosition();
+    requestAnimationFrame(syncVideoBarPosition);
   }
 
   // =========================================================================
@@ -9802,16 +9909,27 @@ window.StudioVideo = (function () {
   // =========================================================================
   function computeFit(viewport, outCanvas, view) {
     if (state.layout === 'desktop') return null;
+    syncVideoBarPosition();
     const W = viewport.clientWidth || window.innerWidth;
     const H = viewport.clientHeight || window.innerHeight;
     const aspect = outCanvas.width / Math.max(1, outCanvas.height);
+    const vb = document.getElementById('videoBar');
+    const vbVisible = vb && !vb.hidden;
+    const vbRect = vbVisible ? vb.getBoundingClientRect() : null;
 
     if (state.layout === 'iphone') {
       const topEl = document.getElementById('mGlassTop');
       const dockEl = document.getElementById('mGlassDock');
-      const topSafe = topEl ? (topEl.getBoundingClientRect().bottom + 8) : 64;
+      let topSafe = topEl ? (topEl.getBoundingClientRect().bottom + 8) : 64;
       const dockTop = dockEl ? dockEl.getBoundingClientRect().top : (H - 170);
-      const botSafe = Math.max(70, H - dockTop + 8);
+      let botSafe = Math.max(70, H - dockTop + 8);
+      if (vbRect) {
+        if (vb.style.top && vb.style.top !== 'auto') {
+          topSafe = Math.max(topSafe, vbRect.bottom + 8);
+        } else {
+          botSafe = Math.max(botSafe, H - vbRect.top + 8);
+        }
+      }
 
       // Área Livre Inteligente:
       // Fotos horizontais/quadradas (aspect >= 0.88) centralizam na área livre entre pílula superior e card flutuante.
@@ -9841,7 +9959,8 @@ window.StudioVideo = (function () {
       const dockEl = document.getElementById('ipDock');
       const sessEl = document.getElementById('ipSession');
       const topH = topEl ? topEl.getBoundingClientRect().height : 50;
-      const dockH = dockEl ? dockEl.getBoundingClientRect().height : 160;
+      let dockH = dockEl ? dockEl.getBoundingClientRect().height : 160;
+      if (vbRect) dockH += (vbRect.height + 10);
       const leftW = (sessEl && getComputedStyle(sessEl).display !== 'none') ? sessEl.getBoundingClientRect().width : 0;
 
       const availW = Math.max(160, W - leftW - 32);
@@ -9950,6 +10069,7 @@ window.StudioVideo = (function () {
     if (next === 'desktop') {
       restoreBorrowedSection();
       root.innerHTML = '';
+      syncVideoBarPosition();
     } else {
       renderAdaptiveUI();
     }
@@ -9975,8 +10095,11 @@ window.StudioVideo = (function () {
     setLayout: (m) => { window.__PIXELAR_DEVICE = m; syncLayout(true); },
   };
 
-  window.addEventListener('resize', () => syncLayout(false));
-  window.addEventListener('orientationchange', () => setTimeout(() => syncLayout(true), 120));
+  window.addEventListener('resize', () => { syncLayout(false); syncVideoBarPosition(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { syncLayout(true); syncVideoBarPosition(); }, 120));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => { syncVideoBarPosition(); if (state.layout !== 'desktop') App.fitViewport(false); });
+  }
 
   syncLayout(true);
 

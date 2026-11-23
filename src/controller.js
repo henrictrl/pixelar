@@ -583,6 +583,7 @@
       fitViewport(true);
       resetLazyThumbs();
       highlightFilmstrip('');
+      if (window.__PX_ADAPTIVE && window.__PX_ADAPTIVE.onMediaChange) window.__PX_ADAPTIVE.onMediaChange();
       toast(`AVI carregado (${avi.frames.length} frames · ${media.w}×${media.h}). Clique em Exportar para converter!`);
     } catch (e) {
       toast(e.message || 'Erro ao abrir arquivo .AVI');
@@ -614,6 +615,7 @@
       fitViewport(true);
       resetLazyThumbs();
       highlightFilmstrip('');
+      if (window.__PX_ADAPTIVE && window.__PX_ADAPTIVE.onMediaChange) window.__PX_ADAPTIVE.onMediaChange();
       toast(`Vídeo carregado: ${media.name}`);
     };
     v.onseeked = () => { if (!media.playing && media.kind === 'video') renderNow(); };

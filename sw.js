@@ -3,7 +3,7 @@
  * - Limpa automaticamente todos os caches antigos (pixelar-5.x e anteriores) ao ativar.
  * - Mantém funcionamento 100% offline como PWA no iPhone, iPad, Android e Desktop.
  */
-const VERSION = 'pixelar-6.0.2';
+const VERSION = 'pixelar-6.0.3';
 const CORE = [
   './',
   './index.html',

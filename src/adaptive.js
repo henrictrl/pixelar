@@ -637,6 +637,8 @@
     const onDragState = (isDragging) => {
       dock.classList.toggle('glass-dragging', isDragging);
       topBar.classList.toggle('glass-dragging', isDragging);
+      const vb = document.getElementById('videoBar');
+      if (vb) vb.classList.toggle('glass-dragging', isDragging);
     };
 
     const body = document.createElement('div');
@@ -925,10 +927,66 @@
     restoreScrollPositions();
   }
 
+  // Keep #videoBar outside .stage-col stacking context on mobile/iPad & positioned strictly above the live dock
+  function syncVideoBarPosition() {
+    const vb = document.getElementById('videoBar');
+    if (!vb) return;
+    if (state.layout === 'desktop') {
+      const stageCol = document.querySelector('.stage-col');
+      const strip = document.getElementById('filmstrip');
+      if (stageCol && vb.parentElement !== stageCol) {
+        if (strip && strip.parentElement === stageCol) stageCol.insertBefore(vb, strip);
+        else stageCol.appendChild(vb);
+      }
+      vb.style.bottom = '';
+      vb.style.top = '';
+      vb.style.left = '';
+      vb.style.right = '';
+      vb.classList.remove('glass-dragging');
+      return;
+    }
+
+    // Move #videoBar onto document.body so it is NEVER trapped behind #mGlassDock / #ipDock by .stage-col's stacking context!
+    if (vb.parentElement !== document.body) {
+      document.body.appendChild(vb);
+    }
+    if (vb.hidden) return;
+
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    if (state.layout === 'iphone') {
+      const topEl = document.getElementById('mGlassTop');
+      const dockEl = document.getElementById('mGlassDock');
+      const topBot = topEl ? topEl.getBoundingClientRect().bottom : 58;
+      const dockTop = dockEl ? dockEl.getBoundingClientRect().top : (vh - 180);
+      const barH = vb.getBoundingClientRect().height || 42;
+      vb.style.left = '10px';
+      vb.style.right = '10px';
+      if (dockTop - barH - 12 < topBot + 8) {
+        // When expanded sheet is tall, float video controls cleanly right below the top glass pills
+        vb.style.top = Math.round(topBot + 8) + 'px';
+        vb.style.bottom = 'auto';
+      } else {
+        vb.style.top = 'auto';
+        vb.style.bottom = Math.max(12, Math.round(window.innerHeight - dockTop + 8)) + 'px';
+      }
+    } else if (state.layout === 'ipad') {
+      const dockEl = document.getElementById('ipDock');
+      const sessEl = document.getElementById('ipSession');
+      const dockTop = dockEl ? dockEl.getBoundingClientRect().top : (vh - 170);
+      const sessW = (sessEl && getComputedStyle(sessEl).display !== 'none') ? sessEl.getBoundingClientRect().width : 0;
+      vb.style.top = 'auto';
+      vb.style.bottom = Math.max(12, Math.round(window.innerHeight - dockTop + 8)) + 'px';
+      vb.style.left = (sessW ? Math.round(sessW + 16) : 16) + 'px';
+      vb.style.right = '16px';
+    }
+  }
+
   function renderAdaptiveUI() {
     if (state.layout === 'iphone') renderIphoneUI();
     else if (state.layout === 'ipad') renderIpadUI();
     else { restoreBorrowedSection(); root.innerHTML = ''; }
+    syncVideoBarPosition();
+    requestAnimationFrame(syncVideoBarPosition);
   }
 
   // =========================================================================
@@ -936,16 +994,27 @@
   // =========================================================================
   function computeFit(viewport, outCanvas, view) {
     if (state.layout === 'desktop') return null;
+    syncVideoBarPosition();
     const W = viewport.clientWidth || window.innerWidth;
     const H = viewport.clientHeight || window.innerHeight;
     const aspect = outCanvas.width / Math.max(1, outCanvas.height);
+    const vb = document.getElementById('videoBar');
+    const vbVisible = vb && !vb.hidden;
+    const vbRect = vbVisible ? vb.getBoundingClientRect() : null;
 
     if (state.layout === 'iphone') {
       const topEl = document.getElementById('mGlassTop');
       const dockEl = document.getElementById('mGlassDock');
-      const topSafe = topEl ? (topEl.getBoundingClientRect().bottom + 8) : 64;
+      let topSafe = topEl ? (topEl.getBoundingClientRect().bottom + 8) : 64;
       const dockTop = dockEl ? dockEl.getBoundingClientRect().top : (H - 170);
-      const botSafe = Math.max(70, H - dockTop + 8);
+      let botSafe = Math.max(70, H - dockTop + 8);
+      if (vbRect) {
+        if (vb.style.top && vb.style.top !== 'auto') {
+          topSafe = Math.max(topSafe, vbRect.bottom + 8);
+        } else {
+          botSafe = Math.max(botSafe, H - vbRect.top + 8);
+        }
+      }
 
       // Área Livre Inteligente:
       // Fotos horizontais/quadradas (aspect >= 0.88) centralizam na área livre entre pílula superior e card flutuante.
@@ -975,7 +1044,8 @@
       const dockEl = document.getElementById('ipDock');
       const sessEl = document.getElementById('ipSession');
       const topH = topEl ? topEl.getBoundingClientRect().height : 50;
-      const dockH = dockEl ? dockEl.getBoundingClientRect().height : 160;
+      let dockH = dockEl ? dockEl.getBoundingClientRect().height : 160;
+      if (vbRect) dockH += (vbRect.height + 10);
       const leftW = (sessEl && getComputedStyle(sessEl).display !== 'none') ? sessEl.getBoundingClientRect().width : 0;
 
       const availW = Math.max(160, W - leftW - 32);
@@ -1084,6 +1154,7 @@
     if (next === 'desktop') {
       restoreBorrowedSection();
       root.innerHTML = '';
+      syncVideoBarPosition();
     } else {
       renderAdaptiveUI();
     }
@@ -1109,8 +1180,11 @@
     setLayout: (m) => { window.__PIXELAR_DEVICE = m; syncLayout(true); },
   };
 
-  window.addEventListener('resize', () => syncLayout(false));
-  window.addEventListener('orientationchange', () => setTimeout(() => syncLayout(true), 120));
+  window.addEventListener('resize', () => { syncLayout(false); syncVideoBarPosition(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { syncLayout(true); syncVideoBarPosition(); }, 120));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => { syncVideoBarPosition(); if (state.layout !== 'desktop') App.fitViewport(false); });
+  }
 
   syncLayout(true);
 

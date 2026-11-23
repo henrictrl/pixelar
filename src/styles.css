@@ -371,9 +371,13 @@ input[type="text"], input[type="search"] { user-select: text; }
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .video-play-btn:hover { filter: brightness(1.08); }
-.video-scrub { flex: 1; accent-color: var(--accent); cursor: pointer; height: 6px; }
-.video-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.video-scrub { flex: 1 1 0%; min-width: 0; width: 100%; accent-color: var(--accent); cursor: pointer; height: 6px; }
+.video-time { flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .video-badge {
+  flex-shrink: 0;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 2px 7px; border-radius: 4px;
   background: var(--accent-soft); border: 1px solid var(--accent-mid);
   color: var(--accent); font-family: var(--font-mono); font-size: 10px; font-weight: 600;
